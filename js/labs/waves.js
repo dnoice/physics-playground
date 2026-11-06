@@ -39,18 +39,12 @@ import { chartFrame, chartMessage } from '../core/chart.js';
 import { genericState } from '../core/codec.js';
 import { RAMP_GLOW, RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing } from '../core/draw.js';
-
-import { FOV3, PITCH0, m4look, m4mul, m4persp } from '../core/math3d.js';
-import { TAU, clamp, rand, reduceMotion, wrapAngle } from '../core/util.js';
+import { FOV3 } from '../core/math3d.js';
+import { TAU, clamp, rand } from '../core/util.js';
 import { view } from '../core/view.js';
-import { reliefGL } from '../render/relief-gl.js';
 import { camOf } from '../shell/camera.js';
-import { sticky } from '../shell/diagnostics.js';
-import { updateDock } from '../shell/dock.js';
 import { setParam } from '../shell/lifecycle.js';
-
-import { updateNav } from '../shell/navigator.js';
-import { refreshEnabled, syncControl } from '../shell/panel.js';
+import { refreshEnabled } from '../shell/panel.js';
 import { active } from '../shell/state.js';
 
 /* ================================================================== */
@@ -59,6 +53,9 @@ import { active } from '../shell/state.js';
 export const waves = {
   id: 'waves', name: 'Waves', title: 'Ripple tank',
   zoomRange: [0.5, 10],
+  rig3: { plane: 'floor', yaw: -0.6, pitch: 0.68, fit: 1.04, height: 1.5, pitchMin: 0.14, target: [0.2, -0.2, 0] },
+  /* The tank in scene units: water depth, depth over a glass slab, barrier height above the water, surface height of a unit wave. */
+  tank3: { depth: 0.46, shallow: 0.15, wall: 0.3, amp: 0.085 },
   eq: '∂<sup>2</sup>u/∂t<sup>2</sup> = c<sup>2</sup>∇<sup>2</sup>u',
   eqTex: '\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\nabla^2 u',
   aria: 'Wave simulation: a two-dimensional ripple tank',
@@ -66,7 +63,7 @@ export const waves = {
   interact: [
     'Pick a tool from the dock, then click or drag on the tank.',
     '<b>Pulse</b> drops a disturbance. <b>Wall</b> and <b>Erase</b> paint barriers. <b>Source</b> adds an oscillator, or removes one you click. <b>Glass</b> paints a slower medium.',
-    'Switch the view to <b>Intensity</b> to see the time-averaged interference pattern, or to <b>Relief 3D</b> to see the water as a lit surface you can orbit. Every tool works in 3D too.',
+    'Switch the view to <b>Intensity</b> to see the time-averaged interference pattern. Every tool works in 3D too.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'pulse', label: 'Pulse', key: 'p', icon: 'pulse', hint: 'Click to drop a pulse · drag to leave a wake' },
@@ -87,7 +84,7 @@ export const waves = {
     { id: 'doppler', label: 'Moving source', params: { f: 3, srcSpeed: 0.6, phaseStep: 0 } },
   ],
   controls: [
-    { type: 'seg', key: 'view', label: 'View', options: [['disp', 'Displacement'], ['int', 'Intensity'], ['relief', 'Relief 3D']] },
+    { type: 'seg', key: 'view', label: 'View', options: [['disp', 'Displacement'], ['int', 'Intensity']] },
     { type: 'range', key: 'c', label: 'Wave speed c', min: 20, max: 120, step: 1, unit: 'cells/s' },
     { type: 'range', key: 'f', label: 'Source frequency f', min: 0.5, max: 8, step: 0.1, unit: 'Hz' },
     { type: 'range', key: 'phaseStep', label: 'Source phase step Δφ', min: -180, max: 180, step: 1, unit: '°', note: 'Each point source lags the one before it by Δφ.' },
@@ -105,13 +102,12 @@ export const waves = {
   ],
   Nx: 2, Ny: 2, cs: 4, Ls: 20, u: null, u0: null, wall: null, glass: null, sponge: null, inten: null, slits: null,
   off: null, octx: null, img: null, sources: [], time: 0, drawing: false, last: null, lastPulse: null,
-  steps: 0, stepClock: 0, stepRate: 0, maxU: 0, cam3: null, view3: null, flatView: 'disp',
+  steps: 0, stepClock: 0, stepRate: 0, maxU: 0,
   dt() { return 0.5 / this.p.c; }, maxSteps: 24,
 
   setup(w, h) {
     this.cs = clamp(Math.round(Math.sqrt(w * h / 42000)), 3, 6);
     const Nx = Math.ceil(w / this.cs), Ny = Math.ceil(h / this.cs), N = Nx * Ny;
-    if (Nx !== this.Nx || Ny !== this.Ny) this.cam3 = null;
     this.Nx = Nx; this.Ny = Ny;
     this.u = new Float32Array(N); this.u0 = new Float32Array(N); this.inten = new Float32Array(N);
     this.wall = new Uint8Array(N); this.glass = new Uint8Array(N); this.sponge = new Float32Array(N);
@@ -158,111 +154,91 @@ export const waves = {
   },
   worldRect() { return { w: this.Nx * this.cs, h: this.Ny * this.cs }; },
   unit() { return { name: 'cells', k: 1 / this.cs }; },
-  onParam(key) {
-    if (key !== 'view') return;
-    if (this.p.view !== 'relief') this.flatView = this.p.view;
-    else if (!reliefGL.init()) { this.leave3D('3D relief needs WebGL 2, which this browser did not provide, so the tank stays flat.'); return; }
-    if (this === active) { updateNav(); updateDock(); refreshEnabled(); }
-  },
-  leave3D(msg) {
-    this.p.view = this.flatView || 'disp';
-    if (this === active) { syncControl('view'); updateNav(); updateDock(); }
-    sticky({ id: 'w-3d', level: 'info', title: '3D relief is unavailable', body: msg }, 12);
-  },
-  drawFixes() { return this.p.view === 'relief' ? [{ label: 'Flat view', run() { setParam(waves, 'view', waves.flatView || 'disp'); } }] : []; },
-  navExtras: [{ id: 'relief', label: '3D relief', icon: 'cube', title: 'Switch between the flat tank and the 3D relief',
-    pressed: () => waves.p.view === 'relief', run() { setParam(waves, 'view', waves.p.view === 'relief' ? (waves.flatView || 'disp') : 'relief'); } }],
   mini(g) { g.imageSmoothingEnabled = true; g.drawImage(this.off, 0, 0, this.Nx * this.cs, this.Ny * this.cs); },
-  /* ---- 3D relief camera: orbit (yaw, pitch), dolly (dist), pan (target on the water plane) ---- */
-  is3D() { return this.p.view === 'relief'; },
-  dist0() { const a = view.w / Math.max(1, view.h), t = Math.tan(FOV3 / 2); return Math.max(this.Nx / (2 * t * a), this.Ny / (2 * t) * 0.9) * 1.5; },
-  c3() {
-    if (!this.cam3) { const D = this.dist0(); this.cam3 = { yaw: 0, pitch: PITCH0, dist: D, tx: 0, tz: 0, yawT: 0, pitchT: PITCH0, distT: D, txT: 0, tzT: 0 }; }
-    return this.cam3;
+  /* What source s, the k-th point source, is driving the water to right now; the solver's own expression. */
+  signal3(s, k) {
+    const t = this.time - s.t0, phase = s.type === 'point' ? s.phase - k * this.p.phaseStep * Math.PI / 180 : s.phase;
+    return clamp(t / 0.6, 0, 1) * Math.sin(TAU * this.p.f * t + phase);
   },
-  camMatrices(w, h) {
-    const c = this.c3(), cp = Math.cos(c.pitch), e = [c.tx + c.dist * cp * Math.sin(c.yaw), c.dist * Math.sin(c.pitch), c.tz + c.dist * cp * Math.cos(c.yaw)];
-    const V = m4look(e, [c.tx, 0, c.tz], [0, 1, 0]), P = m4persp(FOV3, w / Math.max(1, h), c.dist * 0.02, c.dist * 6 + Math.max(this.Nx, this.Ny) * 2);
-    return { mvp: m4mul(P, V.m), eye: e, r: V.r, u: V.u, f: V.f, w, h };
+  /* The tank lies across the view on a wide stage, so the whole apparatus has to fit, not just the plane under it. */
+  dist0() {
+    const P = this.plane3(), R = this.rig3, t = Math.tan(FOV3 / 2), a = view.w / Math.max(1, view.h), X = P.hw + 0.5, Z = P.hh + 0.5;
+    const sy = Math.abs(Math.sin(R.yaw)), cy = Math.abs(Math.cos(R.yaw));
+    return Math.max((X * cy + Z * sy) / (t * a), ((X * sy + Z * cy) * Math.sin(R.pitch) + 1.3 * Math.cos(R.pitch)) / t) * R.fit;
   },
-  basis3() { return this.view3 || (this.view3 = this.camMatrices(view.w, view.h)); },
-  project3(x, y, z) {
-    const V = this.view3; if (!V) return null;
-    const m = V.mvp, cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
-    return cw > 1e-6 ? { x: (cx / cw + 1) * 0.5 * V.w, y: (1 - cy / cw) * 0.5 * V.h } : null;
-  },
+  /* Surface height of displacement u in scene units, compressed so strong sources stay readable. */
+  height3(u) { const v = u * this.p.gain; return this.tank3.amp * this.p.relief * v / (1 + Math.abs(v)); },
+  /* The ray lands on the moving water rather than its rest plane, and off the tank it lands on nothing. */
   pick3(s) {
-    const V = this.basis3(), t = Math.tan(FOV3 / 2), a = view.w / Math.max(1, view.h);
-    const nx = (2 * s.x / view.w - 1) * t * a, ny = (1 - 2 * s.y / view.h) * t;
-    const d = [V.f[0] + V.r[0] * nx + V.u[0] * ny, V.f[1] + V.r[1] * nx + V.u[1] * ny, V.f[2] + V.r[2] * nx + V.u[2] * ny];
-    if (d[1] > -1e-4) return null;
-    const k = -V.eye[1] / d[1];
-    return { x: (V.eye[0] + d[0] * k + this.Nx / 2) * this.cs, y: (V.eye[2] + d[2] * k + this.Ny / 2) * this.cs };
-  },
-  clampT3() {
-    const c = this.c3(), X = this.Nx / 2, Z = this.Ny / 2;
-    c.tx = clamp(c.tx, -X, X); c.tz = clamp(c.tz, -Z, Z); c.txT = clamp(c.txT, -X, X); c.tzT = clamp(c.tzT, -Z, Z);
-  },
-  orbit3(dx, dy) { const c = this.c3(); c.yaw = c.yawT = c.yawT - dx * 0.008; c.pitch = c.pitchT = clamp(c.pitchT + dy * 0.006, 0.08, 1.553); },
-  pan3(dx, dy) {
-    const c = this.c3(), k = 2 * c.dist * Math.tan(FOV3 / 2) / Math.max(1, view.h), sy = Math.sin(c.yaw), cy = Math.cos(c.yaw), sp = Math.max(0.35, Math.sin(c.pitch));
-    c.tx += -cy * dx * k - sy * dy * k / sp; c.tz += sy * dx * k - cy * dy * k / sp;
-    c.txT = c.tx; c.tzT = c.tz; this.clampT3();
-  },
-  zoom3(f, s, instant) {
-    const c = this.c3(), D0 = this.dist0(), nd = clamp(c.distT / f, D0 * 0.12, D0 * 3);
-    if (s) {
-      const p = this.pick3(s);
-      if (p) { const k = 1 - nd / c.distT, hx = p.x / this.cs - this.Nx / 2, hz = p.y / this.cs - this.Ny / 2; c.txT += (hx - c.txT) * k; c.tzT += (hz - c.tzT) * k; this.clampT3(); }
+    const hit = this.rayHit(s); if (!hit) return null;
+    const { p, P } = hit, e = this.basis3().eye, dy = p[1] - e[1], Nx = this.Nx, Ny = this.Ny, cs = this.cs;
+    let x = p[0], z = p[2];
+    for (let i = 0; i < 3; i++) {
+      const cx = clamp(Math.round((x / P.k + P.cx) / cs), 0, Nx - 1), cy = clamp(Math.round((z / P.k + P.cy) / cs), 0, Ny - 1);
+      const t = (P.o[1] + this.height3(this.u[cy * Nx + cx]) - e[1]) / dy;
+      x = e[0] + (p[0] - e[0]) * t; z = e[2] + (p[2] - e[2]) * t;
     }
-    c.distT = nd;
-    if (instant || reduceMotion) { c.dist = c.distT; c.tx = c.txT; c.tz = c.tzT; }
+    const wx = x / P.k + P.cx, wy = z / P.k + P.cy;
+    return wx >= 0 && wy >= 0 && wx <= P.cx * 2 && wy <= P.cy * 2 ? { x: wx, y: wy } : null;
   },
-  actual3() { this.c3().distT = this.dist0(); },
-  zoomPct3() { return this.dist0() / this.c3().dist * 100; },
-  frame3() { Object.assign(this.c3(), { yawT: Math.round(this.c3().yaw / TAU) * TAU, pitchT: PITCH0, distT: this.dist0(), txT: 0, tzT: 0 }); },
-  snap3(id) {
-    const c = this.c3(), S = { x: Math.PI / 2, '-x': -Math.PI / 2, y: Math.PI, '-y': 0 };
-    if (id === 'z') { c.yawT = Math.round(c.yaw / TAU) * TAU; c.pitchT = 1.553; return; }
-    if (!(id in S)) return;
-    c.yawT = c.yaw + wrapAngle(S[id] - c.yaw); c.pitchT = 0.24;
-  },
-  tick3(real) {
-    const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 12);
-    c.yaw += wrapAngle(c.yawT - c.yaw) * k; c.pitch += (c.pitchT - c.pitch) * k;
-    c.dist *= Math.pow(c.distT / c.dist, k); c.tx += (c.txT - c.tx) * k; c.tz += (c.tzT - c.tz) * k;
-  },
-  draw3(g, w, h) {
-    g.fillStyle = THEME.ink; g.fillRect(0, 0, w, h);
-    if (!reliefGL.render(this, w, h)) { this.leave3D('The 3D renderer stopped (WebGL 2 failed or its context was lost), so the tank is back to the flat view.'); return; }
-    g.imageSmoothingEnabled = true; g.drawImage(reliefGL.canvas, 0, 0, w, h);
-    const Nx = this.Nx, Ny = this.Ny, P = (x, y, hh = 0) => this.project3(x - Nx / 2, hh, y - Ny / 2);
-    const poly = (pts, close) => { g.beginPath(); let pen = false; for (const q of pts) { if (!q) { pen = false; continue; } pen ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); pen = true; } if (close) g.closePath(); g.stroke(); };
-    const ring = (cx, cy, r, hh, n = 24) => Array.from({ length: n + 1 }, (_, i) => P(cx + r * Math.cos(i / n * TAU), cy + r * Math.sin(i / n * TAU), hh));
-    g.save(); g.lineWidth = 1;
-    if (this.p.absorb) { const L = this.Ls; g.strokeStyle = THEME.muted; g.globalAlpha = 0.3; g.setLineDash([2, 6]); poly([P(L, L), P(Nx - L, L), P(Nx - L, Ny - L), P(L, Ny - L)], true); }
-    const xd = this.detectorX();
-    g.setLineDash([5, 5]); g.strokeStyle = THEME.cyan; g.globalAlpha = 0.75; g.lineWidth = 1.3; poly([P(xd, 0, 0.4), P(xd, Ny - 1, 0.4)]);
-    g.setLineDash([]); g.globalAlpha = 1;
-    let k = 0;
-    for (const src of this.sources) {
-      g.strokeStyle = THEME.amber; g.fillStyle = THEME.amber; g.lineWidth = 2;
-      if (src.type === 'line') { g.globalAlpha = 0.75; poly([P(src.x, 1, 0.5), P(src.x, Ny - 2, 0.5)]); g.globalAlpha = 1; continue; }
-      const b = P(src.x, src.y, 0), t = P(src.x, src.y, 10);
-      poly(ring(src.x, src.y, 2.4, 0.3));
-      if (b && t) {
-        g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(t.x, t.y); g.stroke(); g.beginPath(); g.arc(t.x, t.y, 3.5, 0, TAU); g.fill();
-        if (this.p.phaseStep !== 0 && this.pointCount() > 1) {
-          const ph = ((-k * this.p.phaseStep) % 360 + 360) % 360;
-          g.font = `400 10px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText(`${ph.toFixed(0)}°`, t.x - 8, t.y);
-        }
+  /* Screen overlays for the 3D view: phase labels and a preview of what the tool under the cursor will do. */
+  overlay3(g) {
+    const cs = this.cs, T = this.tank3, hv = this.hover, tool = this.p.tool;
+    const ring = (x, y, r, lift, n = 40) => {
+      g.beginPath();
+      let pen = false;
+      for (let i = 0; i <= n; i++) {
+        const q = this.project3(x + r * Math.cos(i / n * TAU), y + r * Math.sin(i / n * TAU), lift);
+        if (!q) { pen = false; continue; }
+        if (pen) g.lineTo(q.x, q.y); else g.moveTo(q.x, q.y);
+        pen = true;
       }
-      k++;
+    };
+    g.save(); g.lineWidth = 1.3;
+    if (this.p.phaseStep !== 0 && this.pointCount() > 1) {
+      let k = 0, lx = -99, ly = -99;
+      g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.text; g.textAlign = 'right'; g.textBaseline = 'middle';
+      for (const s of this.sources) {
+        if (s.type !== 'point') continue;
+        const q = this.project3(s.x * cs, s.y * cs, 0.86), ph = ((-k * this.p.phaseStep) % 360 + 360) % 360;
+        k++;
+        // A row seen end-on would stack its labels, so each keeps a line of clear space.
+        if (!q || Math.hypot(q.x - lx, q.y - ly) < 13) continue;
+        g.fillText(`${ph.toFixed(0)}°`, q.x - 7, q.y); lx = q.x; ly = q.y;
+      }
     }
-    const hv = this.hover;
-    if (hv && this.p.tool !== 'source') {
-      g.strokeStyle = THEME.text; g.globalAlpha = 0.6; g.setLineDash([3, 4]);
-      poly(ring(hv.x / this.cs, hv.y / this.cs, { pulse: 3, wall: 1.6, erase: 3.2, glass: 3.2 }[this.p.tool], 0.4, 32));
+    if (hv && tool === 'source') {
+      const c = this.toCell(hv), at = this.sources.find(s => s.type === 'point' && Math.hypot(s.x - c.x, s.y - c.y) < 4);
+      if (at) { g.strokeStyle = THEME.crit; ring(at.x * cs, at.y * cs, 4 * cs, 0.02); g.stroke(); }
+      else {
+        const b = this.project3(hv.x, hv.y, 0.02), t = this.project3(hv.x, hv.y, 0.7);
+        g.strokeStyle = g.fillStyle = THEME.amber; g.globalAlpha = 0.85;
+        ring(hv.x, hv.y, 2.2 * cs, 0.02); g.stroke();
+        if (b && t) { g.setLineDash([3, 3]); g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(t.x, t.y); g.stroke(); g.setLineDash([]); g.beginPath(); g.arc(t.x, t.y, 3, 0, TAU); g.fill(); }
+      }
+    } else if (hv) {
+      const r = { pulse: 3, wall: 1.6, erase: 3.2, glass: 3.2 }[tool] * cs;
+      if (tool === 'wall') {
+        g.strokeStyle = THEME.text; g.fillStyle = 'rgba(205,214,224,0.14)';
+        for (let i = 0; i < 4; i++) {
+          const a = i / 4 * TAU + 0.6, b = this.project3(hv.x + r * Math.cos(a), hv.y + r * Math.sin(a), 0), t = this.project3(hv.x + r * Math.cos(a), hv.y + r * Math.sin(a), T.wall);
+          if (b && t) { g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(t.x, t.y); g.stroke(); }
+        }
+        ring(hv.x, hv.y, r, 0); g.stroke();
+        ring(hv.x, hv.y, r, T.wall); g.fill(); g.stroke();
+      } else if (tool === 'glass') {
+        g.strokeStyle = THEME.cyan; g.fillStyle = 'rgba(95,208,223,0.12)';
+        ring(hv.x, hv.y, r, -T.shallow); g.fill();
+        g.setLineDash([3, 4]); g.stroke(); g.setLineDash([]);
+        ring(hv.x, hv.y, r, 0.01); g.stroke();
+      } else if (tool === 'erase') {
+        g.strokeStyle = THEME.crit; g.setLineDash([3, 4]);
+        ring(hv.x, hv.y, r, 0.01); g.stroke(); g.setLineDash([]);
+      } else {
+        g.strokeStyle = THEME.amber;
+        ring(hv.x, hv.y, r, 0.01); g.stroke();
+        g.globalAlpha = 0.4; ring(hv.x, hv.y, r * 1.7, 0.01); g.stroke();
+      }
     }
     g.restore();
   },
@@ -273,7 +249,7 @@ export const waves = {
     if (key === 'srcSpeed') return points ? true : 'Moves point sources; add one with the Source tool.';
     if (key === 'phaseStep') return points > 1 ? true : 'Needs two or more point sources.';
     if (key === 'glassN') return this.glass && this.glass.includes(1) ? true : 'Paint glass, or load the Glass lens scene.';
-    if (key === 'relief') return this.p.view === 'relief' ? true : 'Shapes the Relief 3D view.';
+    if (key === 'relief') return this.is3D() ? true : 'Shapes the 3D view.';
     return true;
   },
   pulse(cx, cy, amp, rad = 3) {
@@ -374,7 +350,6 @@ export const waves = {
   pointerMove(p, e, down) { if (down && this.drawing) this.applyTool(p, false); },
   pointerUp() { this.drawing = false; this.last = null; this.lastPulse = null; },
   draw(g, w, h) {
-    if (this.is3D()) { this.draw3(g, w, h); return; }
     const Nx = this.Nx, Ny = this.Ny, N = Nx * Ny, u = this.u, I = this.inten, wall = this.wall, glass = this.glass, d = this.img.data;
     const disp = this.p.view === 'disp', gain = this.p.gain, RW = RAMP_WAVE.rgb, RG = RAMP_GLOW.rgb;
     for (let i = 0, o = 0; i < N; i++, o += 4) {
@@ -521,8 +496,8 @@ export const waves = {
     <div class="f" data-tex="\\sin\\theta = \\frac{\\Delta\\varphi\\,\\lambda}{2\\pi d}"></div>
     <p>A source faster than the wave (v<sub>s</sub> &gt; c) leaves a Mach cone of half-angle:</p>
     <div class="f" data-tex="\\sin\\theta = \\frac{c}{v_s}"></div>
-    <p>The Relief 3D view lifts each cell to a compressed height, so strong sources stay readable, and shades it from the surface normal. Walls stand as raised blocks; glass is tinted.</p>
-    <div class="f" data-tex="h = \\frac{H\\,u}{1 + |u|/2}, \\qquad \\hat{\\mathbf n} \\propto \\left(-\\frac{\\partial h}{\\partial x},\\ 1,\\ -\\frac{\\partial h}{\\partial y}\\right)"></div>`,
+    <p>The 3D view lifts each cell to a compressed height, so strong sources stay readable, and refracts the lamp through the surface onto the bed. A crest focuses light, which is why a ripple tank projects its waves as bright lines. Walls stand as blocks in the water; glass is a shallow slab, which is what slows a real ripple.</p>
+    <div class="f" data-tex="h = \\frac{H\\,u}{1 + |u|}, \\qquad \\hat{\\mathbf n} \\propto \\left(-\\frac{\\partial h}{\\partial x},\\ 1,\\ -\\frac{\\partial h}{\\partial y}\\right)"></div>`,
 };
 
 
