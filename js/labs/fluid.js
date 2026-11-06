@@ -45,7 +45,7 @@ import { view } from '../core/view.js';
 
 
 import { FL_CAP, fluidGL } from '../render/fluid-gl.js';
-import { camOf, camXf } from '../shell/camera.js';
+import { camOf, camXf, is3D } from '../shell/camera.js';
 import { sticky } from '../shell/diagnostics.js';
 import { setParam } from '../shell/lifecycle.js';
 
@@ -66,6 +66,7 @@ export function latticeDensity(s) {
 }
 export const fluid = {
   id: 'fluid', name: 'Fluid', title: 'Particle fluid',
+  rig3: { plane: 'wall', yaw: 0.5, pitch: 0.15, fit: 1.88, height: 0.7, depth: 1.5, yawMax: 1.05, pitchMin: -0.08, pitchMax: 0.95, target: [0, -0.42, 0] },
   eq: 'P = k(ρ − ρ<sub>0</sub>)',
   eqTex: 'P = k\\,(\\rho - \\rho_0)',
   aria: 'Fluid simulation: particles behaving as a liquid in a tank',
@@ -177,6 +178,7 @@ export const fluid = {
     }
   },
   worldRect() { return { w: this.Wu * this.U, h: this.Hu * this.U }; },
+  enabled(key) { return key === 'surface' && is3D(this) ? 'Shapes the 2D view; the 3D tank always draws the water.' : true; },
   buildGrid() {
     const n = this.n, cols = this.cols, rows = this.rows, start = this.cellStart, fill = this.fillPos, cellOf = this.cellOf, items = this.cellItems;
     start.fill(0);
@@ -360,6 +362,60 @@ export const fluid = {
     if (hv && tool !== 'obstacle') brushRing(g, hv, tool === 'pour' ? 0.6 * U : tool === 'drain' ? 2 * U : 3.2 * U, tool === 'drain' ? THEME.crit : THEME.text);
     if (hv && tool === 'obstacle') brushRing(g, hv, 1.5 * U, THEME.amber);
   },
+  /* Screen overlay in 3D: each tool's reach, drawn where it acts, on the tank's mid-plane.
+     A post is previewed at both its ends; red marks the post a click would remove. */
+  overlay3(g, w, h) {
+    if (this.p.gravity > 0 && this.p.tilt !== 0) this.gravityMark(g, h);
+    const hv = this.hover; if (!hv) return;
+    const tool = this.p.tool, U = this.U, d = this.rig3.depth / 2;
+    const ring = (x, y, r, lift, a0 = 0, a1 = TAU) => {
+      g.beginPath();
+      for (let i = 0; i <= 48; i++) {
+        const a = a0 + (a1 - a0) * i / 48, s = this.project3(x + r * Math.cos(a), y + r * Math.sin(a), lift);
+        if (s) g.lineTo(s.x, s.y);
+      }
+      g.stroke();
+    };
+    const spoke = (ax, ay, az, bx, by, bz) => { const p = this.project3(ax, ay, az), q = this.project3(bx, by, bz); if (p && q) { g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); } };
+    const rays = (n, r0, r1, turn = 0) => {
+      g.beginPath();
+      for (let i = 0; i < n; i++) { const a = i / n * TAU + turn, c = Math.cos(a), s = Math.sin(a); spoke(hv.x + r0 * c, hv.y + r0 * s, 0, hv.x + r1 * c, hv.y + r1 * s, 0); }
+      g.stroke();
+    };
+    g.save(); g.lineWidth = 1.5; g.lineCap = 'round';
+    if (tool === 'obstacle') {
+      const hit = this.obs.find(o => (o.x - hv.x / U) ** 2 + (o.y - hv.y / U) ** 2 < (o.r + 0.3) ** 2);
+      const x = hit ? hit.x * U : hv.x, y = hit ? hit.y * U : hv.y, r = (hit ? hit.r : 1.5) * U;
+      g.strokeStyle = hit ? THEME.crit : THEME.amber; g.globalAlpha = 0.85;
+      if (!hit) g.setLineDash([5, 5]);
+      ring(x, y, r, d);
+      g.globalAlpha = 0.45; ring(x, y, r, -d);
+      g.setLineDash([]); g.beginPath();
+      for (let i = 0; i < 4; i++) { const a = (i + 0.5) * TAU / 4, c = x + r * Math.cos(a), s = y + r * Math.sin(a); spoke(c, s, d, c, s, -d); }
+      g.stroke();
+    } else {
+      const R = (tool === 'pour' ? 0.6 : tool === 'drain' ? 2 : 3.2) * U;
+      g.strokeStyle = tool === 'drain' ? THEME.crit : tool === 'pour' ? THEME.cyan : THEME.text; g.globalAlpha = 0.75;
+      g.setLineDash([4, 5]); ring(hv.x, hv.y, R, 0); g.setLineDash([]);
+      if (tool === 'stir') {
+        const a = 1.7, c = R * 0.62, tip = [hv.x + c * Math.cos(a), hv.y + c * Math.sin(a)];
+        ring(hv.x, hv.y, c, 0, -2.2, a);
+        g.beginPath();
+        for (const k of [0.82, 1.18]) spoke(hv.x + c * k * Math.cos(a - 0.24), hv.y + c * k * Math.sin(a - 0.24), 0, tip[0], tip[1], 0);
+        g.stroke();
+      } else if (tool === 'push') rays(8, R * 0.56, R * 0.84);
+      else if (tool === 'pull') rays(8, R * 0.84, R * 0.56);
+      else if (tool === 'drain') rays(6, R * 0.86, R * 0.5, 0.26);
+      else if (tool === 'pour') { g.lineWidth = 2; g.beginPath(); spoke(hv.x, hv.y - R * 6, 0, hv.x, hv.y - R * 1.4, 0); g.stroke(); }
+    }
+    g.restore();
+  },
+  gravityMark(g, h) {
+    const a = this.p.tilt * Math.PI / 180, cx = 34, cy = h - 64;
+    g.save(); g.strokeStyle = THEME.amber; g.fillStyle = THEME.amber; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cx - 14 * Math.sin(a), cy - 14 * Math.cos(a)); g.lineTo(cx + 14 * Math.sin(a), cy + 14 * Math.cos(a)); g.stroke();
+    g.beginPath(); g.arc(cx + 14 * Math.sin(a), cy + 14 * Math.cos(a), 3.5, 0, TAU); g.fill(); g.restore();
+  },
   mini(g, k) {
     const U = this.U, r = Math.max(U * 0.42, 0.9 / k);
     g.fillStyle = '#2fa6c8';
@@ -367,14 +423,7 @@ export const fluid = {
     g.fillStyle = THEME.amber;
     for (const o of this.obs) { g.beginPath(); g.arc(o.x * U, o.y * U, o.r * U, 0, TAU); g.fill(); }
   },
-  drawScreen(g, w, h) {
-    if (this.p.gravity > 0 && this.p.tilt !== 0) {
-      const a = this.p.tilt * Math.PI / 180, cx = 34, cy = h - 64;
-      g.strokeStyle = THEME.amber; g.fillStyle = THEME.amber; g.lineWidth = 2;
-      g.beginPath(); g.moveTo(cx - 14 * Math.sin(a), cy - 14 * Math.cos(a)); g.lineTo(cx + 14 * Math.sin(a), cy + 14 * Math.cos(a)); g.stroke();
-      g.beginPath(); g.arc(cx + 14 * Math.sin(a), cy + 14 * Math.cos(a), 3.5, 0, TAU); g.fill();
-    }
-  },
+  drawScreen(g, w, h) { if (this.p.gravity > 0 && this.p.tilt !== 0) this.gravityMark(g, h); },
   readouts() {
     let vmax = 0;
     for (let i = 0; i < this.n; i++) { const s2 = this.vx[i] ** 2 + this.vy[i] ** 2; if (s2 > vmax) vmax = s2; }
@@ -418,13 +467,13 @@ export const fluid = {
   /* Twice a second from diagnostics: a surface this device cannot keep up with falls back to discs. */
   slowSurface: 0,
   watchDraw(perf) {
-    if (!(this.p.surface && this.renderer === 'gpu' && perf.draw > 40 && perf.fps < 24)) { this.slowSurface = 0; return; }
+    if (is3D(this) || !(this.p.surface && this.renderer === 'gpu' && perf.draw > 40 && perf.fps < 24)) { this.slowSurface = 0; return; }
     if ((this.slowSurface += 0.5) < 4) return;
     this.slowSurface = 0;
     setParam(this, 'surface', false);
     sticky({ id: 'f-gpu-slow', level: 'info', title: 'Switched to simple discs', body: `The liquid surface took about ${perf.draw.toFixed(0)} ms per frame on this device, so the tank now draws plain discs. Turn on Liquid surface rendering under Parameters to try it again.` }, 14);
   },
-  drawFixes() { return this.p.surface ? [{ label: 'Use simple discs', run() { setParam(fluid, 'surface', false); } }] : []; },
+  drawFixes() { return this.p.surface && !is3D(this) ? [{ label: 'Use simple discs', run() { setParam(fluid, 'surface', false); } }] : []; },
   perfFixes() { return this.n > 800 ? [{ label: `Restart with ${Math.round(this.n * 0.6 / 50) * 50} particles`, run() { setParam(fluid, 'count', clamp(Math.round(fluid.n * 0.6 / 50) * 50, 300, 3000)); } }] : []; },
   sane() { for (let i = 0; i < this.n; i++) if (!Number.isFinite(this.x[i]) || !Number.isFinite(this.y[i])) return false; return true; },
   chart: {
