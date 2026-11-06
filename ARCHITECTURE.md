@@ -85,7 +85,7 @@ flowchart TB
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
 | Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, tools, camera, input, loop, modes, capture, storage, layout, experiments |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, tools, camera, input, loop, modes, instruments, details, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `syncControl`, `refreshEnabled`,
@@ -102,8 +102,8 @@ before anything else reads it. Then `boot()` runs:
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
    `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
-   (scope and diagnostics pill), `automation.init`
-   (`window.PhysicsPlayground`).
+   (scope and diagnostics pill), `details.init` (selection card),
+   `automation.init` (`window.PhysicsPlayground`).
 3. `start()` reads the theme, sizes the stage, applies saved parameters
    and presets, builds the orbit ball and library controls, selects the
    lab from the address hash or the last visit, starts the frame loop and
@@ -163,6 +163,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
+| `inspect()`, `deselect()` | The selected object for the Details card, or null: `{ id, kicker, title, color, rows, actions, spot }`, where `spot` asks the scene for a portrait |
 
 ## The 3D mode
 
@@ -212,6 +213,7 @@ Gravity is really three-dimensional, so it keeps its own camera in
 | `sync(lab, view)` | Every frame: copy lab state into objects, reading only |
 | `prepare(renderer, camera)` | Extra GPU passes before the main render |
 | `onTier(tier, w, h)` | Resize targets and thin meshes for a new tier |
+| `portrait(lab)` | The camera for the Details card, and optionally its own small scene |
 | `exposure`, `bloom` | Per-scene grade |
 | `dispose()` | Free what it made |
 
@@ -241,12 +243,14 @@ own lab back to 2D. The simulation never notices any of this.
 ## Instruments
 
 `js/shell/instruments.js` is one tile holding a lab's readings. It reads the
-formatted rows from `lab.readouts()`, so a lab gets gauges, sparklines and
+formatted rows from `lab.readouts()`, so a lab gets stat tiles, sparklines and
 plotting with no code of its own: a row plots if its text starts with a number.
-Samples are kept per lab at panel rate. The plot shares its time axis with the
-rewind history, so a click seeks to the nearest snapshot. While the run is
-replaying the past, sampling stops, so the recorded future stays until a new
-branch discards it. With nothing plotted, the lab's own `chart` shows instead.
+Samples are kept per lab at panel rate. Each plotted reading gets its own lane on
+one time axis, because their units differ, and keeps its colour for as long as
+it is plotted. The axis is shared with the rewind history, so a click seeks to
+the nearest snapshot. While the run is replaying the past, sampling stops, so the
+recorded future stays until a new branch discards it. With nothing plotted, the
+lab's own `chart` shows instead.
 
 ## Guided experiments
 
@@ -285,10 +289,10 @@ The stylesheets load in this order, each building on the last:
 | --- | --- |
 | `tokens.css` | Colours, type, spacing, radius, the page grid |
 | `icons.css` | Material Symbols styling and tab glyph animations |
-| `workspace.css` | Top bar, lab rail, bento grid, tile chrome, keys sheet |
+| `workspace.css` | Top bar, lab rail, console grid, tile chrome, keys sheet, mode switch |
 | `controls.css` | Buttons, segmented choices, sliders, switches |
-| `stage.css` | Stage header, HUD, experiment banner, gizmo, timeline |
-| `tiles.css` | Scene, tools, instruments deck, diagnostics sheet, notebook |
+| `stage.css` | Stage title and scene dropdown, HUD, player bar, experiment banner, gizmo |
+| `tiles.css` | Inspector, Details card, instruments deck, diagnostics sheet, tabs |
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 

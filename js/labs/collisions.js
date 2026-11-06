@@ -264,12 +264,21 @@ export const collisions = {
     return bd < 6 / camOf(this).z ? best : -1;
   },
   eraseAt(p) { for (let i = this.n - 1; i >= 0; i--) if (Math.hypot(this.x[i] - p.x, this.y[i] - p.y) < 26 + this.r[i] * 0.5) this.remove(i); },
+  /* The ball last grabbed, for the Details card. A disc's mass is r² and its spin energy ¼m²ω² here. */
+  picked: -1,
+  inspect() {
+    const i = this.picked; if (i < 0 || i >= this.n) return null;
+    const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
+    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass', fmtSI(m)], ['Radius', `${r.toFixed(1)} px`], ['Speed', `${v.toFixed(0)} px/s`], ['Spin', `${w.toFixed(2)} rad/s`], ['Kinetic energy', fmtSI(0.5 * m * v * v)], ['Spin energy', fmtSI(0.25 * m * m * w * w)]], actions: [] };
+  },
+  deselect() { this.picked = -1; },
   cursorAt(p) { return this.p.tool === 'grab' ? (this.hit(p) >= 0 ? 'grab' : 'copy') : 'crosshair'; },
   pointerDown(p) {
     const tool = this.p.tool;
     if (tool === 'erase') { this.brush = { ...p }; this.eraseAt(p); return; }
     if (tool === 'heat' || tool === 'cool') { this.brush = { ...p }; return; }
     let i = this.hit(p);
+    this.picked = i;
     if (i < 0) {
       const r = this.p.radius;
       i = this.add(clamp(p.x, r, this.w - r), clamp(p.y, r, this.h - r), 0, 0, r);

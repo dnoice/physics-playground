@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Control Styles (digiSpace Edition - v2.0)
+    - Title: Control Styles (digiSpace Edition - v2.1)
     - File Name: controls.css
     - Relative Path: css/controls.css
     - Artifact Type: stylesheet
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — One-column
+      parameters and larger values for the Inspector.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour
@@ -64,16 +66,14 @@
 .seg-label { font-size: 13px; line-height: 1.35; }
 
 /* ---------- parameter controls ---------- */
-.params { display: grid; gap: 18px; }
-@container tile (min-width: 390px) { .params { grid-template-columns: 1fr 1fr; column-gap: 20px; } .params > .wide { grid-column: 1 / -1; } }
-@container tile (min-width: 760px) { .params { grid-template-columns: 1fr 1fr 1fr; } }
+.params { display: grid; gap: 20px; }
 .ctl { display: grid; gap: 5px; align-content: start; }
 .ctl-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.ctl-head label { font-size: 13px; line-height: 1.35; }
+.ctl-head label { font-size: 13.5px; line-height: 1.35; }
 .ctl-tools { display: inline-flex; align-items: center; gap: 4px; }
 .ctl-val {
   appearance: none; background: none; border: 0; padding: 2px 3px; border-radius: 4px; cursor: text;
-  font: 400 12px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap;
+  font: 500 13px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap;
   border-bottom: 1px dashed transparent; transition: border-color 0.2s, background 0.2s;
 }
 .ctl-val:hover { border-bottom-color: color-mix(in oklab, var(--amber) 60%, transparent); background: color-mix(in oklab, var(--amber) 8%, transparent); }
@@ -86,7 +86,7 @@ output.ctl-val { cursor: default; }
 .ctl-reset .ms { font-size: 15px; }
 .ctl-reset:hover { color: var(--amber); transform: rotate(-90deg); }
 .ctl-reset[hidden] { display: none; }
-.ctl-note { font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.ctl-note { font-size: 12px; line-height: 1.5; color: var(--muted); }
 .ctl-note:empty { display: none; }
 .ctl-out { font: 400 12px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ctl.is-disabled label, .ctl.is-disabled .ctl-val { opacity: 0.45; }

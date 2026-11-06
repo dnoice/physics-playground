@@ -51,13 +51,13 @@ export let dockButtons = [];
 export function buildDock(lab) {
   dockEl.replaceChildren(); dockButtons = [];
   const d = lab.dock;
-  $('#tools-key').textContent = d ? d.label : '';
-  $('#tile-tools-title').textContent = d && d.key === 'view' ? 'View' : 'Tools';
-  if (!d) { dockEl.append(el('p', { class: 'tool-hint', text: 'This lab has no pointer tools.' })); return; }
+  $('#tools-key').textContent = d && d.key === 'view' ? 'Show' : 'Tools';
+  $('#nav-tools').hidden = !d;
+  if (!d) return;
   dockEl.setAttribute('aria-label', d.label);
   d.options.forEach((o, i) => {
-    const b = el('button', { type: 'button', role: 'radio', class: 'dock-btn', id: `dock-${lab.id}-${o.id}`, title: `${o.label} (${o.key.toUpperCase()})`, 'aria-keyshortcuts': o.key.toUpperCase(),
-      html: `${icon(o.icon)}<span class="dock-label">${o.label}</span><kbd>${o.key.toUpperCase()}</kbd>` });
+    const b = el('button', { type: 'button', role: 'radio', class: 'dock-btn', id: `dock-${lab.id}-${o.id}`, 'data-tip': `${o.label} · ${o.key.toUpperCase()}`, 'aria-keyshortcuts': o.key.toUpperCase(),
+      html: `${icon(o.icon)}<span class="sr-only">${o.label}</span>` });
     b.addEventListener('click', () => selectDock(o.id));
     b.addEventListener('keydown', e => {
       let j = -1;

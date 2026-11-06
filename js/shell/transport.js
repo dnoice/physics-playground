@@ -50,7 +50,7 @@ import { drawChart, rangeMap, updateReadouts } from './panel.js';
 import { ptr, refreshCursor } from './stage.js';
 import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
-import { hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
+import { closeSceneMenu, hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
 import { closeDiag } from './instruments.js';
 import { closeGfx, toggleMode } from './mode.js';
 
@@ -111,10 +111,10 @@ export function init() {
     }
     else if (k === 'r' || k === 'R') resetActive();
     else if (k === 'f' || k === 'F') { setFocus(!isFocus()); announce(isFocus() ? 'Stage focused' : 'Workspace restored'); }
-    else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Bottom bay shown' : 'Bottom bay hidden'); }
+    else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); }
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
     else if (k === 'z' || k === 'Z') toggleMode();
-    else if (k === 'Escape') { if (closeGfx() || closeDiag()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeDiag()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();

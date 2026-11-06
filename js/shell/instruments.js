@@ -25,8 +25,8 @@
 
 ✒ Key Features:
     - Gauges build from each lab's readouts, so no lab needed changing.
-    - Up to four readings plot together, each on its own scale, with their
-      values in a legend that follows the cursor.
+    - Up to four readings plot together, each in its own lane on one time
+      axis, with their values in a legend that follows the cursor.
     - Click or drag on the scope to rewind; the wheel zooms the time window.
     - Plotted readings are remembered per lab, and a rewind that branches
       drops the abandoned future from the plot too.
@@ -48,12 +48,24 @@ import { hist, histSeek } from './capture.js';
 import { drawChart } from './panel.js';
 import { active, announce } from './state.js';
 
-const CAP = 1200, SPARK = 64, MAX_PINS = 4, INK = ['#f2a541', '#5fd0df', '#6fcf97', '#c58af9'];
+/* Passes the categorical checks on the dark surface: lightness band, colour-blind separation and contrast. */
+const CAP = 1200, SPARK = 64, MAX_PINS = 4, SERIES = ['#c4852a', '#2f9fc4', '#d9648c', '#8f7ae0'];
 const SI = { k: 1e3, M: 1e6, G: 1e9, T: 1e12 };
 const saved = store.get('pins', {});
-const inst = lab => lab.inst || (lab.inst = { series: new Map(), pins: new Set(saved[lab.id] || []), span: 0, hoverX: null });
+/* A reading keeps its colour slot for as long as it is plotted, so removing one never repaints the others. */
+function pin(I, label) {
+  const used = new Set(I.slot.values());
+  let k = 0; while (used.has(k)) k++;
+  I.slot.set(label, k); I.pins.add(label);
+}
+function inst(lab) {
+  if (lab.inst) return lab.inst;
+  const I = lab.inst = { series: new Map(), pins: new Set(), slot: new Map(), span: 0, hoverX: null };
+  for (const label of saved[lab.id] || []) pin(I, label);
+  return I;
+}
 export const scopeOn = lab => inst(lab).pins.size > 0;
-const inkOf = (I, label) => INK[[...I.pins].indexOf(label) % INK.length];
+const colorOf = (I, label) => SERIES[I.slot.get(label) ?? 0];
 
 /* A reading plots only if it starts as a number: "0.5916 J/kg", "−8.8e-6 %" and "1.2k" do; "not yet" does not. */
 export function readingValue(text) {
@@ -79,8 +91,8 @@ let gauges = [];
 export function resetGauges() { gauges = []; $('#readouts').replaceChildren(); legendKey = null; }
 function togglePin(lab, label) {
   const I = inst(lab);
-  if (I.pins.has(label)) I.pins.delete(label);
-  else if (I.pins.size < MAX_PINS) I.pins.add(label);
+  if (I.pins.has(label)) { I.pins.delete(label); I.slot.delete(label); }
+  else if (I.pins.size < MAX_PINS) pin(I, label);
   else { announce(`Up to ${MAX_PINS} readings plot at once. Remove one first.`); return; }
   saved[lab.id] = [...I.pins]; store.set('pins', saved);
   refresh(lab);
@@ -114,14 +126,14 @@ export function updateGauges(lab, rows) {
     const on = I.pins.has(r[0]), numeric = Number.isFinite(readingValue(r[1])) || (!!s && Number.isFinite(s.last()));
     n.hit.disabled = !numeric && !on;
     if (n.on !== on) { n.on = on; n.hit.setAttribute('aria-pressed', String(on)); n.root.classList.toggle('on', on); }
-    if (on) n.root.style.setProperty('--ink', inkOf(I, r[0]));
+    if (on) n.root.style.setProperty('--series', colorOf(I, r[0]));
     n.path.setAttribute('d', sparkPath(s));
   });
   renderLegend(lab);
 }
 
 /* ---------- scope ---------- */
-const BOX = { l: 8, r: 8, t: 8, b: 16 };
+const BOX = { l: 2, r: 2, t: 2, b: 16 }, LANE_GAP = 7;
 function windowOf(lab) {
   const I = inst(lab), list = [...I.pins].map(l => I.series.get(l)).filter(s => s && s.n);
   if (!list.length) return null;
@@ -135,35 +147,40 @@ function nearest(s, t) {
 }
 const timeAt = (W, x, w) => W.beg + clamp((x - BOX.l) / Math.max(1, w - BOX.l - BOX.r), 0, 1) * (W.end - W.beg);
 
+/* Each reading gets its own lane on one time axis: their units differ, and a shared scale would be a lie. */
 export function drawScope(c) {
   const { g, w, h } = c, lab = active, W = windowOf(lab);
-  g.font = `400 10px ${THEME.mono}`; g.textBaseline = 'alphabetic';
-  if (!W || W.end <= W.beg) { g.fillStyle = THEME.muted; g.textAlign = 'center'; g.fillText('Collecting samples…', w / 2, h / 2); return; }
-  const x0 = BOX.l, x1 = w - BOX.r, y0 = BOX.t, y1 = h - BOX.b, sx = t => x0 + (t - W.beg) / (W.end - W.beg) * (x1 - x0);
-  g.strokeStyle = THEME.rule; g.lineWidth = 1;
-  for (let k = 0; k <= 4; k++) { const y = Math.round(y0 + (y1 - y0) * k / 4) + 0.5; g.globalAlpha = k === 4 ? 1 : 0.45; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); }
-  g.globalAlpha = 1; g.fillStyle = THEME.muted;
-  g.textAlign = 'left'; g.fillText(`t = ${W.beg.toFixed(1)} s`, x0, h - 4);
-  g.textAlign = 'right'; g.fillText(`${W.end.toFixed(1)} s`, x1, h - 4);
+  g.textBaseline = 'alphabetic';
+  if (!W || W.end <= W.beg) { g.font = `400 12px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'center'; g.fillText('Collecting samples…', w / 2, h / 2); return; }
+  const pins = [...W.I.pins].filter(l => { const s = W.I.series.get(l); return s && s.n; });
+  const x0 = BOX.l, x1 = w - BOX.r, top = BOX.t, bottom = h - BOX.b, sx = t => x0 + (t - W.beg) / (W.end - W.beg) * (x1 - x0);
+  const laneH = (bottom - top - LANE_GAP * (pins.length - 1)) / Math.max(1, pins.length);
   const H = hist(lab), hover = W.I.hoverX == null ? null : timeAt(W, W.I.hoverX, w);
-  // History reaches back less far than the plot: shade what a click cannot rewind to.
-  if (H.snaps.length) { const kept = sx(clamp(H.snaps[0].t, W.beg, W.end)); if (kept > x0) { g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(x0, y0, kept - x0, y1 - y0); } }
-  [...W.I.pins].forEach(label => {
-    const s = W.I.series.get(label); if (!s || !s.n) return;
-    const a = Math.max(0, nearest(s, W.beg) - 1);
+  const kept = H.snaps.length ? sx(clamp(H.snaps[0].t, W.beg, W.end)) : x0;
+  pins.forEach((label, n) => {
+    const s = W.I.series.get(label), y0 = top + n * (laneH + LANE_GAP), y1 = y0 + laneH, a = Math.max(0, nearest(s, W.beg) - 1);
+    g.fillStyle = 'rgba(255,255,255,0.025)'; g.beginPath(); g.roundRect(x0, y0, x1 - x0, laneH, 7); g.fill();
+    // History reaches back less far than the plot: shade what a click cannot rewind to.
+    if (kept > x0) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(x0, y0, kept - x0, laneH); }
     let lo = Infinity, hi = -Infinity;
     for (let i = a; i < s.n; i++) { const v = s.v[s.idx(i)]; if (Number.isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; } }
-    if (!(hi >= lo)) return;
-    if (hi - lo < 1e-12) { const m = Math.abs(hi) * 0.05 || 1; lo -= m; hi += m; }
-    const pad = (hi - lo) * 0.08, sy = v => y1 - (v - lo + pad) / (hi - lo + 2 * pad) * (y1 - y0), col = inkOf(W.I, label);
-    g.strokeStyle = col; g.lineWidth = 1.6; g.lineJoin = 'round'; g.beginPath();
-    let pen = false;
-    for (let i = a; i < s.n; i++) { const k = s.idx(i), v = s.v[k]; if (!Number.isFinite(v)) { pen = false; continue; } const X = sx(s.t[k]), Y = sy(v); pen ? g.lineTo(X, Y) : g.moveTo(X, Y); pen = true; }
-    g.stroke();
-    if (hover != null) { const k = s.idx(nearest(s, hover)), v = s.v[k]; if (Number.isFinite(v)) { g.fillStyle = col; g.beginPath(); g.arc(sx(s.t[k]), sy(v), 3, 0, Math.PI * 2); g.fill(); } }
+    if (hi >= lo) {
+      if (hi - lo < 1e-12) { const m = Math.abs(hi) * 0.05 || 1; lo -= m; hi += m; }
+      const pad = (hi - lo) * 0.12, sy = v => y1 - (v - lo + pad) / (hi - lo + 2 * pad) * laneH, col = colorOf(W.I, label);
+      g.strokeStyle = col; g.lineWidth = 2; g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
+      let pen = false;
+      for (let i = a; i < s.n; i++) { const k = s.idx(i), v = s.v[k]; if (!Number.isFinite(v)) { pen = false; continue; } const X = sx(s.t[k]), Y = sy(v); pen ? g.lineTo(X, Y) : g.moveTo(X, Y); pen = true; }
+      g.stroke();
+      if (hover != null) { const k = s.idx(nearest(s, hover)), v = s.v[k]; if (Number.isFinite(v)) { const X = sx(s.t[k]), Y = sy(v); g.fillStyle = THEME.ink; g.beginPath(); g.arc(X, Y, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(X, Y, 3.5, 0, Math.PI * 2); g.fill(); } }
+    }
+    g.font = '500 12px "IBM Plex Sans", system-ui, sans-serif'; g.fillStyle = THEME.muted; g.textAlign = 'left';
+    if (laneH >= 26) g.fillText(label, x0 + 9, y0 + 15);
   });
-  if (H.pos >= 0) { const X = Math.round(sx(clamp(H.snaps[H.pos].t, W.beg, W.end))) + 0.5; g.strokeStyle = THEME.amber; g.lineWidth = 1.5; g.beginPath(); g.moveTo(X, y0); g.lineTo(X, y1); g.stroke(); }
-  if (hover != null) { const X = Math.round(sx(hover)) + 0.5; g.strokeStyle = THEME.text; g.globalAlpha = 0.5; g.lineWidth = 1; g.beginPath(); g.moveTo(X, y0); g.lineTo(X, y1); g.stroke(); g.globalAlpha = 1; }
+  g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted;
+  g.textAlign = 'left'; g.fillText(`t = ${W.beg.toFixed(1)} s`, x0 + 2, h - 3);
+  g.textAlign = 'right'; g.fillText(`${W.end.toFixed(1)} s`, x1 - 2, h - 3);
+  if (H.pos >= 0) { const X = Math.round(sx(clamp(H.snaps[H.pos].t, W.beg, W.end))) + 0.5; g.strokeStyle = THEME.amber; g.lineWidth = 1.5; g.beginPath(); g.moveTo(X, top); g.lineTo(X, bottom); g.stroke(); }
+  if (hover != null) { const X = Math.round(sx(hover)) + 0.5; g.strokeStyle = THEME.text; g.globalAlpha = 0.45; g.lineWidth = 1; g.beginPath(); g.moveTo(X, top); g.lineTo(X, bottom); g.stroke(); g.globalAlpha = 1; g.textAlign = X > w - 90 ? 'right' : 'left'; g.fillStyle = THEME.text; g.fillText(`t = ${hover.toFixed(2)} s`, X + (X > w - 90 ? -6 : 6), h - 3); }
 }
 
 /* ---------- legend ---------- */
@@ -177,7 +194,7 @@ function renderLegend(lab) {
       host.replaceChildren(...[...I.pins].map(label => {
         const val = el('b'), x = el('button', { type: 'button', class: 'scope-x', 'aria-label': `Stop plotting ${label}`, title: 'Stop plotting', html: '<span class="ms" aria-hidden="true">close</span>', onclick: () => togglePin(lab, label) });
         chips.push({ label, val });
-        return el('span', { class: 'scope-chip', style: `--ink: ${inkOf(I, label)}`, title: label }, el('i'), el('span', { class: 'scope-name', text: label }), val, x);
+        return el('span', { class: 'scope-chip', style: `--series: ${colorOf(I, label)}`, title: label }, el('i'), el('span', { class: 'scope-name', text: label }), val, x);
       }));
     }
     $('#chart-title').textContent = I.pins.size ? 'Scope' : (lab.chart ? lab.chart.title : 'Chart');
@@ -215,7 +232,8 @@ export function showTopAlert(alert, apply) {
   if (top.dataset.id === alert.id) return;
   top.dataset.id = alert.id;
   const fix = alert.fixes && alert.fixes[0];
-  top.replaceChildren(el('span', { text: alert.title }), fix ? el('button', { type: 'button', class: 'btn btn-fix', text: fix.label, onclick: () => { apply(alert, 0); top.dataset.id = ''; } }) : null);
+  top.replaceChildren(el('span', { text: alert.title }));
+  if (fix) top.append(el('button', { type: 'button', class: 'btn btn-fix', text: fix.label, onclick: () => { apply(alert, 0); top.dataset.id = ''; } }));
 }
 
 /* Wiring: run once from main.js after every module has evaluated. */

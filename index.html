@@ -25,16 +25,15 @@
 
 ✒ Description:
     The workspace page of the physics playground: seven live labs (gravity,
-    collisions, fluid, waves, chaos, cloth, fields) laid out as a bento grid
-    of tiles around one stage. It holds the markup, the stylesheet order,
+    collisions, fluid, waves, chaos, cloth, fields) laid out as a console
+    around one stage. It holds the markup, the stylesheet order,
     the third-party links and the import map; all behaviour lives in
     js/main.js and the modules it loads.
 
 ✒ Key Features:
-    - Bento workspace: stage tile, Scene, Tools and Parameters tiles, and a
-      bottom bay with the Instruments deck and a notebook (experiments, guide,
-      math, library).
-    - Focus mode (F) and a hideable bottom bay (Shift+B); the layout reflows
+    - Console layout: the stage with its player bar, an instruments deck
+      beneath it, and a full-height inspector beside them.
+    - Focus mode (F) and hideable instruments (Shift+B); the layout reflows
       below 1180 px and 760 px.
     - Material Symbols Rounded from Google Fonts, subset with icon_names to
       the glyphs the code uses.
@@ -70,7 +69,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,bookmark,bubble_chart,category,check_circle,close,close_fullscreen,construction,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,fiber_manual_record,fit_screen,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,warning,water_drop&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,bookmark,bubble_chart,check_circle,close,close_fullscreen,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,warning,water_drop&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -105,7 +104,7 @@
       <button type="button" role="radio" id="mode-3d" aria-checked="true" title="3D world (Z)">3D</button>
     </div>
     <button type="button" class="btn gfx-btn" id="btn-gfx" aria-expanded="false" aria-controls="gfx-sheet" title="Graphics tier"><span class="ms" aria-hidden="true">tune</span><span id="btn-gfx-label">Auto</span></button>
-    <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the bottom bay (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Bottom bay</span></button>
+    <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the instruments (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Instruments</span></button>
     <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
     <button type="button" class="icon-btn" id="btn-keys" aria-expanded="false" aria-controls="keys-sheet" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
   </div>
@@ -113,81 +112,81 @@
 
 <main class="bento" id="bento">
   <section class="tile tile-stage" id="tile-stage" aria-labelledby="stage-lab">
-    <header class="tile-head stage-head">
-      <div class="stage-title">
-        <span class="ms tile-ico" id="stage-icon" aria-hidden="true">orbit</span>
-        <h2 id="stage-lab">Gravity</h2>
-        <span class="stage-scene" id="stage-scene"></span>
-      </div>
-      <div class="transport" role="group" aria-label="Simulation transport">
-        <button type="button" class="btn btn-primary" id="btn-play" title="Play or pause (Space)"><span class="ms fill" id="btn-play-icon" aria-hidden="true">pause</span><span id="btn-play-label">Pause</span></button>
-        <button type="button" class="btn" id="btn-step" title="Pause and advance one frame (.)"><span class="ms" aria-hidden="true">skip_next</span><span class="lbl">Step</span></button>
-        <button type="button" class="btn" id="btn-reset" title="Restart the current scene with the current settings (R)"><span class="ms" aria-hidden="true">restart_alt</span><span class="lbl">Reset</span></button>
-        <div class="speed" role="group" aria-label="Simulation speed">
-          <span class="ms" aria-hidden="true">speed</span>
-          <div class="range-wrap" style="--notch: 0.624"><input type="range" id="ctl-speed" min="0" max="1000" step="1" aria-label="Simulation speed"></div>
-          <output id="ctl-speed-out" class="ctl-val" for="ctl-speed">1.00×</output>
-          <button type="button" class="ctl-reset" id="speed-reset" aria-label="Reset speed to 1×" title="Back to 1×" hidden><span class="ms" aria-hidden="true">restart_alt</span></button>
-        </div>
-        <div class="capture" role="group" aria-label="Capture">
-          <button type="button" class="btn btn-rec" id="btn-rec" aria-pressed="false" title="Record the stage as a video (M)"><span class="ms fill" aria-hidden="true">fiber_manual_record</span><span class="lbl" id="btn-rec-label">Video</span></button>
-          <button type="button" class="btn" id="btn-data" aria-pressed="false" title="Record this lab's measurements over time as a dataset (D)"><span class="ms" aria-hidden="true">monitoring</span><span class="lbl" id="btn-data-label">Data</span></button>
-          <button type="button" class="btn" id="btn-state" title="Save the exact state of this scene so you can reload it later"><span class="ms" aria-hidden="true">bookmark</span><span class="lbl">Save state</span></button>
-        </div>
-      </div>
-    </header>
     <div class="stage" id="stage">
       <canvas id="stage-canvas" role="img" aria-label="Simulation stage"></canvas>
-      <div class="hud">
-        <span class="chip pill" id="hud-state" data-state="run">Running</span>
-        <span class="chip" id="hud-time">t = 0.00 s</span>
-        <span class="chip" id="hud-rate" data-state="ok" title="Simulated seconds per real second">1.00× real time</span>
-        <span class="chip" id="hud-fps">60 fps</span>
-        <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
-        <button type="button" class="chip hud-rec" id="hud-rec" hidden></button>
-        <button type="button" class="chip hud-rec data" id="hud-data" hidden></button>
+      <div class="stage-top">
+        <div class="stage-title">
+          <span class="ms" id="stage-icon" aria-hidden="true">orbit</span>
+          <h2 id="stage-lab">Gravity</h2>
+          <div class="scene-pick">
+            <button type="button" class="scene-btn" id="scene-btn" aria-haspopup="true" aria-expanded="false" aria-controls="scene-menu" title="Change the scene"><span id="stage-scene"></span><span class="ms" aria-hidden="true">expand_more</span></button>
+            <div class="scene-menu" id="scene-menu" hidden></div>
+          </div>
+        </div>
+        <div class="hud">
+          <span class="chip pill" id="hud-state" data-state="run">Running</span>
+          <span class="chip" id="hud-time">t = 0.00 s</span>
+          <span class="chip" id="hud-rate" data-state="ok" title="Simulated seconds per real second">1.00× real time</span>
+          <span class="chip" id="hud-fps">60 fps</span>
+          <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
+          <button type="button" class="chip hud-rec" id="hud-rec" hidden></button>
+          <button type="button" class="chip hud-rec data" id="hud-data" hidden></button>
+        </div>
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>
       <p class="stage-hint" id="stage-hint"></p>
-      <div class="nav" id="nav" role="group" aria-label="View controls">
-        <div class="orbit" id="nav-orbit" title="Drag to orbit · click an axis to look along it" hidden>
-          <svg class="orbit-lines" id="orbit-lines" viewBox="-36 -36 72 72" aria-hidden="true"></svg>
+      <div class="nav" id="nav" role="group" aria-label="Tools and view">
+        <div class="nav-sec" id="nav-tools">
+          <span class="nav-cap" id="tools-key">Tools</span>
+          <div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div>
         </div>
-        <button type="button" class="nav-btn" id="nav-in" aria-label="Zoom in" title="Zoom in (+)"><span class="ms" aria-hidden="true">add</span></button>
-        <button type="button" class="nav-zoom" id="nav-zoom" title="Drag up or down to zoom · click for 100%">100%</button>
-        <button type="button" class="nav-btn" id="nav-out" aria-label="Zoom out" title="Zoom out (−)"><span class="ms" aria-hidden="true">remove</span></button>
-        <span class="nav-rule" aria-hidden="true"></span>
-        <button type="button" class="nav-btn" id="nav-pan" aria-pressed="false" aria-label="Pan mode" title="Pan · drag this button to move the view, or click it so a left-drag on the stage pans · Space-drag pans anytime"><span class="ms" aria-hidden="true">pan_tool</span></button>
-        <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" title="Frame the scene (0)"><span class="ms" aria-hidden="true">fit_screen</span></button>
-        <div class="nav-extra" id="nav-extra"></div>
+        <div class="nav-sec">
+          <span class="nav-cap">View</span>
+          <div class="orbit" id="nav-orbit" title="Drag to orbit · click an axis to look along it" hidden>
+            <svg class="orbit-lines" id="orbit-lines" viewBox="-36 -36 72 72" aria-hidden="true"></svg>
+          </div>
+          <div class="nav-zoomrow">
+            <button type="button" class="nav-btn" id="nav-out" aria-label="Zoom out" data-tip="Zoom out · −"><span class="ms" aria-hidden="true">remove</span></button>
+            <button type="button" class="nav-zoom" id="nav-zoom" data-tip="Drag to zoom · click for 100%">100%</button>
+            <button type="button" class="nav-btn" id="nav-in" aria-label="Zoom in" data-tip="Zoom in · +"><span class="ms" aria-hidden="true">add</span></button>
+          </div>
+          <div class="nav-row">
+            <button type="button" class="nav-btn" id="nav-pan" aria-pressed="false" aria-label="Pan mode" data-tip="Pan · Space-drag anytime"><span class="ms" aria-hidden="true">pan_tool</span></button>
+            <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" data-tip="Frame the scene · 0"><span class="ms" aria-hidden="true">fit_screen</span></button>
+            <div class="nav-extra" id="nav-extra"></div>
+          </div>
+        </div>
       </div>
       <div class="nav-foot" id="nav-foot">
         <div class="scalebar" id="scalebar" aria-hidden="true"><span class="scalebar-lbl" id="scalebar-lbl"></span><span class="scalebar-bar" id="scalebar-bar"></span></div>
         <div class="minimap" id="minimap" hidden><canvas id="minimap-canvas" role="img" aria-label="Overview of the whole scene with the visible area outlined; click or drag to move the view"></canvas></div>
       </div>
     </div>
-    <footer class="timeline" role="group" aria-label="Rewind">
-      <span class="ms" aria-hidden="true">history</span>
-      <label for="rewind-range" class="timeline-label">Rewind</label>
-      <div class="range-wrap no-notch"><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note"></div>
-      <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
-      <span class="timeline-note" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
+    <footer class="player">
+      <div class="transport" role="group" aria-label="Simulation transport">
+        <button type="button" class="btn btn-primary" id="btn-play" title="Play or pause (Space)"><span class="ms fill" id="btn-play-icon" aria-hidden="true">pause</span><span id="btn-play-label">Pause</span></button>
+        <button type="button" class="btn btn-ghost" id="btn-step" title="Pause and advance one frame (.)"><span class="ms" aria-hidden="true">skip_next</span><span class="sr-only">Step</span></button>
+        <button type="button" class="btn btn-ghost" id="btn-reset" title="Restart the current scene with the current settings (R)"><span class="ms" aria-hidden="true">restart_alt</span><span class="sr-only">Reset</span></button>
+      </div>
+      <div class="speed" role="group" aria-label="Simulation speed">
+        <span class="ms" aria-hidden="true">speed</span>
+        <div class="range-wrap" style="--notch: 0.624"><input type="range" id="ctl-speed" min="0" max="1000" step="1" aria-label="Simulation speed"></div>
+        <output id="ctl-speed-out" class="ctl-val" for="ctl-speed">1.00×</output>
+        <button type="button" class="ctl-reset" id="speed-reset" aria-label="Reset speed to 1×" title="Back to 1×" hidden><span class="ms" aria-hidden="true">restart_alt</span></button>
+      </div>
+      <div class="timeline" role="group" aria-label="Rewind">
+        <span class="ms" aria-hidden="true">history</span>
+        <label for="rewind-range" class="sr-only">Rewind</label>
+        <div class="range-wrap no-notch"><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note" title="Drag back to replay recent history. Comma steps back."></div>
+        <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
+        <span class="sr-only" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
+      </div>
+      <div class="capture" role="group" aria-label="Capture">
+        <button type="button" class="btn btn-ghost btn-rec" id="btn-rec" aria-pressed="false" title="Record the stage as a video (M)"><span class="ms fill" aria-hidden="true">fiber_manual_record</span><span class="lbl" id="btn-rec-label">Video</span></button>
+        <button type="button" class="btn btn-ghost" id="btn-data" aria-pressed="false" title="Record this lab's measurements over time as a dataset (D)"><span class="ms" aria-hidden="true">monitoring</span><span class="lbl" id="btn-data-label">Data</span></button>
+        <button type="button" class="btn btn-ghost" id="btn-state" title="Save the exact state of this scene so you can reload it later"><span class="ms" aria-hidden="true">bookmark</span><span class="lbl">Save</span></button>
+      </div>
     </footer>
-  </section>
-
-  <section class="tile tile-scene" id="tile-scene" aria-labelledby="tile-scene-title">
-    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">category</span><h3 id="tile-scene-title">Scene</h3></header>
-    <div class="tile-body" id="scene-body"></div>
-  </section>
-
-  <section class="tile tile-tools" id="tile-tools" aria-labelledby="tile-tools-title">
-    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">construction</span><h3 id="tile-tools-title">Tools</h3><span class="tile-meta" id="tools-key"></span></header>
-    <div class="tile-body"><div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div><p class="tool-hint" id="tool-hint"></p></div>
-  </section>
-
-  <section class="tile tile-params" id="tile-params" aria-labelledby="tile-params-title">
-    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">tune</span><h3 id="tile-params-title">Parameters</h3></header>
-    <div class="tile-body" id="params-body"></div>
   </section>
 
   <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments">
@@ -199,22 +198,30 @@
       <button type="button" class="icon-btn" id="btn-deck-tall" aria-pressed="false" title="Make the instruments taller"><span class="ms" aria-hidden="true">open_in_full</span><span class="sr-only">Taller instruments</span></button>
     </header>
     <div class="deck-body">
-      <div class="deck-chart"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
       <dl class="readouts" id="readouts"></dl>
+      <div class="deck-chart"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
     </div>
   </section>
 
-  <section class="tile tile-notes bay" id="tile-notes" aria-label="Notebook">
-    <header class="tile-head notes-head">
-      <div class="tabs" role="tablist" aria-label="Notebook" id="notes-tabs">
-        <button type="button" role="tab" id="nt-experiments" aria-controls="np-experiments" aria-selected="true"><span class="ms" aria-hidden="true">science</span>Experiments<span class="tab-count" id="nt-experiments-count" hidden></span></button>
-        <button type="button" role="tab" id="nt-guide" aria-controls="np-guide" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">school</span>Guide</button>
-        <button type="button" role="tab" id="nt-math" aria-controls="np-math" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">functions</span>Math</button>
-        <button type="button" role="tab" id="nt-library" aria-controls="np-library" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">video_library</span>Library<span class="tab-count" id="nt-library-count" hidden></span></button>
-      </div>
-    </header>
+  <aside class="tile tile-inspector" id="tile-notes" aria-label="Inspector">
+    <div class="scene-intro" id="scene-body"></div>
+    <article class="details" id="details" aria-label="Selected object" hidden>
+      <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
+      <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3></div>
+      <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
+      <dl class="details-rows" id="details-rows"></dl>
+      <div class="details-actions" id="details-actions"></div>
+    </article>
+    <div class="tabs" role="tablist" aria-label="Inspector" id="notes-tabs">
+      <button type="button" role="tab" id="nt-controls" aria-controls="np-controls" aria-selected="true"><span class="ms" aria-hidden="true">tune</span>Controls</button>
+      <button type="button" role="tab" id="nt-experiments" aria-controls="np-experiments" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">science</span>Experiments<span class="tab-count" id="nt-experiments-count" hidden></span></button>
+      <button type="button" role="tab" id="nt-guide" aria-controls="np-guide" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">school</span>Guide</button>
+      <button type="button" role="tab" id="nt-math" aria-controls="np-math" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">functions</span>Math</button>
+      <button type="button" role="tab" id="nt-library" aria-controls="np-library" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">video_library</span>Library<span class="tab-count" id="nt-library-count" hidden></span></button>
+    </div>
     <div class="tile-body notes-body">
-      <div role="tabpanel" id="np-experiments" aria-labelledby="nt-experiments"><div id="experiments"></div></div>
+      <div role="tabpanel" id="np-controls" aria-labelledby="nt-controls"><div id="params-body"></div></div>
+      <div role="tabpanel" id="np-experiments" aria-labelledby="nt-experiments" hidden><div id="experiments"></div></div>
       <div role="tabpanel" id="np-guide" aria-labelledby="nt-guide" hidden><div id="guide"></div></div>
       <div role="tabpanel" id="np-math" aria-labelledby="nt-math" hidden><div class="math" id="math"></div></div>
       <div role="tabpanel" id="np-library" aria-labelledby="nt-library" hidden>
@@ -225,7 +232,7 @@
         <div class="capture-settings" id="capture-settings"></div>
       </div>
     </div>
-  </section>
+  </aside>
 </main>
 
 <div class="sheet" id="keys-sheet" role="dialog" aria-modal="false" aria-labelledby="keys-title" hidden>
@@ -240,7 +247,7 @@
     <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record video · record data</dd>
     <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Switch labs</dd>
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
-    <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the bottom bay</dd>
+    <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
     <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
     <dt>Scroll</dt><dd>Zoom at the cursor; middle or right drag pans</dd>
     <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>

@@ -167,7 +167,8 @@ export function buildPanel(lab) {
   if (lab.eqTex) { eq.dataset.tex = lab.eqTex; eq.dataset.inline = 'true'; } else eq.innerHTML = lab.eqFull || lab.eq;
   const pg = radioGroup('Scene', lab.presets.map(p => [p.id, p.label]), () => lab.presetId, id => applyPreset(lab, id), `preset-${lab.id}`, 'preset-list');
   ui.sync.set('__preset', pg.update);
-  $('#scene-body').replaceChildren(el('div', { class: 'scene-intro' }, el('h2', { text: lab.title }), eq), pg.group);
+  $('#scene-menu').replaceChildren(pg.group);
+  $('#scene-body').replaceChildren(el('h2', { text: lab.title }), eq);
   const grid = el('div', { class: 'params' });
   const ranges = lab.controls.filter(c => c.type !== 'toggle'), toggles = lab.controls.filter(c => c.type === 'toggle');
   for (const c of ranges) { const n = buildControl(lab, c); if (n) grid.append(n); }

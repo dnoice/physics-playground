@@ -111,6 +111,12 @@ def settle(pg, expression, timeout=15000):
         return False
 
 
+def scene(pg, preset):
+    """Pick a scene from the dropdown in the stage title."""
+    pg.click("#scene-btn")
+    pg.click(preset)
+
+
 def ok(name, cond, info=''):
     """Record a named check as a PASS or FAIL mark, with an optional reading."""
     if name in out:

@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Workspace Layout (digiSpace Edition - v2.0)
+    - Title: Workspace Layout (digiSpace Edition - v2.1)
     - File Name: layout.js
     - Relative Path: js/shell/layout.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      scene dropdown; Controls is the first Inspector tab.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: the bento workspace he picked, with
       focus mode and a hideable bay.
@@ -82,9 +84,28 @@ export function setKeys(open) {
   if (open) $('#keys-close').focus();
 }
 
+/* ---------- scene dropdown ---------- */
+export function setSceneMenu(open) {
+  const menu = $('#scene-menu');
+  menu.hidden = !open;
+  $('#scene-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const cur = menu.querySelector('[aria-checked="true"]'); if (cur) cur.focus(); }
+}
+export function closeSceneMenu() { if ($('#scene-menu').hidden) return false; setSceneMenu(false); $('#scene-btn').focus(); return true; }
+
 export function init() {
+  $('#scene-btn').addEventListener('click', () => setSceneMenu($('#scene-menu').hidden));
+  // A mouse pick leaves nothing focused, so Space goes back to play and pause; a keyboard pick returns to the button.
+  $('#scene-menu').addEventListener('click', e => {
+    if (!e.target.closest('[role="radio"]')) return;
+    closeSceneMenu();
+    if (e.detail > 0) document.activeElement.blur();
+  });
+  document.addEventListener('pointerdown', e => {
+    if (!$('#scene-menu').hidden && !e.target.closest('.scene-pick')) setSceneMenu(false);
+  });
   $('#btn-focus').addEventListener('click', () => { setFocus(!isFocus()); announce(isFocus() ? 'Stage focused' : 'Workspace restored'); });
-  $('#btn-bay').addEventListener('click', () => { setBay(!hasBay()); announce(hasBay() ? 'Bottom bay shown' : 'Bottom bay hidden'); });
+  $('#btn-bay').addEventListener('click', () => { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); });
   $('#btn-keys').addEventListener('click', () => setKeys($('#keys-sheet').hidden));
   $('#keys-close').addEventListener('click', () => { setKeys(false); $('#btn-keys').focus(); });
   document.addEventListener('pointerdown', e => {
@@ -101,7 +122,7 @@ export function init() {
       if (j >= 0) { e.preventDefault(); selectNote(tabs[j].id.slice(3), true); }
     });
   });
-  selectNote(store.get('notesTab', 'experiments'));
+  selectNote(store.get('notesTab', 'controls'));
   setFocus(store.get('focus', false), false);
   setBay(store.get('bay', true), false);
   // Hide glyph names if the icon font never arrives (offline).

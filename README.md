@@ -119,26 +119,30 @@ Auto changes tier, and offers a cheaper tier when a fixed one runs slowly.
 
 ## Using the workspace
 
-The workspace is a bento grid of tiles around the stage.
+The workspace is one large stage, an Instruments deck beneath it and a
+full-height Inspector beside them.
 
-- **Stage** (large, top left): the simulation, with play, step, reset,
-  speed, and capture buttons in its header and the rewind timeline below.
-  The gizmo on the right zooms, pans, frames the view and holds lab extras
-  such as Follow.
-- **Scene**: the lab's scenes as chips. Loading one restarts the run.
-- **Tools**: what the pointer does on the stage, each with a letter key.
-- **Parameters**: sliders, choices and switches. A disabled control says
-  why underneath.
-- **Instruments**: every reading as a live gauge beside the lab's chart.
-  Click a gauge to plot it, up to four at once. Hover the plot to read any
-  moment, click or drag along it to rewind to that moment, and use the wheel
-  to zoom the time window. The pill shows the simulation's health, with the
-  top alert and its fix beside it; click it for the full list.
-- **Notebook**: Experiments, Guide, Math and Library pages.
+- **Stage**: the simulation. The lab's name in the top left holds the scene
+  dropdown; loading a scene restarts the run. The gizmo on the right holds the
+  tools, each with a letter key, above the view controls: the axis ball, zoom,
+  pan, frame and lab extras such as Follow.
+- **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
+  data and save buttons.
+- **Instruments**: every reading as a live tile beside the lab's chart. Click a
+  tile to plot it, up to four at once, each in its own lane on one time axis.
+  Hover the plot to read any moment, click or drag along it to rewind to that
+  moment, and use the wheel to zoom the time window. The pill shows the
+  simulation's health, with the top alert and its fix beside it; click it for
+  the full list.
+- **Inspector**: the lab's formula above five tabs: Controls, Experiments,
+  Guide, Math and Library. A disabled control says why underneath.
+- **Details**: click a body in Gravity, a ball in Collisions or, with Move, a
+  particle in Fields, and a card opens at the top of the Inspector with its
+  live stats. Gravity shows a rendered portrait of the body and its orbit:
+  distance, period, eccentricity and inclination.
 
 Press **F** to give the stage the whole window and **Shift+B** to hide the
-bottom bay. The layout reflows to two columns below 1180 px and to one
-column below 760 px.
+Instruments. The layout reflows to one column below 1180 px.
 
 ### Mouse and touch
 
@@ -165,7 +169,7 @@ column below 760 px.
 | Arrow keys | Pan, or orbit in 3D mode |
 | [ and ] | Halve or double the speed |
 | M and D | Record a video clip, record a dataset |
-| F and Shift+B | Focus the stage, hide the bottom bay |
+| F and Shift+B | Focus the stage, hide the Instruments |
 | ? | Keyboard reference |
 
 ## Capturing runs

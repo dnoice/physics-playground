@@ -76,7 +76,7 @@ export function createEngine(tier) {
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 
   const E = { renderer, tier, mats: createMaterials(renderer), canvas: renderer.domElement, lost: false, time: 0 };
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 500);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 500), portraitCam = new THREE.PerspectiveCamera(22, 1, 0.05, 500);
   const factories = new Map(), scenes = new Map();
   let composer = null, bloom = null, grade = null, render0 = null, size = { w: 0, h: 0, dpr: 0, pr: 0 };
   let onLost = null, onRestored = null;
@@ -110,6 +110,20 @@ export function createEngine(tier) {
     if (s.onTier) s.onTier(E.tier, size.w * size.pr, size.h * size.pr);
   };
 
+  /* Shoot the corner of the default framebuffer and copy it out; the main pass then draws over it. */
+  function shootPortrait(s, lab) {
+    const c = E.portraitTo, aim = s.portrait(lab), S = Math.min(144, size.h);
+    E.portraitTo = null;
+    if (!aim) return;
+    portraitCam.near = aim.near; portraitCam.far = aim.far; portraitCam.position.set(...aim.eye); portraitCam.up.set(0, 1, 0);
+    portraitCam.lookAt(...aim.at); portraitCam.updateProjectionMatrix(); portraitCam.updateMatrixWorld();
+    renderer.setRenderTarget(null); renderer.setViewport(0, 0, S, S); renderer.setScissor(0, 0, S, S); renderer.setScissorTest(true);
+    renderer.toneMappingExposure = s.exposure ?? 1;
+    renderer.render(aim.scene || s.scene, portraitCam);
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, size.w, size.h);
+    const px = S * size.pr;
+    c.getContext('2d').drawImage(E.canvas, 0, E.canvas.height - px, px, px, 0, 0, c.width, c.height);
+  }
   function sceneFor(lab) {
     let s = scenes.get(lab.id);
     if (s) return s;
@@ -130,6 +144,7 @@ export function createEngine(tier) {
       return load().then(m => { factories.set(id, m.createScene); return true; });
     },
     ready: id => factories.has(id),
+    canPortrait(lab) { const s = scenes.get(lab.id); return !!(s && s.portrait); },
     onContext(lost, restored) { onLost = lost; onRestored = restored; },
     setTier(t) {
       E.tier = t;
@@ -149,6 +164,7 @@ export function createEngine(tier) {
       camera.lookAt(V.eye[0] + V.f[0], V.eye[1] + V.f[1], V.eye[2] + V.f[2]);
       camera.updateProjectionMatrix(); camera.updateMatrixWorld();
       s.sync(lab, { t: E.time, dt, w, h, pr: size.pr, camera, px: h / (2 * Math.tan(V.fovDeg * Math.PI / 360)) });
+      if (E.portraitTo && s.portrait) shootPortrait(s, lab);
       if (s.prepare) s.prepare(renderer, camera);
       if (s.studio) s.studio.prepare(renderer, camera);
       renderer.toneMappingExposure = s.exposure ?? 1;

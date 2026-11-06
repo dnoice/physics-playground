@@ -46,7 +46,7 @@
 """
 import re
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, settle
+from harness import URL, finish, launch, ok, open_page, settle, scene
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
@@ -157,8 +157,8 @@ with sync_playwright() as p:
 
     # ---- Space after a mouse click belongs to play and pause; a keyboard-focused button keeps it
     pg = fresh("gravity")
-    for name, sel in [("reset", "#btn-reset"), ("scene_chip", "#preset-gravity-figure8")]:
-        pg.click(sel); pg.wait_for_timeout(700)
+    for name, pick in [("reset", lambda: pg.click("#btn-reset")), ("scene_chip", lambda: scene(pg, "#preset-gravity-figure8"))]:
+        pick(); pg.wait_for_timeout(700)
         t0, run0 = lab_t(), running()
         pg.keyboard.press("Space")
         ok(f"{name}_click_then_space_toggles", running() != run0, running())
@@ -174,17 +174,22 @@ with sync_playwright() as p:
     pg.keyboard.press("Space"); pg.wait_for_timeout(50)
     ok("space_on_focused_reset_restarts", lab_t() < t0, (round(t0, 3), round(lab_t(), 3)))
     ok("space_on_focused_reset_leaves_play", running() == run0, running())
-    pg.focus("#dock-gravity-throw"); pg.keyboard.press("Shift+Tab"); pg.wait_for_timeout(700)
+    # Tab onto the scene button from behind, open it with Space, and Space again reloads the scene.
+    pg.focus("#nav-tools .dock-btn"); pg.keyboard.press("Shift+Tab"); pg.wait_for_timeout(700)
     a = pg.evaluate(ACTIVE)
-    ok("tab_reaches_scene_chip_with_ring", a["id"] == "preset-gravity-figure8" and a["ring"], a)
+    ok("tab_reaches_scene_button_with_ring", a["id"] == "scene-btn" and a["ring"], a)
+    pg.keyboard.press("Space"); pg.wait_for_timeout(100)
+    a = pg.evaluate(ACTIVE)
+    ok("space_opens_the_scene_menu", a["id"] == "preset-gravity-figure8", a)
     t0, run0 = lab_t(), running()
     pg.keyboard.press("Space"); pg.wait_for_timeout(50)
+    ok("keyboard_pick_returns_to_the_button", pg.evaluate(ACTIVE)["id"] == "scene-btn", pg.evaluate(ACTIVE))
     ok("space_on_focused_chip_reloads_scene", lab_t() < t0, (round(t0, 3), round(lab_t(), 3)))
     ok("space_on_focused_chip_leaves_play", running() == run0, running())
     pg.context.close()
 
     # ---- resizing the stage keeps what was drawn on it
-    pg = fresh("waves"); pg.click("#preset-waves-ripple"); blur(); pg.wait_for_timeout(1300)
+    pg = fresh("waves"); scene(pg, "#preset-waves-ripple"); blur(); pg.wait_for_timeout(1300)
     pg.keyboard.press("w")
     pg.mouse.move(*stage_point(0.3, 0.5)); pg.mouse.down(); pg.mouse.move(*stage_point(0.7, 0.5), steps=12); pg.mouse.up()
     pg.keyboard.press("Space")
@@ -207,7 +212,7 @@ with sync_playwright() as p:
     pg.context.close()
 
     # ---- a dataset recorded across a rewind is one continuous timeline
-    pg = fresh("gravity"); pg.click("#preset-gravity-figure8"); blur()
+    pg = fresh("gravity"); scene(pg, "#preset-gravity-figure8"); blur()
     pg.keyboard.press("d"); pg.wait_for_timeout(2600)
     for _ in range(6): pg.keyboard.press(",")
     back_to, reached = lab_t(), pg.evaluate(P + ".capture.dataRec.rows.at(-1)[0]")
@@ -223,9 +228,9 @@ with sync_playwright() as p:
     ok("rewind_dataset_has_no_gap", max(gaps) < 0.25, max(gaps))
     ok("rewind_tracks_stay_in_order", all(y >= x for x, y in zip(track_ts, track_ts[1:])))
     # A scene change ends the recording, but the dataset still belongs to the scene it recorded.
-    pg.click("#preset-gravity-figure8"); blur()
+    scene(pg, "#preset-gravity-figure8"); blur()
     pg.keyboard.press("d"); pg.wait_for_timeout(2000)
-    pg.click("#preset-gravity-binary"); pg.wait_for_timeout(500)
+    scene(pg, "#preset-gravity-binary"); pg.wait_for_timeout(500)
     run = pg.evaluate(NEWEST_RUN)
     ok("scene_change_stops_recording", state("capture.dataRec.on") is False)
     ok("scene_change_header_moves_on", pg.inner_text("#stage-scene") == "Binary star", pg.inner_text("#stage-scene"))
@@ -235,7 +240,7 @@ with sync_playwright() as p:
     pg.context.close()
 
     # ---- Fields, Dipole: the B slider enables the B gradient control at once
-    pg = fresh("fields"); pg.click("#preset-fields-dipole")
+    pg = fresh("fields"); scene(pg, "#preset-fields-dipole")
     ok("gradb_locked_at_zero_b", pg.is_disabled("#ctl-fields-gradB") and state("labs.fields.p.B") == 0)
     ok("gradb_says_why", "magnetic field" in pg.inner_text("#ctl-fields-gradB-note"), pg.inner_text("#ctl-fields-gradB-note"))
     pg.focus("#ctl-fields-B"); pg.keyboard.press("ArrowRight")
@@ -262,9 +267,9 @@ with sync_playwright() as p:
     pg.context.close()
 
     # ---- loading a saved state moves the stage header to the saved scene
-    pg = fresh("gravity"); pg.click("#preset-gravity-figure8"); pg.wait_for_timeout(200)
+    pg = fresh("gravity"); scene(pg, "#preset-gravity-figure8"); pg.wait_for_timeout(200)
     pg.click("#btn-state"); pg.wait_for_timeout(400)
-    pg.click("#preset-gravity-binary"); pg.wait_for_timeout(100)
+    scene(pg, "#preset-gravity-binary"); pg.wait_for_timeout(100)
     ok("header_before_load", pg.inner_text("#stage-scene") == "Binary star", pg.inner_text("#stage-scene"))
     pg.click("#nt-library"); pg.wait_for_timeout(200)
     pg.locator(".lib-item[data-kind=state] [data-fk=load]").click(); pg.wait_for_timeout(400)

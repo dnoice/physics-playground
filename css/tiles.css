@@ -34,78 +34,70 @@
       16.4+)
 ---------
 */
-/* ---------- scene tile ---------- */
-.scene-intro { display: grid; gap: 4px; margin-bottom: 12px; }
-.scene-intro h2 { margin: 0; font: 400 21px/1.1 var(--font-display); text-wrap: balance; }
-.scene-intro .eq { margin: 0; color: var(--amber); min-height: 1.6em; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-.scene-intro .eq .katex { font-size: 1.02em; white-space: nowrap; }
-.preset-list { display: flex; flex-wrap: wrap; gap: 5px; }
+/* ---------- inspector: lab heading, selection card, tabs ---------- */
+.tile-inspector { grid-template-rows: auto auto auto minmax(0, 1fr); }
+.scene-intro { display: grid; gap: 5px; padding: 18px var(--pad) 12px; }
+.scene-intro h2 { margin: 0; font: 400 24px/1.1 var(--font-display); text-wrap: balance; }
+.scene-intro .eq { margin: 0; color: var(--amber); min-height: 1.5em; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.scene-intro .eq .katex { font-size: 1.04em; white-space: nowrap; }
+.preset-list { display: grid; gap: 1px; }
 .preset-list button {
-  appearance: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-  font: 500 12px/1 var(--font-body); color: var(--muted); background: var(--ink); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 10px 6px 8px;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 11px; border: 0; border-radius: 9px; cursor: pointer; text-align: left;
+  font: 500 13.5px/1.2 var(--font-body); color: color-mix(in oklab, var(--text) 80%, var(--muted)); background: none; transition: color 0.12s, background 0.12s;
 }
-.preset-list button::before { content: ""; width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
-.preset-list button:hover { color: var(--text); border-color: var(--muted); }
-.preset-list button[aria-checked="true"] { color: var(--text); border-color: color-mix(in oklab, var(--amber) 60%, var(--rule)); background: color-mix(in oklab, var(--amber) 12%, var(--ink)); }
-.preset-list button[aria-checked="true"]::before { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px color-mix(in oklab, var(--amber) 60%, transparent); }
+.preset-list button::before { content: ""; width: 6px; height: 6px; flex: none; border-radius: 50%; background: transparent; }
+.preset-list button:hover { color: var(--text); background: color-mix(in oklab, var(--text) 8%, transparent); }
+.preset-list button[aria-checked="true"] { color: var(--text); background: color-mix(in oklab, var(--amber) 14%, transparent); }
+.preset-list button[aria-checked="true"]::before { background: var(--amber); box-shadow: 0 0 8px color-mix(in oklab, var(--amber) 70%, transparent); }
 
-/* ---------- tools tile ---------- */
-.dock { position: relative; display: grid; gap: 4px; isolation: isolate; }
-.dock-btn {
-  appearance: none; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; width: 100%; text-align: left;
-  background: none; border: 1px solid transparent; border-radius: 9px; color: var(--muted); font: 500 12.5px/1 var(--font-body);
-  padding: 6px 8px; cursor: pointer; transition: color 0.15s, background 0.15s, border-color 0.15s;
+.details {
+  display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; grid-template-rows: auto auto auto; column-gap: 12px; row-gap: 12px; align-items: center;
+  margin: 0 12px 12px; padding: 12px; border-radius: 14px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); animation: tile-in 0.26s var(--ease) both;
 }
-.dock-btn .ms { font-size: 19px; }
-.dock-btn:hover { color: var(--text); background: color-mix(in oklab, var(--text) 5%, transparent); }
-.dock-btn[aria-checked="true"] { color: #1a1206; background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 92%, white), var(--amber)); border-color: var(--amber); box-shadow: 0 2px 10px color-mix(in oklab, var(--amber) 30%, transparent); }
-.dock-btn kbd { font-size: 9.5px; padding: 2px 4px; background: transparent; border-color: currentColor; color: inherit; opacity: 0.55; }
-@container tile (min-width: 320px) { .dock { grid-template-columns: 1fr 1fr; } }
-/* Tiles only query their width, so a short window is read from the viewport: two narrow columns fit
-   six tools without scrolling, and each button's tooltip keeps its key. */
-@media (max-height: 1040px) {
-  @container tile (max-width: 319px) {
-    .dock { grid-template-columns: 1fr 1fr; gap: 3px; }
-    .dock-btn { grid-template-columns: auto 1fr; gap: 5px; padding-inline: 6px; }
-    .dock-label { font-size: 11.5px; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dock-btn kbd { display: none; }
-  }
-}
-.tool-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
-.tool-hint:empty { display: none; }
+.details[hidden] { display: none; }
+.details-portrait { width: 88px; height: 88px; border-radius: 50%; background: #03050a; box-shadow: inset 0 0 0 1px var(--hair), 0 0 24px -8px color-mix(in oklab, var(--cyan) 40%, transparent); }
+.details-name { display: grid; gap: 3px; min-width: 0; }
+.details-name span { font-size: 12px; color: var(--muted); }
+.details-name h3 { margin: 0; font: 400 22px/1.1 var(--font-display); }
+.details .icon-btn { align-self: start; width: 30px; height: 30px; }
+.details-rows { grid-column: 1 / -1; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.details-rows dt { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+.details-rows dd { margin: 1px 0 0; font: 500 14px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.details-actions { grid-column: 1 / -1; display: flex; gap: 6px; }
+.details-actions .btn { flex: 1; min-height: 32px; border-radius: 9px; }
+.details-actions:empty { display: none; }
 
-/* ---------- instruments: gauges beside a live scope ---------- */
-.deck-head { gap: 10px; min-width: 0; }
-.deck-head h3 { white-space: nowrap; }
-.deck-body { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: 10px; padding: 8px 10px 10px; }
-.deck-chart { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 3px; }
+/* ---------- instruments: one row of stat tiles above a live scope ---------- */
+.deck-head { gap: 10px; min-width: 0; min-height: 48px; }
+.deck-body { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; padding: 0 12px 12px; }
+.deck-chart { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; }
 .deck-chart canvas { width: 100%; height: 100%; min-height: 0; display: block; }
 .scoping .deck-chart canvas { cursor: crosshair; touch-action: none; }
-.caption { margin: 0; font-size: 11px; line-height: 1.35; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caption { margin: 0; font-size: 12px; line-height: 1.35; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scoping .caption { display: none; }
-.readouts { margin: 0; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); grid-auto-rows: min-content; gap: 4px; align-content: start; overscroll-behavior: contain; }
-.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 4px 8px 12px; border-radius: 8px; background: var(--well); border: 1px solid transparent; overflow: hidden; transition: border-color 0.15s, background 0.15s; }
-.gauge:hover { border-color: var(--rule); }
-.gauge.on { border-color: var(--ink); background: color-mix(in oklab, var(--ink) 10%, var(--well)); }
-.gauge dt { color: var(--muted); font-size: 10.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gauge dd { margin: 0; display: flex; align-items: center; gap: 5px; font: 500 12.5px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gauge dd[data-state]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.readouts { margin: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(158px, 1fr); gap: 8px; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 1px; }
+.readouts::-webkit-scrollbar { display: none; }
+.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: box-shadow 0.15s, background 0.15s; }
+.gauge:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
+.gauge.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
+.gauge dt { grid-column: 1 / -1; color: var(--muted); font-size: 12px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gauge dd { margin: 0; align-self: end; display: flex; align-items: center; gap: 6px; min-width: 0; font: 500 15px/1.15 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gauge dd[data-state]::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 .gauge dd[data-state="warn"]::before { background: var(--warn); }
 .gauge dd[data-state="crit"]::before { background: var(--crit); }
 .gauge dd[data-state="idle"]::before { background: var(--muted); }
-.gauge-spark { position: absolute; left: 8px; right: 8px; bottom: 2px; height: 10px; pointer-events: none; }
-.gauge-spark svg { display: block; width: 100%; height: 100%; }
-.gauge-spark path { fill: none; stroke: var(--muted); stroke-width: 1.2; vector-effect: non-scaling-stroke; opacity: 0.65; }
-.gauge.on .gauge-spark path { stroke: var(--ink); opacity: 1; }
+.gauge-spark { align-self: end; height: 22px; pointer-events: none; }
+.gauge-spark svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.gauge-spark path { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.7; }
+.gauge.on .gauge-spark path { stroke: var(--series); opacity: 1; }
 .gauge-hit { position: absolute; inset: 0; appearance: none; background: none; border: 0; border-radius: inherit; cursor: pointer; }
 .gauge-hit:disabled { cursor: default; }
 .scope-legend { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-.scope-hint { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
-.scope-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 3px 2px 7px; border-radius: 999px; background: var(--well); border: 1px solid var(--rule); font-size: 11px; white-space: nowrap; }
-.scope-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
-.scope-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
-.scope-chip b { font: 500 11px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.scope-hint { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.scope-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 9px; border-radius: 999px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); font-size: 12px; white-space: nowrap; }
+.scope-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--series); }
+.scope-name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.scope-chip b { font: 500 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
 .scope-x { appearance: none; display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
 .scope-x:hover { color: var(--text); background: var(--rule); }
 .scope-x .ms { font-size: 13px; }
@@ -119,7 +111,7 @@
 .diag-sheet[hidden] { display: none; }
 .diag-sheet:focus { outline: none; }
 .diag-sheet .tile-body { display: grid; gap: 12px; align-content: start; }
-@container tile (max-width: 620px) { .deck-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, 1fr) minmax(0, 1fr); } .diag-top { display: none; } }
+@container tile (max-width: 620px) { .diag-top { display: none; } }
 
 /* ---------- diagnostics ---------- */
 .diag-sum { font: 400 11.5px/1 var(--font-mono); color: var(--ok); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -155,22 +147,20 @@
 @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
 
 /* ---------- notebook tile: experiments, guide, math, library ---------- */
-.notes-head { padding-inline: 6px; }
-.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 10px; box-shadow: inset 0 -1px 0 var(--hair); }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs [role="tab"] {
-  appearance: none; display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 8px; border: 0; cursor: pointer;
-  background: none; color: var(--muted); font: 500 12.5px/1 var(--font-body); white-space: nowrap; transition: color 0.15s, background 0.15s;
+  appearance: none; position: relative; display: grid; justify-items: center; gap: 4px; padding: 9px 2px 10px; border: 0; background: none; color: var(--muted); cursor: pointer; font: 500 11.5px/1 var(--font-body); white-space: nowrap;
+  transition: color 0.15s;
 }
-.tabs [role="tab"] .ms { font-size: 17px; }
+.tabs [role="tab"] .ms { font-size: 20px; }
 .tabs [role="tab"]:hover { color: var(--text); }
-.tabs [role="tab"][aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--amber) 12%, transparent); box-shadow: inset 0 -2px 0 var(--amber); }
+.tabs [role="tab"][aria-selected="true"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--amber); }
 .tabs [role="tab"][aria-selected="true"] .ms { color: var(--amber); }
 .tabs [role="tab"] { position: relative; }
-.tab-count { font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 5px; }
+.tab-count { position: absolute; top: 5px; left: calc(50% + 11px); font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 5px; }
 .tabs [role="tab"].has-new .tab-count { color: var(--ink); background: var(--amber); border-color: var(--amber); }
 .tabs [role="tab"].has-new::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
-@container tile (max-width: 430px) { .tabs [role="tab"] { font-size: 0; gap: 0; } .tabs [role="tab"] .ms { font-size: 19px; } .tab-count { margin-left: 4px; } }
 .notes-body [role="tabpanel"] { display: grid; gap: 14px; align-content: start; }
 .notes-body [role="tabpanel"][hidden] { display: none; }
 .guide { display: grid; gap: 12px; }

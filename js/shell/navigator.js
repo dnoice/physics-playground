@@ -80,7 +80,7 @@ export function setPanMode(on) {
 export function buildNav(lab) {
   navExtraEl.replaceChildren();
   navExtras = (lab.navExtras || []).map(o => {
-    const b = el('button', { type: 'button', class: 'nav-btn', id: `nav-${o.id}`, 'aria-pressed': 'false', 'aria-label': o.label, title: o.title, html: icon(o.icon) });
+    const b = el('button', { type: 'button', class: 'nav-btn', id: `nav-${o.id}`, 'aria-pressed': 'false', 'aria-label': o.label, 'data-tip': o.tip || o.label, html: icon(o.icon) });
     b.addEventListener('click', () => { o.run(); updateNav(); });
     navExtraEl.append(b);
     return { o, b };

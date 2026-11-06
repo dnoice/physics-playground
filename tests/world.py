@@ -32,6 +32,9 @@
       around the apparatus orbits.
     - Instruments: a reading plots, the plot rewinds and scrubs, plotted
       readings are remembered, and diagnostics open on demand.
+    - The scene dropdown, tools in the gizmo, and the Details card with a
+      period that matches Kepler's third law and a drawn portrait.
+    - The pendulum can be seen from behind.
     - Rewind and video capture work on the 3D stage.
     - All five tiers apply; Auto lands on Lite under software rendering and
       steps down from a tier the machine cannot hold.
@@ -164,7 +167,10 @@ with sync_playwright() as p:
     ok("resize_keeps_the_angle", abs(V()["yaw"] - yaw) < 1e-6, round(V()["yaw"] - yaw, 6))
     pg.evaluate(f"{P}.view.frame()"); pg.wait_for_timeout(700)
     n0 = pg.evaluate(f"{P}.labs.collisions.n"); y0 = V()["yaw"]
-    pg.mouse.move(box["x"] + 14, box["y"] + box["height"] - 14); pg.mouse.down(); pg.mouse.move(box["x"] + 90, box["y"] + box["height"] - 14, steps=5); pg.mouse.up()
+    free = pg.evaluate("""(() => { const L = PhysicsPlayground.active, c = document.getElementById('stage-canvas'), r = c.getBoundingClientRect();
+      for (let y = r.height - 8; y > 8; y -= 12) for (let x = 12; x < r.width * 0.7; x += 12) if (L.offStage3({ x, y }) && document.elementFromPoint(r.left + x, r.top + y) === c) return { x: r.left + x, y: r.top + y };
+      return null; })()""")
+    pg.mouse.move(free["x"], free["y"]); pg.mouse.down(); pg.mouse.move(free["x"] + 90, free["y"], steps=5); pg.mouse.up()
     ok("drag_around_apparatus_orbits", abs(V()["yaw"] - y0) > 0.2 and pg.evaluate(f"{P}.labs.collisions.n") == n0, round(V()["yaw"] - y0, 3))
 
     # Tools reach the simulation through the ray.
@@ -213,6 +219,43 @@ with sync_playwright() as p:
     tall = pg.locator("#tile-deck").bounding_box()["height"]
     pg.click("#btn-deck-tall"); pg.wait_for_timeout(500)
     ok("deck_grows_and_shrinks", tall > pg.locator("#tile-deck").bounding_box()["height"] + 40, round(tall))
+    ctx.close()
+
+    # The console: scene dropdown, tools in the gizmo, and a click that opens up what was clicked.
+    ctx = b.new_context(viewport={"width": 1440, "height": 900})
+    pg = page(ctx, lab="gravity")
+    settle(pg, IS3D, 30000); pg.wait_for_timeout(1500)
+    pg.click("#scene-btn")
+    ok("scene_menu_opens", pg.locator("#scene-menu [role=radio]").count() == 7 and not pg.evaluate("document.getElementById('scene-menu').hidden"))
+    pg.keyboard.press("Escape")
+    ok("escape_closes_scene_menu", pg.evaluate("document.getElementById('scene-menu').hidden") and pg.evaluate("document.activeElement.id") == "scene-btn")
+    pg.click("#scene-btn"); pg.click("#preset-gravity-kepler"); pg.wait_for_timeout(300)
+    ok("scene_menu_picks_and_closes", pg.evaluate(f"{P}.active.presetId") == "kepler" and pg.evaluate("document.getElementById('scene-menu').hidden") and "Kepler" in pg.inner_text("#stage-scene"))
+    pg.click("#dock-gravity-erase")
+    ok("tools_live_in_the_gizmo", pg.evaluate(f"{P}.active.p.tool") == "erase" and pg.evaluate("!!document.querySelector('#nav #dock-gravity-erase')"))
+    pg.click("#dock-gravity-throw")
+    pg.click("#scene-btn"); pg.click("#preset-gravity-solar"); pg.wait_for_timeout(1000)
+    ok("nothing_selected_at_first", pg.evaluate("document.getElementById('details').hidden"))
+    spot = pg.evaluate(f"""(() => {{ const L = {P}.active, B = L.bodies.filter(b => b.m < L.STAR_MASS).sort((a, c) => c.m - a.m)[0], q = L.project3(B.x, B.y, B.z), r = document.getElementById('stage-canvas').getBoundingClientRect(); return {{ x: r.left + q.x, y: r.top + q.y, id: B.id }}; }})()""")
+    pg.mouse.click(spot["x"], spot["y"]); pg.wait_for_timeout(900)
+    ok("click_shows_the_body", not pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") == spot["id"], pg.inner_text("#details-title"))
+    ok("details_show_its_orbit", "Orbital period" in pg.inner_text("#details-rows") and "Eccentricity" in pg.inner_text("#details-rows"))
+    orbit = pg.evaluate(f"""(() => {{ const L = {P}.active, b = L.bodies.find(q => q.id === L.track), P = L.bodies.reduce((a, q) => (q !== b && q.m > a.m ? q : a), {{ m: 0 }}), r = Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z), mu = 5000 * L.p.G * (P.m + b.m); return 2 * Math.PI * Math.sqrt(r ** 3 / mu); }})()""")
+    card = float(pg.inner_text("#details-rows").split("Orbital period")[1].split()[0])
+    ok("period_matches_kepler", abs(card - orbit) / orbit < 0.2, (card, round(orbit, 2)))
+    pg.wait_for_timeout(600)
+    ok("portrait_is_drawn", pg.evaluate("""(() => { const d = document.getElementById('details-portrait').getContext('2d').getImageData(44, 44, 88, 88).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 90) lit++; return lit > 200; })()"""))
+    pg.click("#details-close"); pg.wait_for_timeout(200)
+    ok("close_clears_the_selection", pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") is None)
+    ctx.close()
+
+    # Every apparatus can be walked around, front and back.
+    ctx = b.new_context(viewport=VIEW)
+    pg = page(ctx, lab="chaos")
+    settle(pg, IS3D, 30000); pg.wait_for_timeout(400)
+    pg.evaluate(f"{P}.view.snap('y')"); pg.wait_for_timeout(900)
+    yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))
+    ok("chaos_seen_from_behind", abs(yaw - 3.1416) < 0.3 and pg.evaluate(LIT) > 0.02, round(yaw, 2))
     ctx.close()
 
     # Graphics tiers.

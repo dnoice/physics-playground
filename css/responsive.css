@@ -36,27 +36,25 @@
 */
 /* Seven labs crowd the rail first: drop the numbers, then the selected
    lab's equation, before the rail ever has to scroll. */
-@media (max-width: 1440px) { .tab-n { display: none; } }
-@media (max-width: 1300px) { .tab[aria-selected="true"] .tab-eq { max-width: 0; opacity: 0; } }
+@media (max-width: 1280px) { .tab { padding: 0 10px; } .brand h1 { font-size: 22px; } }
+@media (max-width: 1120px) { .tab-name { display: none; } .tab[aria-selected="true"] .tab-name { display: inline; } }
 /* ---------- narrower screens: the bento reflows and the page scrolls ---------- */
 @media (max-width: 1180px) {
   html, body { height: auto; }
   body { display: block; overflow: auto; }
   .bento {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto;
-    grid-template-areas: "stage stage" "scene tools" "params params" "deck deck" "notes notes";
+    grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto;
+    grid-template-areas: "stage" "deck" "notes";
   }
-  .bento.no-bay { grid-template-areas: "stage stage" "scene tools" "params params"; grid-template-rows: none; }
+  .bento.no-bay { grid-template-areas: "stage" "notes"; grid-template-rows: none; }
   .tile-stage { height: min(68vh, 640px); min-height: 360px; }
   .bento.focus .tile-stage { height: calc(100vh - 76px); }
-  .tile-notes { max-height: 460px; }
-  .tile-deck { height: 300px; }
+  .tile-inspector { max-height: 680px; }
+  .tile-deck { height: 320px; }
   .bento.deck-tall .tile-deck { height: 460px; }
-  .tile-scene, .tile-tools { max-height: 420px; }
 }
 @media (max-width: 760px) {
-  .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "tools" "scene" "params" "deck" "notes"; padding: 6px; gap: 6px; }
-  .bento.no-bay { grid-template-areas: "stage" "tools" "scene" "params"; }
+  .bento { padding: 0 6px 6px; gap: 6px; }
   .brand h1 { display: none; }
   .brand { padding-right: 6px; }
   .tab { padding: 0 10px; }

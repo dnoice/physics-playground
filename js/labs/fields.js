@@ -192,6 +192,14 @@ export const fields = {
     this.track = pid; for (const s of Object.values(this.series)) s.clear();
     const i = this.indexOf(pid); this.E0track = i >= 0 ? this.energyOf(i).et : NaN; this.sampleClock = 0;
   },
+  /* The charted particle, once the user has picked it, for the Details card. */
+  picked: false,
+  inspect() {
+    const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
+    const en = this.energyOf(i), q = this.qm[i], B = this.p.B;
+    return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge to mass', q.toFixed(2)], ['Speed', `${Math.hypot(this.vx[i], this.vy[i]).toFixed(0)} px/s`], ['Kinetic energy', fmtSI(en.ke)], ['Potential energy', fmtSI(en.pe)], ['Total energy', fmtSI(en.et)], ['Gyro radius', B ? `${(Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)).toFixed(0)} px` : 'no field']], actions: [] };
+  },
+  deselect() { this.picked = false; },
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
   retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },
   energyOf(i) { const ke = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2), pe = this.qm[i] * this.Vat(this.x[i], this.y[i]); return { ke, pe, et: ke + pe }; },
@@ -409,7 +417,7 @@ export const fields = {
     const c = this.hitCharge(p);
     if (t === 'move') {
       if (c) { this.drag = { kind: 'charge', c, dx: c.x - p.x, dy: c.y - p.y, hold3: this.lift3(c.x, c.y) }; canvas.style.cursor = 'grabbing'; return; }
-      const i = this.hitParticle(p); if (i >= 0) { this.setTrack(this.pid[i]); announce('Charting this particle'); }
+      const i = this.hitParticle(p); if (i >= 0) { this.setTrack(this.pid[i]); this.picked = true; announce('Charting this particle'); }
       return;
     }
     const dq = t === 'plus' ? 1 : -1;

@@ -38,7 +38,7 @@
 """
 import re
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, settle, shot
+from harness import URL, finish, launch, ok, open_page, settle, shot, scene
 with sync_playwright() as p:
     b = launch(p)
     pg = open_page(b, viewport={"width": 1440, "height": 900})
@@ -71,7 +71,7 @@ with sync_playwright() as p:
     ok("zoom_slider_follows", r[1] == f"{r[0]:.2f}×", r[1])
     # collisions: click empty -> spawn, drag throw
     pg.keyboard.press("2"); pg.wait_for_timeout(200)
-    pg.click("#preset-collisions-pool"); pg.wait_for_timeout(100)
+    scene(pg, "#preset-collisions-pool"); pg.wait_for_timeout(100)
     ok("pool_count_disabled", pg.evaluate("document.getElementById('ctl-collisions-count').disabled"))
     r = pg.inner_text("#ctl-collisions-count-note")
     ok("pool_count_note", "15-ball rack" in r, r)
@@ -83,13 +83,13 @@ with sync_playwright() as p:
     ok("thrown_ball_has_speed", r > 100, r)
     # waves: source tool adds a source, enabling f
     pg.keyboard.press("4"); pg.wait_for_timeout(200)
-    pg.click("#preset-waves-ripple"); pg.wait_for_timeout(100)
+    scene(pg, "#preset-waves-ripple"); pg.wait_for_timeout(100)
     ok("f_disabled_without_source", pg.evaluate("document.getElementById('ctl-waves-f').disabled"))
     pg.click("#dock-waves-source"); pg.mouse.click(cx, cy)
     r = pg.evaluate("PhysicsPlayground.labs.waves.sources.length")
     ok("source_added", r == 1, r)
     ok("f_enabled_with_source", not pg.evaluate("document.getElementById('ctl-waves-f').disabled"))
-    pg.click("#ctl-waves-view-int"); pg.click("#preset-waves-lens"); pg.wait_for_timeout(7000)
+    pg.click("#ctl-waves-view-int"); scene(pg, "#preset-waves-lens"); pg.wait_for_timeout(7000)
     pg.screenshot(path=shot("waves_lens_int.png"))
     # chaos: drag bob 2, paused so it is still where it was read when the mouse goes down
     pg.keyboard.press("5"); pg.wait_for_timeout(300)

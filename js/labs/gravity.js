@@ -317,6 +317,25 @@ export const gravity = {
   },
   wantsPan() { return this.p.tool === 'pan'; },
   offStage3() { return false; },
+  /* The followed body, for the Details card. Orbit figures are the two-body elements about the heaviest other body. */
+  inspect() {
+    const b = this.track == null ? null : this.bodies.find(q => q.id === this.track); if (!b) return null;
+    let P = null;
+    for (const q of this.bodies) if (q !== b && (!P || q.m > P.m)) P = q;
+    const star = b.m >= STAR_MASS, title = star ? 'Star' : b.m >= 1.1 ? 'Gas giant' : b.m < 0.25 ? 'Moon' : b.id % 2 ? 'Ocean world' : 'Rocky world', v = Math.hypot(b.vx, b.vy, b.vz);
+    const rows = [['Mass', fmtSI(b.m)], ['Speed', `${fmtSI(v)} px/s`]];
+    if (P) {
+      const rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz);
+      const mu = G0 * this.p.G * (P.m + b.m), E = (ux * ux + uy * uy + uz * uz) / 2 - mu / r, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
+      const a = -mu / (2 * E), e = Math.sqrt(Math.max(0, 1 + 2 * E * h2 / (mu * mu))), bound = E < 0, i = Math.acos(clamp(hz / Math.sqrt(h2 || 1), -1, 1)) * 180 / Math.PI;
+      rows.push(['Distance', `${fmtSI(r)} px`], ['Eccentricity', e.toFixed(3)], ['Orbital period', bound ? `${fmtSI(TAU * Math.sqrt(a * a * a / mu))} s` : 'none'], ['Semi-major axis', bound ? `${fmtSI(a)} px` : 'none'], ['Inclination', `${i.toFixed(1)}°`], ['Orbit', bound ? 'Bound' : 'Escaping']);
+    } else rows.push(['Radius', `${b.r.toFixed(1)} px`]);
+    return { id: b.id, kicker: `Body ${b.id} · camera following`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
+      { label: 'Release camera', run: () => this.deselect() },
+      { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
+    ] };
+  },
+  deselect() { this.track = null; updateNav(); },
   stateSummary() { return { bodies: this.bodies.length }; },
   navExtras: [{ id: 'follow', label: 'Follow', icon: 'follow', title: 'Follow the centre of mass · click a body on the stage to follow it instead · click again to free the camera',
     pressed: () => gravity.p.follow || gravity.track != null,

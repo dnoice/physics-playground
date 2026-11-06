@@ -38,7 +38,7 @@
 ---------
 """
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, settle, shot
+from harness import URL, finish, launch, ok, open_page, settle, shot, scene
 with sync_playwright() as p:
     b = launch(p)
     pg = open_page(b, viewport={"width": 1440, "height": 900})
@@ -68,11 +68,11 @@ with sync_playwright() as p:
     # each preset builds and stays finite for 2 s
     bad = []
     for pre in ["dipole", "quad", "plates", "cyclotron", "exb", "gradb"]:
-        pg.click(f"#preset-fields-{pre}"); pg.wait_for_timeout(2000)
+        scene(pg, f"#preset-fields-{pre}"); pg.wait_for_timeout(2000)
         if not pg.evaluate(F + ".sane()"): bad.append(pre)
     ok("presets_sane", not bad, bad)
     ok("cyclotron_energy_flat", abs(pg.evaluate("(() => { const f = " + F + "; f.clearParticles(); return 0 })()")) == 0)
-    pg.click("#preset-fields-cyclotron"); pg.wait_for_timeout(3000)
+    scene(pg, "#preset-fields-cyclotron"); pg.wait_for_timeout(3000)
     d = pg.evaluate(F + ".stats().drift"); ok("boris_conserves_speed", d is not None and abs(d) < 1e-6, d)
     # stage size never depends on the scene
     sizes = set()
@@ -96,7 +96,7 @@ with sync_playwright() as p:
     # ---- tilted orbits in the flat view: 3D belongs to the global mode, which this suite keeps at 2D
     pg.evaluate("PhysicsPlayground.select('gravity')"); pg.wait_for_timeout(300)
     G = "PhysicsPlayground.labs.gravity"
-    pg.click("#preset-gravity-tilted"); pg.wait_for_timeout(1500)
+    scene(pg, "#preset-gravity-tilted"); pg.wait_for_timeout(1500)
     pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(300)
     ok("tilted_stays_flat", not pg.evaluate(G + ".is3D()") and pg.evaluate("PhysicsPlayground.view.get().mode") == "2d")
     ok("orbit_ball_hidden", pg.evaluate("document.getElementById('nav-orbit').hidden"))

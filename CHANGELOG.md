@@ -86,12 +86,32 @@ not to pause for permission or leave open flags.
 On Dennis's call that the chart, readouts and diagnostics took more room than
 they gave back, the three tiles became one, and the stage grew.
 
-- Every reading is a gauge with a sparkline. Clicking one plots it, up to four
+- Every reading is a tile with a sparkline. Clicking one plots it, up to four
   together, on a shared time axis.
 - The plot is live: hover to read any moment, click or drag to rewind to it,
   wheel to zoom the time window.
 - Diagnostics are a status pill. The top alert and its fix stay in the header,
   and the full list opens on demand.
+
+### The console
+
+On Dennis's call that the workspace was mostly empty boxes and read as
+underdeveloped, the layout was rebuilt around the stage.
+
+- One large stage, an instruments deck beneath it and a full-height Inspector
+  beside them, replacing the Scene, Tools, Parameters and notebook tiles.
+- Scenes are a dropdown in the stage title. Tools moved into a rebuilt gizmo,
+  grouped with the view controls and given room, with tooltips naming each tool
+  and its key.
+- Transport, speed, the rewind timeline and capture share one player bar.
+- The Inspector holds Controls, Experiments, Guide, Math and Library as tabs.
+- **Details card**: clicking a body shows it with live stats. Gravity adds its
+  orbit, computed as two-body elements about the heaviest other body, and a
+  portrait rendered at full detail by the scene.
+- Readings are stat tiles with larger values, room to breathe and sparklines.
+- The scope draws each reading in its own lane on one time axis, in a palette
+  validated for colour-blind separation on the dark surface, and a reading keeps
+  its colour when another is removed.
 
 ### Moving around in 3D
 
@@ -106,6 +126,8 @@ shared by every plane lab, and the tall, wide table showed it worst.
 - Panning a tilted view lagged the pointer; the plane now slides one to one.
 - Any resize threw away the user's angle; now it only rescales the view.
 - Dragging the empty space around an apparatus orbits, as a 3D viewer should.
+- Chaos orbits all the way around, on Dennis's call to see the model front and
+  back.
 
 ### Graphics tiers
 

@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Design Tokens (digiSpace Edition - v2.0)
+    - Title: Design Tokens (digiSpace Edition - v2.1)
     - File Name: tokens.css
     - Relative Path: css/tokens.css
     - Artifact Type: stylesheet
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A darker
+      bench, hairline edges and more generous spacing.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: the formal stack; tokens moved out of
       the v1.3 single file and extended for tiles.
@@ -23,7 +25,7 @@
 
 ✒ Key Features:
     - Dark bench palette with amber and cyan accents.
-    - Tile, gap, radius and shadow tokens for the bento grid.
+    - Tile, gap, radius and shadow tokens for the console.
     - Body grid pins content to the viewport width so nothing widens the
       page.
 
@@ -36,14 +38,14 @@
 */
 @property --sweep { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
 :root {
-  /* An instrument bench laid out as a bento workspace: a live stage tile
-     with transport and timeline, flanked by scene, tool and parameter
-     tiles, above a bay of chart, readout, diagnostics and notebook tiles. */
-  --ink: #0a0e14;
-  --bench: #10151d;
-  --tile: #0f141c;
-  --tile-hi: #141a24;
-  --rule: #242d3a;
+  /* An instrument console: one large stage with its player bar, an
+     instruments deck beneath it, and a full-height inspector beside them. */
+  --ink: #080b11;
+  --bench: #0c1118;
+  --tile: #0e131b;
+  --tile-hi: #131a24;
+  --rule: #232c39;
+  --hair: color-mix(in oklab, white 7%, transparent);
   --rule-soft: color-mix(in oklab, var(--rule) 70%, transparent);
   --text: #e8edf3;
   --muted: #8f9cad;
@@ -52,23 +54,23 @@
   --ok: #6fcf97;
   --warn: #f2c94c;
   --crit: #ef6461;
-  --glass: rgba(14, 19, 27, 0.72);
+  --glass: rgba(11, 15, 22, 0.68);
   --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
-  --gap: 8px;
-  --radius: 14px;
-  --pad: 14px;
+  --gap: 10px;
+  --radius: 16px;
+  --pad: 16px;
   --well: color-mix(in oklab, var(--ink) 72%, var(--bench));
-  --tile-shadow: 0 1px 0 color-mix(in oklab, white 4%, transparent) inset, 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  --tile-shadow: 0 1px 0 color-mix(in oklab, white 5%, transparent) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.9);
   color-scheme: dark;
   interpolate-size: allow-keywords;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: radial-gradient(1200px 600px at 20% -10%, color-mix(in oklab, var(--cyan) 6%, transparent), transparent 60%), var(--ink);
+  background: radial-gradient(1400px 700px at 18% -12%, color-mix(in oklab, var(--cyan) 5%, transparent), transparent 62%), radial-gradient(1000px 600px at 100% 110%, color-mix(in oklab, var(--amber) 3%, transparent), transparent 60%), var(--ink);
   color: var(--text); font: 400 14px/1.5 var(--font-body);
   display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); overflow: hidden; -webkit-font-smoothing: antialiased;
 }

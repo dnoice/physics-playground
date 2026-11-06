@@ -42,6 +42,7 @@ import { is3D, navTick } from './camera.js';
 import { dataRec, drawRecOverlay, histBranch, histCapture, sampleData, updateCaptureChips, updateRewind } from './capture.js';
 import { drawPerf, evaluateDiagnostics, updatePerfNums } from './diagnostics.js';
 import { tickExperiment } from './experiments.js';
+import { updateDetails } from './details.js';
 import { updateDock } from './dock.js';
 import { resizeLab } from './lifecycle.js';
 import { updateNav, updateOrbit } from './navigator.js';
@@ -96,7 +97,7 @@ export function frame(now) {
       $('#hud-fps').textContent = `${Math.round(perf.fps)} fps`;
       updateNav();
     }
-    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
+    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
     if ((diagClock += real) >= 0.5) { diagClock = 0; evaluateDiagnostics(); }
   }
   requestAnimationFrame(frame);

@@ -593,6 +593,45 @@ export function createScene(E, lab) {
   const flash = instanced(fgeo, flashMat, FLASH_CAP); flash.mesh.renderOrder = 7;
   scene.add(farPlanets.mesh, nearPlanets.mesh, atmo, rings.mesh, stars.mesh, corona.mesh, glare.mesh, flash.mesh);
 
+  /* The Details card's small stage: one body at full detail, whatever its size in the main view, lit by the real stars. */
+  const solo = { scene: new THREE.Scene(), planet: withAxis(instanced(new THREE.SphereGeometry(1, 96, 64), planetMat, 1)), star: instanced(new THREE.SphereGeometry(1, 64, 44), starMat, 1), ring: instanced(ringGeo, ringMat, 1) };
+  solo.atmo = new THREE.InstancedMesh(solo.planet.g, atmoMat, 1);
+  solo.atmo.instanceMatrix = solo.planet.mesh.instanceMatrix; solo.atmo.frustumCulled = false; solo.atmo.renderOrder = 2; solo.ring.mesh.renderOrder = 3;
+  solo.scene.background = new THREE.Color(0x02030a);
+  solo.scene.add(solo.planet.mesh, solo.star.mesh, solo.atmo, solo.ring.mesh);
+  const writeRing = (batch, X, Y, Z, s2, f, c, rPx) => {
+    const j = put(batch, X, Y, Z, s2), m = batch.mesh.instanceMatrix.array, o = j * 16, ax = f.ax, ay = f.ay, az = f.az;
+    // The same basis the planet's vertex shader builds, so ring and spin share one axis.
+    const up = Math.abs(ay) < 0.9, cx = up ? -az : 0, cy = up ? 0 : az, cz = up ? ax : -ay, cl = Math.hypot(cx, cy, cz) || 1, qx = cx / cl, qy = cy / cl, qz = cz / cl;
+    const wx = qy * az - qz * ay, wy = qz * ax - qx * az, wz = qx * ay - qy * ax;
+    m[o] = qx * s2; m[o + 1] = qy * s2; m[o + 2] = qz * s2; m[o + 4] = ax * s2; m[o + 5] = ay * s2; m[o + 6] = az * s2; m[o + 8] = wx * s2; m[o + 9] = wy * s2; m[o + 10] = wz * s2;
+    batch.A.array[j * 4] = f.seed; batch.A.array[j * 4 + 3] = rPx; batch.C.array[j * 3] = c[0]; batch.C.array[j * 3 + 1] = c[1]; batch.C.array[j * 3 + 2] = c[2];
+  };
+  /* Three-quarter lit by the brightest star, so the terminator shows. */
+  function portrait(l) {
+    const b = l.bodies.find(q => q.id === l.track); if (!b) return null;
+    const X = b.x, Y = b.z, Z = b.y, r = b.r, f = faceOf(b.id), star = b.m >= STAR_MASS, RPX = 220;
+    solo.planet.n = solo.star.n = solo.ring.n = 0;
+    let ringed = false;
+    if (star) {
+      const c = starTint(b.m, rgb), i = put(solo.star, X, Y, Z, r);
+      solo.star.A.array[i * 4] = f.seed; solo.star.A.array[i * 4 + 3] = RPX; solo.star.C.array.set(c.slice(0, 3), i * 3);
+    } else {
+      const type = typeOf(b.m, f), c = tintOf(l.bodyColor3(b)), i = put(solo.planet, X, Y, Z, r), P = solo.planet;
+      ringed = type === 2 && b.m >= RING_MASS && f.ring;
+      P.A.array[0] = f.seed; P.A.array[1] = type; P.A.array[2] = ringed ? 1 : 0; P.A.array[3] = f.rate;
+      P.B.array[0] = f.ax; P.B.array[1] = f.ay; P.B.array[2] = f.az; P.B.array[3] = RPX;
+      P.C.array[i * 3] = c[0]; P.C.array[i * 3 + 1] = c[1]; P.C.array[i * 3 + 2] = c[2];
+      if (ringed) writeRing(solo.ring, X, Y, Z, r, f, c, RPX);
+    }
+    flush(solo.planet); flush(solo.star); flush(solo.ring);
+    solo.atmo.count = solo.planet.n; solo.atmo.visible = solo.planet.n > 0;
+    let s = null;
+    for (const q of l.bodies) if (q !== b && q.m >= STAR_MASS && (!s || q.m > s.m)) s = q;
+    const dx = s ? s.x - b.x : 1, dz = s ? s.y - b.y : 0.6, c = Math.cos(0.95), n = Math.sin(0.95), ex = dx * c - dz * n, ez = dx * n + dz * c, len = Math.hypot(ex, ez) || 1, d = r * (ringed ? 10.5 : 7.4);
+    return { scene: solo.scene, eye: [X + ex / len * d * 0.96, Y + d * 0.27, Z + ez / len * d * 0.96], at: [X, Y, Z], near: Math.max(0.01, d * 0.05), far: d * 4 };
+  }
+
   /* The orbital plane and everything drawn as ribbons. */
   const gridU = { uCol: { value: new THREE.Color(0.014, 0.024, 0.035) }, uR: { value: 800 }, uS: { value: 100 }, uFade: { value: 0 }, uGain: { value: 1 } };
   const gridMat = new THREE.ShaderMaterial({
@@ -705,13 +744,7 @@ export function createScene(E, lab) {
         Bx[i * 4] = f.ax; Bx[i * 4 + 1] = f.ay; Bx[i * 4 + 2] = f.az; Bx[i * 4 + 3] = rPx;
         C[i * 3] = c[0]; C[i * 3 + 1] = c[1]; C[i * 3 + 2] = c[2];
         if (ring) {
-          const j = put(rings, X, Y, Z, s), m = rings.mesh.instanceMatrix.array, o = j * 16, ax = f.ax, ay = f.ay, az = f.az;
-          // The same basis the planet's vertex shader builds, so ring and spin share one axis.
-          const up = Math.abs(ay) < 0.9, cx = up ? -az : 0, cy = up ? 0 : az, cz = up ? ax : -ay, cl = Math.hypot(cx, cy, cz) || 1, qx = cx / cl, qy = cy / cl, qz = cz / cl;
-          const wx = qy * az - qz * ay, wy = qz * ax - qx * az, wz = qx * ay - qy * ax;
-          m[o] = qx * s; m[o + 1] = qy * s; m[o + 2] = qz * s; m[o + 4] = ax * s; m[o + 5] = ay * s; m[o + 6] = az * s; m[o + 8] = wx * s; m[o + 9] = wy * s; m[o + 10] = wz * s;
-          const RA = rings.A.array, RC = rings.C.array;
-          RA[j * 4] = f.seed; RA[j * 4 + 3] = rPx; RC[j * 3] = c[0]; RC[j * 3 + 1] = c[1]; RC[j * 3 + 2] = c[2];
+          writeRing(rings, X, Y, Z, s, f, c, rPx);
         }
         dropMark(b, plane, depth, px, c);
       }
@@ -811,7 +844,7 @@ export function createScene(E, lab) {
   }
 
   const api = {
-    scene, studio: null, exposure: 1, bloom: { strength: BLOOM, radius: 0.42, threshold: 1.05 },
+    portrait, scene, studio: null, exposure: 1, bloom: { strength: BLOOM, radius: 0.42, threshold: 1.05 },
     sync(l, view) {
       const B = lab.bodies;
       L.uClock.value = reduceMotion ? 0 : view.t; L.uSpin.value = reduceMotion ? 0 : lab.t;
