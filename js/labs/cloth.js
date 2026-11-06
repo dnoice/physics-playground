@@ -53,6 +53,8 @@ import { canvas } from '../shell/state.js';
 export const CL_PTS = 5000, CL_LINKS = 10000, CL_MAXSTEP = 60;
 export const cloth = {
   id: 'cloth', name: 'Cloth', title: 'Verlet cloth',
+  rig3: { plane: 'wall', yaw: 0.3, pitch: 0.07, fit: 1.46, height: 0.05, pitchMin: -0.05, target: [0, 0.12, 0] },
+  zoomRange: [0.5, 10],
   eq: 'x<sub>n+1</sub> = 2x<sub>n</sub> − x<sub>n−1</sub> + aΔt<sup>2</sup>',
   eqTex: '\\mathbf x_{n+1} = 2\\mathbf x_n - \\mathbf x_{n-1} + \\mathbf a\\,\\Delta t^2',
   aria: 'Cloth simulation: a sheet of linked points hanging under gravity',
@@ -60,10 +62,10 @@ export const cloth = {
   interact: [
     '<b>Grab</b> pulls the nearest point. <b>Cut</b> slices every link your stroke crosses. <b>Pin</b> fixes or frees the point you click.',
     '<b>Ball</b> drags a round collider through the sheet, so you can drape and push it.',
-    'Hold <b>Shift</b> or use the right mouse button to cut with any tool.',
+    'Hold <b>Shift</b> or use the right mouse button to cut with any tool. In 3D mode the right button still cuts and Shift-drag pans, so orbit with the middle button or the axis ball.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
-    { id: 'grab', label: 'Grab', key: 'g', icon: 'grab', hint: 'Drag to pull the cloth · Shift-drag or right-drag to cut' },
+    { id: 'grab', label: 'Grab', key: 'g', icon: 'grab', get hint() { return `Drag to pull the cloth · ${cloth.is3D && cloth.is3D() ? 'right-drag' : 'Shift-drag or right-drag'} to cut`; } },
     { id: 'cut', label: 'Cut', key: 'c', icon: 'cut', hint: 'Drag across the cloth to slice it' },
     { id: 'pin', label: 'Pin', key: 'n', icon: 'pin', hint: 'Click a point to pin or free it' },
     { id: 'ball', label: 'Ball', key: 'b', icon: 'ball', hint: 'Drag the ball through the cloth to push and drape it' },
@@ -123,7 +125,6 @@ export const cloth = {
     else if (preset === 'net') { for (let c = 0; c < cols; c++) this.pin[id(c, 0)] = 1; }
     this.aliveCount = this.L;
   },
-  onResize(w, h, ow, oh) { if (Math.abs(w - ow) > 12 || Math.abs(h - oh) > 12) rebuild(this); else { this.w = w; this.h = h; } },
   worldRect() { return { w: this.w, h: this.h }; },
   step(dt) {
     const n = this.n, X = this.x, Y = this.y, OX = this.ox, OY = this.oy, pin = this.pin, dt2 = dt * dt;
@@ -278,6 +279,53 @@ export const cloth = {
       g.fill(paths[k]);
     }
   },
+  /* The readouts draw() refreshes in 2D. */
+  measure3() {
+    const X = this.x, Y = this.y;
+    let sum = 0, mx = 0, cnt = 0;
+    for (let k = 0; k < this.L; k++) {
+      if (!this.alive[k]) continue;
+      const a = this.la[k], b = this.lb[k], s = Math.hypot(X[b] - X[a], Y[b] - Y[a]) / this.rest[k] - 1;
+      sum += s; if (s > mx) mx = s; cnt++;
+    }
+    this.meanStretch = cnt ? sum / cnt : 0; this.maxStretch = mx; this.aliveCount = cnt;
+  },
+  /* Screen overlay in 3D: the cut trail, the grab handle and what the tool would act on. */
+  overlay3(g) {
+    this.measure3();
+    const k = this.plane3().k, lift = i => (this.relief3 ? this.relief3[i] * k : 0), H = this.hover, tool = this.p.tool, X = this.x, Y = this.y;
+    const now = performance.now();
+    if (this.cutTrail.length) this.cutTrail = this.cutTrail.filter(q => now - q.t < 350);
+    if (this.cutTrail.length > 1) {
+      g.strokeStyle = THEME.crit; g.lineWidth = 2; g.globalAlpha = 0.85; g.lineJoin = 'round'; g.beginPath();
+      let on = false;
+      for (const q of this.cutTrail) { const s = this.project3(q.x, q.y, 0.04); if (!s) continue; if (on) g.lineTo(s.x, s.y); else g.moveTo(s.x, s.y); on = true; }
+      g.stroke(); g.globalAlpha = 1;
+    }
+    if (this.grab) {
+      const i = this.grab.i, s = this.project3(X[i], Y[i], lift(i));
+      if (s) {
+        g.strokeStyle = THEME.text; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x, s.y, 9, 0, TAU); g.stroke();
+        g.fillStyle = THEME.amber; g.beginPath(); g.arc(s.x, s.y, 3, 0, TAU); g.fill();
+      }
+      return;
+    }
+    if (!H || this.cutting || this.ball) return;
+    if (tool === 'ball') {
+      const R = this.ballR();
+      g.strokeStyle = THEME.amber; g.globalAlpha = 0.6; g.lineWidth = 1.5; g.setLineDash([5, 5]); g.beginPath();
+      for (let a = 0; a <= 40; a++) { const s = this.project3(H.x + R * Math.cos(a / 40 * TAU), H.y + R * Math.sin(a / 40 * TAU), 0); if (s) g.lineTo(s.x, s.y); }
+      g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+    } else if (tool === 'cut') {
+      const s = this.project3(H.x, H.y, 0);
+      if (s) { g.strokeStyle = THEME.crit; g.lineWidth = 1.5; g.globalAlpha = 0.7; g.beginPath(); g.arc(s.x, s.y, 7, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+    } else {
+      const i = this.nearest(H, tool === 'pin' ? 20 : 40); if (i < 0) return;
+      const s = this.project3(X[i], Y[i], lift(i)); if (!s) return;
+      g.strokeStyle = tool === 'pin' && this.pin[i] ? THEME.crit : THEME.amber; g.lineWidth = 1.5; g.globalAlpha = 0.9;
+      g.beginPath(); g.arc(s.x, s.y, 9, 0, TAU); g.stroke(); g.globalAlpha = 1;
+    }
+  },
   mini(g, k) {
     g.fillStyle = 'rgba(95,208,223,0.75)'; const r = Math.max(1, 0.9 / k);
     for (let i = 0; i < this.n; i++) g.fillRect(this.x[i] - r, this.y[i] - r, 2 * r, 2 * r);
@@ -325,7 +373,8 @@ export const cloth = {
     <div class="f" data-tex="\\Delta = \\frac{|\\mathbf d| - L_0}{|\\mathbf d|}\\cdot\\frac{\\mathbf d}{2}"></div>
     <p>Repeating that relaxation <i>k</i> times per step converges toward a stiff sheet; fewer iterations give stretchier fabric. Technique after <cite>Jakobsen (2001), Advanced Character Physics</cite>.</p>
     <p>A link tears once |d| passes the tear factor × L<sub>0</sub>. The ball collider pushes any point inside it back to its surface on every iteration, and a per-step cap of ${CL_MAXSTEP} px keeps extreme wind from flinging points off the stage.</p>
-    <p>The fabric shade comes from each panel’s area A against its rest area A<sub>0</sub>: a sheet seen edge-on looks smaller, so bunching into folds reads as cloth turning away from the light. A negative area means the panel has flipped over, and the warm lining shows.</p>`,
+    <p>The fabric shade comes from each panel’s area A against its rest area A<sub>0</sub>: a sheet seen edge-on looks smaller, so bunching into folds reads as cloth turning away from the light. A negative area means the panel has flipped over, and the warm lining shows.</p>
+    <p>The solver is planar: the depth in the 3D view is a visual relief, a height solved per node for display from compression, wind and contact, and it never feeds back into the cloth.</p>`,
 };
 
 
@@ -333,12 +382,13 @@ export const cloth = {
 Object.assign(cloth, genericState, {
   histBudget: 16e6, histInterval: 0.25,
   snapshot() {
-    const n = this.n, a = new Float32Array(n * 4);
+    const n = this.n, a = new Float64Array(n * 4), { gravity, wind, iters, damping, tearable, tear } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 4; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.ox[i]; a[o + 3] = this.oy[i]; }
-    return { n, L: this.L, a, alive: this.alive.slice(0, this.L), pin: this.pin.slice(0, n) };
+    return { n, L: this.L, a, alive: this.alive.slice(0, this.L), pin: this.pin.slice(0, n), p: { gravity, wind, iters, damping, tearable, tear } };
   },
   restore(s) {
     if (s.n !== this.n || s.L !== this.L) return false;
+    Object.assign(this.p, s.p);
     for (let i = 0; i < s.n; i++) { const o = i * 4; this.x[i] = s.a[o]; this.y[i] = s.a[o + 1]; this.ox[i] = s.a[o + 2]; this.oy[i] = s.a[o + 3]; }
     this.alive.set(s.alive); this.pin.set(s.pin);
     let a = 0; for (let k = 0; k < this.L; k++) a += this.alive[k];
