@@ -39,7 +39,8 @@ import { genericState } from '../core/codec.js';
 import { RAMP_HEAT, THEME } from '../core/color.js';
 import { brushRing, drawSphere, rampRgb, sphereSprite } from '../core/draw.js';
 
-import { TAU, clamp, fmtSI, pct, rand } from '../core/util.js';
+import { FOV3 } from '../core/math3d.js';
+import { TAU, clamp, fmtSI, pct, rand, reduceMotion } from '../core/util.js';
 import { view } from '../core/view.js';
 
 import { camOf, camXf } from '../shell/camera.js';
@@ -48,6 +49,7 @@ import { setParam } from '../shell/lifecycle.js';
 
 
 import { announce, canvas } from '../shell/state.js';
+import { stage3d } from './stage3d.js';
 
 /* ================================================================== */
 /*  Lab 2 · Collisions                                                 */
@@ -57,6 +59,7 @@ export const COLL_RGB = Array.from({ length: 24 }, (_, b) => rampRgb(RAMP_HEAT, 
 export const collisions = {
   id: 'collisions', name: 'Collisions', title: 'Elastic and inelastic collisions',
   zoomRange: [0.5, 16],
+  rig3: { plane: 'floor', yaw: 0.42, pitch: 0.64, fit: 1.26, height: 2.7, target: [0, -0.7, 0.3] },
   eq: 'J = −(1 + e) μ v<sub>n</sub>',
   eqTex: 'J = -(1 + e)\\,\\mu\\, v_n',
   aria: 'Collision simulation: discs bouncing in a box',
@@ -100,6 +103,7 @@ export const collisions = {
   grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, vel: velocityTracker(),
   wallImp: 0, wallTime: 0, Z: NaN, KE0: 0,
   dt() { return 1 / 240; }, maxSteps: 48,
+  tiltNow: 0,
 
   add(x, y, vx, vy, r) {
     if (this.n >= COLL_CAP) return -1;
@@ -340,6 +344,86 @@ export const collisions = {
     if (tool === 'heat') brushRing(g, hv, 70, THEME.amber);
     else if (tool === 'cool') brushRing(g, hv, 70, THEME.cyan);
     else if (tool === 'erase') brushRing(g, hv, 26, THEME.crit);
+  },
+  /* Frame the table with its rails and trunnions, which the plane alone does not reach. */
+  dist0() {
+    const P = this.plane3(), t = Math.tan(FOV3 / 2), a = view.w / Math.max(1, view.h);
+    return Math.max((P.hh + 1.2) / t, (P.hw + 1.4) / (t * a)) * this.rig3.fit;
+  },
+  /* The table's angle: tilted up like a bagatelle board, so the lab's +y gravity runs downhill. */
+  tilt3() { return this.tiltNow; },
+  /* Cosmetic easing toward the angle the gravity slider asks for, called from the scene's sync; never saved. */
+  ease3(dt) {
+    const reach = this.h * 5 / Math.max(this.w, this.h) + 0.72, room = Math.asin(Math.min(1, (this.rig3.height - 0.32) / reach));
+    const goal = Math.min(room, 0.6 * (1 - Math.exp(-this.p.gravity / 420)));
+    this.tiltNow = reduceMotion ? goal : this.tiltNow + (goal - this.tiltNow) * (1 - Math.exp(-dt * 3));
+  },
+  /* Balls stand on the plane, so the pointer meets a sphere above its disc: a ray that strikes one
+     lands on it, and a held ball follows the pointer at its own height. */
+  pick3(s) {
+    if (this.p.tool !== 'grab') return stage3d.pick3.call(this, s);
+    const V = this.basis3(), P = this.plane3(), t = Math.tan(FOV3 / 2), a = V.w / Math.max(1, V.h), nx = (2 * s.x / V.w - 1) * t * a, ny = (1 - 2 * s.y / V.h) * t;
+    const d = [0, 1, 2].map(i => V.f[i] + V.r[i] * nx + V.u[i] * ny), e = [0, 1, 2].map(i => V.eye[i] - P.o[i]);
+    const dot = (A, B) => A[0] * B[0] + A[1] * B[1] + A[2] * B[2];
+    const ex = dot(e, P.u) / P.k + P.cx, ey = dot(e, P.v) / P.k + P.cy, ez = dot(e, P.n) / P.k, dx = dot(d, P.u), dy = dot(d, P.v), dz = dot(d, P.n);
+    if (this.grab) {
+      const q = (this.r[this.grab.i] - ez) / dz;
+      return q > 0 ? { x: ex + dx * q, y: ey + dy * q } : stage3d.pick3.call(this, s);
+    }
+    const dd = dx * dx + dy * dy + dz * dz;
+    let best = Infinity;
+    for (let i = 0; i < this.n; i++) {
+      const r = this.r[i], ox = ex - this.x[i], oy = ey - this.y[i], oz = ez - r, b = ox * dx + oy * dy + oz * dz, c = ox * ox + oy * oy + oz * oz - r * r, h = b * b - dd * c;
+      if (h < 0) continue;
+      const q = (-b - Math.sqrt(h)) / dd;
+      if (q > 0 && q < best) best = q;
+    }
+    return best < Infinity ? { x: ex + dx * best, y: ey + dy * best } : stage3d.pick3.call(this, s);
+  },
+  /* Screen overlay in 3D: every tool's preview, laid on the table so it leans with the tilt. */
+  overlay3(g) {
+    const P = this.plane3(), tool = this.p.tool, B = this.brush || this.hover, G = this.grab, k = P.k;
+    const at = (x, y, lift) => { const q = this.to3(x, y, lift, P); return this.projectScene(q[0], q[1], q[2]); };
+    const circle = (x, y, r, lift) => {
+      g.beginPath();
+      for (let a = 0; a < 64; a++) { const s = at(x + r * Math.cos(a / 64 * TAU), y + r * Math.sin(a / 64 * TAU), lift); if (s) g.lineTo(s.x, s.y); }
+      g.closePath();
+    };
+    g.save(); g.lineCap = 'round';
+    if (tool === 'grab' && G) {
+      const i = G.i, x = this.x[i], y = this.y[i], r = this.r[i], lift = r * k, c = at(x, y, lift), m = at(G.tx, G.ty, lift);
+      g.strokeStyle = THEME.text; g.lineWidth = 1.5; g.globalAlpha = 0.9; circle(x, y, r + 3, lift); g.stroke();
+      // The spring: a coil from the ball to where the pointer is pulling it.
+      const dx = G.tx - x, dy = G.ty - y, L = Math.hypot(dx, dy);
+      if (L > 2 && c && m) {
+        const turns = Math.max(3, Math.min(10, Math.round(L / 14))), ux = dx / L, uy = dy / L, A = Math.min(5, L / 6);
+        g.strokeStyle = THEME.cyan; g.lineWidth = 1.4; g.globalAlpha = 0.85; g.beginPath(); g.moveTo(c.x, c.y);
+        for (let q = 1; q < turns * 12; q++) { const f = q / (turns * 12), w = Math.sin(f * turns * TAU) * A, s = at(x + dx * f - uy * w, y + dy * f + ux * w, lift); if (s) g.lineTo(s.x, s.y); }
+        g.lineTo(m.x, m.y); g.stroke();
+        g.fillStyle = THEME.cyan; g.beginPath(); g.arc(m.x, m.y, 3, 0, TAU); g.fill();
+      }
+      // The throw: where the ball would go in the next quarter second if released now.
+      const v = Math.hypot(this.vel.vx, this.vel.vy), cap = v > 2500 ? 2500 / v : 1;
+      if (v > 20 && c) {
+        const vx = this.vel.vx * cap, vy = this.vel.vy * cap, e = at(x + vx * 0.25, y + vy * 0.25, lift), b = at(x + vx * 0.25 - (vx - vy * 0.5) * 0.03, y + vy * 0.25 - (vy + vx * 0.5) * 0.03, lift), d = at(x + vx * 0.25 - (vx + vy * 0.5) * 0.03, y + vy * 0.25 - (vy - vx * 0.5) * 0.03, lift);
+        if (e && b && d) {
+          g.strokeStyle = g.fillStyle = THEME.amber; g.lineWidth = 2; g.globalAlpha = 0.95; g.beginPath(); g.moveTo(c.x, c.y); g.lineTo(e.x, e.y); g.stroke();
+          g.beginPath(); g.moveTo(e.x, e.y); g.lineTo(b.x, b.y); g.lineTo(d.x, d.y); g.closePath(); g.fill();
+          g.font = `400 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(`${(v * cap).toFixed(0)} px/s`, e.x + 9, e.y);
+        }
+      }
+    } else if (tool === 'grab' && B) {
+      const i = this.hit(B);
+      if (i >= 0) { g.strokeStyle = THEME.amber; g.lineWidth = 1.5; g.globalAlpha = 0.9; circle(this.x[i], this.y[i], this.r[i] + 3, this.r[i] * k); g.stroke(); }
+      else if (B.x >= 0 && B.x <= this.w && B.y >= 0 && B.y <= this.h) {
+        const r = this.p.radius;
+        g.strokeStyle = THEME.amber; g.lineWidth = 1.5; g.globalAlpha = 0.6; g.setLineDash([4, 4]); circle(clamp(B.x, r, this.w - r), clamp(B.y, r, this.h - r), r, 0.01); g.stroke(); g.setLineDash([]);
+      }
+    } else if (B) {
+      const R = tool === 'erase' ? 26 : 70, col = tool === 'heat' ? THEME.amber : tool === 'cool' ? THEME.cyan : THEME.crit;
+      g.strokeStyle = col; g.lineWidth = this.brush ? 2 : 1.5; g.globalAlpha = this.brush ? 0.95 : 0.65; g.setLineDash(this.brush ? [] : [5, 5]); circle(B.x, B.y, R, 0.015); g.stroke(); g.setLineDash([]);
+    }
+    g.restore();
   },
   mini(g, k) {
     g.fillStyle = THEME.cyan; g.globalAlpha = 0.8;
