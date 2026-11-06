@@ -1,0 +1,126 @@
+/*
+✒ Metadata
+    - Title: Control Styles (digiSpace Edition - v2.0)
+    - File Name: controls.css
+    - Relative Path: css/controls.css
+    - Artifact Type: stylesheet
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
+      of the v1.3 single-file playground when Dennis asked for a proper
+      separation of concerns so the stack can keep growing; behaviour
+      unchanged. v2.0 lets switches show why they are disabled.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    Buttons, segmented choices, sliders, switches and the Parameters grid.
+
+✒ Key Features:
+    - Parameters flow into two or three columns as the tile widens.
+    - Disabled controls keep their reason visible underneath.
+    - Large touch targets on coarse pointers.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+/* ---------- buttons ---------- */
+.btn {
+  appearance: none; font: 500 13px/1 var(--font-body); color: var(--text); background: var(--ink);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px; min-height: 34px; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: border-color 0.2s, background 0.2s, transform 0.12s var(--ease), box-shadow 0.2s, color 0.2s;
+}
+.btn .ms { font-size: 18px; }
+.btn:hover { border-color: var(--muted); background: color-mix(in oklab, var(--ink) 80%, var(--muted) 10%); }
+.btn:active { transform: translateY(1px) scale(0.985); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 90%, white), var(--amber)); border-color: var(--amber); color: #1a1206; box-shadow: 0 2px 12px color-mix(in oklab, var(--amber) 25%, transparent); }
+.btn-primary:hover { border-color: var(--amber); background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 80%, white), var(--amber)); }
+.btn-fix { min-height: 28px; padding: 5px 9px; font-size: 12px; background: color-mix(in oklab, var(--ink) 85%, currentColor 8%); }
+.btn-rec .ms { color: var(--crit); }
+.btn[aria-pressed="true"] { border-color: var(--crit); color: var(--crit); background: color-mix(in oklab, var(--crit) 10%, var(--ink)); }
+.btn[aria-pressed="true"] .ms { animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { to { opacity: 0.25; } }
+
+/* ---------- segmented choices ---------- */
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button {
+  appearance: none; font: 500 12.5px/1 var(--font-body); color: var(--muted); background: var(--ink);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 7px 11px; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.seg button:hover { color: var(--text); border-color: var(--muted); }
+.seg button[aria-checked="true"] { color: #1a1206; background: var(--amber); border-color: var(--amber); }
+.seg-wrap { display: grid; gap: 8px; }
+.seg-label { font-size: 13px; line-height: 1.35; }
+
+/* ---------- parameter controls ---------- */
+.params { display: grid; gap: 18px; }
+@container tile (min-width: 390px) { .params { grid-template-columns: 1fr 1fr; column-gap: 20px; } .params > .wide { grid-column: 1 / -1; } }
+@container tile (min-width: 760px) { .params { grid-template-columns: 1fr 1fr 1fr; } }
+.ctl { display: grid; gap: 5px; align-content: start; }
+.ctl-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ctl-head label { font-size: 13px; line-height: 1.35; }
+.ctl-tools { display: inline-flex; align-items: center; gap: 4px; }
+.ctl-val {
+  appearance: none; background: none; border: 0; padding: 2px 3px; border-radius: 4px; cursor: text;
+  font: 400 12px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap;
+  border-bottom: 1px dashed transparent; transition: border-color 0.2s, background 0.2s;
+}
+.ctl-val:hover { border-bottom-color: color-mix(in oklab, var(--amber) 60%, transparent); background: color-mix(in oklab, var(--amber) 8%, transparent); }
+output.ctl-val { cursor: default; }
+.ctl-edit { width: 7.5em; font: 400 12px/1 var(--font-mono); color: var(--text); background: var(--ink); text-align: right; border: 1px solid var(--amber); border-radius: 4px; padding: 3px 5px; }
+.ctl-reset {
+  appearance: none; background: none; border: 0; padding: 1px; color: var(--muted); cursor: pointer; border-radius: 4px; display: inline-flex;
+  transition: color 0.2s, transform 0.3s var(--ease);
+}
+.ctl-reset .ms { font-size: 15px; }
+.ctl-reset:hover { color: var(--amber); transform: rotate(-90deg); }
+.ctl-reset[hidden] { display: none; }
+.ctl-note { font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.ctl-note:empty { display: none; }
+.ctl-out { font: 400 12px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ctl.is-disabled label, .ctl.is-disabled .ctl-val { opacity: 0.45; }
+.range-wrap { position: relative; }
+.range-wrap::before {
+  content: ""; position: absolute; top: 4px; width: 2px; height: 14px; border-radius: 1px; pointer-events: none;
+  left: calc(7px + (100% - 14px) * var(--notch, 0.5) - 1px); background: var(--muted); opacity: 0.55;
+}
+.range-wrap.no-notch::before { display: none; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer; position: relative; }
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--amber) 0 var(--fill, 50%), var(--rule) var(--fill, 50%) 100%); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%;
+  background: var(--text); border: 2px solid var(--ink); box-shadow: 0 0 0 1px var(--amber); transition: box-shadow 0.2s, transform 0.15s var(--ease);
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); }
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1px var(--amber), 0 0 0 5px color-mix(in oklab, var(--cyan) 45%, transparent); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--rule); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--amber); }
+input[type="range"]::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: var(--text); border: 2px solid var(--ink); }
+input[type="range"]:disabled { cursor: not-allowed; opacity: 0.4; }
+.switch {
+  appearance: none; background: none; border: 0; padding: 2px 0; color: var(--text); font: inherit; font-size: 13px;
+  display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left;
+}
+.switch:disabled { cursor: not-allowed; }
+.switch:disabled .switch-track, .switch:disabled .switch-text > span:first-child { opacity: 0.45; }
+.switch-text { display: grid; gap: 2px; text-align: left; }
+.switch-note { font-size: 11.5px; line-height: 1.4; color: var(--muted); }
+.switch-note:empty { display: none; }
+.switch-track { width: 30px; height: 18px; border-radius: 9px; background: var(--rule); position: relative; flex: none; transition: background 0.2s; }
+.switch-thumb { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--muted); transition: transform 0.22s var(--ease), background 0.2s; }
+.switch[aria-checked="true"] .switch-track { background: color-mix(in oklab, var(--amber) 35%, transparent); }
+.switch[aria-checked="true"] .switch-thumb { transform: translateX(12px); background: var(--amber); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule-soft); }
+h4.sub { margin: 0; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }

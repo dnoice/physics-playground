@@ -1,0 +1,65 @@
+/*
+✒ Metadata
+    - Title: Responsive Styles (digiSpace Edition - v2.0)
+    - File Name: responsive.css
+    - Relative Path: css/responsive.css
+    - Artifact Type: stylesheet
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+      for v2.0 on Dennis's direction: the bento layout's reflow.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    Reflows the workspace for narrower screens and compacts the lab rail.
+
+✒ Key Features:
+    - Rail drops tab numbers at 1440 px and the selected equation at 1300
+      px.
+    - Two-column bento below 1180 px; single column below 760 px.
+    - Reduced-motion and coarse-pointer adjustments.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+/* Seven labs crowd the rail first: drop the numbers, then the selected
+   lab's equation, before the rail ever has to scroll. */
+@media (max-width: 1440px) { .tab-n { display: none; } }
+@media (max-width: 1300px) { .tab[aria-selected="true"] .tab-eq { max-width: 0; opacity: 0; } }
+/* ---------- narrower screens: the bento reflows and the page scrolls ---------- */
+@media (max-width: 1180px) {
+  html, body { height: auto; }
+  body { display: block; overflow: auto; }
+  .bento {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto;
+    grid-template-areas: "stage stage" "scene tools" "params params" "chart reads" "diag notes";
+  }
+  .bento.no-bay { grid-template-areas: "stage stage" "scene tools" "params params"; grid-template-rows: none; }
+  .tile-stage { height: min(68vh, 640px); min-height: 360px; }
+  .bento.focus .tile-stage { height: calc(100vh - 76px); }
+  .tile-chart, .tile-readouts, .tile-diag, .tile-notes { max-height: 460px; }
+  .tile-chart { min-height: 240px; }
+  .tile-scene, .tile-tools { max-height: 420px; }
+}
+@media (max-width: 760px) {
+  .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "tools" "scene" "params" "chart" "reads" "diag" "notes"; padding: 6px; gap: 6px; }
+  .bento.no-bay { grid-template-areas: "stage" "tools" "scene" "params"; }
+  .brand h1 { display: none; }
+  .brand { padding-right: 6px; }
+  .tab { padding: 0 10px; }
+  .tab-n { display: none; }
+  .tile-stage { height: min(64vh, 560px); min-height: 330px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

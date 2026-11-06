@@ -1,0 +1,36 @@
+/*
+✒ Metadata
+    - Title: Markdown Lint Rules (digiSpace Edition - v2.0)
+    - File Name: .markdownlint.jsonc
+    - Relative Path: .markdownlint.jsonc
+    - Artifact Type: config
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+      with the project documentation for the formal stack.
+
+✒ Description:
+    markdownlint settings for the project's documentation: the
+    vscode-markdownlint defaults, except that table rows and code blocks
+    may run past 80 characters.
+
+✒ Key Features:
+    - Prose wraps at 80 characters (MD013).
+    - Table rows are exempt, so reference tables stay one row per item.
+    - Code blocks are exempt, so commands are never broken.
+
+✒ Other Important Information:
+    - Dependencies: none; read by vscode-markdownlint and markdownlint-cli2
+    - Compatible platforms: markdownlint 0.30+ in any editor or CI
+---------
+*/
+{
+  "default": true,
+  "MD013": { "line_length": 80, "tables": false, "code_blocks": false }
+}

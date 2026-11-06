@@ -1,0 +1,36 @@
+# ✒ Metadata
+#     - Title: Git Attributes (digiSpace Edition - v2.1)
+#     - File Name: .gitattributes
+#     - Relative Path: .gitattributes
+#     - Artifact Type: config
+#     - Version: 2.1.0
+#     - Date: 11/06/2026
+#     - Update: Friday, November 06, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       with the local repository; pins line endings.
+#
+# ✒ Description:
+#     Keeps every text file LF in the repository and in the working tree,
+#     whatever core.autocrlf says on the machine, and marks binary assets so
+#     Git never touches them.
+#
+# ✒ Key Features:
+#     - LF everywhere, which the shipped modules and tools already use.
+#     - Font and image assets are binary.
+#
+# ✒ Other Important Information:
+#     - Dependencies: none
+#     - Compatible platforms: Git 2.x on any OS
+# ---------
+
+* text=auto eol=lf
+*.woff2 binary
+*.png binary
+*.webm binary
+
+# ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!

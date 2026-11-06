@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<!--
+✒ Metadata
+    - Title: Physics Playground (digiSpace Edition - v2.0)
+    - File Name: index.html
+    - Relative Path: index.html
+    - Artifact Type: markup
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Rebuilt
+      as the entry page of a multi-file project on Dennis's direction: bento
+      layout of tiles, Material Symbols icons, KaTeX math, an import map for
+      three.js, and two new features, the Fields lab and a 3D orbit view for
+      gravity, plus guided experiments.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    The workspace page of the physics playground: seven live labs (gravity,
+    collisions, fluid, waves, chaos, cloth, fields) laid out as a bento grid
+    of tiles around one stage. It holds the markup, the stylesheet order,
+    the third-party links and the import map; all behaviour lives in
+    js/main.js and the modules it loads.
+
+✒ Key Features:
+    - Bento workspace: stage tile, Scene, Tools and Parameters tiles, and a
+      bottom bay with chart, readouts, diagnostics and a notebook
+      (experiments, guide, math, library).
+    - Focus mode (F) and a hideable bottom bay (Shift+B); the layout reflows
+      below 1180 px and 760 px.
+    - Material Symbols Rounded from Google Fonts, subset with icon_names to
+      the glyphs the code uses.
+    - Import map pinning three.js 0.187.0 and KaTeX 0.19.1 on jsDelivr;
+      KaTeX styles and fonts are vendored because the artifact host only
+      allows fonts from Google or the page itself.
+    - Keyboard sheet (?) as the single floating panel; a polite live region
+      announces state changes.
+
+✒ Usage Instructions:
+    Serve the folder over HTTP (modules do not load from file://):
+    $ npm run dev
+    then open http://localhost:5173/. A #lab hash (#fields) opens that lab.
+
+✒ Other Important Information:
+    - Dependencies: Google Fonts (IBM Plex, Instrument Serif, Material
+      Symbols Rounded), jsDelivr (three@0.187.0, katex@0.19.1 module),
+      vendored KaTeX CSS and fonts in vendor/katex
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+    - The header follows the doctype because the artifact host rejects pages
+      that do not begin with it.
+---------
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Simulation Playground</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='6' fill='%23f2a541'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='6' fill='none' stroke='%235fd0df' stroke-width='2' transform='rotate(-24 16 16)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,bookmark,bubble_chart,category,check_circle,close,close_fullscreen,construction,content_cut,cyclone,data_table,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,fiber_manual_record,fit_screen,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,warning,water_drop&display=block">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/icons.css">
+<link rel="stylesheet" href="css/workspace.css">
+<link rel="stylesheet" href="css/controls.css">
+<link rel="stylesheet" href="css/stage.css">
+<link rel="stylesheet" href="css/tiles.css">
+<link rel="stylesheet" href="css/library.css">
+<link rel="stylesheet" href="css/responsive.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "katex": "https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.mjs"
+  }
+}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="ms fill brand-mark" aria-hidden="true">orbit</span>
+    <h1>Physics <em>Playground</em></h1>
+  </div>
+  <nav class="rail" aria-label="Simulation labs">
+    <div role="tablist" id="rail" aria-label="Simulation labs"></div>
+  </nav>
+  <div class="top-actions" role="group" aria-label="Workspace">
+    <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the bottom bay (B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Bottom bay</span></button>
+    <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
+    <button type="button" class="icon-btn" id="btn-keys" aria-expanded="false" aria-controls="keys-sheet" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
+  </div>
+</header>
+
+<main class="bento" id="bento">
+  <section class="tile tile-stage" id="tile-stage" aria-labelledby="stage-lab">
+    <header class="tile-head stage-head">
+      <div class="stage-title">
+        <span class="ms tile-ico" id="stage-icon" aria-hidden="true">orbit</span>
+        <h2 id="stage-lab">Gravity</h2>
+        <span class="stage-scene" id="stage-scene"></span>
+      </div>
+      <div class="transport" role="group" aria-label="Simulation transport">
+        <button type="button" class="btn btn-primary" id="btn-play" title="Play or pause (Space)"><span class="ms fill" id="btn-play-icon" aria-hidden="true">pause</span><span id="btn-play-label">Pause</span></button>
+        <button type="button" class="btn" id="btn-step" title="Pause and advance one frame (.)"><span class="ms" aria-hidden="true">skip_next</span><span class="lbl">Step</span></button>
+        <button type="button" class="btn" id="btn-reset" title="Restart the current scene with the current settings (R)"><span class="ms" aria-hidden="true">restart_alt</span><span class="lbl">Reset</span></button>
+        <div class="speed" role="group" aria-label="Simulation speed">
+          <span class="ms" aria-hidden="true">speed</span>
+          <div class="range-wrap" style="--notch: 0.624"><input type="range" id="ctl-speed" min="0" max="1000" step="1" aria-label="Simulation speed"></div>
+          <output id="ctl-speed-out" class="ctl-val" for="ctl-speed">1.00×</output>
+          <button type="button" class="ctl-reset" id="speed-reset" aria-label="Reset speed to 1×" title="Back to 1×" hidden><span class="ms" aria-hidden="true">restart_alt</span></button>
+        </div>
+        <div class="capture" role="group" aria-label="Capture">
+          <button type="button" class="btn btn-rec" id="btn-rec" aria-pressed="false" title="Record the stage as a video (M)"><span class="ms fill" aria-hidden="true">fiber_manual_record</span><span class="lbl" id="btn-rec-label">Video</span></button>
+          <button type="button" class="btn" id="btn-data" aria-pressed="false" title="Record this lab's measurements over time as a dataset (D)"><span class="ms" aria-hidden="true">monitoring</span><span class="lbl" id="btn-data-label">Data</span></button>
+          <button type="button" class="btn" id="btn-state" title="Save the exact state of this scene so you can reload it later"><span class="ms" aria-hidden="true">bookmark</span><span class="lbl">Save state</span></button>
+        </div>
+      </div>
+    </header>
+    <div class="stage" id="stage">
+      <canvas id="stage-canvas" role="img" aria-label="Simulation stage"></canvas>
+      <div class="hud">
+        <span class="chip pill" id="hud-state" data-state="run">Running</span>
+        <span class="chip" id="hud-time">t = 0.00 s</span>
+        <span class="chip" id="hud-rate" data-state="ok" title="Simulated seconds per real second">1.00× real time</span>
+        <span class="chip" id="hud-fps">60 fps</span>
+        <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
+        <button type="button" class="chip hud-rec" id="hud-rec" hidden></button>
+        <button type="button" class="chip hud-rec data" id="hud-data" hidden></button>
+      </div>
+      <div class="exp-banner" id="exp-banner" hidden></div>
+      <p class="stage-hint" id="stage-hint"></p>
+      <div class="nav" id="nav" role="group" aria-label="View controls">
+        <div class="orbit" id="nav-orbit" title="Drag to orbit · click an axis to look along it" hidden>
+          <svg class="orbit-lines" id="orbit-lines" viewBox="-36 -36 72 72" aria-hidden="true"></svg>
+        </div>
+        <button type="button" class="nav-btn" id="nav-in" aria-label="Zoom in" title="Zoom in (+)"><span class="ms" aria-hidden="true">add</span></button>
+        <button type="button" class="nav-zoom" id="nav-zoom" title="Drag up or down to zoom · click for 100%">100%</button>
+        <button type="button" class="nav-btn" id="nav-out" aria-label="Zoom out" title="Zoom out (−)"><span class="ms" aria-hidden="true">remove</span></button>
+        <span class="nav-rule" aria-hidden="true"></span>
+        <button type="button" class="nav-btn" id="nav-pan" aria-pressed="false" aria-label="Pan mode" title="Pan · drag this button to move the view, or click it so a left-drag on the stage pans · Space-drag pans anytime"><span class="ms" aria-hidden="true">pan_tool</span></button>
+        <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" title="Frame the scene (0)"><span class="ms" aria-hidden="true">fit_screen</span></button>
+        <div class="nav-extra" id="nav-extra"></div>
+      </div>
+      <div class="nav-foot" id="nav-foot">
+        <div class="scalebar" id="scalebar" aria-hidden="true"><span class="scalebar-lbl" id="scalebar-lbl"></span><span class="scalebar-bar" id="scalebar-bar"></span></div>
+        <div class="minimap" id="minimap" hidden><canvas id="minimap-canvas" role="img" aria-label="Overview of the whole scene with the visible area outlined; click or drag to move the view"></canvas></div>
+      </div>
+    </div>
+    <footer class="timeline" role="group" aria-label="Rewind">
+      <span class="ms" aria-hidden="true">history</span>
+      <label for="rewind-range" class="timeline-label">Rewind</label>
+      <div class="range-wrap no-notch"><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note"></div>
+      <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
+      <span class="timeline-note" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
+    </footer>
+  </section>
+
+  <section class="tile tile-scene" id="tile-scene" aria-labelledby="tile-scene-title">
+    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">category</span><h3 id="tile-scene-title">Scene</h3></header>
+    <div class="tile-body" id="scene-body"></div>
+  </section>
+
+  <section class="tile tile-tools" id="tile-tools" aria-labelledby="tile-tools-title">
+    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">construction</span><h3 id="tile-tools-title">Tools</h3><span class="tile-meta" id="tools-key"></span></header>
+    <div class="tile-body"><div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div><p class="tool-hint" id="tool-hint"></p></div>
+  </section>
+
+  <section class="tile tile-params" id="tile-params" aria-labelledby="tile-params-title">
+    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">tune</span><h3 id="tile-params-title">Parameters</h3></header>
+    <div class="tile-body" id="params-body"></div>
+  </section>
+
+  <section class="tile tile-chart bay" id="tile-chart" aria-labelledby="chart-title">
+    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">show_chart</span><h3 id="chart-title">Chart</h3></header>
+    <div class="tile-body chart-body"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
+  </section>
+
+  <section class="tile tile-readouts bay" id="tile-readouts" aria-labelledby="tile-readouts-title">
+    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">data_table</span><h3 id="tile-readouts-title">Readouts</h3></header>
+    <div class="tile-body"><dl class="readouts" id="readouts"></dl></div>
+  </section>
+
+  <section class="tile tile-diag bay" id="diag" tabindex="-1" aria-labelledby="diag-title">
+    <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">monitor_heart</span><h3 id="diag-title">Diagnostics</h3><span class="diag-sum" id="diag-sum">Stable</span></header>
+    <div class="tile-body">
+      <div class="perf">
+        <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
+        <dl class="perf-nums">
+          <dt>Solver</dt><dd id="perf-sim">0.0 ms</dd>
+          <dt>Drawing</dt><dd id="perf-draw">0.0 ms</dd>
+          <dt>Steps / frame</dt><dd id="perf-steps">0</dd>
+          <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
+        </dl>
+      </div>
+      <div class="insights" id="insights"></div>
+    </div>
+  </section>
+
+  <section class="tile tile-notes bay" id="tile-notes" aria-label="Notebook">
+    <header class="tile-head notes-head">
+      <div class="tabs" role="tablist" aria-label="Notebook" id="notes-tabs">
+        <button type="button" role="tab" id="nt-experiments" aria-controls="np-experiments" aria-selected="true"><span class="ms" aria-hidden="true">science</span>Experiments<span class="tab-count" id="nt-experiments-count" hidden></span></button>
+        <button type="button" role="tab" id="nt-guide" aria-controls="np-guide" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">school</span>Guide</button>
+        <button type="button" role="tab" id="nt-math" aria-controls="np-math" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">functions</span>Math</button>
+        <button type="button" role="tab" id="nt-library" aria-controls="np-library" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">video_library</span>Library<span class="tab-count" id="nt-library-count" hidden></span></button>
+      </div>
+    </header>
+    <div class="tile-body notes-body">
+      <div role="tabpanel" id="np-experiments" aria-labelledby="nt-experiments"><div id="experiments"></div></div>
+      <div role="tabpanel" id="np-guide" aria-labelledby="nt-guide" hidden><div id="guide"></div></div>
+      <div role="tabpanel" id="np-math" aria-labelledby="nt-math" hidden><div class="math" id="math"></div></div>
+      <div role="tabpanel" id="np-library" aria-labelledby="nt-library" hidden>
+        <div class="lib-store" id="lib-store" role="status">Connecting to storage…</div>
+        <div id="lib-filter"></div>
+        <ul class="lib-list" id="lib-list" aria-label="Saved clips, datasets and states"></ul>
+        <p class="lib-empty" id="lib-empty"></p>
+        <div class="capture-settings" id="capture-settings"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="sheet" id="keys-sheet" role="dialog" aria-modal="false" aria-labelledby="keys-title" hidden>
+  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">keyboard</span><h3 id="keys-title">Keyboard and pointer</h3><button type="button" class="icon-btn" id="keys-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+  <dl class="keys-list">
+    <dt><kbd>Space</kbd></dt><dd>Play or pause; hold it and drag to pan</dd>
+    <dt><kbd>.</kbd> <kbd>,</kbd></dt><dd>Step forward one frame · step back through history</dd>
+    <dt><kbd>R</kbd></dt><dd>Restart the scene</dd>
+    <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Halve or double the speed</dd>
+    <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, frame the scene</dd>
+    <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Pan (orbit in 3D views; Shift pans)</dd>
+    <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record video · record data</dd>
+    <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Switch labs</dd>
+    <dt><kbd>F</kbd> <kbd>B</kbd></dt><dd>Focus the stage · show or hide the bottom bay</dd>
+    <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
+    <dt>Scroll</dt><dd>Zoom at the cursor; middle or right drag pans</dd>
+    <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>
+  </dl>
+</div>
+<p class="sr-only" id="sr-status" aria-live="polite"></p>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

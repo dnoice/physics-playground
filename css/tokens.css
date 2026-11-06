@@ -1,0 +1,82 @@
+/*
+✒ Metadata
+    - Title: Design Tokens (digiSpace Edition - v2.0)
+    - File Name: tokens.css
+    - Relative Path: css/tokens.css
+    - Artifact Type: stylesheet
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+      for v2.0 on Dennis's direction: the formal stack; tokens moved out of
+      the v1.3 single file and extended for tiles.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    Colour, type, spacing and radius tokens, the page grid, focus rings and
+    keyboard keys.
+
+✒ Key Features:
+    - Dark bench palette with amber and cyan accents.
+    - Tile, gap, radius and shadow tokens for the bento grid.
+    - Body grid pins content to the viewport width so nothing widens the
+      page.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+@property --sweep { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+:root {
+  /* An instrument bench laid out as a bento workspace: a live stage tile
+     with transport and timeline, flanked by scene, tool and parameter
+     tiles, above a bay of chart, readout, diagnostics and notebook tiles. */
+  --ink: #0a0e14;
+  --bench: #10151d;
+  --tile: #0f141c;
+  --tile-hi: #141a24;
+  --rule: #242d3a;
+  --rule-soft: color-mix(in oklab, var(--rule) 70%, transparent);
+  --text: #e8edf3;
+  --muted: #8f9cad;
+  --amber: #f2a541;
+  --cyan: #5fd0df;
+  --ok: #6fcf97;
+  --warn: #f2c94c;
+  --crit: #ef6461;
+  --glass: rgba(14, 19, 27, 0.72);
+  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --gap: 8px;
+  --radius: 14px;
+  --pad: 14px;
+  --well: color-mix(in oklab, var(--ink) 72%, var(--bench));
+  --tile-shadow: 0 1px 0 color-mix(in oklab, white 4%, transparent) inset, 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+  interpolate-size: allow-keywords;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(1200px 600px at 20% -10%, color-mix(in oklab, var(--cyan) 6%, transparent), transparent 60%), var(--ink);
+  color: var(--text); font: 400 14px/1.5 var(--font-body);
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+::selection { background: color-mix(in oklab, var(--amber) 40%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+kbd {
+  font: 500 10.5px/1 var(--font-mono); color: var(--text); background: var(--ink);
+  border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 3px 5px;
+}

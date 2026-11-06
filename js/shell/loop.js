@@ -1,0 +1,108 @@
+/*
+✒ Metadata
+    - Title: Frame Loop (digiSpace Edition - v2.0)
+    - File Name: loop.js
+    - Relative Path: js/shell/loop.js
+    - Artifact Type: javascript
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
+      of the v1.3 single file; v2.0 runs the guided experiment check with
+      the panel update.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    The requestAnimationFrame loop: steps the active lab under a time
+    budget, draws it, and updates HUD, panel, diagnostics and experiments at
+    their own rates.
+
+✒ Key Features:
+    - Fixed-step simulation with an accumulator and a per-frame step cap.
+    - Frame-time, simulation and drawing statistics for diagnostics.
+    - Experiment checks run four times a second.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+import { $ } from '../core/util.js';
+import { is3D, navTick } from './camera.js';
+import { dataRec, drawRecOverlay, histBranch, histCapture, sampleData, updateCaptureChips, updateRewind } from './capture.js';
+import { drawPerf, evaluateDiagnostics, updatePerfNums } from './diagnostics.js';
+import { tickExperiment } from './experiments.js';
+import { updateDock } from './dock.js';
+import { resizeLab } from './lifecycle.js';
+import { updateNav, updateOrbit } from './navigator.js';
+import { drawChart, updateReadouts } from './panel.js';
+import { drawStage } from './stage.js';
+import { BUDGET_MS, active, measure, perf, stageEl, state } from './state.js';
+
+/* ---------- loop ---------- */
+export function advance(lab, simDt, budget = BUDGET_MS) {
+  const h = lab.dt(), cap = lab.maxSteps || 32, t0 = performance.now();
+  lab._acc += simDt;
+  let n = 0, over = false;
+  const rec = dataRec.on && dataRec.lab === lab;
+  while (lab._acc >= h && n < cap) {
+    lab.step(h); lab.t += h; lab._acc -= h; n++;
+    if (rec && dataRec.on) sampleData(lab);
+    if ((n & 1) === 0 && performance.now() - t0 > budget) { over = true; break; }
+  }
+  if (n >= cap || over) lab._acc = Math.min(lab._acc, h);
+  if (lab.after) lab.after(n * h);
+  return n;
+}
+export let last = performance.now(), uiClock = 0, hudClock = 0, diagClock = 0;
+export function setLast(t) { last = t; }
+export function frame(now) {
+  const real = Math.min(0.05, Math.max(0, (now - last) / 1000));
+  last = now;
+  if (real > 0) perf.fps += (1 / real - perf.fps) * 0.05;
+  if (active) {
+    const t0 = performance.now();
+    let n = 0;
+    const stepping = state.running && !active.holding;
+    if (stepping) { histBranch(active); n = advance(active, real * state.speed); if (n) histCapture(active); }
+    const t1 = performance.now();
+    navTick(real);
+    drawStage(active);
+    drawRecOverlay();
+    if (is3D(active)) updateOrbit();
+    const t2 = performance.now();
+    perf.sim += ((t1 - t0) - perf.sim) * 0.1; perf.draw += ((t2 - t1) - perf.draw) * 0.1; perf.steps += (n - perf.steps) * 0.1;
+    perf.hist[perf.hi] = t2 - t0; perf.hsim[perf.hi] = t1 - t0; perf.hi = (perf.hi + 1) % perf.hist.length;
+    if (stepping && real > 0) {
+      perf.rate += ((n * active.dt()) / real - perf.rate) * 0.06;
+      perf.slow = perf.rate < state.speed * 0.9 ? perf.slow + real : Math.max(0, perf.slow - real * 2);
+    } else perf.slow = 0;
+    if ((hudClock += real) >= 0.1) {
+      hudClock = 0;
+      $('#hud-time').textContent = `t = ${active.t.toFixed(2)} s`;
+      $('#hud-fps').textContent = `${Math.round(perf.fps)} fps`;
+      updateNav();
+    }
+    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
+    if ((diagClock += real) >= 0.5) { diagClock = 0; evaluateDiagnostics(); }
+  }
+  requestAnimationFrame(frame);
+}
+export let resizeTimer = 0;
+
+/* Wiring: run once from main.js after every module has evaluated. */
+export function init() {
+  new ResizeObserver(() => {
+    if (!measure()) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (active) { resizeLab(active); updateDock(true); } }, 120);
+  }).observe(stageEl);
+  document.addEventListener('visibilitychange', () => { last = performance.now(); perf.slow = 0; });
+}

@@ -1,0 +1,87 @@
+/*
+✒ Metadata
+    - Title: Automation Surface (digiSpace Edition - v2.0)
+    - File Name: automation.js
+    - Relative Path: js/shell/automation.js
+    - Artifact Type: javascript
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
+      of the v1.3 single-file playground when Dennis asked for a proper
+      separation of concerns so the stack can keep growing; behaviour
+      unchanged.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    window.PhysicsPlayground: a small scripting surface for tests and power
+    users (labs, play, pause, select, view).
+
+✒ Key Features:
+    - Read lab state and drive the transport from the console or a test.
+    - view.get/zoomBy/toWorld expose the camera.
+    - capture exposes the vault and recorders.
+
+✒ Usage Instructions:
+    In the browser console: PhysicsPlayground.select('fields');
+    PhysicsPlayground.labs.fields.charges
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+
+import { globalInsights } from './diagnostics.js';
+import { labsById } from '../labs/index.js';
+import { fluidGL } from '../render/fluid-gl.js';
+import { reliefGL } from '../render/relief-gl.js';
+import { camOf, is3D, navActual, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
+import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
+import { selectDock } from './dock.js';
+import { applyPreset, setParam } from './lifecycle.js';
+import { advance } from './loop.js';
+import { ptr } from './stage.js';
+import { active, perf, state } from './state.js';
+import { pause, play, resetActive, setSpeed, stepOnce } from './transport.js';
+import { vault } from './vault.js';
+import { selectLab } from './workspace.js';
+
+/* ---------- automation surface ---------- */
+
+/* Wiring: run once from main.js after every module has evaluated. */
+export function init() {
+  window.PhysicsPlayground = {
+    labs: labsById,
+    get active() { return active; },
+    state, perf,
+    select: id => selectLab(id),
+    preset: id => applyPreset(active, id),
+    setParam: (key, value) => setParam(active, key, value),
+    tool: id => selectDock(id),
+    diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
+    play, pause, step: stepOnce, reset: resetActive, setSpeed,
+    advance: seconds => advance(active, seconds, Infinity),
+    capture: { toggleVideo, toggleData, saveState, loadState, vault, dataRec, vrec },
+    history: { seek: k => histSeek(active, k), size: () => hist(active).snaps.length, back: () => rewindStep(-1) },
+    renderer: () => fluidGL.ok ? 'gpu' : 'cpu',
+    view: {
+      get() {
+        if (is3D(active)) { const c = active.c3(); return { mode: '3d', yaw: c.yaw, pitch: c.pitch, dist: c.dist, tx: c.tx, tz: c.tz, zoom: zoomPct(active) }; }
+        const c = camOf(active); return { mode: '2d', x: c.x, y: c.y, z: c.z, fit: !!c.fit, zoom: zoomPct(active), panMode: ptr.panMode };
+      },
+      zoomBy: (f, x, y) => navZoomBy(f, x == null ? null : { x, y }, true),
+      pan: (dx, dy) => navPan(dx, dy), frame: () => navFrame(), actual: () => navActual(),
+      toWorld: (x, y) => toWorld(active, { x, y }),
+      orbit: (dx, dy) => active.orbit3 && active.orbit3(dx, dy), snap: id => active.snap3 && active.snap3(id),
+      renderer3d: () => reliefGL.ok,
+    },
+  };
+}

@@ -1,0 +1,40 @@
+# ✒ Metadata
+#     - Title: Git Ignore Rules (digiSpace Edition - v2.0)
+#     - File Name: .gitignore
+#     - Relative Path: .gitignore
+#     - Artifact Type: config
+#     - Version: 2.0.0
+#     - Date: 11/05/2026
+#     - Update: Thursday, November 05, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       with the formal stack Dennis asked for.
+#
+# ✒ Description:
+#     Keeps installed packages, logs and editor or OS clutter out of version
+#     control. Vendored KaTeX under vendor/ is source and stays tracked.
+#
+# ✒ Key Features:
+#     - Ignores node_modules and npm logs.
+#     - Ignores OS and editor files.
+#     - Ignores local test output (screenshots, traces).
+#
+# ✒ Other Important Information:
+#     - Dependencies: none
+#     - Compatible platforms: Git 2.x on any OS
+# ---------
+
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+shots/
+test-results/
+__pycache__/

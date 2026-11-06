@@ -1,0 +1,60 @@
+/*
+✒ Metadata
+    - Title: Icon Styles (digiSpace Edition - v2.0)
+    - File Name: icons.css
+    - Relative Path: css/icons.css
+    - Artifact Type: stylesheet
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+      for v2.0 on Dennis's direction: Google icons throughout the
+      playground.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    Material Symbols Rounded styling and the small animations of the
+    selected lab's glyph.
+
+✒ Key Features:
+    - .ms sets the variable-font axes and size.
+    - data-anim spin, pulse, sway, bob and flash, off under reduced motion.
+    - html.no-icons hides glyph names if the font cannot load.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+/* Material Symbols Rounded, subset through the Google Fonts icon_names list in index.html. */
+.ms {
+  font-family: "Material Symbols Rounded"; font-weight: normal; font-style: normal; font-size: 20px; line-height: 1;
+  letter-spacing: normal; text-transform: none; white-space: nowrap; word-wrap: normal; direction: ltr;
+  display: inline-block; width: 1em; height: 1em; overflow: hidden; flex: none; user-select: none; vertical-align: middle;
+  -webkit-font-feature-settings: "liga"; font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
+}
+.ms.fill, [aria-pressed="true"] > .ms, [aria-selected="true"] > .ms, [aria-checked="true"] > .ms { font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20; }
+.ms.sm { font-size: 16px; }
+.ms.lg { font-size: 24px; font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+/* If the icon font cannot load (offline), hide the glyph names rather than print them. */
+html.no-icons .ms { display: none; }
+/* Lab glyphs come alive on the selected tab and on hover. */
+.tab .ms { transition: transform 0.4s var(--ease); }
+.tab[aria-selected="true"] .ms[data-anim="spin"], .tab:hover .ms[data-anim="spin"] { animation: ms-spin 6s linear infinite; }
+.tab[aria-selected="true"] .ms[data-anim="pulse"], .tab:hover .ms[data-anim="pulse"] { animation: ms-pulse 1.8s ease-in-out infinite; }
+.tab[aria-selected="true"] .ms[data-anim="sway"], .tab:hover .ms[data-anim="sway"] { animation: ms-sway 2.4s ease-in-out infinite alternate; }
+.tab[aria-selected="true"] .ms[data-anim="bob"], .tab:hover .ms[data-anim="bob"] { animation: ms-bob 1.6s ease-in-out infinite; }
+.tab[aria-selected="true"] .ms[data-anim="flash"], .tab:hover .ms[data-anim="flash"] { animation: ms-flash 2.2s steps(1) infinite; }
+@keyframes ms-spin { to { transform: rotate(360deg); } }
+@keyframes ms-pulse { 50% { transform: scale(1.18); } }
+@keyframes ms-sway { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+@keyframes ms-bob { 50% { transform: translateY(-2px); } }
+@keyframes ms-flash { 0%, 100% { opacity: 1; } 8% { opacity: 0.35; } 12% { opacity: 1; } 16% { opacity: 0.5; } }

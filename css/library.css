@@ -1,0 +1,73 @@
+/*
+✒ Metadata
+    - Title: Library Styles (digiSpace Edition - v2.0)
+    - File Name: library.css
+    - Relative Path: css/library.css
+    - Artifact Type: stylesheet
+    - Version: 2.0.0
+    - Date: 11/05/2026
+    - Update: Thursday, November 05, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
+      of the v1.3 single-file playground when Dennis asked for a proper
+      separation of concerns so the stack can keep growing; behaviour
+      unchanged.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    Storage status, meter, filter and saved-item cards of the Library page.
+
+✒ Key Features:
+    - Item cards with kind glyph, metadata and actions.
+    - Inline rename and delete confirmation.
+    - Video preview sized to the card.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+/* ---------- library: storage status, saved clips, datasets and states ---------- */
+.lib-store { margin: 0; display: grid; gap: 8px; padding: 12px 14px; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }
+.lib-status { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; line-height: 1.5; color: var(--text); }
+.lib-status::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--muted); }
+.lib-store[data-mode="cloud"] .lib-status::before, .lib-store[data-mode="local"] .lib-status::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ok) 22%, transparent); }
+.lib-store[data-mode="memory"] .lib-status::before, .lib-store[data-mode="cloud-ro"] .lib-status::before { background: var(--warn); }
+.lib-sub { font-size: 12px; line-height: 1.5; color: var(--muted); }
+.meter { height: 5px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.meter > span { display: block; height: 100%; min-width: 2px; border-radius: 3px; background: linear-gradient(90deg, var(--cyan), var(--amber)); transition: width 0.4s var(--ease); }
+.meter-row { display: flex; justify-content: space-between; font: 400 11px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.lib-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lib-list:empty { display: none; }
+.lib-item { border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--ink) 92%, white 2%), var(--ink)); animation: rise 0.3s var(--ease) both; }
+.lib-main { display: flex; gap: 10px; align-items: flex-start; }
+.lib-ico { color: var(--amber); padding-top: 1px; display: inline-flex; }
+.lib-ico .ms { font-size: 19px; }
+.lib-item[data-kind="run"] .lib-ico { color: var(--cyan); }
+.lib-item[data-kind="state"] .lib-ico { color: var(--ok); }
+.lib-text { display: grid; gap: 2px; min-width: 0; }
+.lib-title { appearance: none; background: none; border: 0; padding: 0; text-align: left; font: 600 13px/1.35 var(--font-body); color: var(--text); cursor: text; overflow-wrap: anywhere; }
+.lib-title:hover { text-decoration: underline dotted color-mix(in oklab, var(--amber) 70%, transparent); text-underline-offset: 3px; }
+.lib-rename { width: 100%; text-align: left; font-size: 12.5px; }
+.lib-meta { font: 400 11px/1.45 var(--font-mono); color: var(--muted); }
+.lib-note { font-size: 11.5px; color: var(--warn); }
+.lib-badge { font: 500 9.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 2px 4px; margin-left: 6px; vertical-align: 2px; }
+.lib-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.lib-actions .btn { min-height: 28px; padding: 5px 9px; font-size: 12px; }
+.btn-del:hover { color: var(--crit); border-color: color-mix(in oklab, var(--crit) 55%, var(--rule)); }
+.lib-preview { display: grid; gap: 6px; overflow-x: auto; }
+.lib-preview video { width: 100%; max-height: 260px; border-radius: 6px; display: block; background: #000; }
+.lib-sum { width: 100%; border-collapse: collapse; font: 400 11px/1.55 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lib-sum th { text-align: left; color: var(--muted); font-weight: 400; padding: 1px 8px 1px 0; }
+.lib-sum td { text-align: right; padding: 1px 0 1px 8px; }
+.lib-sum tr:first-child th { color: var(--text); border-bottom: 1px solid var(--rule); }
+.lib-confirm { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--crit); flex-wrap: wrap; }
+.lib-empty { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); text-align: center; padding: 18px 16px; border: 1px dashed var(--rule); border-radius: 10px; }
+.lib-empty[hidden] { display: none; }
+.capture-settings { display: grid; gap: 14px; padding-top: 16px; margin-top: 2px; border-top: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); }
