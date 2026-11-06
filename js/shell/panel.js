@@ -42,6 +42,7 @@ import { canvasContext, chartMessage } from '../core/chart.js';
 import { typeset } from '../core/tex.js';
 import { $, clamp, decimalsFor, el, reduceMotion } from '../core/util.js';
 import { evaluateDiagnostics } from './diagnostics.js';
+import { drawScope, resetGauges, scopeOn, updateGauges } from './instruments.js';
 import { renderExperiments } from './experiments.js';
 import { applyPreset, rebuild, setParam } from './lifecycle.js';
 
@@ -177,6 +178,7 @@ export function buildPanel(lab) {
   $('#chart-title').textContent = lab.chart ? lab.chart.title : 'Chart';
   $('#chart').setAttribute('aria-label', lab.chart ? lab.chart.title : 'No chart for this lab');
   $('#chart-caption').textContent = lab.chart ? lab.chart.caption : '';
+  $('#chart-caption').title = lab.chart ? lab.chart.caption : '';
   $('#guide').replaceChildren(el('div', { class: 'guide' }, el('p', { class: 'blurb', text: lab.blurb }),
     el('ul', { class: 'interact', html: [...lab.interact, navHelp(lab)].map(s => `<li>${s}</li>`).join('') })));
   const math = $('#math');
@@ -184,7 +186,7 @@ export function buildPanel(lab) {
   typeset(math); typeset($('#scene-body'));
   renderExperiments(lab);
   refreshEnabled();
-  readoutNodes = []; $('#readouts').replaceChildren();
+  resetGauges();
   updateReadouts(); drawChart();
   for (const f of math.querySelectorAll('.f')) { formulaRO.observe(f); f.addEventListener('scroll', () => markClip(f), { passive: true }); }
   if (!reduceMotion) for (const b of document.querySelectorAll('#scene-body, #params-body, #math, #guide, #dock')) if (b.animate) b.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
@@ -200,25 +202,12 @@ export function markClip(f) {
   else { f.removeAttribute('tabindex'); f.removeAttribute('role'); f.removeAttribute('aria-label'); }
 }
 export const formulaRO = new ResizeObserver(entries => { for (const e of entries) markClip(e.target); });
-export let readoutNodes = [];
-export function updateReadouts() {
-  const dl = $('#readouts'); if (!dl || !active) return;
-  const rows = active.readouts();
-  if (readoutNodes.length !== rows.length) {
-    dl.replaceChildren(); readoutNodes = [];
-    for (const r of rows) { const dt = el('dt', { text: r[0] }), dd = el('dd'); dl.append(dt, dd); readoutNodes.push([dt, dd]); }
-  }
-  rows.forEach((r, i) => {
-    const [dt, dd] = readoutNodes[i];
-    if (dt.textContent !== r[0]) dt.textContent = r[0];
-    if (dd.textContent !== r[1]) dd.textContent = r[1];
-    if (r[2]) dd.setAttribute('data-state', r[2]); else dd.removeAttribute('data-state');
-  });
-}
+export function updateReadouts() { if (active) updateGauges(active, active.readouts()); }
 export function drawChart() {
   if (!active) return;
   const c = canvasContext($('#chart')); if (!c) return;
+  if (scopeOn(active)) { drawScope(c); return; }
   if (!active.chart) { chartMessage(c.g, c.w, c.h, 'This lab has no running chart'); return; }
   active.chart.draw(c);
-  const cap = $('#chart-caption'); if (cap && cap.textContent !== active.chart.caption) cap.textContent = active.chart.caption;
+  const cap = $('#chart-caption'); if (cap && cap.textContent !== active.chart.caption) { cap.textContent = active.chart.caption; cap.title = active.chart.caption; }
 }

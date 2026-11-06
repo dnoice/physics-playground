@@ -59,7 +59,7 @@ import { canvas } from '../shell/state.js';
 export const PEND_TRAIL = 900;
 export const pendulum = {
   id: 'chaos', name: 'Chaos', title: 'Chaotic double pendulum',
-  rig3: { plane: 'wall', yaw: 0.36, pitch: 0.17, fit: 1.3, yawMax: 1.3 },
+  rig3: { plane: 'wall', yaw: 0.36, pitch: 0.17, fit: 1.3 },
   eq: 'δ(t) ≈ δ<sub>0</sub> e<sup>λt</sup>',
   eqTex: '\\delta(t) \\approx \\delta_0\\, e^{\\lambda t}',
   aria: 'Chaos simulation: several double pendulums starting almost identically',

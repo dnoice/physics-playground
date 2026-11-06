@@ -129,8 +129,12 @@ The workspace is a bento grid of tiles around the stage.
 - **Tools**: what the pointer does on the stage, each with a letter key.
 - **Parameters**: sliders, choices and switches. A disabled control says
   why underneath.
-- **Bottom bay**: the chart, readouts, diagnostics and a notebook with
-  Experiments, Guide, Math and Library pages.
+- **Instruments**: every reading as a live gauge beside the lab's chart.
+  Click a gauge to plot it, up to four at once. Hover the plot to read any
+  moment, click or drag along it to rewind to that moment, and use the wheel
+  to zoom the time window. The pill shows the simulation's health, with the
+  top alert and its fix beside it; click it for the full list.
+- **Notebook**: Experiments, Guide, Math and Library pages.
 
 Press **F** to give the stage the whole window and **Shift+B** to hide the
 bottom bay. The layout reflows to two columns below 1180 px and to one
@@ -139,10 +143,12 @@ column below 760 px.
 ### Mouse and touch
 
 - Wheel zooms at the cursor. Middle-drag, right-drag or Space-drag pans.
-- In 3D mode, right-drag orbits and Shift-drag pans. Drag the axis ball to
-  orbit, or click an axis to look along it. Z on the ball looks straight at
-  the simulation plane. In Cloth the right button is a tool, so middle-drag
-  orbits.
+- In 3D mode, right-drag orbits and Shift-drag pans. Dragging the empty space
+  around the apparatus orbits too, and so does the axis ball; click an axis to
+  look along it. Z on the ball looks straight at the simulation plane. In
+  Cloth the right button is a tool, so middle-drag orbits.
+- Zooming in follows the cursor and zooming back out returns to the home
+  view, so you can always find your way back.
 - On touch screens, pinch zooms and two fingers pan.
 
 ### Keyboard

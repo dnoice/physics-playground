@@ -316,6 +316,7 @@ export const gravity = {
     return this.bodyAt(p) ? 'pointer' : 'crosshair';
   },
   wantsPan() { return this.p.tool === 'pan'; },
+  offStage3() { return false; },
   stateSummary() { return { bodies: this.bodies.length }; },
   navExtras: [{ id: 'follow', label: 'Follow', icon: 'follow', title: 'Follow the centre of mass · click a body on the stage to follow it instead · click again to free the camera',
     pressed: () => gravity.p.follow || gravity.track != null,

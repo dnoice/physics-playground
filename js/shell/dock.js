@@ -85,6 +85,6 @@ export function updateDock() {
   const o = d.options.find(x => x.id === cur);
   let hint = o ? o.hint : active.hint || '';
   if (ptr.panMode) hint = 'Pan mode: drag to move the view · click the hand in the view controls to use the tool again';
-  else if (is3D(active)) hint += coarsePointer ? ' · drag the axis ball to orbit' : ` · ${active.rightButton ? 'middle' : 'right'}-drag orbits · Shift-drag pans`;
+  else if (is3D(active)) hint += coarsePointer ? ` · ${active.selfCam ? 'drag the axis ball' : 'drag around it'} to orbit` : ` · ${active.rightButton ? 'middle' : 'right'}-drag orbits · Shift-drag pans`;
   $('#stage-hint').textContent = hint;
 }

@@ -26,7 +26,12 @@
     - Every lab draws lit pixels with no console messages.
     - Switching modes neither resets nor pauses the run, and is remembered.
     - Ray picking round-trips within two world units on every plane lab.
-    - Orbit, Shift-drag pan, wheel zoom and the floor limit on the camera.
+    - Orbit, Shift-drag pan, wheel zoom and the floor limit on the camera;
+      the pivot stays on the apparatus, zooming out returns home, the first
+      pan does not jump, a resize keeps the angle, and dragging the space
+      around the apparatus orbits.
+    - Instruments: a reading plots, the plot rewinds and scrubs, plotted
+      readings are remembered, and diagnostics open on demand.
     - Rewind and video capture work on the 3D stage.
     - All five tiers apply; Auto lands on Lite under software rendering and
       steps down from a tier the machine cannot hold.
@@ -53,12 +58,14 @@ P = "PhysicsPlayground"
 LABS = ["gravity", "collisions", "fluid", "waves", "chaos", "cloth", "fields"]
 PLANES = ["collisions", "fluid", "waves", "chaos", "cloth", "fields"]
 IS3D = "window.PhysicsPlayground && PhysicsPlayground.mode.is3D()"
-LIT = """(() => { const c = document.getElementById('stage-canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-  let lit = 0, n = 0; for (let i = 0; i < d.length; i += 256) { n++; if (d[i] * 0.3 + d[i + 1] * 0.6 + d[i + 2] * 0.1 > 24) lit++; } return lit / n; })()"""
+# Read a small copy: reading the stage itself would push it onto a slow software path and starve the recorder.
+LIT = """(() => { const t = document.createElement('canvas'); t.width = 96; t.height = 60; const g = t.getContext('2d', { willReadFrequently: true });
+  g.drawImage(document.getElementById('stage-canvas'), 0, 0, 96, 60); const d = g.getImageData(0, 0, 96, 60).data;
+  let lit = 0, n = 0; for (let i = 0; i < d.length; i += 4) { n++; if (d[i] * 0.3 + d[i + 1] * 0.6 + d[i + 2] * 0.1 > 24) lit++; } return lit / n; })()"""
 
 
 def page(owner, tier="lite", mode="3d", lab="chaos", **kw):
-    pg = open_page(owner, mode=mode, viewport=VIEW, **kw)
+    pg = open_page(owner, mode=mode, **kw)
     pg.add_init_script(f"try {{ localStorage.setItem('psp:tier', '\"{tier}\"'); }} catch (_) {{ /* no storage here */ }}")
     pg.goto(URL + "#" + lab)
     return pg
@@ -68,7 +75,7 @@ with sync_playwright() as p:
     b = launch(p)
 
     # Every lab renders.
-    ctx = b.new_context()
+    ctx = b.new_context(viewport=VIEW)
     pg = page(ctx)
     ok("engine_ready", settle(pg, IS3D, 30000))
     for lab in LABS:
@@ -95,20 +102,20 @@ with sync_playwright() as p:
     ok("switch_state_true", pg.evaluate("document.getElementById('mode-3d').getAttribute('aria-checked')") == "true")
     ctx.close()
 
-    ctx = b.new_context()
-    pg = ctx.new_page(); pg.set_viewport_size(VIEW)
+    ctx = b.new_context(viewport=VIEW)
+    pg = ctx.new_page()
     pg.goto(URL)
     ok("3d_is_the_default", pg.evaluate(f"{P}.mode.get()") == "3d")
     ctx.close()
 
     # A click lands where it points, from any angle.
-    ctx = b.new_context()
+    ctx = b.new_context(viewport=VIEW)
     pg = page(ctx)
     settle(pg, IS3D, 30000)
     for lab in PLANES:
         pg.evaluate(f"{P}.select('{lab}')"); settle(pg, IS3D, 20000); pg.wait_for_timeout(300)
         pg.evaluate(f"{P}.view.orbit(70, -30)"); pg.wait_for_timeout(200)
-        err = pg.evaluate("""(() => { const L = PhysicsPlayground.active, W = L.plane3(), x = W.cx * 0.6, y = W.cy * 1.3, s = L.project3(x, y), q = s && L.pick3(s); return q ? Math.hypot(q.x - x, q.y - y) : 1e9; })()""")
+        err = pg.evaluate("""(() => { const L = PhysicsPlayground.active, W = L.plane3(), x = W.cx * 0.3, y = W.cy * 1.6, s = L.project3(x, y, L.lift3 ? L.lift3(x, y) : 0), q = s && L.pick3(s); return q ? Math.hypot(q.x - x, q.y - y) : 1e9; })()""")
         ok(f"{lab}_pick_round_trip", err < 2.5 / pg.evaluate("Math.min(1, PhysicsPlayground.active.plane3().k * 96)"), round(err, 3))
 
     # The camera.
@@ -131,6 +138,35 @@ with sync_playwright() as p:
     pg.keyboard.press("0"); pg.wait_for_timeout(900)
     ok("frame_key_returns_home", abs(V()["zoom"] - 100) < 8, round(V()["zoom"], 1))
 
+    # The pivot stays on the apparatus, however the wheel wanders.
+    pg.evaluate(f"{P}.select('collisions')"); settle(pg, IS3D); pg.wait_for_timeout(400)
+    pg.evaluate(f"{P}.view.frame()"); pg.wait_for_timeout(700)
+    home = V()
+    for fx, fy in [(0.92, 0.1), (0.06, 0.9), (0.95, 0.92), (0.05, 0.08)]:
+        pg.mouse.move(box["x"] + box["width"] * fx, box["y"] + box["height"] * fy)
+        for _ in range(4): pg.mouse.wheel(0, -240); pg.wait_for_timeout(40)
+        for _ in range(2): pg.mouse.wheel(0, 240); pg.wait_for_timeout(40)
+    pg.wait_for_timeout(600)
+    off = pg.evaluate("""(() => { const L = PhysicsPlayground.active, c = L.c3(), P = L.plane3(), H = L.home3(); return Math.max(Math.abs(c.tx - H.tx) / P.hw, Math.abs(c.tz - H.tz) / P.hh); })()""")
+    ok("wheel_keeps_pivot_on_apparatus", off <= 1.02, round(off, 3))
+    for _ in range(14): pg.mouse.wheel(0, 240); pg.wait_for_timeout(30)
+    pg.wait_for_timeout(700)
+    v = V()
+    ok("zooming_out_returns_home", abs(v["tx"] - home["tx"]) < 0.02 and abs(v["tz"] - home["tz"]) < 0.02, (round(v["tx"], 3), round(v["tz"], 3)))
+    pg.evaluate(f"{P}.view.frame()"); pg.wait_for_timeout(700)
+    v1 = V()
+    pg.keyboard.down("Shift"); pg.mouse.move(cx, cy); pg.mouse.down(); pg.mouse.move(cx + 4, cy, steps=2); pg.mouse.up(); pg.keyboard.up("Shift")
+    v2 = V()
+    ok("first_pan_does_not_jump", abs(v2["tx"] - v1["tx"]) + abs(v2["tz"] - v1["tz"]) < 0.25, round(abs(v2["tx"] - v1["tx"]) + abs(v2["tz"] - v1["tz"]), 3))
+    pg.evaluate(f"{P}.view.orbit(120, 0)"); pg.wait_for_timeout(200)
+    yaw = V()["yaw"]
+    pg.keyboard.press("Shift+B"); pg.wait_for_timeout(700); pg.keyboard.press("Shift+B"); pg.wait_for_timeout(700)
+    ok("resize_keeps_the_angle", abs(V()["yaw"] - yaw) < 1e-6, round(V()["yaw"] - yaw, 6))
+    pg.evaluate(f"{P}.view.frame()"); pg.wait_for_timeout(700)
+    n0 = pg.evaluate(f"{P}.labs.collisions.n"); y0 = V()["yaw"]
+    pg.mouse.move(box["x"] + 14, box["y"] + box["height"] - 14); pg.mouse.down(); pg.mouse.move(box["x"] + 90, box["y"] + box["height"] - 14, steps=5); pg.mouse.up()
+    ok("drag_around_apparatus_orbits", abs(V()["yaw"] - y0) > 0.2 and pg.evaluate(f"{P}.labs.collisions.n") == n0, round(V()["yaw"] - y0, 3))
+
     # Tools reach the simulation through the ray.
     n0 = pg.evaluate(f"{P}.labs.gravity.bodies.length")
     pg.evaluate(f"{P}.select('gravity')"); settle(pg, IS3D); pg.wait_for_timeout(300)
@@ -144,12 +180,43 @@ with sync_playwright() as p:
     pg.evaluate(f"{P}.history.back()"); pg.wait_for_timeout(300)
     ok("rewind_in_3d", size > 1 and pg.evaluate(LIT) > 0.02, size)
     pg.evaluate(f"{P}.play()")
-    pg.evaluate(f"{P}.capture.toggleVideo()"); pg.wait_for_timeout(1500); pg.evaluate(f"{P}.capture.toggleVideo()")
+    pg.evaluate(f"{P}.capture.toggleVideo()"); pg.wait_for_timeout(3000); pg.evaluate(f"{P}.capture.toggleVideo()")
     ok("video_saves_from_3d", settle(pg, f"{P}.capture.vault.list().some(i => i.kind === 'clip' && !i.saving && i.sizeBytes > 0)", 10000))
     ctx.close()
 
+    # Instruments: a reading plots, the plot rewinds, diagnostics open on demand.
+    ctx = b.new_context(viewport={"width": 1440, "height": 900})
+    pg = page(ctx, lab="chaos")
+    settle(pg, IS3D, 30000); pg.wait_for_timeout(2600)
+    hits = pg.locator("#readouts .gauge-hit")
+    ok("readings_are_gauges", hits.count() >= 4 and pg.locator("#readouts dd").count() == hits.count(), hits.count())
+    ok("lab_chart_shows_first", pg.inner_text("#chart-title").upper() != "SCOPE")
+    hits.nth(0).click()
+    ok("reading_plots", settle(pg, "document.getElementById('chart-title').textContent === 'Scope'", 4000) and pg.locator(".scope-chip").count() == 1)
+    ok("gauge_shows_pressed", hits.nth(0).get_attribute("aria-pressed") == "true")
+    cb = pg.locator("#chart").bounding_box()
+    t0 = pg.evaluate(f"{P}.active.t")
+    pg.mouse.click(cb["x"] + cb["width"] * 0.3, cb["y"] + cb["height"] * 0.5); pg.wait_for_timeout(400)
+    ok("plot_click_rewinds", pg.evaluate(f"{P}.active.t") < t0 and pg.evaluate(f"{P}.active.hist.pos") >= 0 and pg.evaluate(f"!{P}.state.running"), round(pg.evaluate(f"{P}.active.t"), 2))
+    pg.mouse.move(cb["x"] + cb["width"] * 0.3, cb["y"] + cb["height"] * 0.5); pg.mouse.down(); pg.mouse.move(cb["x"] + cb["width"] * 0.8, cb["y"] + cb["height"] * 0.5, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    t1 = pg.evaluate(f"{P}.active.t")
+    ok("plot_drag_scrubs_forward", pg.evaluate(f"{P}.active.hist.pos") >= 0 and t1 > t0 * 0.45, round(t1, 2))
+    pg.reload(); settle(pg, IS3D, 30000); pg.wait_for_timeout(1400)
+    ok("plotted_readings_remembered", pg.locator(".scope-chip").count() == 1)
+    pg.locator(".scope-x").first.click(); pg.wait_for_timeout(300)
+    ok("removing_the_last_returns_to_lab_chart", pg.inner_text("#chart-title").upper() != "SCOPE")
+    pg.click("#diag-toggle")
+    ok("diagnostics_open_on_demand", not pg.evaluate("document.getElementById('diag').hidden"))
+    pg.keyboard.press("Escape")
+    ok("escape_closes_diagnostics", pg.evaluate("document.getElementById('diag').hidden") and pg.evaluate("document.activeElement.id") == "diag-toggle")
+    pg.click("#btn-deck-tall"); pg.wait_for_timeout(500)
+    tall = pg.locator("#tile-deck").bounding_box()["height"]
+    pg.click("#btn-deck-tall"); pg.wait_for_timeout(500)
+    ok("deck_grows_and_shrinks", tall > pg.locator("#tile-deck").bounding_box()["height"] + 40, round(tall))
+    ctx.close()
+
     # Graphics tiers.
-    ctx = b.new_context()
+    ctx = b.new_context(viewport=VIEW)
     pg = page(ctx, tier="auto")
     settle(pg, IS3D, 30000)
     ok("auto_finds_lite_on_software_gl", pg.evaluate(f"{P}.mode.world.engine.tier.id") == "lite")
@@ -167,8 +234,8 @@ with sync_playwright() as p:
     ctx.close()
 
     # Every way 3D can fail ends in a working 2D stage that says why.
-    ctx = b.new_context()
-    pg = open_page(ctx, mode="3d", watch=False, viewport=VIEW)
+    ctx = b.new_context(viewport=VIEW)
+    pg = open_page(ctx, mode="3d", watch=False)
     pg.route("**/three@*/**", lambda r: r.abort())
     pg.goto(URL + "#chaos")
     ok("no_three_falls_back", settle(pg, f"window.PhysicsPlayground && {P}.mode.get() === '2d' && !!{P}.mode.world.fail", 20000))
@@ -178,15 +245,15 @@ with sync_playwright() as p:
     ok("no_three_still_runs", pg.evaluate(f"{P}.active.t") > t0)
     ctx.close()
 
-    ctx = b.new_context()
-    pg = open_page(ctx, mode="3d", watch=False, viewport=VIEW)
+    ctx = b.new_context(viewport=VIEW)
+    pg = open_page(ctx, mode="3d", watch=False)
     pg.add_init_script("const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, o) { return t === 'webgl2' ? null : g.call(this, t, o); };")
     pg.goto(URL + "#chaos"); pg.wait_for_timeout(1200)
     ok("no_webgl2_stays_2d", pg.evaluate(f"{P}.mode.get()") == "2d" and pg.evaluate("document.getElementById('mode-3d').disabled"))
     ctx.close()
 
-    ctx = b.new_context()
-    pg = open_page(ctx, mode="3d", watch=False, viewport=VIEW)
+    ctx = b.new_context(viewport=VIEW)
+    pg = open_page(ctx, mode="3d", watch=False)
     pg.add_init_script("try { localStorage.setItem('psp:tier', '\"lite\"'); } catch (_) { /* no storage here */ }")
     pg.goto(URL + "#chaos"); settle(pg, IS3D, 30000)
     pg.evaluate(f"window.__lose = {P}.mode.world.engine.renderer.getContext().getExtension('WEBGL_lose_context'); window.__lose.loseContext()")
@@ -196,25 +263,25 @@ with sync_playwright() as p:
     ok("restored_context_returns", settle(pg, IS3D, 12000))
     pg.wait_for_timeout(600)
     ok("restored_context_draws", pg.evaluate(LIT) > 0.02)
-    pg.evaluate(f"{P}.labs.chaos.bobR = () => {{ throw new Error('planted') }}")
+    pg.evaluate(f"void ({P}.labs.chaos.bobR = () => {{ throw new Error('planted') }})")
     ok("broken_scene_goes_to_2d", settle(pg, f"!{P}.mode.is3D()", 8000))
     pg.evaluate(f"{P}.select('cloth')")
     ok("other_labs_unaffected", settle(pg, IS3D, 20000))
     ctx.close()
 
-    # Soak: every scene of every lab, twice. The second lap must not grow.
-    ctx = b.new_context()
+    # Soak: every scene of every lab, twice, drawn each time so its resources exist. The second lap must not grow.
+    ctx = b.new_context(viewport=VIEW)
     pg = page(ctx, tier="high")
     crashed = []
     pg.on("crash", lambda *_: crashed.append(1))
     settle(pg, IS3D, 30000)
     lap = f"""async () => {{
+      const frames = n => new Promise(r => {{ const f = () => n-- > 0 ? requestAnimationFrame(f) : r(); f(); }});
       for (const id of {LABS!r}) {{
         {P}.select(id);
-        const L = {P}.active;
-        for (const q of L.presets) {{ {P}.preset(q.id); await new Promise(r => setTimeout(r, 250)); }}
+        while (!{P}.mode.is3D()) await new Promise(r => setTimeout(r, 50));
+        for (const q of {P}.active.presets) {{ {P}.preset(q.id); await frames(3); }}
       }}
-      await new Promise(r => setTimeout(r, 600));
       const i = {P}.mode.info();
       return {{ geo: i.geometries, tex: i.textures, heap: (performance.memory || {{}}).usedJSHeapSize || 0 }};
     }}"""

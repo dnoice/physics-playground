@@ -82,22 +82,21 @@
 
 /* ---------- bento workspace ---------- */
 .bento {
-  --bay: minmax(210px, 31vh);
+  --bay: minmax(178px, 23vh);
   display: grid; gap: var(--gap); padding: var(--gap); min-height: 0;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(230px, 0.78fr) minmax(190px, 0.6fr);
   grid-template-rows: minmax(0, 0.98fr) minmax(0, 1.12fr) var(--bay);
   grid-template-areas:
     "stage stage stage scene tools"
     "stage stage stage params params"
-    "chart reads diag notes notes";
+    "deck deck deck notes notes";
 }
 .tile-stage { grid-area: stage; }
 .tile-scene { grid-area: scene; }
 .tile-tools { grid-area: tools; }
 .tile-params { grid-area: params; }
-.tile-chart { grid-area: chart; }
-.tile-readouts { grid-area: reads; }
-.tile-diag { grid-area: diag; }
+.tile-deck { grid-area: deck; }
+.bento.deck-tall { --bay: minmax(280px, 44vh); }
 .tile-notes { grid-area: notes; }
 .bento.no-bay { grid-template-rows: minmax(0, 0.98fr) minmax(0, 1.12fr); grid-template-areas: "stage stage stage scene tools" "stage stage stage params params"; }
 .bento.no-bay .bay { display: none; }

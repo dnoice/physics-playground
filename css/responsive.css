@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Responsive Styles (digiSpace Edition - v2.0)
+    - Title: Responsive Styles (digiSpace Edition - v2.1)
     - File Name: responsive.css
     - Relative Path: css/responsive.css
     - Artifact Type: stylesheet
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fits the
+      mode switch at phone width and reflows the Instruments deck.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: the bento layout's reflow.
     Earlier entries: see CHANGELOG.md
@@ -42,23 +44,29 @@
   body { display: block; overflow: auto; }
   .bento {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto;
-    grid-template-areas: "stage stage" "scene tools" "params params" "chart reads" "diag notes";
+    grid-template-areas: "stage stage" "scene tools" "params params" "deck deck" "notes notes";
   }
   .bento.no-bay { grid-template-areas: "stage stage" "scene tools" "params params"; grid-template-rows: none; }
   .tile-stage { height: min(68vh, 640px); min-height: 360px; }
   .bento.focus .tile-stage { height: calc(100vh - 76px); }
-  .tile-chart, .tile-readouts, .tile-diag, .tile-notes { max-height: 460px; }
-  .tile-chart { min-height: 240px; }
+  .tile-notes { max-height: 460px; }
+  .tile-deck { height: 300px; }
+  .bento.deck-tall .tile-deck { height: 460px; }
   .tile-scene, .tile-tools { max-height: 420px; }
 }
 @media (max-width: 760px) {
-  .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "tools" "scene" "params" "chart" "reads" "diag" "notes"; padding: 6px; gap: 6px; }
+  .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "tools" "scene" "params" "deck" "notes"; padding: 6px; gap: 6px; }
   .bento.no-bay { grid-template-areas: "stage" "tools" "scene" "params"; }
   .brand h1 { display: none; }
   .brand { padding-right: 6px; }
   .tab { padding: 0 10px; }
   .tab-n { display: none; }
   .tile-stage { height: min(64vh, 560px); min-height: 330px; }
+  .top-actions { gap: 3px; }
+  .mode-switch button { min-width: 28px; padding: 0 5px; font-size: 11.5px; }
+  .gfx-btn { padding: 0 7px; }
+  #btn-gfx-label { display: none; }
+  #btn-keys { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

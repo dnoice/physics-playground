@@ -46,7 +46,7 @@
 """
 import re
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page
+from harness import URL, finish, launch, ok, open_page, settle
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
@@ -88,6 +88,7 @@ with sync_playwright() as p:
     def resize_cycle(name, keep):
         """F, Shift+B and a viewport change each resize the stage. The edit read by
         keep(), the clock and the rewind history must come through all three."""
+        settle(pg, P + ".history.size() >= 2")
         kept0, n0, t0 = keep(), snapshots(), lab_t()
         ok(name + "_history_to_keep", n0 >= 2, n0)
         steps = [("focus", lambda: pg.keyboard.press("f"), lambda: pg.keyboard.press("f")),
@@ -139,7 +140,9 @@ with sync_playwright() as p:
     pg.keyboard.up("d")
     ok("hold_events_repeat", pg.evaluate("repeats") == 3, pg.evaluate("repeats"))
     ok("hold_d_starts_once", state("capture.dataRec.on") is True and pg.get_attribute("#btn-data", "aria-pressed") == "true")
-    pg.wait_for_timeout(700); pg.keyboard.press("d"); pg.wait_for_timeout(400)
+    settle(pg, P + ".capture.dataRec.rows.length >= 2")
+    pg.keyboard.press("d")
+    settle(pg, P + ".capture.vault.list().some(i => i.kind === 'run' && !i.saving)")
     ok("hold_d_one_dataset", pg.evaluate(P + ".capture.vault.list().filter(i => i.kind === 'run').length") == 1)
     for _ in range(4): pg.keyboard.down("m")
     pg.keyboard.up("m"); pg.wait_for_timeout(400)

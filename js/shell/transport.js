@@ -51,6 +51,7 @@ import { ptr, refreshCursor } from './stage.js';
 import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
 import { hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
+import { closeDiag } from './instruments.js';
 import { closeGfx, toggleMode } from './mode.js';
 
 /* ---------- transport and keys ---------- */
@@ -73,8 +74,14 @@ export function pause() { state.running = false; updatePlay(); announce('Paused'
 export function togglePlay() { state.running ? pause() : play(); }
 export function stepOnce() { if (state.running) pause(); histBranch(active); advance(active, 1 / 60, Infinity); histCapture(active); updateReadouts(); drawChart(); updateRewind(); }
 export function resetActive() { rebuild(active); updateReadouts(); drawChart(); evaluateDiagnostics(); announce(`${active.title} restarted`); }
+/* Whether the focused element got focus from a press. A clicked button keeps focus, but Space then
+   means play and pause; focus that arrived any other way, by Tab, arrows or from code, keeps Space. */
+let pointerFocus = false, pressing = false;
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
+  document.addEventListener('pointerdown', () => { pointerFocus = pressing = true; }, true);
+  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, () => { pressing = false; }, true);
+  document.addEventListener('focusin', () => { if (!pressing) pointerFocus = false; }, true);
   speedInput.parentElement.style.setProperty('--notch', speedMap.toS(1) / 1000);
   speedInput.addEventListener('input', () => setSpeed(speedMap.fromS(+speedInput.value)));
   $('#speed-reset').addEventListener('click', () => { setSpeed(1); speedInput.focus(); });
@@ -89,8 +96,7 @@ export function init() {
     // One action per press: holding a key must not chain clips or flip the layout back and forth.
     if (e.repeat && (/^[rfmdz?]$/i.test(k) || e.code === 'KeyB')) return;
     if (k === ' ' || e.code === 'Space') {
-      // A button clicked with the mouse keeps focus without showing it, so Space belongs to play and pause.
-      if (tag === 'BUTTON' && !t.matches(':focus-visible')) t.blur();
+      if (tag === 'BUTTON' && pointerFocus) t.blur();
       else if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'A' || tag === 'SUMMARY') return;
       e.preventDefault();
       if (!e.repeat && !ptr.space) { ptr.space = true; ptr.spaceUsed = false; refreshCursor(); }
@@ -108,7 +114,7 @@ export function init() {
     else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Bottom bay shown' : 'Bottom bay hidden'); }
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
     else if (k === 'z' || k === 'Z') toggleMode();
-    else if (k === 'Escape') { if (closeGfx()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'Escape') { if (closeGfx() || closeDiag()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();

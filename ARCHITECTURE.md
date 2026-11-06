@@ -101,7 +101,8 @@ before anything else reads it. Then `boot()` runs:
 2. `diagnostics.init`, `transport.init` (buttons and every keyboard
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
    `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
-   rail), `mode.init` (2D and 3D, graphics tiers), `automation.init`
+   rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
+   (scope and diagnostics pill), `automation.init`
    (`window.PhysicsPlayground`).
 3. `start()` reads the theme, sizes the stage, applies saved parameters
    and presets, builds the orbit ball and library controls, selects the
@@ -237,6 +238,16 @@ the 3D switch with the reason and adds an insight. A lost WebGL context drops
 to 2D and returns when the context does. A scene that throws sends only its
 own lab back to 2D. The simulation never notices any of this.
 
+## Instruments
+
+`js/shell/instruments.js` is one tile holding a lab's readings. It reads the
+formatted rows from `lab.readouts()`, so a lab gets gauges, sparklines and
+plotting with no code of its own: a row plots if its text starts with a number.
+Samples are kept per lab at panel rate. The plot shares its time axis with the
+rewind history, so a click seeks to the nearest snapshot. While the run is
+replaying the past, sampling stops, so the recorded future stays until a new
+branch discards it. With nothing plotted, the lab's own `chart` shows instead.
+
 ## Guided experiments
 
 `js/labs/experiments.js` holds the curriculum, keyed by lab id:
@@ -277,7 +288,7 @@ The stylesheets load in this order, each building on the last:
 | `workspace.css` | Top bar, lab rail, bento grid, tile chrome, keys sheet |
 | `controls.css` | Buttons, segmented choices, sliders, switches |
 | `stage.css` | Stage header, HUD, experiment banner, gizmo, timeline |
-| `tiles.css` | Scene, tools, chart, readouts, diagnostics, notebook |
+| `tiles.css` | Scene, tools, instruments deck, diagnostics sheet, notebook |
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 

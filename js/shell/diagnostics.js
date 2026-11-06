@@ -47,7 +47,7 @@ import { cheaperTier, in3D, pickTier } from './mode.js';
 import { syncPanel } from './panel.js';
 import { BUDGET_MS, active, announce, perf, state, stickies } from './state.js';
 import { setSpeed } from './transport.js';
-import { revealTile } from './layout.js';
+import { setDiag, showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
 
 /* ---------- diagnostics ---------- */
@@ -88,12 +88,17 @@ export function evaluateDiagnostics() {
   btn.hidden = !alerts.length;
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
   sum.dataset.level = worst || 'ok';
+  showTopAlert(alerts[0], applyFix);
   sum.textContent = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable';
   const ids = new Set(alerts.map(a => a.id));
   for (const a of alerts) if (!lastAlertIds.has(a.id)) { announce(`${LEVEL_TAG[a.level]}: ${a.title}`); break; }
   lastAlertIds = ids;
 }
 let quietEl = null;
+function applyFix(ins, i) {
+  const fx = ins.fixes && ins.fixes[i]; if (!fx) return;
+  fx.run(); announce(`Applied: ${fx.label}`); syncPanel(); evaluateDiagnostics();
+}
 export function renderInsights(list) {
   const seen = new Set();
   for (const ins of list) {
@@ -112,10 +117,7 @@ export function renderInsights(list) {
     const fk = (ins.fixes || []).map(f => f.label).join('|');
     if (card.key !== fk) {
       card.key = fk; card.fixes.replaceChildren();
-      (ins.fixes || []).forEach((f, i) => card.fixes.append(el('button', { type: 'button', class: 'btn btn-fix', text: f.label, onclick: () => {
-        const fx = card.ins.fixes && card.ins.fixes[i]; if (!fx) return;
-        fx.run(); announce(`Applied: ${fx.label}`); syncPanel(); evaluateDiagnostics();
-      } })));
+      (ins.fixes || []).forEach((f, i) => card.fixes.append(el('button', { type: 'button', class: 'btn btn-fix', text: f.label, onclick: () => applyFix(card.ins, i) })));
     }
   }
   for (const [id, c] of insightCards) if (!seen.has(id)) { c.el.remove(); insightCards.delete(id); }
@@ -155,9 +157,5 @@ export function updatePerfNums() {
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
-  $('#hud-alert').addEventListener('click', () => {
-    const d = $('#diag');
-    revealTile(d);
-    d.focus({ preventScroll: true });
-  });
+  $('#hud-alert').addEventListener('click', () => setDiag(true));
 }

@@ -77,7 +77,8 @@ export const ptr = { ids: new Map(), drag: null, pinch: null, space: false, spac
 export const ptrPos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
 export const labPoint = (lab, s) => (lab.screenInput ? s : toWorld(lab, s));
 export function cursorFor(s) {
-  if (ptr.drag) return ptr.drag.mode === 'orbit' ? 'move' : 'grabbing';
+  if (ptr.drag) return 'grabbing';
+  if (is3D(active) && active.offStage3(s)) return 'grab';
   if (ptr.space || ptr.panMode || (active.wantsPan && active.wantsPan({ button: 0 }))) return 'grab';
   const p = labPoint(active, s);
   return (p && active.cursorAt && active.cursorAt(p)) || 'crosshair';
@@ -121,6 +122,7 @@ export function init() {
     if (b === 1 || (b === 2 && !active.rightButton)) mode = three && !e.shiftKey ? 'orbit' : 'pan';
     else if (b === 0 && three && e.shiftKey) mode = 'pan';
     else if (b === 0 && (ptr.space || ptr.panMode || (active.wantsPan && active.wantsPan(e)))) mode = three && ptr.space && !ptr.panMode && !e.shiftKey ? 'orbit' : 'pan';
+    else if (b === 0 && three && active.offStage3(s)) mode = 'orbit';
     if (mode) { ptr.drag = { mode, id: e.pointerId, x: s.x, y: s.y }; if (ptr.space) ptr.spaceUsed = true; canvas.style.cursor = cursorFor(s); return; }
     const p = labPoint(active, s);
     if (!p) return;

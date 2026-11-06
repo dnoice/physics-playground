@@ -31,6 +31,9 @@
     - The long side of every world is 10 scene units, so lights and materials
       read the same in every lab and at every window size.
     - The camera keeps above the floor and frames the plane at any aspect.
+    - The orbit pivot stays on the apparatus: zooming in follows the cursor,
+      zooming out retraces home, and a resize keeps the user's angle.
+    - Dragging the empty space around the apparatus orbits.
 
 ✒ Usage Instructions:
     rig3: { plane: 'floor' | 'wall', yaw, pitch, fit, height }
@@ -75,13 +78,26 @@ export const stage3d = {
     const P = this.plane3(), R = this.rig3, T = R.target || [0, 0, 0];
     return { yaw: R.yaw ?? 0.45, pitch: R.pitch ?? (R.plane === 'wall' ? 0.16 : 0.72), dist: this.dist0(), tx: P.o[0] + T[0], ty: P.o[1] + T[1], tz: P.o[2] + T[2] };
   },
+  /* A new world re-frames the view; a new stage size only rescales it, so the user keeps their angle. */
   c3() {
-    const key = `${view.w}x${view.h}:${worldOf(this).w}x${worldOf(this).h}`;
+    const W = worldOf(this), key = `${W.w}x${W.h}`, D = this.dist0();
     if (!this.cam3 || this.cam3.key !== key) {
       const H = this.home3();
-      this.cam3 = { ...H, yawT: H.yaw, pitchT: H.pitch, distT: H.dist, txT: H.tx, tyT: H.ty, tzT: H.tz, key };
+      this.cam3 = { ...H, yawT: H.yaw, pitchT: H.pitch, distT: H.dist, txT: H.tx, tyT: H.ty, tzT: H.tz, key, d0: D };
+    } else if (this.cam3.d0 !== D) {
+      const r = D / this.cam3.d0;
+      this.cam3.dist *= r; this.cam3.distT *= r; this.cam3.d0 = D;
     }
     return this.cam3;
+  },
+  /* Keep the orbit pivot on the apparatus: past its edges an orbit swings the whole scene off the stage. */
+  clampTarget(c) {
+    const H = this.home3(), P = this.plane3(), r = [c.txT - H.tx, c.tyT - H.ty, c.tzT - H.tz];
+    const ru = clamp(r[0] * P.u[0] + r[1] * P.u[1] + r[2] * P.u[2], -P.hw, P.hw), rv = clamp(r[0] * P.v[0] + r[1] * P.v[1] + r[2] * P.v[2], -P.hh, P.hh);
+    const rn = clamp(r[0] * P.n[0] + r[1] * P.n[1] + r[2] * P.n[2], -0.2, 1);
+    c.txT = H.tx + P.u[0] * ru + P.v[0] * rv + P.n[0] * rn;
+    c.tyT = Math.max(0.05, H.ty + P.u[1] * ru + P.v[1] * rv + P.n[1] * rn);
+    c.tzT = H.tz + P.u[2] * ru + P.v[2] * rv + P.n[2] * rn;
   },
   camMatrices(w, h) {
     const c = this.c3(), cp = Math.cos(c.pitch);
@@ -126,27 +142,32 @@ export const stage3d = {
     c.yaw = c.yawT;
     c.pitch = c.pitchT = clamp(c.pitchT + dy * 0.006, this.pitchFloor(c), this.rig3.pitchMax ?? 1.553);
   },
+  /* Slide the plane under the pointer: the point held at the stage centre follows the drag one to one. */
   pan3(dx, dy) {
-    const c = this.c3(), V = this.basis3(), P = this.plane3(), k = 2 * c.dist * Math.tan(FOV3 / 2) / Math.max(1, view.h);
-    const d = [(-V.r[0] * dx + V.u[0] * dy) * k, (-V.r[1] * dx + V.u[1] * dy) * k, (-V.r[2] * dx + V.u[2] * dy) * k];
-    // Slide in the plane: the view moves over the apparatus, never through it.
-    const dn = d[0] * P.n[0] + d[1] * P.n[1] + d[2] * P.n[2];
-    c.txT = clamp(c.tx + d[0] - P.n[0] * dn, P.o[0] - P.hw, P.o[0] + P.hw); c.tx = c.txT;
-    c.tyT = clamp(c.ty + d[1] - P.n[1] * dn, Math.max(0.05, P.o[1] - P.hh * Math.abs(P.v[1]) - 0.5), P.o[1] + P.hh * Math.abs(P.v[1]) + 0.5); c.ty = c.tyT;
-    c.tzT = clamp(c.tz + d[2] - P.n[2] * dn, P.o[2] - P.hh - 1, P.o[2] + P.hh + 1); c.tz = c.tzT;
+    const c = this.c3(), a = this.rayHit({ x: view.w / 2, y: view.h / 2 }), b = this.rayHit({ x: view.w / 2 - dx, y: view.h / 2 - dy });
+    if (!a || !b) return;
+    c.txT = c.tx + b.p[0] - a.p[0]; c.tyT = c.ty + b.p[1] - a.p[1]; c.tzT = c.tz + b.p[2] - a.p[2];
+    this.clampTarget(c);
+    c.tx = c.txT; c.ty = c.tyT; c.tz = c.tzT;
     if (this.onUserPan) this.onUserPan();
   },
+  /* In: dolly toward the cursor. Out: retrace toward the home framing, reached by 100%, so zooming out always recovers the view. */
   zoom3(f, s, instant) {
-    const c = this.c3(), D0 = this.dist0(), nd = clamp(c.distT / f, D0 * 0.14, D0 * 3.2);
-    const hit = s ? this.rayHit(s) : null;
-    if (hit && !(this.camLocked && this.camLocked())) {
-      const k = 1 - nd / c.distT;
-      c.txT += (hit.p[0] - c.txT) * k; c.tyT += (hit.p[1] - c.tyT) * k; c.tzT += (hit.p[2] - c.tzT) * k;
-    }
+    const c = this.c3(), H = this.home3(), D0 = H.dist, nd = clamp(c.distT / f, D0 * 0.14, D0 * 3.2);
+    let aim = null, k = 0;
+    if (nd < c.distT) { const hit = s ? this.rayHit(s) : null; if (hit) { aim = hit.p; k = 1 - nd / c.distT; } }
+    else if (c.distT < D0) { aim = [H.tx, H.ty, H.tz]; k = clamp((nd - c.distT) / (D0 - c.distT), 0, 1); }
+    if (aim) { c.txT += (aim[0] - c.txT) * k; c.tyT += (aim[1] - c.tyT) * k; c.tzT += (aim[2] - c.tzT) * k; this.clampTarget(c); }
     c.distT = nd;
     if (instant || reduceMotion) { c.dist = c.distT; c.tx = c.txT; c.ty = c.tyT; c.tz = c.tzT; }
   },
-  actual3() { this.c3().distT = this.dist0(); },
+  actual3() { const c = this.c3(), H = this.home3(); Object.assign(c, { distT: H.dist, txT: H.tx, tyT: H.ty, tzT: H.tz }); },
+  /* True for a stage pixel off the apparatus, where a left-drag has nothing to act on and orbits instead. */
+  offStage3(s) {
+    const hit = this.rayHit(s); if (!hit) return true;
+    const { p, P } = hit, r = [p[0] - P.o[0], p[1] - P.o[1], p[2] - P.o[2]];
+    return Math.abs(r[0] * P.u[0] + r[1] * P.u[1] + r[2] * P.u[2]) > P.hw + 0.25 || Math.abs(r[0] * P.v[0] + r[1] * P.v[1] + r[2] * P.v[2]) > P.hh + 0.25;
+  },
   zoomPct3() { return this.dist0() / this.c3().dist * 100; },
   frame3(instant) {
     const c = this.c3(), H = this.home3();

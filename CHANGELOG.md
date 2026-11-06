@@ -81,6 +81,32 @@ not to pause for permission or leave open flags.
   stays planar; the folds are a stated visual relief.
 - **Fields**: a black glass bench with the potential as a relief of light.
 
+### Instruments
+
+On Dennis's call that the chart, readouts and diagnostics took more room than
+they gave back, the three tiles became one, and the stage grew.
+
+- Every reading is a gauge with a sparkline. Clicking one plots it, up to four
+  together, on a shared time axis.
+- The plot is live: hover to read any moment, click or drag to rewind to it,
+  wheel to zoom the time window.
+- Diagnostics are a status pill. The top alert and its fix stay in the header,
+  and the full list opens on demand.
+
+### Moving around in 3D
+
+Dennis reported the Collisions camera as all over the place. The cause was
+shared by every plane lab, and the tall, wide table showed it worst.
+
+- Zooming out pushed the orbit pivot away from the cursor with no limit, so a
+  few wheel moves left it far off the apparatus and an orbit swung the scene
+  across the stage. The pivot now stays on the apparatus, and zooming out
+  retraces to the home view.
+- The first pan jumped, because the home target sat outside the pan limits.
+- Panning a tilted view lagged the pointer; the plane now slides one to one.
+- Any resize threw away the user's angle; now it only rescales the view.
+- Dragging the empty space around an apparatus orbits, as a 3D viewer should.
+
 ### Graphics tiers
 
 - Ultra, High, Medium, Low and Lite set resolution, antialiasing, shadows,
