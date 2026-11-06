@@ -23,8 +23,9 @@
     reflection. Scenes ask for a studio and add their apparatus to it.
 
 ✒ Key Features:
-    - Image-based light from softboxes rendered once through PMREM, tinted per
-      scene with no downloaded HDRI.
+    - Image-based light from softboxes on every side, so an apparatus reads
+      from any angle, rendered once through PMREM and tinted per scene with
+      no downloaded HDRI.
     - Spot key with soft shadows; rim light comes from coloured softbox
       strips, so it edges the apparatus without a streak across the floor.
     - Polished floor: a mirrored camera pass into a mipmapped target, blurred
@@ -55,6 +56,7 @@ export function bakeEnvironment(renderer, { top = 0xfff4e6, left = 0x8fc8ff, rig
   softbox(room, -18, 6, 4, 3, 16, left, 3.4 * power);
   softbox(room, 18, 5, -2, 2.4, 14, right, 3 * power);
   softbox(room, 0, 4, 20, 26, 2, 0xdfe8f4, 0.9 * power);
+  softbox(room, 0, 11, -20, 24, 9, 0xcfdcec, 1.5 * power);
   const pm = new THREE.PMREMGenerator(renderer);
   const rt = pm.fromScene(room, 0.018, 0.1, 80);
   pm.dispose();
@@ -83,11 +85,11 @@ function createDome(o) {
 
 /* ---------- polished floor with a planar reflection ---------- */
 const clipBias = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
-function createFloor(E, o) {
+function createFloor(E, o, env) {
   const smudge = E.mats.map('smudge', 1024, { repeat: o.repeat || 5 }), U = {
     tRefl: { value: null }, uMirror: { value: new THREE.Matrix4() }, uReflect: { value: 0 }, uBlur: { value: o.blur ?? 0.012 }, uF0: { value: o.f0 ?? 0.06 },
   };
-  const mat = new THREE.MeshStandardMaterial({ color: o.color ?? 0x171c24, roughness: o.roughness ?? 0.42, metalness: o.metalness ?? 0.25, roughnessMap: smudge });
+  const mat = new THREE.MeshStandardMaterial({ color: o.color ?? 0x171c24, roughness: o.roughness ?? 0.42, metalness: o.metalness ?? 0.25, roughnessMap: smudge, envMap: env, envMapIntensity: o.env ?? 0.2 });
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWorld;')
@@ -159,7 +161,7 @@ export function createStudio(E, o = {}) {
   const key = new THREE.SpotLight(O.keyColor, O.key, 0, O.keyAngle, O.keyPenumbra, 2);
   key.position.set(...O.keyPos); key.target.position.set(...O.keyTarget);
   key.shadow.camera.near = 2; key.shadow.camera.far = O.shadowSpan; key.shadow.bias = -0.00025; key.shadow.normalBias = 0.018; key.shadow.radius = 5;
-  const floor = O.floor === false ? null : createFloor(E, O.floor);
+  const floor = O.floor === false ? null : createFloor(E, O.floor, env);
   scene.add(dome, key, key.target);
   if (floor) scene.add(floor.mesh);
 

@@ -53,6 +53,8 @@ P = "PhysicsPlayground"
 WALLS = P + ".labs.waves.wall.reduce((a, b) => a + b, 0)"
 LINKS = P + ".labs.cloth.alive.subarray(0, " + P + ".labs.cloth.L).reduce((a, b) => a + b, 0)"
 OBSTACLES = "JSON.stringify(" + P + ".labs.fluid.obs)"
+# A paused run takes no snapshots, so anything that pauses must first wait for this.
+HISTORY = P + ".history.size() >= 2"
 ACTIVE = "(() => { const a = document.activeElement; return { tag: a.tagName, id: a.id, fk: a.dataset.fk || null, text: a.textContent.trim(), ring: a.matches(':focus-visible') } })()"
 NEWEST_RUN = """async () => { const C = PhysicsPlayground.capture, run = C.vault.list().find(i => i.kind === 'run');
   return { title: run.title, preset: run.preset, names: run.files.map(f => f.name), csv: await (await C.vault.blob(run, 0)).text(), tracks: run.files[1] ? await (await C.vault.blob(run, 1)).text() : '' } }"""
@@ -88,7 +90,6 @@ with sync_playwright() as p:
     def resize_cycle(name, keep):
         """F, Shift+B and a viewport change each resize the stage. The edit read by
         keep(), the clock and the rewind history must come through all three."""
-        settle(pg, P + ".history.size() >= 2")
         kept0, n0, t0 = keep(), snapshots(), lab_t()
         ok(name + "_history_to_keep", n0 >= 2, n0)
         steps = [("focus", lambda: pg.keyboard.press("f"), lambda: pg.keyboard.press("f")),
@@ -192,18 +193,18 @@ with sync_playwright() as p:
     pg = fresh("waves"); scene(pg, "#preset-waves-ripple"); blur(); pg.wait_for_timeout(1300)
     pg.keyboard.press("w")
     pg.mouse.move(*stage_point(0.3, 0.5)); pg.mouse.down(); pg.mouse.move(*stage_point(0.7, 0.5), steps=12); pg.mouse.up()
-    pg.keyboard.press("Space")
+    settle(pg, HISTORY); pg.keyboard.press("Space")
     ok("waves_wall_painted", pg.evaluate(WALLS) > 0, pg.evaluate(WALLS))
     resize_cycle("waves", lambda: pg.evaluate(WALLS))
     pg.context.close()
 
     pg = fresh("fluid"); blur(); pg.wait_for_timeout(1000)
-    pg.keyboard.press("b"); pg.mouse.click(*stage_point(0.5, 0.3)); pg.keyboard.press("Space")
+    pg.keyboard.press("b"); pg.mouse.click(*stage_point(0.5, 0.3)); settle(pg, HISTORY); pg.keyboard.press("Space")
     ok("fluid_obstacle_placed", pg.evaluate(P + ".labs.fluid.obs.length") == 1)
     resize_cycle("fluid", lambda: pg.evaluate(OBSTACLES))
     pg.context.close()
 
-    pg = fresh("cloth"); blur(); pg.wait_for_timeout(1000)
+    pg = fresh("cloth"); blur(); settle(pg, HISTORY)
     pg.keyboard.press("Space"); pg.keyboard.press("c")
     links0 = pg.evaluate(LINKS)
     pg.mouse.move(*stage_point(0.25, 0.4)); pg.mouse.down(); pg.mouse.move(*stage_point(0.75, 0.42), steps=20); pg.mouse.up()

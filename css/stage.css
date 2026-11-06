@@ -196,7 +196,7 @@
   .stage-hint { max-width: calc(100% - 110px); }
   .stage:has(.minimap:not([hidden])) .stage-hint { max-width: calc(100% - 160px); }
 }
-@container stage (max-height: 470px) { .nav { gap: 7px; padding: 8px; } .orbit { display: none; } .dock-btn, .nav-btn { height: 32px; } .nav-sec + .nav-sec { padding-top: 7px; } }
+@container stage (max-height: 400px) { .nav { gap: 7px; padding: 8px; } .orbit { display: none; } .dock-btn, .nav-btn { height: 32px; } .nav-sec + .nav-sec { padding-top: 7px; } }
 
 .nav-btn .ms { font-size: 19px; }
 .hud [hidden] { display: none !important; }

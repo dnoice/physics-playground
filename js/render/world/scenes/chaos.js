@@ -90,6 +90,24 @@ export function createScene(E, lab) {
     const a = (k + 0.5) * TAU / 12, b = shadow(new THREE.Mesh(bolt(0.016), M.brass()));
     b.rotation.x = Math.PI / 2; b.position.set(Math.sin(a) * 0.986, Math.cos(a) * 0.986, 0.02); dialGroup.add(b);
   }
+  // The back of the instrument, which can be walked around: a ribbed casting, a bearing housing and a maker's plate.
+  const rear = new THREE.Group(); rear.position.z = -0.095; dialGroup.add(rear);
+  for (const [r, w, m] of [[0.94, 0.014, M.brass()], [0.64, 0.018, M.steel()], [0.3, 0.016, M.brass()]]) rear.add(shadow(new THREE.Mesh(new THREE.TorusGeometry(r, w, 16, 180), m)));
+  const ribGeo = roundedBox(0.034, 0.62, 0.04, 0.014, 3), screwGeo = bolt(0.017);
+  for (let k = 0; k < 8; k++) {
+    const a = (k + 0.5) * TAU / 8, rib = shadow(new THREE.Mesh(ribGeo, M.steel()));
+    rib.position.set(Math.sin(a) * 0.61, Math.cos(a) * 0.61, -0.012); rib.rotation.z = -a; rear.add(rib);
+    for (const r of [0.94, 0.3]) { const b = shadow(new THREE.Mesh(screwGeo, M.brass())); b.rotation.x = -Math.PI / 2; b.position.set(Math.sin(a) * r, Math.cos(a) * r, -0.02); rear.add(b); }
+  }
+  const housing = shadow(new THREE.Mesh(turned([[0.2, 0], [0.19, 0.03], [0.12, 0.05], [0.11, 0.12], [0.07, 0.15], [0.03, 0.17], [0, 0.175]], 48), M.brass()));
+  housing.rotation.x = -Math.PI / 2; rear.add(housing);
+  const plateCanvas2 = document.createElement('canvas'); plateCanvas2.width = 512; plateCanvas2.height = 160;
+  const pg = plateCanvas2.getContext('2d');
+  pg.fillStyle = '#7a5a2a'; pg.fillRect(0, 0, 512, 160); pg.strokeStyle = 'rgba(40,26,8,0.8)'; pg.lineWidth = 5; pg.strokeRect(12, 12, 488, 136);
+  pg.fillStyle = 'rgba(30,18,4,0.92)'; pg.textAlign = 'center'; pg.font = '500 54px "Instrument Serif", Georgia, serif'; pg.fillText('Double Pendulum', 256, 82); pg.font = '500 24px "IBM Plex Mono", monospace'; pg.fillText('DETERMINISTIC · UNPREDICTABLE', 256, 124);
+  const plateTex2 = canvasTexture(plateCanvas2, { renderer: E.renderer, srgb: true });
+  const maker = shadow(new THREE.Mesh(roundedBox(0.44, 0.14, 0.012, 0.005, 2), new THREE.MeshStandardMaterial({ map: plateTex2, emissive: 0xffffff, emissiveMap: plateTex2, emissiveIntensity: 0.55, metalness: 0.5, roughness: 0.42 })));
+  maker.rotation.y = Math.PI; maker.position.set(0, -0.46, -0.03); rear.add(maker);
   // Cradle: an arc under the dial, on a walnut base with brass feet.
   const cradle = shadow(new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.038, 24, 90, Math.PI * 0.62), M.gunmetal()));
   cradle.rotation.z = Math.PI + Math.PI * 0.19; cradle.position.z = -0.02; dialGroup.add(cradle);
@@ -237,7 +255,7 @@ export function createScene(E, lab) {
     },
     dispose() {
       studio.dispose(); trails.dispose(); tube.dispose(); armGeo.dispose(); bobGeo.dispose(); plateTex.dispose(); lightMat.dispose();
-      face.map.dispose(); face.lines.dispose(); dialMat.dispose(); glassMat.dispose();
+      face.map.dispose(); face.lines.dispose(); dialMat.dispose(); plateTex2.dispose(); ribGeo.dispose(); screwGeo.dispose(); glassMat.dispose();
     },
   };
 }
