@@ -71,6 +71,7 @@ export const massRgb = m => rampRgb(RAMP_HEAT, massIdx(m));
 
 export const gravity = {
   id: 'gravity', name: 'Gravity', title: 'N-body gravity',
+  zoomRange: [0.1, 40],
   eq: 'F = Gm<sub>1</sub>m<sub>2</sub> / r<sup>2</sup>',
   eqTex: 'F = G\\,\\frac{m_1 m_2}{r^2}',
   aria: 'Gravity simulation: bodies orbiting under mutual Newtonian attraction',
@@ -222,6 +223,7 @@ export const gravity = {
     }
   },
   mergeBodies(list) {
+    const before = this.energy();
     for (let k = 0; k < list.length; k += 2) {
       const a = list[k], b = list[k + 1];
       if (a.dead || b.dead) continue;
@@ -232,7 +234,8 @@ export const gravity = {
       if (small.id === this.track) this.track = big.id;
     }
     this.bodies = this.bodies.filter(b => !b.dead);
-    this.accDirty = true; this.E0 = this.energy();
+    // Move the baseline by what the merge took away, so numerical gain stays visible as drift.
+    this.accDirty = true; this.E0 += this.energy() - before;
   },
   cullEscapes() {
     const B = this.bodies; if (B.length < 2) return;
@@ -240,7 +243,7 @@ export const gravity = {
     for (const b of B) { M += b.m; cx += b.m * b.x; cy += b.m * b.y; cz += b.m * b.z; }
     cx /= M; cy /= M; cz /= M;
     const keep = B.filter(b => (b.x - cx) ** 2 + (b.y - cy) ** 2 + (b.z - cz) ** 2 < 6000 * 6000);
-    if (keep.length !== B.length) { this.escaped += B.length - keep.length; this.bodies = keep; this.accDirty = true; this.E0 = this.energy(); }
+    if (keep.length !== B.length) { const before = this.energy(); this.escaped += B.length - keep.length; this.bodies = keep; this.accDirty = true; this.E0 += this.energy() - before; }
   },
   energy() {
     const B = this.bodies, G = G0 * this.p.G, e2 = this.p.soft * this.p.soft;
@@ -315,6 +318,7 @@ export const gravity = {
     return this.bodyAt(p) ? 'pointer' : 'crosshair';
   },
   wantsPan() { return this.p.tool === 'pan'; },
+  stateSummary() { return { bodies: this.bodies.length }; },
   navExtras: [{ id: 'follow', label: 'Follow', icon: 'follow', title: 'Follow the centre of mass · click a body on the stage to follow it instead · click again to free the camera',
     pressed: () => gravity.p.follow || gravity.track != null,
     run() {
@@ -388,27 +392,27 @@ export const gravity = {
   },
   predict(x0, y0, vx0, vy0) {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
-    const X = new Float64Array(N), Y = new Float64Array(N), VX = new Float64Array(N), VY = new Float64Array(N), M = new Float64Array(N), R = new Float64Array(N);
-    for (let i = 0; i < n; i++) { const b = B[i]; X[i] = b.x; Y[i] = b.y; VX[i] = b.vx; VY[i] = b.vy; M[i] = b.m; R[i] = b.r; }
+    const X = new Float64Array(N), Y = new Float64Array(N), Z = new Float64Array(N), VX = new Float64Array(N), VY = new Float64Array(N), VZ = new Float64Array(N), M = new Float64Array(N), R = new Float64Array(N);
+    for (let i = 0; i < n; i++) { const b = B[i]; X[i] = b.x; Y[i] = b.y; Z[i] = b.z; VX[i] = b.vx; VY[i] = b.vy; VZ[i] = b.vz; M[i] = b.m; R[i] = b.r; }
     X[n] = x0; Y[n] = y0; VX[n] = vx0; VY[n] = vy0; M[n] = this.p.launchMass;
-    const AX = new Float64Array(N), AY = new Float64Array(N), out = [x0, y0], dt = 1 / 60;
+    const AX = new Float64Array(N), AY = new Float64Array(N), AZ = new Float64Array(N), out = [x0, y0], dt = 1 / 60;
     for (let s = 0; s < 300; s++) {
-      AX.fill(0); AY.fill(0);
+      AX.fill(0); AY.fill(0); AZ.fill(0);
       if (dyn) {
         for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
-          const dx = X[j] - X[i], dy = Y[j] - Y[i], d2 = dx * dx + dy * dy + e2, inv = G / (d2 * Math.sqrt(d2));
-          AX[i] += dx * inv * M[j]; AY[i] += dy * inv * M[j]; AX[j] -= dx * inv * M[i]; AY[j] -= dy * inv * M[i];
+          const dx = X[j] - X[i], dy = Y[j] - Y[i], dz = Z[j] - Z[i], d2 = dx * dx + dy * dy + dz * dz + e2, inv = G / (d2 * Math.sqrt(d2));
+          AX[i] += dx * inv * M[j]; AY[i] += dy * inv * M[j]; AZ[i] += dz * inv * M[j]; AX[j] -= dx * inv * M[i]; AY[j] -= dy * inv * M[i]; AZ[j] -= dz * inv * M[i];
         }
       } else {
         for (let j = 0; j < n; j++) {
-          const dx = X[j] - X[n], dy = Y[j] - Y[n], d2 = dx * dx + dy * dy + e2, inv = G / (d2 * Math.sqrt(d2));
-          AX[n] += dx * inv * M[j]; AY[n] += dy * inv * M[j];
+          const dx = X[j] - X[n], dy = Y[j] - Y[n], dz = Z[j] - Z[n], d2 = dx * dx + dy * dy + dz * dz + e2, inv = G / (d2 * Math.sqrt(d2));
+          AX[n] += dx * inv * M[j]; AY[n] += dy * inv * M[j]; AZ[n] += dz * inv * M[j];
         }
       }
-      for (let i = dyn ? 0 : n; i < N; i++) { VX[i] += AX[i] * dt; VY[i] += AY[i] * dt; X[i] += VX[i] * dt; Y[i] += VY[i] * dt; }
+      for (let i = dyn ? 0 : n; i < N; i++) { VX[i] += AX[i] * dt; VY[i] += AY[i] * dt; VZ[i] += AZ[i] * dt; X[i] += VX[i] * dt; Y[i] += VY[i] * dt; Z[i] += VZ[i] * dt; }
       out.push(X[n], Y[n]);
       let hit = false;
-      for (let j = 0; j < n; j++) if ((X[j] - X[n]) ** 2 + (Y[j] - Y[n]) ** 2 < R[j] * R[j]) { hit = true; break; }
+      for (let j = 0; j < n; j++) if ((X[j] - X[n]) ** 2 + (Y[j] - Y[n]) ** 2 + (Z[j] - Z[n]) ** 2 < R[j] * R[j]) { hit = true; break; }
       if (hit) break;
     }
     return out;
@@ -520,7 +524,7 @@ export const gravity = {
         const X = b.x * z + ox, Y = b.y * z + oy, R = Math.max(1.4, b.r * z) + 5;
         g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
         g.beginPath(); g.arc(X, Y, R, 0, TAU); g.stroke();
-        const label = `m ${b.m < 10 ? b.m.toFixed(2) : b.m.toFixed(0)} · ${Math.hypot(b.vx, b.vy).toFixed(0)} px/s`;
+        const label = `m ${b.m < 10 ? b.m.toFixed(2) : b.m.toFixed(0)} · ${Math.hypot(b.vx, b.vy, b.vz).toFixed(0)} px/s`;
         g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
         const lx = clamp(X + R + 6, 4, w - tw - 14), ly = clamp(Y - R - 6, 16, h - 6);
         g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(lx - 5, ly - 13, tw + 10, 18);
@@ -567,7 +571,7 @@ export const gravity = {
       if (b === H) continue;
       const rx = b.x - H.x, ry = b.y - H.y, rz = b.z - H.z, vx = b.vx - H.vx, vy = b.vy - H.vy, vz = b.vz - H.vz;
       const lx = ry * vz - rz * vy, ly = rz * vx - rx * vz, lz = rx * vy - ry * vx, L = Math.hypot(lx, ly, lz); if (!L) continue;
-      const i = Math.acos(Math.abs(lz) / L) * 180 / Math.PI; lo = Math.min(lo, i); hi = Math.max(hi, i);
+      const i = Math.acos(lz / L) * 180 / Math.PI; lo = Math.min(lo, i); hi = Math.max(hi, i);
     }
     if (hi < 0.05) return 'flat (0°)';
     return `${lo.toFixed(0)}° – ${hi.toFixed(0)}°`;
@@ -589,7 +593,7 @@ export const gravity = {
       if (ad > 1) {
         const h = this.dt();
         for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
-          const a = B[i], b = B[j], d = Math.hypot(b.x - a.x, b.y - a.y), v = Math.hypot(b.vx - a.vx, b.vy - a.vy);
+          const a = B[i], b = B[j], d = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z), v = Math.hypot(b.vx - a.vx, b.vy - a.vy, b.vz - a.vz);
           if (v > 0) { const steps = d / v / h; if (steps < worst) { worst = steps; wd = d; } }
         }
         const fixes = [];
@@ -645,11 +649,12 @@ export const gravity = {
 Object.assign(gravity, {
   histBudget: 16e6, histInterval: 0.2,
   snapshot() {
-    const B = this.bodies, n = B.length, a = new Float64Array(n * 7);
+    const B = this.bodies, n = B.length, a = new Float64Array(n * 7), { G, soft, merge } = this.p;
     for (let i = 0; i < n; i++) { const b = B[i], o = i * 7; a[o] = b.x; a[o + 1] = b.y; a[o + 2] = b.vx; a[o + 3] = b.vy; a[o + 4] = b.m; a[o + 5] = b.z; a[o + 6] = b.vz; }
-    return { stride: 7, a, ids: B.map(b => b.id), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount };
+    return { stride: 7, a, ids: B.map(b => b.id), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount, p: { G, soft, merge } };
   },
   restore(s) {
+    Object.assign(this.p, s.p);
     const B = [];
     const st = s.stride || 5;
     for (let i = 0; i < s.ids.length; i++) { const o = i * st, b = this.body(s.a[o], s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4], st >= 7 ? s.a[o + 5] : 0, st >= 7 ? s.a[o + 6] : 0); b.id = s.ids[i]; B.push(b); }
@@ -662,7 +667,7 @@ Object.assign(gravity, {
     return true;
   },
   serialize() {
-    return { bodies: this.bodies.map(b => ({ id: b.id, m: b.m, x: b.x, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz })), merged: this.merged, escaped: this.escaped, cam: { ...this.cam }, stepCount: this.stepCount };
+    return { bodies: this.bodies.map(b => ({ id: b.id, m: b.m, x: b.x, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz })), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount };
   },
   deserialize(o) {
     if (!o || !Array.isArray(o.bodies)) return false;
@@ -671,7 +676,7 @@ Object.assign(gravity, {
     this.merged = o.merged || 0; this.escaped = o.escaped || 0; this.stepCount = o.stepCount || 0;
     if (o.cam) this.cam = { x: +o.cam.x || 0, y: +o.cam.y || 0, z: clamp(+o.cam.z || this.p.zoom, 0.1, 40) };
     this.p.zoom = this.cam.z; this.track = null;
-    this.accDirty = true; this.E0 = this.energy();
+    this.accDirty = true; this.E0 = this.energy(); if (Number.isFinite(o.E0)) this.E0 = o.E0;
     for (const s of Object.values(this.series)) s.clear();
     return true;
   },

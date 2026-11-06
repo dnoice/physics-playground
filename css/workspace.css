@@ -82,7 +82,7 @@
   --bay: minmax(210px, 31vh);
   display: grid; gap: var(--gap); padding: var(--gap); min-height: 0;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(230px, 0.78fr) minmax(190px, 0.6fr);
-  grid-template-rows: minmax(0, 0.8fr) minmax(0, 1.3fr) var(--bay);
+  grid-template-rows: minmax(0, 0.98fr) minmax(0, 1.12fr) var(--bay);
   grid-template-areas:
     "stage stage stage scene tools"
     "stage stage stage params params"
@@ -96,7 +96,7 @@
 .tile-readouts { grid-area: reads; }
 .tile-diag { grid-area: diag; }
 .tile-notes { grid-area: notes; }
-.bento.no-bay { grid-template-rows: minmax(0, 0.85fr) minmax(0, 1.25fr); grid-template-areas: "stage stage stage scene tools" "stage stage stage params params"; }
+.bento.no-bay { grid-template-rows: minmax(0, 0.98fr) minmax(0, 1.12fr); grid-template-areas: "stage stage stage scene tools" "stage stage stage params params"; }
 .bento.no-bay .bay { display: none; }
 .bento.focus { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage"; }
 .bento.focus .tile:not(.tile-stage) { display: none; }
@@ -116,7 +116,10 @@
 .tile-head h3 { margin: 0; font: 500 11px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .tile-ico { color: var(--amber); font-size: 18px; }
 .tile-meta { margin-left: auto; font: 400 11px/1 var(--font-mono); color: var(--muted); }
-.tile-body { min-height: 0; overflow: auto; padding: var(--pad); overscroll-behavior: contain; line-height: 1.6; }
+/* A soft shadow at the bottom edge shows there is more to scroll; the local layer rides over it at the end of the content. */
+.tile-body {
+  background: linear-gradient(transparent, var(--tile) 70%) center bottom / 100% 30px no-repeat local, radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.55), transparent) center bottom / 100% 13px no-repeat scroll;
+  min-height: 0; overflow: auto; padding: var(--pad); overscroll-behavior: contain; line-height: 1.6; }
 .tile-body p, .tile-body li { text-wrap: pretty; }
 .tile-body sub, .tile-body sup { line-height: 0; }
 .tile.flash { animation: tile-flash 1.2s var(--ease); }
@@ -134,3 +137,20 @@
 .keys-list { margin: 0; padding: 12px var(--pad) 16px; display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; font-size: 13px; align-items: baseline; }
 .keys-list dt { white-space: nowrap; color: var(--muted); }
 .keys-list dd { margin: 0; color: color-mix(in oklab, var(--text) 88%, var(--muted)); }
+
+/* ---------- view mode and graphics tier ---------- */
+.mode-switch { display: inline-flex; padding: 2px; gap: 2px; border-radius: 10px; background: var(--ink, #0b0f15); border: 1px solid var(--rule); }
+.mode-switch button { appearance: none; border: 0; min-width: 36px; height: 28px; padding: 0 9px; border-radius: 8px; background: transparent; color: var(--muted); font: 600 12.5px/1 var(--font-mono, monospace); letter-spacing: 0.04em; cursor: pointer; transition: background 0.18s, color 0.18s; }
+.mode-switch button:hover:not([disabled]) { color: var(--text); }
+.mode-switch button[aria-checked="true"] { background: var(--amber); color: #17120a; box-shadow: 0 1px 8px color-mix(in oklab, var(--amber) 45%, transparent); }
+.mode-switch button[disabled] { opacity: 0.45; cursor: not-allowed; }
+.gfx-btn { height: 34px; padding: 0 10px; gap: 6px; white-space: nowrap; font-size: 12.5px; }
+.gfx-sheet { width: min(380px, calc(100vw - 24px)); }
+.gfx-list { display: grid; gap: 2px; padding: 8px; }
+.gfx-row { appearance: none; display: grid; gap: 2px; text-align: left; padding: 8px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font: inherit; }
+.gfx-row b { font-weight: 600; font-size: 13.5px; }
+.gfx-row span { font-size: 12px; line-height: 1.4; color: var(--muted); }
+.gfx-row:hover { background: color-mix(in oklab, var(--text) 7%, transparent); }
+.gfx-row[aria-checked="true"] { background: color-mix(in oklab, var(--amber) 15%, transparent); box-shadow: inset 2px 0 0 var(--amber); }
+.gfx-note { margin: 0; padding: 0 18px 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.gfx-note:last-child { padding-bottom: 16px; font-family: var(--font-mono, monospace); font-size: 11px; overflow-wrap: anywhere; }

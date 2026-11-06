@@ -39,8 +39,8 @@ import { canvasContext } from '../core/chart.js';
 
 import { THEME } from '../core/color.js';
 import { $, el } from '../core/util.js';
-import { fluid } from '../labs/fluid.js';
-import { rebuild, setParam } from './lifecycle.js';
+import { rebuild } from './lifecycle.js';
+import { cheaperTier, in3D, pickTier } from './mode.js';
 
 import { syncPanel } from './panel.js';
 import { BUDGET_MS, active, announce, perf, state, stickies } from './state.js';
@@ -62,21 +62,18 @@ export function globalInsights() {
     out.push({ id: 'perf-slow', level: 'warn', title: 'Running slower than requested', body: `The solver needs about <b>${perf.sim.toFixed(1)} ms</b> per frame, more than its ${BUDGET_MS} ms budget, so this lab is simulating <b>${perf.rate.toFixed(2)}×</b> real time instead of ${state.speed.toFixed(2)}×. The budget drops the backlog so the page stays responsive.`, fixes });
   }
   if (perf.fps < 40 && perf.draw > 12) out.push({ id: 'perf-draw', level: 'info', title: 'Drawing is the bottleneck', body: `Each frame spends <b>${perf.draw.toFixed(1)} ms</b> drawing, so the display rather than the physics limits the frame rate. Large windows and dense scenes cost the most.`, fixes: active.drawFixes ? active.drawFixes() : [] });
+  if (in3D(active) && perf.fps < 30 && cheaperTier()) {
+    const next = cheaperTier();
+    out.push({ id: 'gfx-slow', level: 'info', title: 'This graphics tier is heavy here', body: `The 3D view is running at about <b>${Math.round(perf.fps)} fps</b>. A cheaper tier, or Auto in the Graphics menu, keeps it smooth.`, fixes: [{ label: `Use ${next[0].toUpperCase()}${next.slice(1)}`, run() { pickTier(next); } }, { label: 'Use Auto', run() { pickTier('auto'); } }] });
+  }
   const now = performance.now();
   for (let i = stickies.length - 1; i >= 0; i--) if (stickies[i].until < now) stickies.splice(i, 1);
   for (const s of stickies) if (s.lab === active.id) out.push(s);
   return out;
 }
-export let slowSurface = 0;
 export function evaluateDiagnostics() {
   if (!active) return;
-  if (active === fluid && fluid.p.surface && fluid.renderer === 'gpu' && perf.draw > 40 && perf.fps < 24) {
-    if ((slowSurface += 0.5) >= 4) {
-      slowSurface = 0;
-      setParam(fluid, 'surface', false);
-      sticky({ id: 'f-gpu-slow', level: 'info', title: 'Switched to simple discs', body: `The liquid surface took about ${perf.draw.toFixed(0)} ms per frame on this device, so the tank now draws plain discs. Turn on Liquid surface rendering under Parameters to try it again.` }, 14);
-    }
-  } else slowSurface = 0;
+  if (active.watchDraw) active.watchDraw(perf);
   if (active.sane && !active.sane()) {
     rebuild(active);
     sticky({ id: 'nan', level: 'crit', title: 'The simulation blew up and was restarted', body: 'Some values became infinite or undefined, so the scene was rebuilt with the current settings. Pull the most extreme parameter back toward its notch to keep it stable.' }, 12);

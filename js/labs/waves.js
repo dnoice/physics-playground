@@ -47,7 +47,7 @@ import { reliefGL } from '../render/relief-gl.js';
 import { camOf } from '../shell/camera.js';
 import { sticky } from '../shell/diagnostics.js';
 import { updateDock } from '../shell/dock.js';
-import { rebuild, setParam } from '../shell/lifecycle.js';
+import { setParam } from '../shell/lifecycle.js';
 
 import { updateNav } from '../shell/navigator.js';
 import { refreshEnabled, syncControl } from '../shell/panel.js';
@@ -58,6 +58,7 @@ import { active } from '../shell/state.js';
 /* ================================================================== */
 export const waves = {
   id: 'waves', name: 'Waves', title: 'Ripple tank',
+  zoomRange: [0.5, 10],
   eq: '∂<sup>2</sup>u/∂t<sup>2</sup> = c<sup>2</sup>∇<sup>2</sup>u',
   eqTex: '\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\nabla^2 u',
   aria: 'Wave simulation: a two-dimensional ripple tank',
@@ -102,7 +103,7 @@ export const waves = {
     { label: 'Clear walls and glass', run() { waves.wall.fill(0); waves.glass.fill(0); waves.geomVer++; refreshEnabled(); } },
     { label: 'Remove sources', run() { waves.sources = []; refreshEnabled(); } },
   ],
-  Nx: 2, Ny: 2, cs: 4, Ls: 20, u: null, u0: null, wall: null, glass: null, sponge: null, inten: null,
+  Nx: 2, Ny: 2, cs: 4, Ls: 20, u: null, u0: null, wall: null, glass: null, sponge: null, inten: null, slits: null,
   off: null, octx: null, img: null, sources: [], time: 0, drawing: false, last: null, lastPulse: null,
   steps: 0, stepClock: 0, stepRate: 0, maxU: 0, cam3: null, view3: null, flatView: 'disp',
   dt() { return 0.5 / this.p.c; }, maxSteps: 24,
@@ -124,7 +125,7 @@ export const waves = {
     this.octx = this.off.getContext('2d'); this.img = this.octx.createImageData(Nx, Ny);
   },
   build(preset, w, h) {
-    this.setup(w, h); this.sources = []; this.time = 0; this.maxU = 0;
+    this.setup(w, h); this.sources = []; this.time = 0; this.maxU = 0; this.slits = null;
     const Nx = this.Nx, Ny = this.Ny, cy = Ny / 2, Ls = this.Ls;
     const point = (x, y) => this.sources.push({ type: 'point', x, y, phase: 0, t0: 0, dir: 1 });
     const lineSource = () => this.sources.push({ type: 'line', x: Ls + 2, y: 0, phase: 0, t0: 0, dir: 1 });
@@ -134,7 +135,7 @@ export const waves = {
     } else if (preset === 'double') {
       const bx = Math.round(Nx * 0.36), half = Math.round(Ny * 0.12);
       barrier(bx, y => Math.abs(y - (cy - half)) <= 2 || Math.abs(y - (cy + half)) <= 2);
-      lineSource();
+      lineSource(); this.slits = { x: bx + 1, d: 2 * half };
     } else if (preset === 'single') {
       barrier(Math.round(Nx * 0.36), y => Math.abs(y - cy) <= 8);
       lineSource();
@@ -155,7 +156,6 @@ export const waves = {
       point(Nx * 0.25, cy);
     }
   },
-  onResize(w, h, ow, oh) { if (Math.abs(w - ow) > 12 || Math.abs(h - oh) > 12) rebuild(this); },
   worldRect() { return { w: this.Nx * this.cs, h: this.Ny * this.cs }; },
   unit() { return { name: 'cells', k: 1 / this.cs }; },
   onParam(key) {
@@ -320,7 +320,7 @@ export const waves = {
     const Nx = this.Nx, Ny = this.Ny, wall = this.wall, glass = this.glass, sp = this.sponge;
     this.time += dt;
     this.applySources(dt);
-    const u = this.u, u0 = this.u0, c = this.p.c, k0 = (c * dt) ** 2, kG = k0 / (this.p.glassN ** 2), gam = this.p.damp, sMax = this.p.absorb ? 0.25 * c : 0;
+    const u = this.u, u0 = this.u0, c = this.p.c, k0 = (c * dt) ** 2, kG = k0 / (this.p.glassN ** 2), gam = this.p.damp, sMax = this.p.absorb ? 0.75 * c : 0;
     for (let y = 1; y < Ny - 1; y++) {
       const row = y * Nx;
       for (let x = 1; x < Nx - 1; x++) {
@@ -342,7 +342,8 @@ export const waves = {
       let m = 0; const u = this.u; for (let i = 0; i < u.length; i += 7) { const v = Math.abs(u[i]); if (v > m) m = v; } this.maxU = m;
     }
   },
-  detectorX() { return this.p.absorb ? this.Nx - this.Ls - 4 : this.Nx - 8; },
+  /* Clear of the corners where the sponges meet, which brighten a fringe that lands there. */
+  detectorX() { return this.p.absorb ? this.Nx - this.Ls - 12 : this.Nx - 8; },
   toCell(p) { return { x: p.x / this.cs, y: p.y / this.cs }; },
   applyTool(p, first) {
     const c = this.toCell(p), tool = this.p.tool;
@@ -421,6 +422,37 @@ export const waves = {
     const d = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y), lam = this.p.c / this.p.f, s = (this.p.phaseStep * Math.PI / 180) * lam / (TAU * d);
     return { d, lam, s };
   },
+  /* Fringe spacing measured on the detector: twice the offset of the first dark band each side of the centre.
+     That band sits at half the angle of the next bright fringe, so it stays on the detector in a short tank. NaN until one shows. */
+  fringeSpacing() {
+    const xd = this.detectorX(), Nx = this.Nx, I = this.inten, lo = this.Ls + 1, hi = this.Ny - this.Ls - 2, mid = this.Ny >> 1, at = y => I[y * Nx + xd];
+    let top = 0; for (let y = lo; y <= hi; y++) top = Math.max(top, at(y));
+    const darkFrom = dir => {
+      let low = Infinity, yl = mid;
+      for (let y = mid; y >= lo && y <= hi; y += dir) {
+        const v = at(y);
+        if (v < low) { low = v; yl = y; } else if (low < 0.5 * top && v > low + 0.25 * top) return Math.abs(yl - mid);
+      }
+      return NaN;
+    };
+    const d = top > 1e-4 ? [darkFrom(1), darkFrom(-1)].filter(Number.isFinite) : [];
+    return d.length ? d.reduce((a, v) => a + v) / d.length * 2 : NaN;
+  },
+  /* The same spacing from the slit geometry at frequency f: 2 L tan θ with sin θ = λ/2d. */
+  fringeTheory(f) { const s = Math.min(0.999, this.p.c / f / (2 * this.slits.d)); return 2 * (this.detectorX() - this.slits.x) * s / Math.sqrt(1 - s * s); },
+  /* Degrees off the axis of the beam: the centre of the bright lobe on an arc ahead of the point sources. NaN until waves reach it. */
+  beamAngle() {
+    const pts = this.sources.filter(s => s.type === 'point'), Nx = this.Nx, Ny = this.Ny, Ls = this.Ls, n = pts.length, arc = [];
+    const cx = pts.reduce((a, s) => a + s.x, 0) / n, cy = pts.reduce((a, s) => a + s.y, 0) / n, R = Math.min(Nx - Ls - 3 - cx, (Ny / 2 - Ls - 2) * Math.SQRT2);
+    let top = 0, sum = 0, mass = 0;
+    for (let a = -80; a <= 80; a++) {
+      const t = a * Math.PI / 180, x = Math.round(cx + R * Math.cos(t)), y = Math.round(cy + R * Math.sin(t));
+      if (x <= Ls || y <= Ls || x >= Nx - Ls - 1 || y >= Ny - Ls - 1) continue;
+      const v = this.inten[y * Nx + x]; arc.push([a, v]); top = Math.max(top, v);
+    }
+    for (const [a, v] of arc) if (v >= 0.5 * top) { sum += a * v; mass += v; }
+    return top > 1e-4 ? sum / mass : NaN;
+  },
   readouts() {
     const c = this.p.c, lam = c / this.p.f, hasGlass = this.glass && this.glass.includes(1), st = this.steering();
     return [
@@ -496,16 +528,19 @@ export const waves = {
 
 /* ---------- capture hooks: rewind snapshots, datasets, saved states ---------- */
 Object.assign(waves, genericState, {
-  histBudget: 24e6, histInterval: 0.5, geomVer: 0,
+  histBudget: 36e6, histInterval: 0.5, geomVer: 0,
   snapshot() {
     if (!this._geom || this._geom.v !== this.geomVer) this._geom = { v: this.geomVer, wall: this.wall.slice(), glass: this.glass.slice() };
-    return { Nx: this.Nx, Ny: this.Ny, u: this.u.slice(), u0: this.u0.slice(), shared: this._geom, sources: this.sources.map(s => ({ ...s })), time: this.time };
+    const { c, f, damp, absorb, glassN, srcSpeed, phaseStep } = this.p;
+    return { Nx: this.Nx, Ny: this.Ny, u: this.u.slice(), u0: this.u0.slice(), inten: this.inten.slice(), shared: this._geom, sources: this.sources.map(s => ({ ...s })), time: this.time, p: { c, f, damp, absorb, glassN, srcSpeed, phaseStep } };
   },
   restore(s) {
     if (s.Nx !== this.Nx || s.Ny !== this.Ny) return false;
+    Object.assign(this.p, s.p);
     this.u.set(s.u); this.u0.set(s.u0); this.wall.set(s.shared.wall); this.glass.set(s.shared.glass);
     this.geomVer++; this._geom = null;
-    this.sources = s.sources.map(x => ({ ...x })); this.time = s.time; this.inten.fill(0);
+    this.sources = s.sources.map(x => ({ ...x })); this.time = s.time;
+    if (s.inten) this.inten.set(s.inten); else this.inten.fill(0);
     if (this === active) refreshEnabled();
     return true;
   },

@@ -36,7 +36,7 @@
 ---------
 */
 import { icon } from '../core/icons.js';
-import { $, clamp, el, fmtSI, store } from '../core/util.js';
+import { $, clamp, el, fmtSI, keepFocus, store } from '../core/util.js';
 import { labsById } from '../labs/index.js';
 import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, vrec } from './capture.js';
 import { radioGroup } from './panel.js';
@@ -49,7 +49,7 @@ export const KIND = { clip: { icon: 'clip', name: 'Video' }, run: { icon: 'data'
 export function renderLibrary() {
   const storeEl = $('#lib-store'), listEl = $('#lib-list'), emptyEl = $('#lib-empty');
   if (!storeEl) return;
-  const [head, sub] = {
+  const [head, sub] = vault.err ? ['Sync stopped', 'This list may be out of date, and new captures may not reach the artifact.'] : {
     connecting: ['Connecting to storage…', ''],
     cloud: ['Synced to this artifact', 'Kept across sessions and devices, and Claude can read your datasets.'],
     'cloud-ro': ['Read-only here', 'Only editors can save to this artifact, so new captures last for this session.'],
@@ -102,32 +102,32 @@ export function renderItem(li, item) {
   bits.push(fmtWhen(item.createdAt));
   let title;
   if (lib.renaming === item.id) {
-    title = el('input', { type: 'text', class: 'ctl-edit lib-rename', value: item.title || '', 'aria-label': 'New name' });
+    title = el('input', { type: 'text', class: 'ctl-edit lib-rename', 'data-fk': 'title', value: item.title || '', 'aria-label': 'New name' });
     const done = ok => { if (lib.renaming !== item.id) return; lib.renaming = null; const v = title.value.trim(); if (ok && v && v !== item.title) vault.rename(item, v.slice(0, 120)); else renderLibrary(); };
     title.addEventListener('keydown', e => { if (e.key === 'Enter') done(true); else if (e.key === 'Escape') done(false); });
     title.addEventListener('blur', () => done(true));
   } else {
-    title = el('button', { type: 'button', class: 'lib-title', text: item.title || 'Untitled', title: 'Rename', disabled: item.saving || null, onclick: () => { lib.renaming = item.id; renderLibrary(); } });
+    title = el('button', { type: 'button', class: 'lib-title', 'data-fk': 'title', text: item.title || 'Untitled', title: vault.canWrite(item) ? 'Rename' : item.title, disabled: item.saving || !vault.canWrite(item) || null, onclick: () => { lib.renaming = item.id; renderLibrary(); } });
   }
   const head = el('div', { class: 'lib-main' }, el('span', { class: 'lib-ico', html: icon(k.icon) }),
     el('div', { class: 'lib-text' }, el('div', {}, title, item.localOnly ? el('span', { class: 'lib-badge', text: 'session' }) : null), el('span', { class: 'lib-meta', text: item.saving ? 'Saving…' : bits.join(' · ') }), item.note ? el('span', { class: 'lib-note', text: item.note }) : null));
   const kids = [head];
   if (!item.saving) {
     const acts = el('div', { class: 'lib-actions' });
-    const toggle = label => el('button', { type: 'button', class: 'btn', 'aria-expanded': String(lib.open === item.id), text: lib.open === item.id ? 'Hide' : label, onclick: () => { lib.open = lib.open === item.id ? null : item.id; renderLibrary(); } });
+    const toggle = label => el('button', { type: 'button', class: 'btn', 'data-fk': 'open', 'aria-expanded': String(lib.open === item.id), text: lib.open === item.id ? 'Hide' : label, onclick: () => { lib.open = lib.open === item.id ? null : item.id; renderLibrary(); } });
     if (item.kind === 'clip') acts.append(toggle('Preview'));
     if (item.kind === 'run') acts.append(toggle('Details'));
-    if (item.kind === 'state') acts.append(el('button', { type: 'button', class: 'btn', text: 'Load', onclick: () => loadState(item) }));
+    if (item.kind === 'state') acts.append(el('button', { type: 'button', class: 'btn', 'data-fk': 'load', text: 'Load', onclick: () => loadState(item) }));
     if (vault.canDownload()) item.files.forEach((f, i) => {
       const ext = (f.name.split('.').pop() || '').toUpperCase(), label = f.name.endsWith('-tracks.csv') ? `Save ${item.trackLabel || 'tracks'} CSV` : `Save ${ext}`;
-      acts.append(el('button', { type: 'button', class: 'btn', text: label, onclick: async () => { const b = await vault.blob(item, i); if (b) vault.download(f.name, b); else announce('That file could not be read.'); } }));
+      acts.append(el('button', { type: 'button', class: 'btn', 'data-fk': `save-${i}`, text: label, onclick: async () => { const b = await vault.blob(item, i); if (b) vault.download(f.name, b); else announce('That file could not be read.'); } }));
     });
-    acts.append(el('button', { type: 'button', class: 'btn btn-del', text: 'Delete', onclick: () => { lib.confirm = item.id; renderLibrary(); } }));
+    if (vault.canWrite(item)) acts.append(el('button', { type: 'button', class: 'btn btn-del', 'data-fk': 'del', text: 'Delete', onclick: () => { lib.confirm = item.id; renderLibrary(); $('[data-fk="no"]', li).focus(); } }));
     kids.push(acts);
     if (lib.confirm === item.id) {
       kids.push(el('div', { class: 'lib-confirm', role: 'group', 'aria-label': 'Confirm delete' }, el('span', { text: `Delete this ${k.name.toLowerCase()} for good?` }),
-        el('button', { type: 'button', class: 'btn btn-fix', text: 'Delete', onclick: async () => { lib.confirm = null; try { await vault.remove(item); announce('Deleted'); } catch (_) { announce('Delete failed; try again.'); renderLibrary(); } } }),
-        el('button', { type: 'button', class: 'btn btn-fix', text: 'Keep', onclick: () => { lib.confirm = null; renderLibrary(); } })));
+        el('button', { type: 'button', class: 'btn btn-fix', 'data-fk': 'yes', text: 'Delete', onclick: async () => { lib.confirm = null; try { await vault.remove(item); announce('Deleted'); $('#nt-library').focus(); } catch (_) { announce('Delete failed; try again.'); renderLibrary(); } } }),
+        el('button', { type: 'button', class: 'btn btn-fix', 'data-fk': 'no', text: 'Keep', onclick: () => { lib.confirm = null; renderLibrary(); $('[data-fk="del"]', li).focus(); } })));
     }
     if (lib.open === item.id && item.kind === 'clip') {
       const v = el('video', { controls: true, playsinline: true, preload: 'metadata', 'aria-label': item.title });
@@ -138,11 +138,12 @@ export function renderItem(li, item) {
       const tbl = el('table', { class: 'lib-sum' });
       tbl.append(el('tr', {}, el('th', { text: 'Column' }), el('th', { text: 'Min' }), el('th', { text: 'Mean' }), el('th', { text: 'Max' })));
       for (const s of item.summary || []) tbl.append(el('tr', {}, el('th', { text: s.column }), el('td', { text: s.min == null ? '—' : fmtSI(s.min) }), el('td', { text: s.mean == null ? '—' : fmtSI(s.mean) }), el('td', { text: s.max == null ? '—' : fmtSI(s.max) })));
-      const note = `${(item.rows || 0).toLocaleString()} rows at ${item.rate} Hz of simulated time${item.trackRows ? `, plus ${item.trackRows.toLocaleString()} rows of ${(item.trackLabel || 'tracks').toLowerCase()}` : ''}.`;
+      const asked = item.rateAsked && item.rateAsked !== item.rate ? ` (asked for ${item.rateAsked} Hz; samples land on solver steps)` : '';
+      const note = `${(item.rows || 0).toLocaleString()} rows at ${item.rate} Hz of simulated time${asked}${item.trackRows ? `, plus ${item.trackRows.toLocaleString()} rows of ${(item.trackLabel || 'tracks').toLowerCase()}` : ''}.`;
       kids.push(el('div', { class: 'lib-preview' }, el('p', { class: 'caption', text: note }), tbl));
     }
   }
-  li.replaceChildren(...kids);
+  keepFocus(li, () => li.replaceChildren(...kids));
 }
 export function buildCaptureSettings() {
   const host = $('#capture-settings'); if (!host) return;

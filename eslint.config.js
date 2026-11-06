@@ -28,8 +28,8 @@
     $ npm run lint
 
 ✒ Other Important Information:
-    - Dependencies: eslint 9 and globals (dev dependencies)
-    - Compatible platforms: Node.js 18+
+    - Dependencies: eslint 10 and globals (dev dependencies)
+    - Compatible platforms: Node.js 20.19+
 ---------
 */
 import globals from 'globals';

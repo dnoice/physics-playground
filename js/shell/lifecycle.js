@@ -41,19 +41,22 @@ import { view } from '../core/view.js';
 import { navAnim } from './camera.js';
 import { dataRec, histCapture, histReset, stopData, updateRewind } from './capture.js';
 import { evaluateDiagnostics } from './diagnostics.js';
+import { experimentReset } from './experiments.js';
 import { refreshEnabled, syncControl, syncPanel } from './panel.js';
 import { active, announce } from './state.js';
 
-export function rebuild(lab) {
+export function rebuild(lab, world = view) {
   if (dataRec.on && dataRec.lab === lab) {
     const r = dataRec.rows;
     if (r.length > 1 && r[r.length - 1][0] - r[0][0] >= 1) stopData('The scene restarted, so the dataset so far was saved.');
     else { dataRec.rows = []; dataRec.tracks = []; dataRec.next = 0; }
   }
   lab.t = 0; lab._acc = 0;
-  lab.build(lab.presetId, view.w, view.h);
+  lab.build(lab.presetId, world.w, world.h);
+  lab.built = { w: world.w, h: world.h };
   lab.size = { w: view.w, h: view.h };
   histReset(lab); histCapture(lab, true);
+  experimentReset(lab);
   if (lab === active) { refreshEnabled(); updateRewind(); }
 }
 export function ensureReady(lab) {

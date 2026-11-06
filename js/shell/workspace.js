@@ -36,8 +36,7 @@
 ---------
 */
 import { LAB_ICON } from '../core/icons.js';
-import { $, el } from '../core/util.js';
-import { gravity } from '../labs/gravity.js';
+import { $, el, store } from '../core/util.js';
 import { labs, labsById } from '../labs/index.js';
 import { navAnim } from './camera.js';
 import { dataRec, stopData, stopVideo, updateRewind, vrec } from './capture.js';
@@ -45,10 +44,11 @@ import { evaluateDiagnostics, insightCards } from './diagnostics.js';
 import { buildDock } from './dock.js';
 import { renderLibrary, updateTracksNote } from './library.js';
 import { ensureReady } from './lifecycle.js';
+import { prepareLab, renderMode } from './mode.js';
 import { buildNav } from './navigator.js';
 import { buildPanel } from './panel.js';
-import { ptr } from './stage.js';
-import { active, announce, canvas, perf, pointerIsDown, setActive, setPointerDown, state } from './state.js';
+import { cancelLabPointer, ptr } from './stage.js';
+import { active, announce, canvas, perf, setActive, setPointerDown, state } from './state.js';
 
 /* ---------- tabs ---------- */
 /* The stage tile's header names the lab, its glyph and the loaded scene. */
@@ -62,13 +62,14 @@ export function updateStageTitle(lab = active) {
 export const rail = $('#rail');
 export let tabs = [];
 export function selectLab(id, opts = {}) {
-  const lab = labsById[id] || gravity;
+  const lab = labsById[id] || labs[0];
   if (active === lab) return;
-  if (active) { active.hover = null; if (pointerIsDown && active.pointerUp) active.pointerUp({ x: 0, y: 0 }, {}); }
+  if (active) { active.hover = null; cancelLabPointer(); }
   if (active && vrec.mr) stopVideo();
   if (active && dataRec.on) stopData();
   setPointerDown(false); ptr.drag = null; ptr.pinch = null; ptr.ids.clear(); ptr.panMode = false; navAnim.lab = null;
   setActive(lab);
+  store.set('lab', lab.id);
   tabs.forEach((t, i) => { const on = labs[i] === lab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
   updateStageTitle(lab);
   canvas.setAttribute('aria-label', lab.aria);
@@ -77,6 +78,7 @@ export function selectLab(id, opts = {}) {
   buildPanel(lab);
   buildDock(lab);
   buildNav(lab);
+  prepareLab(lab); renderMode();
   insightCards.forEach(c => c.el.remove()); insightCards.clear();
   perf.slow = 0; perf.rate = state.speed;
   evaluateDiagnostics();

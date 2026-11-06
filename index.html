@@ -97,7 +97,12 @@
     <div role="tablist" id="rail" aria-label="Simulation labs"></div>
   </nav>
   <div class="top-actions" role="group" aria-label="Workspace">
-    <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the bottom bay (B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Bottom bay</span></button>
+    <div class="mode-switch" role="radiogroup" aria-label="View mode">
+      <button type="button" role="radio" id="mode-2d" aria-checked="false" title="Flat 2D view (Z)">2D</button>
+      <button type="button" role="radio" id="mode-3d" aria-checked="true" title="3D world (Z)">3D</button>
+    </div>
+    <button type="button" class="btn gfx-btn" id="btn-gfx" aria-expanded="false" aria-controls="gfx-sheet" title="Graphics tier"><span class="ms" aria-hidden="true">tune</span><span id="btn-gfx-label">Auto</span></button>
+    <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the bottom bay (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Bottom bay</span></button>
     <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
     <button type="button" class="icon-btn" id="btn-keys" aria-expanded="false" aria-controls="keys-sheet" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
   </div>
@@ -243,11 +248,18 @@
     <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Pan (orbit in 3D views; Shift pans)</dd>
     <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record video · record data</dd>
     <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Switch labs</dd>
-    <dt><kbd>F</kbd> <kbd>B</kbd></dt><dd>Focus the stage · show or hide the bottom bay</dd>
+    <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
+    <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the bottom bay</dd>
     <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
     <dt>Scroll</dt><dd>Zoom at the cursor; middle or right drag pans</dd>
     <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>
   </dl>
+</div>
+<div class="sheet gfx-sheet" id="gfx-sheet" role="dialog" aria-modal="false" aria-labelledby="gfx-title" hidden>
+  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">tune</span><h3 id="gfx-title">Graphics</h3><button type="button" class="icon-btn" id="gfx-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+  <div class="gfx-list" id="gfx-list" role="radiogroup" aria-labelledby="gfx-title"></div>
+  <p class="gfx-note" id="gfx-now"></p>
+  <p class="gfx-note" id="gfx-device"></p>
 </div>
 <p class="sr-only" id="sr-status" aria-live="polite"></p>
 <script type="module" src="js/main.js"></script>

@@ -46,7 +46,8 @@ import { view } from '../core/view.js';
 
 import { FL_CAP, fluidGL } from '../render/fluid-gl.js';
 import { camOf, camXf } from '../shell/camera.js';
-import { rebuild, setParam } from '../shell/lifecycle.js';
+import { sticky } from '../shell/diagnostics.js';
+import { setParam } from '../shell/lifecycle.js';
 
 
 import { announce } from '../shell/state.js';
@@ -106,7 +107,7 @@ export const fluid = {
     { label: 'Splash upward', run() { const f = fluid; for (let i = 0; i < f.n; i++) f.vy[i] -= rand(0.04, 0.09); } },
     { label: 'Remove obstacles', run() { fluid.obs = []; } },
   ],
-  U: 20, Wu: 40, Hu: 30, cols: 1, rows: 1, n: 0, rho0: 3, spacing: 0.42, obs: [],
+  U: 20, Wu: 40, Hu: 30, cols: 1, rows: 1, n: 0, rho0: 3, spacing: 0.42, obs: [], seed: 1,
   x: new Float64Array(FL_CAP), y: new Float64Array(FL_CAP), px: new Float64Array(FL_CAP), py: new Float64Array(FL_CAP),
   vx: new Float64Array(FL_CAP), vy: new Float64Array(FL_CAP), rho: new Float32Array(FL_CAP), bin: new Uint8Array(FL_CAP),
   cellOf: new Int32Array(FL_CAP), cellItems: new Int32Array(FL_CAP), cellStart: new Int32Array(2), fillPos: new Int32Array(2),
@@ -151,7 +152,7 @@ export const fluid = {
     return c;
   },
   build(preset, w, h) {
-    this.setup(w, h); this.n = 0; this.series.clear(); this.lastSample = -1; this.ptr = null; this.obs = []; this.clamped = 0; this.ticks = 0; this.clampRate = 0;
+    this.setup(w, h); this.n = 0; this.series.clear(); this.lastSample = -1; this.ptr = null; this.obs = []; this.clamped = 0; this.ticks = 0; this.clampRate = 0; this.seed = rand(0, 4294967296) | 0;
     const s = this.spacing, A = s * s * Math.sqrt(3) / 2, N = Math.round(this.p.count), Wu = this.Wu, Hu = this.Hu, m = 0.45;
     if (preset === 'dam' || preset === 'posts') {
       if (preset === 'posts') {
@@ -175,7 +176,6 @@ export const fluid = {
       this.fillDisc(Wu * 0.73, Hu * 0.58, R, N - half, -0.025, -0.002);
     }
   },
-  onResize(w, h, ow, oh) { if (Math.abs(w - ow) > 12 || Math.abs(h - oh) > 12) rebuild(this); },
   worldRect() { return { w: this.Wu * this.U, h: this.Hu * this.U }; },
   buildGrid() {
     const n = this.n, cols = this.cols, rows = this.rows, start = this.cellStart, fill = this.fillPos, cellOf = this.cellOf, items = this.cellItems;
@@ -185,11 +185,17 @@ export const fluid = {
     fill.set(start);
     for (let i = 0; i < n; i++) items[fill[cellOf[i]]++] = i;
   },
+  /* Mulberry32 over a seed kept in snapshots, so a replay repeats the wall jitter exactly. */
+  jitter() {
+    const s = this.seed = (this.seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  },
   bounds() {
     const m = 0.25, W = this.Wu - m, H = this.Hu - m, X = this.x, Y = this.y, n = this.n;
     for (let i = 0; i < n; i++) {
-      if (X[i] < m) X[i] = m + Math.random() * 1e-3; else if (X[i] > W) X[i] = W - Math.random() * 1e-3;
-      if (Y[i] < m) Y[i] = m + Math.random() * 1e-3; else if (Y[i] > H) Y[i] = H - Math.random() * 1e-3;
+      if (X[i] < m) X[i] = m + this.jitter() * 1e-3; else if (X[i] > W) X[i] = W - this.jitter() * 1e-3;
+      if (Y[i] < m) Y[i] = m + this.jitter() * 1e-3; else if (Y[i] > H) Y[i] = H - this.jitter() * 1e-3;
     }
     for (const o of this.obs) {
       const rr = o.r + 0.25, rr2 = rr * rr, x0 = o.x - rr, x1 = o.x + rr, y0 = o.y - rr, y1 = o.y + rr;
@@ -331,7 +337,10 @@ export const fluid = {
     if (this.p.surface && fluidGL.render(this, view.w, view.h, camXf(this))) {
       g.save(); g.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); g.imageSmoothingEnabled = true;
       g.drawImage(fluidGL.canvas, 0, 0, view.w, view.h); g.restore(); this.renderer = 'gpu';
-    } else this.renderer = 'cpu';
+    } else {
+      this.renderer = 'cpu';
+      if (this.p.surface) this.surfaceFailed();
+    }
     if (this.renderer === 'cpu') for (let i = 0; i < n; i++) {
       const t = byDens ? (this.rho[i] / this.rho0 - 0.4) / 1.2 : Math.hypot(this.vx[i], this.vy[i]) * s / 480;
       bin[i] = clamp((t * BINS) | 0, 0, BINS - 1);
@@ -401,6 +410,20 @@ export const fluid = {
     if (Math.abs(this.p.tilt) > 45 && this.p.gravity > 0) out.push({ id: 'f-tilt', level: 'info', title: 'Steep tilt', body: `Gravity points ${Math.abs(this.p.tilt)}° off vertical, so the liquid piles against the ${this.p.tilt > 0 ? 'right' : 'left'} wall.` });
     return out;
   },
+  /* The GPU could not draw the surface: fall back to discs and say so. */
+  surfaceFailed() {
+    setParam(this, 'surface', false);
+    sticky({ id: 'f-gpu-lost', level: 'warn', title: 'Liquid surface unavailable', body: 'The GPU stopped drawing the liquid surface, so the tank now draws plain discs. Turn Liquid surface rendering back on under Parameters to try again.' }, 14);
+  },
+  /* Twice a second from diagnostics: a surface this device cannot keep up with falls back to discs. */
+  slowSurface: 0,
+  watchDraw(perf) {
+    if (!(this.p.surface && this.renderer === 'gpu' && perf.draw > 40 && perf.fps < 24)) { this.slowSurface = 0; return; }
+    if ((this.slowSurface += 0.5) < 4) return;
+    this.slowSurface = 0;
+    setParam(this, 'surface', false);
+    sticky({ id: 'f-gpu-slow', level: 'info', title: 'Switched to simple discs', body: `The liquid surface took about ${perf.draw.toFixed(0)} ms per frame on this device, so the tank now draws plain discs. Turn on Liquid surface rendering under Parameters to try it again.` }, 14);
+  },
   drawFixes() { return this.p.surface ? [{ label: 'Use simple discs', run() { setParam(fluid, 'surface', false); } }] : []; },
   perfFixes() { return this.n > 800 ? [{ label: `Restart with ${Math.round(this.n * 0.6 / 50) * 50} particles`, run() { setParam(fluid, 'count', clamp(Math.round(fluid.n * 0.6 / 50) * 50, 300, 3000)); } }] : []; },
   sane() { for (let i = 0; i < this.n; i++) if (!Number.isFinite(this.x[i]) || !Number.isFinite(this.y[i])) return false; return true; },
@@ -433,18 +456,19 @@ export const fluid = {
 Object.assign(fluid, genericState, {
   histBudget: 16e6, histInterval: 0.25,
   snapshot() {
-    const n = this.n, a = new Float32Array(n * 4);
+    const n = this.n, a = new Float64Array(n * 4), { gravity, tilt, k, kNear, visc } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 4; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.vx[i]; a[o + 3] = this.vy[i]; }
-    return { n, a, obs: this.obs.map(o => ({ ...o })) };
+    return { n, a, rho: this.rho.slice(0, n), obs: this.obs.map(o => ({ ...o })), seed: this.seed, p: { gravity, tilt, k, kNear, visc } };
   },
   restore(s) {
+    Object.assign(this.p, s.p);
     this.n = s.n;
     for (let i = 0; i < s.n; i++) {
       const o = i * 4;
       this.x[i] = s.a[o]; this.y[i] = s.a[o + 1]; this.vx[i] = s.a[o + 2]; this.vy[i] = s.a[o + 3];
-      this.px[i] = this.x[i] - this.vx[i]; this.py[i] = this.y[i] - this.vy[i]; this.rho[i] = this.rho0;
+      this.px[i] = this.x[i] - this.vx[i]; this.py[i] = this.y[i] - this.vy[i]; this.rho[i] = s.rho ? s.rho[i] : this.rho0;
     }
-    this.obs = s.obs.map(o => ({ ...o })); this.ptr = null;
+    this.obs = s.obs.map(o => ({ ...o })); this.ptr = null; this.seed = s.seed ?? this.seed;
     this.series.truncateAfter(this.t); this.lastSample = this.t;
     return true;
   },

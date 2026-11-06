@@ -39,6 +39,7 @@ import { THEME } from '../core/color.js';
 import { view } from '../core/view.js';
 import { camOf, clampCam, fitCam, is3D, navPan, navZoomBy, toWorld, worldOf } from './camera.js';
 
+import { drawWorld, in3D } from './mode.js';
 import { updateNav } from './navigator.js';
 import { active, canvas, ctx, pointerIsDown, setPointerDown } from './state.js';
 
@@ -56,6 +57,7 @@ export function drawVoid(g, x, y, w, h, z) {
 export function drawStage(lab) {
   const d = view.dpr;
   ctx.setTransform(d, 0, 0, d, 0, 0);
+  if (lab.rig3 && in3D(lab)) { drawWorld(lab, ctx, view.w, view.h); return; }
   if (lab.selfCam || is3D(lab)) { lab.draw(ctx, view.w, view.h); return; }
   const c = camOf(lab);
   if (c.fit) Object.assign(c, fitCam(lab)); else clampCam(lab);
@@ -94,6 +96,13 @@ export function endPointer(e) {
   if (active.pointerUp) active.pointerUp(p, e);
   canvas.style.cursor = cursorFor(ptrPos(e));
 }
+/* The browser took the pointer away: drop what it was doing rather than commit it. */
+export function cancelPointer(e) {
+  ptr.ids.delete(e.pointerId);
+  if (ptr.pinch) { if (ptr.ids.size < 2) ptr.pinch = null; return; }
+  if (ptr.drag && e.pointerId === ptr.drag.id) { ptr.drag = null; updateNav(); return; }
+  cancelLabPointer();
+}
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
@@ -107,6 +116,7 @@ export function init() {
     const three = is3D(active), b = e.button;
     let mode = null;
     if (b === 1 || (b === 2 && !active.rightButton)) mode = three && !e.shiftKey ? 'orbit' : 'pan';
+    else if (b === 0 && three && e.shiftKey) mode = 'pan';
     else if (b === 0 && (ptr.space || ptr.panMode || (active.wantsPan && active.wantsPan(e)))) mode = three && ptr.space && !ptr.panMode && !e.shiftKey ? 'orbit' : 'pan';
     if (mode) { ptr.drag = { mode, id: e.pointerId, x: s.x, y: s.y }; if (ptr.space) ptr.spaceUsed = true; canvas.style.cursor = cursorFor(s); return; }
     const p = labPoint(active, s);
@@ -137,7 +147,7 @@ export function init() {
     if (!pointerIsDown) canvas.style.cursor = cursorFor(s);
   });
   canvas.addEventListener('pointerup', endPointer);
-  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('pointercancel', cancelPointer);
   canvas.addEventListener('pointerleave', () => { if (!pointerIsDown) active.hover = null; ptr.last = null; });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   canvas.addEventListener('auxclick', e => e.preventDefault());

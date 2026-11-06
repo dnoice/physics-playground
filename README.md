@@ -49,14 +49,15 @@ static web server and it runs.
 | 6 | Cloth | Verlet cloth that stretches, tears and can be cut | Curtain, Hammock, Flag in wind, Fragile net |
 | 7 | Fields | Point charges, potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
 
-Every lab has a running chart, live readouts, diagnostics that explain
-extreme settings and offer one-click fixes, a page of the maths behind
-it, and two or three guided experiments with live progress checks.
+Every lab has live readouts, diagnostics that explain extreme settings
+and offer one-click fixes, a page of the maths behind it, and two or
+three guided experiments with live progress checks. All but Cloth also
+keep a running chart.
 
 ## Quick start
 
 The modules load over HTTP only (a `file://` page cannot import them).
-With Node.js 18 or later:
+With Node.js 20.19 or later:
 
 ```bash
 npm run dev

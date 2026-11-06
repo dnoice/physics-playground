@@ -42,6 +42,7 @@ import { tickExperiment } from './experiments.js';
 import { updateDock } from './dock.js';
 import { resizeLab } from './lifecycle.js';
 import { updateNav, updateOrbit } from './navigator.js';
+import { tickWorld } from './mode.js';
 import { drawChart, updateReadouts } from './panel.js';
 import { drawStage } from './stage.js';
 import { BUDGET_MS, active, measure, perf, stageEl, state } from './state.js';
@@ -64,9 +65,11 @@ export function advance(lab, simDt, budget = BUDGET_MS) {
 export let last = performance.now(), uiClock = 0, hudClock = 0, diagClock = 0;
 export function setLast(t) { last = t; }
 export function frame(now) {
-  const real = Math.min(0.05, Math.max(0, (now - last) / 1000));
+  // `raw` is the true frame gap for the meters; `real` is capped so a stall cannot fast-forward the run.
+  const raw = Math.max(0, (now - last) / 1000), real = Math.min(0.05, raw);
   last = now;
-  if (real > 0) perf.fps += (1 / real - perf.fps) * 0.05;
+  if (raw > 0 && raw < 1) perf.fps += (1 / raw - perf.fps) * 0.05;
+  tickWorld(raw);
   if (active) {
     const t0 = performance.now();
     let n = 0;
@@ -80,10 +83,10 @@ export function frame(now) {
     const t2 = performance.now();
     perf.sim += ((t1 - t0) - perf.sim) * 0.1; perf.draw += ((t2 - t1) - perf.draw) * 0.1; perf.steps += (n - perf.steps) * 0.1;
     perf.hist[perf.hi] = t2 - t0; perf.hsim[perf.hi] = t1 - t0; perf.hi = (perf.hi + 1) % perf.hist.length;
-    if (stepping && real > 0) {
-      perf.rate += ((n * active.dt()) / real - perf.rate) * 0.06;
-      perf.slow = perf.rate < state.speed * 0.9 ? perf.slow + real : Math.max(0, perf.slow - real * 2);
-    } else perf.slow = 0;
+    if (stepping && raw > 0 && raw < 1) {
+      perf.rate += ((n * active.dt()) / raw - perf.rate) * 0.06;
+      perf.slow = perf.rate < state.speed * 0.9 ? perf.slow + raw : Math.max(0, perf.slow - raw * 2);
+    } else if (!stepping) perf.slow = 0;
     if ((hudClock += real) >= 0.1) {
       hudClock = 0;
       $('#hud-time').textContent = `t = ${active.t.toFixed(2)} s`;

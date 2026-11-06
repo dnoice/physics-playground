@@ -41,6 +41,7 @@ import { EXPERIMENTS } from './experiments.js';
 import { fields } from './fields.js';
 import { fluid } from './fluid.js';
 import { gravity } from './gravity.js';
+import { mixStage3D } from './stage3d.js';
 import { waves } from './waves.js';
 
 /* ================================================================== */
@@ -49,3 +50,4 @@ import { waves } from './waves.js';
 export const labs = [gravity, collisions, fluid, waves, pendulum, cloth, fields];
 export const labsById = Object.fromEntries(labs.map(l => [l.id, l]));
 for (const l of labs) Object.assign(l, { t: 0, _acc: 0, ready: false, holding: l.holding || false, size: { w: 0, h: 0 }, hover: null, sceneP: { ...l.p }, experiments: EXPERIMENTS[l.id] || [] });
+for (const l of labs) if (l.rig3) mixStage3D(l);

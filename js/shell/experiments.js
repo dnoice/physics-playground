@@ -35,7 +35,7 @@
 ---------
 */
 import { msEl } from '../core/icons.js';
-import { $, el, store } from '../core/util.js';
+import { $, el, keepFocus, store } from '../core/util.js';
 import { applyPreset } from './lifecycle.js';
 import { active, announce, state } from './state.js';
 
@@ -62,7 +62,7 @@ export function renderExperiments(lab) {
     const status = live ? 'active' : fin ? 'done' : 'idle';
     const scene = lab.presets.find(p => p.id === exp.scene);
     const meter = el('div', { class: 'exp-meter', role: 'progressbar', 'aria-label': `${exp.title} progress`, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': Math.round((live ? run.p : fin ? 1 : 0) * 100) }, el('span', { style: `width: ${((live ? run.p : fin ? 1 : 0) * 100).toFixed(1)}%` }));
-    const btn = el('button', { type: 'button', class: 'btn' + (live ? '' : ' btn-primary'), text: live ? 'Stop' : fin ? 'Run again' : 'Start', onclick: () => (live ? stopExperiment(true) : startExperiment(lab, exp)) });
+    const btn = el('button', { type: 'button', class: 'btn' + (live ? '' : ' btn-primary'), 'data-fk': exp.id, text: live ? 'Stop' : fin ? 'Run again' : 'Start', onclick: () => (live ? stopExperiment(true) : startExperiment(lab, exp)) });
     kids.push(el('article', { class: 'experiment', 'data-status': status, 'data-exp': exp.id },
       el('div', { class: 'exp-head' }, msEl(fin && !live ? 'check_circle' : live ? 'play_circle' : 'radio_button_unchecked'), el('h4', { text: exp.title })),
       el('p', { class: 'exp-goal', text: exp.goal }),
@@ -70,7 +70,7 @@ export function renderExperiments(lab) {
       el('div', { class: 'exp-row' }, btn, meter),
       el('span', { class: 'exp-note', text: live ? run.note : `Scene: ${scene ? scene.label : exp.scene}${fin ? ' · finished' : ''}` })));
   }
-  host.replaceChildren(...kids);
+  keepFocus(host, () => host.replaceChildren(...kids));
 }
 
 export function startExperiment(lab, exp) {
@@ -89,6 +89,13 @@ export function stopExperiment(say) {
   renderBanner();
   if (lab && lab === active) renderExperiments(lab);
   if (say) announce('Experiment stopped');
+}
+
+/* The scene was rebuilt: whatever the check remembered belongs to the old run. */
+export function experimentReset(lab) {
+  if (run.lab !== lab || !run.exp || run.finished) return;
+  run.ctx = run.exp.init ? run.exp.init(lab) : {};
+  run.lastT = lab.t;
 }
 
 /* Called from the frame loop at panel rate. */

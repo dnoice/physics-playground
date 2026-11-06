@@ -41,14 +41,13 @@
 
 import { globalInsights } from './diagnostics.js';
 import { labsById } from '../labs/index.js';
-import { fluidGL } from '../render/fluid-gl.js';
-import { reliefGL } from '../render/relief-gl.js';
 import { camOf, is3D, navActual, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
 import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
 import { selectDock } from './dock.js';
 import { applyPreset, setParam } from './lifecycle.js';
 import { advance } from './loop.js';
 import { ptr } from './stage.js';
+import { pickTier, setMode, world } from './mode.js';
 import { active, perf, state } from './state.js';
 import { pause, play, resetActive, setSpeed, stepOnce } from './transport.js';
 import { vault } from './vault.js';
@@ -71,7 +70,8 @@ export function init() {
     advance: seconds => advance(active, seconds, Infinity),
     capture: { toggleVideo, toggleData, saveState, loadState, vault, dataRec, vrec },
     history: { seek: k => histSeek(active, k), size: () => hist(active).snaps.length, back: () => rewindStep(-1) },
-    renderer: () => fluidGL.ok ? 'gpu' : 'cpu',
+    renderer: () => active.renderer || 'cpu',
+    mode: { get: () => world.mode, set: setMode, tier: pickTier, world, is3D: () => is3D(active), info: () => world.engine && world.engine.info() },
     view: {
       get() {
         if (is3D(active)) { const c = active.c3(); return { mode: '3d', yaw: c.yaw, pitch: c.pitch, dist: c.dist, tx: c.tx, tz: c.tz, zoom: zoomPct(active) }; }
@@ -81,7 +81,6 @@ export function init() {
       pan: (dx, dy) => navPan(dx, dy), frame: () => navFrame(), actual: () => navActual(),
       toWorld: (x, y) => toWorld(active, { x, y }),
       orbit: (dx, dy) => active.orbit3 && active.orbit3(dx, dy), snap: id => active.snap3 && active.snap3(id),
-      renderer3d: () => reliefGL.ok,
     },
   };
 }

@@ -97,12 +97,16 @@ export const vault = {
         for (let i = 0; i < files.length; i++) { const r = await this.assets.upload(files[i].blob, { type: files[i].type }); item.files[i].assetId = r.id; }
         await this.db.collection('vault').doc(item.id).set(jsonSafe(item));
         where = 'artifact'; this.refreshUsage();
+        this.evict(item, files);
       } else if (this.mode === 'local') {
         await idbTx(this.idb, ['meta', 'blob'], 'readwrite', tx => { tx.objectStore('meta').put(jsonSafe(item)); files.forEach((f, i) => tx.objectStore('blob').put(f.blob, item.id + ':' + i)); });
         this.stored.unshift(jsonSafe(item)); where = 'browser';
+        this.evict(item, files);
       } else { item.localOnly = true; this.session.unshift(item); }
     } catch (e) {
       const code = e && e.code;
+      // Assets uploaded before the failure would otherwise sit unreferenced against the quota.
+      for (const f of item.files) if (f.assetId) { this.assets.delete(f.assetId).catch(() => null); delete f.assetId; }
       item.localOnly = true;
       item.note = code === 'too_large' ? 'Over the 20 MB artifact limit: kept for this session only. Save it to your computer.' : code === 'quota_or_state' || code === 'quota_exceeded' ? 'Artifact storage is full: kept for this session only.' : 'Could not store it: kept for this session only.';
       this.session.unshift(item);
@@ -111,13 +115,15 @@ export const vault = {
     renderLibrary();
     return { item, where };
   },
+  /* A persisted file is read back from storage on demand, so its bytes can leave memory. */
+  evict(item, files) { files.forEach((_, i) => this.mem.delete(item.id + ':' + i)); },
+  canWrite(item) { return !!item.localOnly || this.mode !== 'cloud-ro'; },
   async blob(item, i) {
     const key = item.id + ':' + i;
     if (this.mem.has(key)) return this.mem.get(key);
     let b = null;
     if (this.mode === 'local' && !item.localOnly) b = await idbTx(this.idb, 'blob', 'readonly', tx => tx.objectStore('blob').get(key));
     else if (item.files[i] && item.files[i].assetId) { const r = await fetch('/_blob/' + item.files[i].assetId); if (r.ok) b = await r.blob(); }
-    if (b) this.mem.set(key, b);
     return b;
   },
   async src(item, i) {
@@ -129,6 +135,7 @@ export const vault = {
     const u = URL.createObjectURL(b); this.urls.set(key, u); return u;
   },
   async remove(item) {
+    if (!this.canWrite(item)) throw new Error('read-only');
     if (!item.localOnly) {
       if (this.mode === 'cloud') {
         await this.db.collection('vault').doc(item.id).delete();
@@ -144,6 +151,7 @@ export const vault = {
     renderLibrary();
   },
   async rename(item, title) {
+    if (!this.canWrite(item)) return;
     item.title = title;
     if (!item.localOnly) {
       if (this.mode === 'cloud') await this.db.collection('vault').doc(item.id).update({ title });

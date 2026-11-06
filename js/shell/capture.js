@@ -37,7 +37,6 @@
 import { THEME } from '../core/color.js';
 import { $, clamp, store } from '../core/util.js';
 import { view } from '../core/view.js';
-import { gravity } from '../labs/gravity.js';
 import { labsById } from '../labs/index.js';
 import { updateDock } from './dock.js';
 import { rebuild } from './lifecycle.js';
@@ -46,14 +45,14 @@ import { drawChart, syncPanel, updateReadouts } from './panel.js';
 import { active, announce, canvas, ctx, state } from './state.js';
 import { updatePlay } from './transport.js';
 import { vault } from './vault.js';
-import { selectLab } from './workspace.js';
+import { selectLab, updateStageTitle } from './workspace.js';
 
 /* ================================================================== */
 /*  Capture: rewind history, video, datasets, saved states, library    */
 /* ================================================================== */
-export const presetLabel = lab => { const p = lab.presets.find(x => x.id === lab.presetId); return p ? p.label : lab.presetId; };
+export const presetLabel = (lab, id = lab.presetId) => { const p = lab.presets.find(x => x.id === id); return p ? p.label : id; };
 export const stamp = () => { const d = new Date(), z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`; };
-export const baseName = lab => `physics-${lab.id}-${lab.presetId}-${stamp()}`;
+export const baseName = (lab, preset = lab.presetId) => `physics-${lab.id}-${preset}-${stamp()}`;
 export const fmtBytes = b => b >= 1073741824 ? (b / 1073741824).toFixed(1) + ' GB' : b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : b >= 1024 ? Math.round(b / 1024) + ' kB' : b + ' B';
 export const fmtDur = s => { s = Math.max(0, s || 0); const m = Math.floor(s / 60), r = s - m * 60; return m ? `${m}:${String(Math.floor(r)).padStart(2, '0')}` : `${r.toFixed(1)} s`; };
 export const fmtWhen = iso => { try { return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (_) { return ''; } };
@@ -85,7 +84,17 @@ export function histCapture(lab, force) {
   H.snaps.push({ t: lab.t, data });
   if (H.snaps.length > H.cap) H.snaps.splice(0, H.snaps.length - H.cap);
 }
-export function histBranch(lab) { const H = hist(lab); if (H.pos >= 0) { H.snaps.length = H.pos + 1; H.pos = -1; updateRewind(); } }
+export function histBranch(lab) {
+  const H = hist(lab);
+  if (H.pos < 0) return;
+  H.snaps.length = H.pos + 1; H.pos = -1; updateRewind();
+  // The discarded future leaves a running dataset too, so the CSV stays one continuous timeline.
+  if (dataRec.on && dataRec.lab === lab) {
+    const kept = r => r[0] <= lab.t + 1e-9;
+    dataRec.rows = dataRec.rows.filter(kept); dataRec.tracks = dataRec.tracks.filter(kept);
+    dataRec.next = lab.t + 1 / dataRec.meta.rate;
+  }
+}
 export function histSeek(lab, k) {
   const H = hist(lab);
   if (H.snaps.length < 2) return;
@@ -95,7 +104,8 @@ export function histSeek(lab, k) {
   lab.t = s.t; lab._acc = 0;
   if (lab.restore(s.data) === false) { announce('That moment cannot be restored at the current stage size.'); return; }
   H.pos = k;
-  updateRewind(); updateReadouts(); drawChart();
+  // A snapshot brings back the parameters its physics ran under, so the panel follows it.
+  syncPanel(); updateRewind(); updateReadouts(); drawChart();
 }
 export const rewindEl = $('#rewind-range'), rewindOut = $('#rewind-out'), rewindNote = $('#rewind-note');
 export function updateRewind() {
@@ -118,7 +128,7 @@ export function rewindStep(dir) {
 }
 
 /* ---------- video recorder ---------- */
-export const VQ = { compact: 3e6, standard: 6e6, high: 12e6 };
+export const VQ = { compact: 3e6, standard: 6e6, high: 12e6 }, VIDEO_CAP = 512 * 1048576;
 export const vrec = { mr: null, stream: null, chunks: [], bytes: 0, t0: 0, mime: '', lab: null, quality: store.get('vq', 'standard'), overlay: store.get('overlay', true) };
 export const videoSupported = () => !!(window.MediaRecorder && canvas.captureStream);
 export function pickMime() {
@@ -136,7 +146,11 @@ export function startVideo() {
     vrec.mr = new MediaRecorder(vrec.stream, mime ? { mimeType: mime, videoBitsPerSecond: VQ[vrec.quality] || VQ.standard } : { videoBitsPerSecond: VQ.standard });
   } catch (e) { vrec.mr = null; announce('The browser refused to start a recording.'); return; }
   Object.assign(vrec, { chunks: [], bytes: 0, t0: performance.now(), lab: active, preset: active.presetId, simT0: active.t, mime: (vrec.mr.mimeType || mime || 'video/webm').split(';')[0] });
-  vrec.mr.ondataavailable = e => { if (e.data && e.data.size) { vrec.chunks.push(e.data); vrec.bytes += e.data.size; } };
+  vrec.mr.ondataavailable = e => {
+    if (!e.data || !e.data.size) return;
+    vrec.chunks.push(e.data); vrec.bytes += e.data.size;
+    if (vrec.bytes >= VIDEO_CAP) { announce('The clip reached 512 MB, so the recording stopped.'); stopVideo(); }
+  };
   vrec.mr.onstop = finishVideo;
   vrec.mr.start(1000);
   updateCaptureUI(); announce('Recording video');
@@ -147,9 +161,9 @@ export async function finishVideo() {
   try { vrec.stream.getTracks().forEach(t => t.stop()); } catch (_) { /* already stopped */ }
   vrec.mr = null; vrec.chunks = []; updateCaptureUI();
   if (!blob.size) { announce('The recording came out empty.'); return; }
-  const ext = vrec.mime.includes('mp4') ? 'mp4' : 'webm', saved = lab.presetId;
-  const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: canvas.width, height: canvas.height },
-    [{ name: `${baseName(lab)}.${ext}`, type: vrec.mime, blob }]);
+  const ext = vrec.mime.includes('mp4') ? 'mp4' : 'webm', saved = vrec.preset;
+  const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab, saved)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: canvas.width, height: canvas.height },
+    [{ name: `${baseName(lab, saved)}.${ext}`, type: vrec.mime, blob }]);
   announce(`Clip saved${where === 'session' ? ' for this session' : ''}: ${fmtDur(dur)}, ${fmtBytes(blob.size)}`);
 }
 export function toggleVideo() { vrec.mr ? stopVideo() : startVideo(); }
@@ -171,13 +185,15 @@ export const dataRec = { on: false, lab: null, rows: [], tracks: [], next: 0, ra
 export function startData() {
   const lab = active;
   if (!lab.dataColumns || dataRec.on) return;
-  Object.assign(dataRec, { on: true, lab, rows: [], tracks: [], next: lab.t, meta: { preset: lab.presetId, params: { ...lab.p }, t0: lab.t } });
+  Object.assign(dataRec, { on: true, lab, rows: [], tracks: [], next: lab.t, meta: { preset: lab.presetId, params: { ...lab.p }, t0: lab.t, rate: dataRec.rate } });
   sampleData(lab);
   updateCaptureUI(); announce('Recording data');
 }
 export function sampleData(lab) {
   if (lab.t + 1e-9 < dataRec.next) return;
-  dataRec.next = lab.t + 1 / dataRec.rate;
+  const period = 1 / dataRec.meta.rate;
+  dataRec.next += period;
+  if (dataRec.next <= lab.t) dataRec.next = lab.t + period;
   dataRec.rows.push(lab.dataRow());
   if (dataRec.tracksOn && lab.trackRows && dataRec.tracks.length < 400000) lab.trackRows(dataRec.tracks);
   if (dataRec.rows.length >= 200000) stopData('The dataset reached 200,000 rows and was saved.');
@@ -185,9 +201,9 @@ export function sampleData(lab) {
 export async function stopData(note) {
   if (!dataRec.on) return;
   dataRec.on = false; updateCaptureUI();
-  const lab = dataRec.lab, rows = dataRec.rows, cols = lab.dataColumns;
+  const lab = dataRec.lab, rows = dataRec.rows, cols = lab.dataColumns, { preset, rate } = dataRec.meta;
   if (rows.length < 2) { announce('Not enough samples to save a dataset.'); return; }
-  const base = baseName(lab), files = [{ name: `${base}.csv`, type: 'text/csv', blob: new Blob([toCSV(cols, rows)], { type: 'text/csv' }) }];
+  const base = baseName(lab, preset), files = [{ name: `${base}.csv`, type: 'text/csv', blob: new Blob([toCSV(cols, rows)], { type: 'text/csv' }) }];
   if (dataRec.tracks.length) files.push({ name: `${base}-tracks.csv`, type: 'text/csv', blob: new Blob([toCSV(lab.trackColumns, dataRec.tracks)], { type: 'text/csv' }) });
   const summary = cols.map((c, j) => {
     let lo = Infinity, hi = -Infinity, sum = 0, k = 0;
@@ -195,8 +211,10 @@ export async function stopData(note) {
     return { column: c, min: k ? lo : null, max: k ? hi : null, mean: k ? sum / k : null };
   });
   const dur = rows[rows.length - 1][0] - rows[0][0], tracks = dataRec.tracks.length;
+  // Samples land on solver steps, so a coarse step can deliver fewer than the rate asked for.
+  const actual = dur > 0 ? Number(((rows.length - 1) / dur).toPrecision(3)) : rate;
   dataRec.rows = []; dataRec.tracks = [];
-  const { where } = await vault.add({ kind: 'run', lab: lab.id, preset: dataRec.meta.preset, title: `${lab.name} · ${presetLabel(lab)} data`, duration: dur, rows: rows.length, columns: cols, rate: dataRec.rate,
+  const { where } = await vault.add({ kind: 'run', lab: lab.id, preset, title: `${lab.name} · ${presetLabel(lab, preset)} data`, duration: dur, rows: rows.length, columns: cols, rate: actual, rateAsked: rate,
     params: dataRec.meta.params, summary, trackRows: tracks, trackColumns: tracks ? lab.trackColumns : null, trackLabel: tracks ? lab.trackLabel : null }, files);
   announce(note || `Dataset saved${where === 'session' ? ' for this session' : ''}: ${rows.length} rows over ${fmtDur(dur)}`);
 }
@@ -206,9 +224,9 @@ export function toggleData() { dataRec.on ? stopData() : startData(); }
 export async function saveState() {
   const lab = active;
   if (!lab.serialize) return;
-  const obj = { app: 'physics-simulation-playground', version: '1.1.0', lab: lab.id, preset: lab.presetId, t: lab.t, params: { ...lab.p }, state: lab.serialize(), savedAt: new Date().toISOString() };
+  const obj = { app: 'physics-simulation-playground', version: '2.1.0', lab: lab.id, preset: lab.presetId, t: lab.t, built: lab.built, params: { ...lab.p }, state: lab.serialize(), savedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(jsonSafe(obj))], { type: 'application/json' });
-  const extra = lab === gravity ? { bodies: gravity.bodies.length } : {};
+  const extra = lab.stateSummary ? lab.stateSummary() : {};
   const { where } = await vault.add({ kind: 'state', lab: lab.id, preset: lab.presetId, title: `${lab.name} · ${presetLabel(lab)} at t = ${lab.t.toFixed(1)} s`, t: lab.t, params: { ...lab.p }, ...extra },
     [{ name: `${baseName(lab)}-state.json`, type: 'application/json', blob }]);
   announce(`State saved${where === 'session' ? ' for this session' : ''}`);
@@ -224,12 +242,12 @@ export async function loadState(item) {
     if (lab.presets.some(p => p.id === obj.preset)) lab.presetId = obj.preset;
     Object.assign(lab.p, obj.params || {});
     lab.sceneP = { ...lab.p };
-    rebuild(lab);
+    rebuild(lab, obj.built);
     const ok = lab.deserialize(obj.state);
-    lab.t = +obj.t || 0;
+    if (ok) lab.t = +obj.t || 0;
     histReset(lab); histCapture(lab, true);
     if (state.running) { state.running = false; updatePlay(); }
-    syncPanel(); updateDock(true); updateRewind(); updateReadouts(); drawChart();
+    syncPanel(); updateStageTitle(lab); updateDock(true); updateRewind(); updateReadouts(); drawChart();
     announce(ok ? `Loaded “${item.title}”. Press Play to continue.` : 'Settings restored, but the saved positions do not fit the current stage size.');
   } catch (e) { announce('That saved state could not be loaded.'); }
 }

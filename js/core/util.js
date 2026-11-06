@@ -65,6 +65,15 @@ export function el(tag, attrs = {}, ...kids) {
   for (const kid of kids) if (kid != null) n.append(kid);
   return n;
 }
+/* Rebuild part of the page without dropping keyboard focus: the element that
+   had it is found again by its data-fk key, else `fallback` takes it. */
+export function keepFocus(host, rebuild, fallback) {
+  const a = document.activeElement, had = !!a && host.contains(a), key = had ? a.dataset.fk : null;
+  rebuild();
+  if (!had || host.contains(document.activeElement)) return;
+  const next = (key && host.querySelector(`[data-fk="${key}"]`)) || fallback;
+  if (next) next.focus();
+}
 export function trimNum(v) { const a = Math.abs(v); return v.toFixed(a >= 100 ? 0 : a >= 10 ? 1 : 2); }
 export function fmtSI(v) {
   if (!Number.isFinite(v)) return '—';

@@ -41,7 +41,7 @@
 */
 import { labs, labsById } from './labs/index.js';
 import { readTheme } from './core/color.js';
-import { clamp } from './core/util.js';
+import { clamp, store } from './core/util.js';
 import { updateCaptureUI } from './shell/capture.js';
 import { buildCaptureSettings, buildLibraryFilter } from './shell/library.js';
 import { frame, setLast } from './shell/loop.js';
@@ -58,6 +58,7 @@ import { init as initLoop } from './shell/loop.js';
 import { init as initCapture } from './shell/capture.js';
 import { init as initWorkspace } from './shell/workspace.js';
 import { init as initAutomation } from './shell/automation.js';
+import { init as initMode } from './shell/mode.js';
 import { selectLab } from './shell/workspace.js';
 
 /* ---------- boot ---------- */
@@ -74,8 +75,8 @@ export function start(data) {
   }
   showSpeed(); updatePlay(); buildOrbit();
   buildCaptureSettings(); buildLibraryFilter(); updateCaptureUI();
-  const fromHash = location.hash.slice(1);
-  selectLab(labsById[fromHash] ? fromHash : (data && labsById[data.lab] ? data.lab : 'gravity'), { silent: true });
+  const fromHash = location.hash.slice(1), last = (data && data.lab) || store.get('lab');
+  selectLab(labsById[fromHash] ? fromHash : labsById[last] ? last : labs[0].id, { silent: true });
   requestAnimationFrame(t => { setLast(t); frame(t); });
   vault.init();
 }
@@ -83,7 +84,7 @@ export const hot = window.claude && window.claude.hot;
 
 /* Boot: wire every shell module, then start the selected lab. */
 function boot() {
-  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initAutomation();
+  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initAutomation();
   if (hot && typeof hot.snapshot === 'function') {
     hot.snapshot(() => ({
       lab: active && active.id, running: state.running, speed: state.speed,

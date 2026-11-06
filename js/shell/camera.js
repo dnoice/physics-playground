@@ -48,9 +48,8 @@ import { active } from './state.js';
    screen px per world px, and cam.fit keeps the whole box in view. Gravity
    keeps its own camera fields and draws in screen space (selfCam). The
    ripple tank's Relief 3D view brings its own orbit camera (is3D). */
-export const ZOOM_RANGE = { gravity: [0.1, 40], collisions: [0.5, 16], fluid: [0.5, 8], waves: [0.5, 10], chaos: [0.5, 8], cloth: [0.5, 10], fields: [0.5, 10] };
 export const is3D = lab => !!(lab && lab.is3D && lab.is3D());
-export const zoomRange = lab => ZOOM_RANGE[lab.id] || [0.5, 8];
+export const zoomRange = lab => lab.zoomRange || [0.5, 8];
 export function worldOf(lab) { return lab.worldRect ? lab.worldRect() : { w: lab.size.w || view.w, h: lab.size.h || view.h }; }
 export function camOf(lab) { const c = lab.cam || (lab.cam = { x: 0, y: 0, z: 1, fit: true }); if (c.z == null) c.z = 1; return c; }
 export function fitCam(lab) {

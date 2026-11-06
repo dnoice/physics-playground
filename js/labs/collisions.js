@@ -56,6 +56,7 @@ export const COLL_CAP = 1500;
 export const COLL_RGB = Array.from({ length: 24 }, (_, b) => rampRgb(RAMP_HEAT, Math.round(40 + 215 * b / 23)));
 export const collisions = {
   id: 'collisions', name: 'Collisions', title: 'Elastic and inelastic collisions',
+  zoomRange: [0.5, 16],
   eq: 'J = −(1 + e) μ v<sub>n</sub>',
   eqTex: 'J = -(1 + e)\\,\\mu\\, v_n',
   aria: 'Collision simulation: discs bouncing in a box',
@@ -451,11 +452,12 @@ export const collisions = {
 Object.assign(collisions, genericState, {
   histBudget: 16e6, histInterval: 0.25,
   snapshot() {
-    const n = this.n, a = new Float32Array(n * 7);
+    const n = this.n, a = new Float64Array(n * 7), { gravity, e, drag, mu } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 7; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.vx[i]; a[o + 3] = this.vy[i]; a[o + 4] = this.r[i]; a[o + 5] = this.ang[i]; a[o + 6] = this.om[i]; }
-    return { n, a, stride: 7, tracer: this.tracer, KE0: this.KE0 };
+    return { n, a, stride: 7, tracer: this.tracer, KE0: this.KE0, p: { gravity, e, drag, mu } };
   },
   restore(s) {
+    Object.assign(this.p, s.p);
     this.n = 0;
     const st = s.stride || 5;
     for (let i = 0; i < s.n; i++) {

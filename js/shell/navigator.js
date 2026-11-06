@@ -50,6 +50,7 @@ export const navZoomEl = $('#nav-zoom'), navPanEl = $('#nav-pan'), navExtraEl = 
 export const miniEl = $('#minimap'), miniCanvas = $('#minimap-canvas'), scaleEl = $('#scalebar');
 export const mini = { k: 1, ox: 0, oy: 0 };
 export let navExtras = [], orbitAxes = [];
+let orbitHtml = '';
 /* A button that can be dragged (onDrag gets screen deltas) or clicked (pointer or keyboard). */
 export function dragButton(btn, onDrag, onClick) {
   let st = null;
@@ -117,8 +118,8 @@ export function updateOrbit() {
     b.style.zIndex = front ? '3' : '1';
     if (!a.neg) lines.push(`<line x1="0" y1="0" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="${a.c}" opacity="${front ? 1 : 0.5}"/>`);
   }
-  const svg = $('#orbit-lines'), html = lines.join('');
-  if (svg.innerHTML !== html) svg.innerHTML = html;
+  const html = lines.join('');
+  if (html !== orbitHtml) { orbitHtml = html; $('#orbit-lines').innerHTML = html; }
 }
 export function updateNav() {
   const lab = active; if (!lab) return;

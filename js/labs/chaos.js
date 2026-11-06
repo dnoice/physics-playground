@@ -56,6 +56,7 @@ import { canvas } from '../shell/state.js';
 export const PEND_TRAIL = 900;
 export const pendulum = {
   id: 'chaos', name: 'Chaos', title: 'Chaotic double pendulum',
+  rig3: { plane: 'wall', yaw: 0.36, pitch: 0.17, fit: 1.3, yawMax: 1.3 },
   eq: 'δ(t) ≈ δ<sub>0</sub> e<sup>λt</sup>',
   eqTex: '\\delta(t) \\approx \\delta_0\\, e^{\\lambda t}',
   aria: 'Chaos simulation: several double pendulums starting almost identically',
@@ -160,6 +161,8 @@ export const pendulum = {
     }
   },
   onParam(key) { if (key === 'mass' || key === 'len' || key === 'g') this.E0 = this.energy(0); },
+  /* Drift in percent of the energy above the hanging rest state: E's zero sits at the pivot, an arbitrary height, so |E0| can be almost nothing. */
+  driftPct(E) { const M = this.p.mass, g = this.p.g, ref = this.E0 + (1 + M) * g + M * g * this.p.len; return ref > 0 ? (E - this.E0) / ref * 100 : 0; },
   layout(w, h) {
     this.scale = 0.9 * Math.min(w / 2, h / 2) / (1 + this.p.len);
     this.pivot = { x: w / 2, y: h / 2 };
@@ -285,6 +288,14 @@ export const pendulum = {
     drawSphere(g, P.x, P.y, 6.5, [242, 165, 65]);
     g.fillStyle = '#1d252f'; g.beginPath(); g.arc(P.x, P.y, 2.2, 0, TAU); g.fill();
   },
+  /* Screen overlay in 3D: the handle a bob offers when the pointer is on it. */
+  overlay3(g) {
+    if (this.p.view !== 'pend' || !this.hover || !this.N) return;
+    const k = this.drag || this.hitBob(this.hover); if (!k) return;
+    const b = this.bobs(0), s = k === 1 ? this.project3(b.x1, b.y1, 0.2) : this.project3(b.x2, b.y2, 0.2); if (!s) return;
+    g.strokeStyle = THEME.amber; g.lineWidth = 1.5; g.globalAlpha = 0.9;
+    g.beginPath(); g.arc(s.x, s.y, 16, 0, TAU); g.stroke(); g.globalAlpha = 1;
+  },
   mini(g, k) {
     if (!this.N) return;
     const b = this.bobs(0), P = this.pivot;
@@ -292,7 +303,7 @@ export const pendulum = {
     g.fillStyle = THEME.text; for (const [x, y] of [[b.x1, b.y1], [b.x2, b.y2]]) { g.beginPath(); g.arc(x, y, 3 / k, 0, TAU); g.fill(); }
   },
   readouts() {
-    const E = this.N ? this.energy(0) : 0, drift = this.E0 ? (E - this.E0) / Math.abs(this.E0) * 100 : 0, ad = Math.abs(drift);
+    const E = this.N ? this.energy(0) : 0, drift = this.N ? this.driftPct(E) : 0, ad = Math.abs(drift);
     let spread = 0;
     for (let i = 1; i < this.N; i++) spread = Math.max(spread, Math.abs(wrapAngle(this.s[i * 4 + 1] - this.s[1])));
     const damped = this.p.damp > 0;
@@ -308,7 +319,7 @@ export const pendulum = {
   diagnose() {
     const out = [], damped = this.p.damp > 0;
     if (!damped && this.N) {
-      const E = this.energy(0), drift = this.E0 ? Math.abs((E - this.E0) / this.E0) * 100 : 0;
+      const drift = Math.abs(this.driftPct(this.energy(0)));
       if (drift > 0.01) out.push({ id: 'p-drift', level: drift > 0.5 ? 'crit' : 'warn', title: 'Integrator error is growing', body: `Energy has drifted <b>${drift.toFixed(3)}%</b>. Spins up to ${this.wmax.toFixed(0)} rad/s cover a large angle per 1/600 s step, which RK4 follows less exactly.`,
         fixes: this.p.g > 12 ? [{ label: 'Gravity 9.81', run() { setParam(pendulum, 'g', 9.81); rebuild(pendulum); } }] : [] });
     }
@@ -356,17 +367,18 @@ export const pendulum = {
 /* ---------- capture hooks: rewind snapshots, datasets, saved states ---------- */
 Object.assign(pendulum, genericState, {
   histBudget: 8e6, histInterval: 0.1,
-  snapshot() { return { N: this.N, s: this.s.slice(), lyap: this.lyap, divergeAt: this.divergeAt, wmax: this.wmax }; },
+  snapshot() { const { mass, len, g, damp } = this.p; return { N: this.N, s: this.s.slice(), lyap: this.lyap, divergeAt: this.divergeAt, wmax: this.wmax, E0: this.E0, p: { mass, len, g, damp } }; },
   restore(o) {
     if (o.N !== this.N) return false;
-    this.s.set(o.s); this.lyap = o.lyap ?? NaN; this.divergeAt = o.divergeAt ?? NaN; this.wmax = o.wmax || 0;
+    Object.assign(this.p, o.p);
+    this.s.set(o.s); this.lyap = o.lyap ?? NaN; this.divergeAt = o.divergeAt ?? NaN; this.wmax = o.wmax || 0; this.E0 = o.E0 ?? this.E0;
     this.sep.truncateAfter(this.t); this.sepClock = this.t; this.tn = 0; this.th = 0;
     return true;
   },
   dataColumns: ['t_s', 'copies', 'energy', 'energy_drift_pct', 'log10_separation', 'lyapunov_estimate', 'theta1', 'theta2', 'omega1', 'omega2'],
   dataRow() {
     const E = this.N ? this.energy(0) : NaN, d = this.separation();
-    return [this.t, this.N, E, this.E0 ? (E - this.E0) / Math.abs(this.E0) * 100 : 0, Number.isFinite(d) ? Math.log10(Math.max(d, 1e-14)) : NaN, this.lyap, this.s[0], this.s[1], this.s[2], this.s[3]];
+    return [this.t, this.N, E, this.N ? this.driftPct(E) : 0, Number.isFinite(d) ? Math.log10(Math.max(d, 1e-14)) : NaN, this.lyap, this.s[0], this.s[1], this.s[2], this.s[3]];
   },
   trackLabel: 'Per-copy tracks',
   trackColumns: ['t_s', 'copy', 'theta1', 'theta2', 'omega1', 'omega2', 'bob2_x_m', 'bob2_y_m'],

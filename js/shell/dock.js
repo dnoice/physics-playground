@@ -38,6 +38,7 @@ import { icon } from '../core/icons.js';
 import { $, coarsePointer, el } from '../core/util.js';
 import { is3D } from './camera.js';
 import { updateNav } from './navigator.js';
+import { refreshEnabled } from './panel.js';
 import { ptr } from './stage.js';
 import { active, announce, ui } from './state.js';
 
@@ -71,7 +72,7 @@ export function selectDock(id) {
   active.p[d.key] = id;
   if (active.onParam) active.onParam(d.key, id);
   if (ptr.panMode) { ptr.panMode = false; updateNav(); }
-  updateDock();
+  updateDock(); refreshEnabled();
   const o = d.options.find(x => x.id === id); if (o) announce(`${o.label} ${d.key === 'view' ? 'view' : 'tool'}`);
 }
 export function updateDock() {
@@ -81,6 +82,6 @@ export function updateDock() {
   const o = d.options.find(x => x.id === cur);
   let hint = o ? o.hint : active.hint || '';
   if (ptr.panMode) hint = 'Pan mode: drag to move the view · click the hand in the view controls to use the tool again';
-  else if (is3D(active)) hint += coarsePointer ? ' · drag the axis ball to orbit' : ' · right-drag orbits · Shift-drag pans';
+  else if (is3D(active)) hint += coarsePointer ? ' · drag the axis ball to orbit' : ` · ${active.rightButton ? 'middle' : 'right'}-drag orbits · Shift-drag pans`;
   $('#stage-hint').textContent = hint;
 }

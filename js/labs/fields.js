@@ -71,6 +71,7 @@ const fmtField = (v, scale) => (Math.abs(v) < 1e-6 * scale ? '0' : fmtSI(v));
 
 export const fields = {
   id: 'fields', name: 'Fields', title: 'Electric and magnetic fields',
+  zoomRange: [0.5, 10],
   eq: 'F = q(E + v × B)',
   eqTex: '\\mathbf F = q\\,(\\mathbf E + \\mathbf v \\times \\mathbf B)',
   aria: 'Field simulation: point charges, their electric field and charged particles moving through it',
@@ -115,7 +116,7 @@ export const fields = {
   ],
   actions: [
     { label: 'Clear particles', run() { fields.clearParticles(); } },
-    { label: 'Clear charges', run() { fields.charges.length = 0; fields.dirty = true; fields.probeRead(); } },
+    { label: 'Clear charges', run() { fields.charges.length = 0; fields.dirty = true; fields.probeRead(); fields.retrack(); } },
   ],
   /* source charges */
   charges: [], nextId: 1, dirty: true,
@@ -181,6 +182,8 @@ export const fields = {
     this.track = pid; for (const s of Object.values(this.series)) s.clear();
     const i = this.indexOf(pid); this.E0track = i >= 0 ? this.energyOf(i).et : NaN; this.sampleClock = 0;
   },
+  /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
+  retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },
   energyOf(i) { const ke = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2), pe = this.qm[i] * this.Vat(this.x[i], this.y[i]); return { ke, pe, et: ke + pe }; },
   build(preset, w, h) {
     this.w = w; this.h = h; this.charges.length = 0; this.clearParticles();
@@ -218,12 +221,12 @@ export const fields = {
     if (this.probe) { this.probe.x *= sx; this.probe.y *= sy; }
     this.w = w; this.h = h; this.dirty = true; this.probeRead();
     // Rescaling moves the potential's zero, so restart the energy count.
-    if (this.indexOf(this.track) >= 0) this.setTrack(this.track);
+    this.retrack();
   },
   worldRect() { return { w: this.w, h: this.h }; },
   onParam(key) {
     if (key === 'k' || key === 'E0') { this.dirty = true; this.probeRead(); }
-    if (key === 'k' || key === 'E0' || key === 'B' || key === 'gradB') { const i = this.indexOf(this.track); if (i >= 0) this.setTrack(this.track); }
+    if (key === 'k' || key === 'E0' || key === 'B' || key === 'gradB') this.retrack();
   },
   enabled(key) {
     if (key === 'gradB' && this.p.B === 0) return 'Needs a magnetic field B.';
@@ -372,9 +375,10 @@ export const fields = {
     return best;
   },
   eraseAt(p) {
-    const r = 24;
+    const r = 24, had = this.charges.length;
     for (let k = this.charges.length - 1; k >= 0; k--) { const c = this.charges[k]; if (Math.hypot(c.x - p.x, c.y - p.y) < r + this.chargeR(c) * 0.5) { this.charges.splice(k, 1); this.dirty = true; } }
     for (let i = this.n - 1; i >= 0; i--) if (Math.hypot(this.x[i] - p.x, this.y[i] - p.y) < r) this.removeParticle(i);
+    if (this.charges.length !== had) this.retrack();
   },
   cursorAt(p) {
     const t = this.p.tool;
@@ -397,10 +401,10 @@ export const fields = {
     if (c) {
       c.q = clamp(c.q + dq, -5, 5); this.dirty = true;
       if (c.q === 0) { this.charges.splice(this.charges.indexOf(c), 1); announce('Charge removed'); } else announce(`Charge now ${c.q > 0 ? '+' : '−'}${Math.abs(c.q)}`);
-      this.probeRead(); return;
+      this.probeRead(); this.retrack(); return;
     }
     const nc = this.addCharge(p.x, p.y, dq);
-    if (nc) { this.drag = { kind: 'charge', c: nc, dx: 0, dy: 0 }; this.probeRead(); }
+    if (nc) { this.drag = { kind: 'charge', c: nc, dx: 0, dy: 0 }; this.probeRead(); this.retrack(); }
   },
   pointerMove(p, e, down) {
     if (!down) return;
@@ -408,7 +412,7 @@ export const fields = {
     if (this.aim) { this.aim.x1 = p.x; this.aim.y1 = p.y; return; }
     const D = this.drag; if (!D) return;
     if (D.kind === 'probe') { this.probe.x = clamp(p.x, 0, this.w); this.probe.y = clamp(p.y, 0, this.h); this.probeRead(); return; }
-    D.c.x = clamp(p.x + D.dx, 0, this.w); D.c.y = clamp(p.y + D.dy, 0, this.h); this.dirty = true; this.probeRead();
+    D.c.x = clamp(p.x + D.dx, 0, this.w); D.c.y = clamp(p.y + D.dy, 0, this.h); this.dirty = true; this.probeRead(); this.retrack();
   },
   pointerUp() {
     this.brush = null;
@@ -418,7 +422,6 @@ export const fields = {
       if (i < 0) announce(`Particle limit reached (${FIELD_P_CAP}).`); else this.setTrack(this.pid[i]);
       this.aim = null;
     }
-    if (this.drag && this.drag.kind === 'charge') { const i = this.indexOf(this.track); if (i >= 0) this.setTrack(this.track); }
     this.drag = null;
   },
   pointerCancel() { this.aim = null; this.pointerUp(); },
@@ -628,16 +631,17 @@ export const fields = {
 Object.assign(fields, genericState, {
   histBudget: 8e6, histInterval: 0.2,
   snapshot() {
-    const n = this.n, a = new Float64Array(n * 6);
+    const n = this.n, a = new Float64Array(n * 6), { k, B, gradB, E0, qm, sign, v0, beam } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 6; a[o] = this.pid[i]; a[o + 1] = this.x[i]; a[o + 2] = this.y[i]; a[o + 3] = this.vx[i]; a[o + 4] = this.vy[i]; a[o + 5] = this.qm[i]; }
-    return { n, a, charges: this.charges.map(c => ({ ...c })), probe: this.probe ? { ...this.probe } : null, track: this.track, E0track: this.E0track, absorbed: this.absorbed, escaped: this.escaped, nextPid: this.nextPid, nextId: this.nextId, w: this.w, h: this.h };
+    return { n, a, charges: this.charges.map(c => ({ ...c })), probe: this.probe ? { ...this.probe } : null, track: this.track, E0track: this.E0track, absorbed: this.absorbed, escaped: this.escaped, beamClock: this.beamClock, nextPid: this.nextPid, nextId: this.nextId, w: this.w, h: this.h, p: { k, B, gradB, E0, qm, sign, v0, beam } };
   },
   restore(s) {
+    Object.assign(this.p, s.p);
     if (s.w && (Math.abs(s.w - this.w) > 1 || Math.abs(s.h - this.h) > 1)) { const sx = this.w / s.w, sy = this.h / s.h; s = { ...s, charges: s.charges.map(c => ({ ...c, x: c.x * sx, y: c.y * sy })), probe: s.probe ? { x: s.probe.x * sx, y: s.probe.y * sy } : null, a: s.a.map((v, k) => (k % 6 === 1 ? v * sx : k % 6 === 2 ? v * sy : v)) }; }
     this.n = 0;
     for (let i = 0; i < s.n; i++) { const o = i * 6, k = this.addParticle(s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4], s.a[o + 5]); if (k >= 0) this.pid[k] = s.a[o]; }
     this.charges = s.charges.map(c => ({ ...c }));
-    Object.assign(this, { probe: s.probe ? { ...s.probe } : null, track: s.track, E0track: s.E0track, absorbed: s.absorbed, escaped: s.escaped, nextPid: s.nextPid, nextId: s.nextId, drag: null, aim: null, brush: null, dirty: true });
+    Object.assign(this, { probe: s.probe ? { ...s.probe } : null, track: s.track, E0track: s.E0track, absorbed: s.absorbed, escaped: s.escaped, beamClock: s.beamClock || 0, nextPid: s.nextPid, nextId: s.nextId, drag: null, aim: null, brush: null, dirty: true });
     for (const ser of Object.values(this.series)) ser.truncateAfter(this.t);
     this.probeRead();
     return true;

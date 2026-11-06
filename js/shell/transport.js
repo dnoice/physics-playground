@@ -48,6 +48,7 @@ import { ptr, refreshCursor } from './stage.js';
 import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
 import { hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
+import { closeGfx, toggleMode } from './mode.js';
 
 /* ---------- transport and keys ---------- */
 export const speedInput = $('#ctl-speed'), speedMap = rangeMap({ min: 0.1, max: 4, log: true });
@@ -82,8 +83,12 @@ export function init() {
     const t = e.target, tag = t && t.tagName, typing = tag === 'TEXTAREA' || (tag === 'INPUT' && t.type !== 'range');
     if (typing) return;
     const k = e.key;
+    // One action per press: holding a key must not chain clips or flip the layout back and forth.
+    if (e.repeat && (/^[rfmdz?]$/i.test(k) || e.code === 'KeyB')) return;
     if (k === ' ' || e.code === 'Space') {
-      if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'A' || tag === 'SUMMARY') return;
+      // A button clicked with the mouse keeps focus without showing it, so Space belongs to play and pause.
+      if (tag === 'BUTTON' && !t.matches(':focus-visible')) t.blur();
+      else if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'A' || tag === 'SUMMARY') return;
       e.preventDefault();
       if (!e.repeat && !ptr.space) { ptr.space = true; ptr.spaceUsed = false; refreshCursor(); }
     } else if (k === '.') { e.preventDefault(); stepOnce(); }
@@ -97,9 +102,10 @@ export function init() {
     }
     else if (k === 'r' || k === 'R') resetActive();
     else if (k === 'f' || k === 'F') { setFocus(!isFocus()); announce(isFocus() ? 'Stage focused' : 'Workspace restored'); }
-    else if (k === 'B') { setBay(!hasBay()); announce(hasBay() ? 'Bottom bay shown' : 'Bottom bay hidden'); }
+    else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Bottom bay shown' : 'Bottom bay hidden'); }
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
-    else if (k === 'Escape' && !document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); }
+    else if (k === 'z' || k === 'Z') toggleMode();
+    else if (k === 'Escape') { if (closeGfx()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();

@@ -41,7 +41,7 @@ import { typeset } from '../core/tex.js';
 import { $, clamp, decimalsFor, el, reduceMotion } from '../core/util.js';
 import { evaluateDiagnostics } from './diagnostics.js';
 import { renderExperiments } from './experiments.js';
-import { applyPreset, rebuild } from './lifecycle.js';
+import { applyPreset, rebuild, setParam } from './lifecycle.js';
 
 import { active, announce, ui } from './state.js';
 
@@ -102,12 +102,14 @@ export function buildRange(lab, c) {
     lab.p[c.key] = v; set(v);
     if (c.rebuild === 'input' || (c.rebuild && rebuildNow)) rebuild(lab);
     else if (!c.rebuild && lab.onParam) lab.onParam(c.key, v);
+    refreshEnabled();
   };
   input.addEventListener('input', () => {
     const v = clamp(round(fromS(+input.value)), c.min, c.max);
     lab.p[c.key] = v; show(v);
     if (c.rebuild === 'input') rebuild(lab);
     else if (!c.rebuild && lab.onParam) lab.onParam(c.key, v);
+    refreshEnabled();
   });
   if (c.rebuild === true) input.addEventListener('change', () => rebuild(lab));
   reset.addEventListener('click', () => { commit(lab.sceneP[c.key], true); input.focus(); announce(`${c.label} reset`); });
@@ -142,14 +144,14 @@ export function buildControl(lab, c) {
     const btn = el('button', { type: 'button', role: 'switch', class: 'switch', id },
       el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-thumb' })), el('span', { class: 'switch-text' }, el('span', { text: c.label }), note));
     const set = () => btn.setAttribute('aria-checked', String(!!lab.p[c.key]));
-    btn.addEventListener('click', () => { lab.p[c.key] = !lab.p[c.key]; set(); if (lab.onParam) lab.onParam(c.key, lab.p[c.key]); refreshEnabled(); });
+    btn.addEventListener('click', () => setParam(lab, c.key, !lab.p[c.key]));
     set(); ui.sync.set(c.key, set);
     // A switch the lab cannot honour right now is disabled and says why.
     ui.enable.set(c.key, s => { const ok = s === true; btn.disabled = !ok; btn.classList.toggle('is-disabled', !ok); note.textContent = ok ? '' : s; });
     return btn;
   }
   if (c.type === 'seg') {
-    const { group, update } = radioGroup(c.label, c.options, () => lab.p[c.key], v => { lab.p[c.key] = v; if (lab.onParam) lab.onParam(c.key, v); }, id);
+    const { group, update } = radioGroup(c.label, c.options, () => lab.p[c.key], v => setParam(lab, c.key, v), id);
     ui.sync.set(c.key, update);
     return el('div', { class: 'seg-wrap wide' }, el('span', { class: 'seg-label', text: c.label }), group);
   }
@@ -187,7 +189,7 @@ export function buildPanel(lab) {
 }
 export function navHelp(lab) {
   const pan = lab.rightButton ? 'drag with the middle button, or hold <b>Space</b> and drag, to pan' : 'drag with the right or middle button, or hold <b>Space</b> and drag, to pan';
-  return `<b>View</b>: scroll to zoom at the cursor and ${pan}; pinch and two-finger drag on touch. The view controls on the right edge of the stage zoom, pan, frame the scene and open an overview.${lab.id === 'waves' ? ' In <b>Relief 3D</b>, right-drag or the axis ball orbits and Shift-drag pans.' : ''}`;
+  return `<b>View</b>: scroll to zoom at the cursor and ${pan}; pinch and two-finger drag on touch. The view controls on the right edge of the stage zoom, pan, frame the scene and open an overview. In <b>3D mode</b>, ${lab.rightButton ? 'middle-drag' : 'right-drag'} or the axis ball orbits and Shift-drag pans.`;
 }
 export function markClip(f) {
   const clipped = f.scrollWidth - f.clientWidth - f.scrollLeft > 2, scrollable = f.scrollWidth - f.clientWidth > 2;

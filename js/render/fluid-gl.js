@@ -131,6 +131,8 @@ export const fluidGL = {
       this.tex = gl.createTexture(); this.fbo = gl.createFramebuffer();
       this.ramps = { speed: this.rampTexture(RAMP_HEAT), density: this.rampTexture(RAMP_DENS) };
       c.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; });
+      // The next init() builds a fresh context, so a brief loss does not last until reload.
+      c.addEventListener('webglcontextrestored', () => { this.ok = null; this.w = 0; this.h = 0; });
       this.ok = true;
     } catch (err) {
       this.ok = false;

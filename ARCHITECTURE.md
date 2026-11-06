@@ -6,7 +6,7 @@
     - Artifact Type: docs
     - Version: 2.0.0
     - Date: 11/05/2026
-    - Update: Thursday, November 05,2026
+    - Update: Thursday, November 05, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
@@ -79,8 +79,9 @@ flowchart TB
 | Shell | `js/shell/` | core, labs | Everything around a lab: panel, tools, camera, input, loop, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
-`syncControl`, `setParam`, `updateNav`. They never build shell UI
-themselves.
+`sticky`, `setParam`, `rebuild`, `syncControl`, `refreshEnabled`,
+`updateDock`, `updateNav`, and the camera readers `camOf` and `camXf`.
+They never build shell UI themselves.
 
 ## Boot order
 
@@ -206,8 +207,8 @@ The stylesheets load in this order, each building on the last:
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 
-Tiles are size containers, so their contents adapt with container queries
-to the tile's width, not the window's. Grid tracks use `minmax(0, …)` and
+Tiles are inline-size containers, so their contents adapt with container
+queries to the tile's width, not the window's. Grid tracks use `minmax(0, …)` and
 the body grid is pinned to the viewport width, so no content can resize
 the stage.
 
@@ -221,7 +222,8 @@ the stage.
 3. Add its glyph to `LAB_ICON` in `js/core/icons.js`, its tool glyphs to
    `ICON`, and any new glyph names to `icon_names` in `index.html`
    (sorted).
-4. Give it a zoom range in `ZOOM_RANGE` in `js/shell/camera.js`.
+4. Declare its zoom range on the lab object, `zoomRange: [lo, hi]`, unless
+   the default of 0.5× to 8× suits it.
 5. Add its experiments under its id in `js/labs/experiments.js`.
 6. Run `npm run verify` and `npm test`.
 
