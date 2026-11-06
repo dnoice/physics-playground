@@ -39,45 +39,33 @@
 ---------
 */
 import { THEME } from '../core/color.js';
+import { brushRing } from '../core/draw.js';
 import { FOV3, m4look, m4mul, m4persp } from '../core/math3d.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
 import { view } from '../core/view.js';
-import { refreshEnabled, syncControl } from '../shell/panel.js';
-import { updateNav } from '../shell/navigator.js';
-import { active, announce, canvas } from '../shell/state.js';
+import { in3D } from '../shell/mode.js';
+import { announce } from '../shell/state.js';
 
 /* ================================================================== */
-/*  Gravity · 3D orbit view: camera, picking, tools and compositing    */
+/*  Gravity · 3D mode: camera, picking, tools and overlays             */
 /* ================================================================== */
-/* Mixed into the gravity lab. The camera orbits a target point that
-   follows the centre of mass (or a tracked body) exactly as the flat view
-   does. three.js is imported only when the view is first switched on; if
-   it cannot load, the lab says so and stays in the flat view. Simulation
-   (x, y, z) is drawn at three.js (X, Z, Y), so z is height. */
+/* Mixed into the gravity lab. Gravity is the one lab simulated in real
+   depth, so it keeps this camera rather than the stage rig: it orbits a
+   target that follows the centre of mass (or a tracked body) exactly as
+   the flat view does, and its units are simulation pixels. Simulation
+   (x, y, z) is drawn at three.js (X, Z, Y), so z is height. The orbital
+   plane is the horizontal plane through the centre of mass. */
 const PITCH3 = 0.62;
-let orbitModule = null;
 
 export const gravity3d = {
-  gl3: null, loading3: null, fail3: null, cam3: null, view3: null,
-  is3D() { return !!(this.p.view3d && this.gl3); },
-  /* Start loading the renderer; the flat view keeps drawing until it is ready. */
-  ensure3() {
-    if (this.gl3 || this.loading3 || this.fail3) return;
-    this.loading3 = (orbitModule || import('../render/orbit3d.js'))
-      .then(m => { orbitModule = Promise.resolve(m); this.gl3 = m.createOrbitView(this.TRAIL_CAP); this.loading3 = null; this.frame3(true); if (active === this) { refreshEnabled(); updateNav(); } })
-      .catch(err => { this.loading3 = null; this.fail3 = String((err && err.message) || err); this.leave3D('The 3D view could not load its library (three.js from the jsDelivr CDN), so the lab stays in the flat view.'); });
-  },
-  leave3D(msg) {
-    if (this.p.view3d) { this.p.view3d = false; syncControl('view3d'); }
-    if (msg) announce(msg);
-    canvas.style.cursor = 'crosshair';
-    if (active === this) { refreshEnabled(); updateNav(); }
-  },
+  cam3: null, view3: null,
+  is3D() { return in3D(this); },
   com3() {
     let M = 0, x = 0, y = 0, z = 0;
     for (const b of this.bodies) { M += b.m; x += b.m * b.x; y += b.m * b.y; z += b.m * b.z; }
     return M ? { x: x / M, y: y / M, z: z / M } : { x: 0, y: 0, z: 0 };
   },
+  tracked3() { return this.track != null ? this.bodies.find(b => b.id === this.track) || null : null; },
   /* Distance at which the whole system fits the stage. */
   dist0() {
     const c = this.com3(); let R = 120;
@@ -90,10 +78,10 @@ export const gravity3d = {
     return this.cam3;
   },
   camMatrices(w, h) {
-    const c = this.c3(), cp = Math.cos(c.pitch);
+    const c = this.c3(), cp = Math.cos(c.pitch), near = Math.max(0.05, c.dist * 0.004), far = c.dist * 40 + 2e4;
     const e = [c.tx + c.dist * cp * Math.sin(c.yaw), c.ty + c.dist * Math.sin(c.pitch), c.tz + c.dist * cp * Math.cos(c.yaw)];
-    const V = m4look(e, [c.tx, c.ty, c.tz], [0, 1, 0]), P = m4persp(FOV3, w / Math.max(1, h), Math.max(0.5, c.dist * 0.004), c.dist * 40 + 2e4);
-    return { mvp: m4mul(P, V.m), eye: e, r: V.r, u: V.u, f: V.f, w, h, fovDeg: FOV3 * 180 / Math.PI };
+    const V = m4look(e, [c.tx, c.ty, c.tz], [0, 1, 0]), P = m4persp(FOV3, w / Math.max(1, h), near, far);
+    return { mvp: m4mul(P, V.m), eye: e, r: V.r, u: V.u, f: V.f, w, h, fovDeg: FOV3 * 180 / Math.PI, near, far };
   },
   basis3() { return this.view3 || (this.view3 = this.camMatrices(view.w, view.h)); },
   /* Simulation point to stage pixels, or null behind the camera. */
@@ -102,14 +90,18 @@ export const gravity3d = {
     const cx = m[0] * X + m[4] * Y + m[8] * Z + m[12], cy = m[1] * X + m[5] * Y + m[9] * Z + m[13], cw = m[3] * X + m[7] * Y + m[11] * Z + m[15];
     return cw > 1e-6 ? { x: (cx / cw + 1) * 0.5 * V.w, y: (1 - cy / cw) * 0.5 * V.h, w: cw } : null;
   },
-  /* Stage pixel to the point on the orbital plane through the target. */
+  /* World length to stage pixels at a projected point. */
+  scale3(s) { return this.basis3().h / (2 * Math.tan(FOV3 / 2) * s.w); },
+  /* A body's radius on the stage, with the same floor the scene draws it at. */
+  radius3(b, s) { return Math.max(b.m >= this.STAR_MASS ? 4 : 2.6, b.r * this.scale3(s)); },
+  /* Stage pixel to the point on the orbital plane. */
   pick3(s) {
-    const V = this.basis3(), c = this.c3(), t = Math.tan(FOV3 / 2), a = V.w / Math.max(1, V.h);
+    const V = this.basis3(), c = this.c3(), t = Math.tan(FOV3 / 2), a = V.w / Math.max(1, V.h), z0 = this.com3().z;
     const nx = (2 * s.x / V.w - 1) * t * a, ny = (1 - 2 * s.y / V.h) * t;
     const d = [V.f[0] + V.r[0] * nx + V.u[0] * ny, V.f[1] + V.r[1] * nx + V.u[1] * ny, V.f[2] + V.r[2] * nx + V.u[2] * ny];
     if (Math.abs(d[1]) < 1e-5) return null;
-    const k = (c.ty - V.eye[1]) / d[1]; if (k <= 0) return null;
-    return { x: V.eye[0] + d[0] * k, y: V.eye[2] + d[2] * k, z: c.ty };
+    const k = (z0 - V.eye[1]) / d[1]; if (k <= 0 || k > c.dist * 8 + 2000) return null;
+    return { x: V.eye[0] + d[0] * k, y: V.eye[2] + d[2] * k, z: z0 };
   },
   orbit3(dx, dy) { const c = this.c3(); c.yaw = c.yawT = c.yawT - dx * 0.008; c.pitch = c.pitchT = clamp(c.pitchT + dy * 0.006, -1.45, 1.553); },
   pan3(dx, dy) {
@@ -119,7 +111,8 @@ export const gravity3d = {
     this.cam.x = c.tx; this.cam.y = c.tz;
   },
   zoom3(f, s, instant) {
-    const c = this.c3(), D0 = this.dist0(), nd = clamp(c.distT / f, D0 * 0.04, D0 * 6);
+    // A tracked body may fill the stage; the free camera stops at a fraction of the system.
+    const c = this.c3(), D0 = this.dist0(), tb = this.tracked3(), nd = clamp(c.distT / f, tb ? Math.min(tb.r * 2.5, D0 * 0.04) : D0 * 0.04, D0 * 6);
     if (s && !this.camLocked()) { const p = this.pick3(s); if (p) { const k = 1 - nd / c.distT; c.txT += (p.x - c.txT) * k; c.tzT += (p.y - c.tzT) * k; } }
     c.distT = nd;
     if (instant || reduceMotion) { c.dist = c.distT; c.tx = c.txT; c.tz = c.tzT; }
@@ -138,53 +131,79 @@ export const gravity3d = {
     c.yawT = c.yaw + wrapAngle(S[id] - c.yaw); c.pitchT = 0.02;
   },
   tick3(real) {
-    const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 10);
-    if (this.camLocked()) {
-      const tb = this.track != null ? this.bodies.find(b => b.id === this.track) : null, m = tb || this.com3();
-      c.txT = m.x; c.tyT = m.z; c.tzT = m.y;
-    }
+    const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 10), tb = this.tracked3();
+    if (this.track != null && !tb) this.track = null;
+    if (this.camLocked()) { const m = tb || this.com3(); c.txT = m.x; c.tyT = m.z; c.tzT = m.y; }
+    // Tracking eases in, then sits exactly on the body, so a fast planet holds still under a close camera.
+    const kt = tb ? (this.trackEase = Math.min(1, this.trackEase + real * 2.5)) : k;
     c.yaw += wrapAngle(c.yawT - c.yaw) * k; c.pitch += (c.pitchT - c.pitch) * k;
-    c.dist *= Math.pow(c.distT / c.dist, k); c.tx += (c.txT - c.tx) * k; c.ty += (c.tyT - c.ty) * k; c.tz += (c.tzT - c.tz) * k;
+    c.dist *= Math.pow(c.distT / c.dist, k); c.tx += (c.txT - c.tx) * kt; c.ty += (c.tyT - c.ty) * kt; c.tz += (c.tzT - c.tz) * kt;
     this.cam.x = c.tx; this.cam.y = c.tz;
   },
-  draw3(g, w, h) {
-    this.view3 = this.camMatrices(w, h);
-    if (!this.gl3.render(this, w, h, view.dpr, THEME)) {
-      this.gl3 = null; this.fail3 = 'WebGL context lost';
-      this.leave3D('The 3D renderer stopped (its WebGL context was lost), so gravity is back to the flat view.');
-      return;
+  /* Screen overlay: follow ring, hover readout, delete brush and the throw preview. */
+  overlay3(g, w, h) {
+    const tb = this.tracked3(), a = this.aim, sT = tb && this.project3(tb.x, tb.y, tb.z);
+    if (sT) {
+      g.save(); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3; g.setLineDash([4, 4]); g.lineDashOffset = -performance.now() / 60;
+      g.beginPath(); g.arc(sT.x, sT.y, this.radius3(tb, sT) + 8, 0, TAU); g.stroke(); g.restore();
     }
-    g.drawImage(this.gl3.canvas, 0, 0, w, h);
-    if (this.track != null) {
-      const b = this.bodies.find(q => q.id === this.track), s = b && this.project3(b.x, b.y, b.z);
-      if (s) { g.strokeStyle = THEME.text; g.globalAlpha = 0.8; g.lineWidth = 1.2; g.beginPath(); g.arc(s.x, s.y, 10 + b.r * this.view3.h / (2 * Math.tan(FOV3 / 2) * s.w), 0, TAU); g.stroke(); g.globalAlpha = 1; }
+    if (this.hover && !a) {
+      const b = this.bodyAt3(this.hover, 12), s = b && this.project3(b.x, b.y, b.z);
+      if (s) {
+        const R = this.radius3(b, s) + 5, label = `m ${b.m < 10 ? b.m.toFixed(2) : b.m.toFixed(0)} · ${Math.hypot(b.vx, b.vy, b.vz).toFixed(0)} px/s`;
+        g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
+        g.beginPath(); g.arc(s.x, s.y, R, 0, TAU); g.stroke();
+        g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
+        const lx = clamp(s.x + R + 6, 4, w - tw - 14), ly = clamp(s.y - R - 6, 16, h - 6);
+        g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(lx - 5, ly - 13, tw + 10, 18);
+        g.fillStyle = THEME.text; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(label, lx, ly);
+      }
     }
-    const a = this.aim;
-    if (a && a.moved) {
-      g.strokeStyle = THEME.amber; g.lineWidth = 1.8; g.setLineDash([6, 5]);
-      g.beginPath(); g.moveTo(a.sx, a.sy); g.lineTo(a.x, a.y); g.stroke(); g.setLineDash([]);
+    if (this.p.tool === 'erase' && this.hover) brushRing(g, this.hover, 14, THEME.crit);
+    if (a && a.moved) this.aimOverlay3(g, a);
+  },
+  /* The throw: the same dashed five-second preview as the flat view, carried over the orbital plane. */
+  aimOverlay3(g, a) {
+    const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
+    if (A && B) {
+      const vx = (B.x - A.x) * this.LAUNCH_K, vy = (B.y - A.y) * this.LAUNCH_K, zs = [], path = this.predict(A.x, A.y, vx, vy, A.z, zs);
+      g.setLineDash([4, 5]); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3;
+      g.beginPath();
+      let on = false;
+      for (let i = 0; i < zs.length; i++) { const s = this.project3(path[i * 2], path[i * 2 + 1], zs[i]); if (!s) { on = false; continue; } if (on) g.lineTo(s.x, s.y); else g.moveTo(s.x, s.y); on = true; }
+      g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+      const s0 = this.project3(A.x, A.y, A.z);
+      if (s0) { g.fillStyle = this.massColor(this.p.launchMass); g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, this.bodyRadius(this.p.launchMass) * this.scale3(s0)), 0, TAU); g.fill(); }
+      g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
+      g.fillText(`${Math.hypot(vx, vy).toFixed(0)} px/s`, a.x + 10, a.y - 6);
     }
+    g.strokeStyle = A && B ? THEME.text : THEME.crit; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(a.sx, a.sy); g.lineTo(a.x, a.y); g.stroke();
+    const ang = Math.atan2(a.y - a.sy, a.x - a.sx);
+    g.fillStyle = g.strokeStyle; g.beginPath();
+    g.moveTo(a.x, a.y); g.lineTo(a.x - 9 * Math.cos(ang - 0.4), a.y - 9 * Math.sin(ang - 0.4)); g.lineTo(a.x - 9 * Math.cos(ang + 0.4), a.y - 9 * Math.sin(ang + 0.4)); g.fill();
   },
   /* Pointer tools in 3D: pick on the orbital plane, hit-test projected bodies. */
   bodyAt3(p, slack = 8) {
     let best = null, bd = Infinity;
     for (const b of this.bodies) {
       const s = this.project3(b.x, b.y, b.z); if (!s) continue;
-      const rs = b.r * this.basis3().h / (2 * Math.tan(FOV3 / 2) * s.w), d = Math.hypot(s.x - p.x, s.y - p.y) - Math.max(2, rs);
+      const d = Math.hypot(s.x - p.x, s.y - p.y) - Math.max(2, b.r * this.scale3(s));
       if (d < bd) { bd = d; best = b; }
     }
     return bd < slack ? best : null;
   },
   eraseAt3(p) {
     const before = this.bodies.length;
-    this.bodies = this.bodies.filter(b => { const s = this.project3(b.x, b.y, b.z); return !s || Math.hypot(s.x - p.x, s.y - p.y) > 14; });
+    this.bodies = this.bodies.filter(b => { const s = this.project3(b.x, b.y, b.z); return !s || Math.hypot(s.x - p.x, s.y - p.y) > Math.max(14, this.radius3(b, s) + 6); });
     if (this.bodies.length !== before) { this.accDirty = true; this.E0 = this.energy(); }
   },
   pointerUp3(a) {
     if (!a.moved) {
       const hit = this.bodyAt3({ x: a.sx, y: a.sy });
       if (hit) { this.followBody(hit); return; }
-      const w = this.pick3({ x: a.sx, y: a.sy }); if (w) this.dropOrbit(w.x, w.y, w.z);
+      const w = this.pick3({ x: a.sx, y: a.sy });
+      if (w) this.dropOrbit(w.x, w.y, w.z); else announce('Aim at the orbital plane to drop a body.');
       return;
     }
     const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });

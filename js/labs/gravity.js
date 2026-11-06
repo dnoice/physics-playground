@@ -64,6 +64,7 @@ export const G0 = 5000;
 export const LAUNCH_K = 1.6;
 export const TRAIL_CAP = 1200;
 export const BODY_CAP = 300;
+export const STAR_MASS = 150;
 export const bodyRadius = m => 1.5 + 1.65 * Math.cbrt(m);
 export const massIdx = m => clamp(Math.round(70 + 185 * Math.log10(m + 1) / Math.log10(2001)), 0, 255);
 export const massColor = m => RAMP_HEAT.css[massIdx(m)];
@@ -71,6 +72,7 @@ export const massRgb = m => rampRgb(RAMP_HEAT, massIdx(m));
 
 export const gravity = {
   id: 'gravity', name: 'Gravity', title: 'N-body gravity',
+  rig3: { plane: 'floor' },
   zoomRange: [0.1, 40],
   eq: 'F = Gm<sub>1</sub>m<sub>2</sub> / r<sup>2</sup>',
   eqTex: 'F = G\\,\\frac{m_1 m_2}{r^2}',
@@ -86,7 +88,7 @@ export const gravity = {
     { id: 'erase', label: 'Delete', key: 'x', icon: 'erase', hint: 'Click or brush over bodies to delete them' },
     { id: 'pan', label: 'Pan', key: 'h', icon: 'pan', hint: 'Drag to move the view · scroll to zoom at the cursor' },
   ] },
-  p: { tool: 'throw', G: 1, soft: 4, launchMass: 2, merge: true, trails: true, trailLen: 360, follow: true, zoom: 1, vectors: false, field: false, incl: 0, view3d: false },
+  p: { tool: 'throw', G: 1, soft: 4, launchMass: 2, merge: true, trails: true, trailLen: 360, follow: true, zoom: 1, vectors: false, field: false, incl: 0 },
   presetId: 'solar',
   presets: [
     { id: 'solar', label: 'Star system', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.85, follow: true } },
@@ -94,7 +96,7 @@ export const gravity = {
     { id: 'binary', label: 'Binary star', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.7, follow: true } },
     { id: 'figure8', label: 'Figure-eight', params: { incl: 0, G: 1, soft: 0.5, merge: false, zoom: 1.4, follow: true } },
     { id: 'disk', label: 'Accretion disk', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.9, follow: true } },
-    { id: 'tilted', label: 'Tilted orbits', params: { G: 1, soft: 4, merge: true, zoom: 0.85, follow: true, incl: 40, view3d: true } },
+    { id: 'tilted', label: 'Tilted orbits', params: { G: 1, soft: 4, merge: true, zoom: 0.85, follow: true, incl: 40 } },
     { id: 'empty', label: 'Empty sky', params: { incl: 0, zoom: 1, follow: true } },
   ],
   controls: [
@@ -109,7 +111,6 @@ export const gravity = {
     { type: 'toggle', key: 'vectors', label: 'Show velocity vectors' },
     { type: 'toggle', key: 'field', label: 'Show potential field' },
     { type: 'range', key: 'incl', label: 'Tilt of new orbits', min: 0, max: 90, step: 1, unit: '°', note: 'Bodies dropped with a click or added from the panel get a random tilt up to this angle.' },
-    { type: 'toggle', key: 'view3d', label: '3D orbit view' },
   ],
   actions: [
     { label: 'Add an orbiting body', run() { gravity.addRandom(); } },
@@ -183,7 +184,7 @@ export const gravity = {
     }
     this.zeroMomentum();
     this.cam.x = 0; this.cam.y = 0; this.cam.z = this.p.zoom; this.track = null;
-    if (this.p.view3d) { this.ensure3(); if (this.gl3) this.frame3(true); }
+    if (this.cam3) this.frame3(true);
     this.accDirty = true;
     this.E0 = this.energy();
   },
@@ -264,12 +265,6 @@ export const gravity = {
   onParam(key) {
     if (key === 'zoom') { this.cam.z = this.p.zoom; if (navAnim.lab === this) navAnim.lab = null; }
     if (key === 'follow' && this.p.follow) this.track = null;
-    if (key === 'view3d') {
-      if (this.p.view3d && this.fail3) this.leave3D('The 3D view is unavailable here: its library did not load.');
-      else if (this.p.view3d) { this.ensure3(); if (this.gl3) this.frame3(true); announce(this.gl3 ? '3D orbit view' : 'Loading the 3D view…'); }
-      else announce('Flat view');
-      updateNav();
-    }
     if (key === 'G' || key === 'soft') { this.accDirty = true; this.E0 = this.energy(); for (const s of Object.values(this.series)) s.clear(); }
   },
   heaviest() { let h = null; for (const b of this.bodies) if (!h || b.m > h.m) h = b; return h; },
@@ -325,10 +320,7 @@ export const gravity = {
       const on = gravity.p.follow || gravity.track != null;
       gravity.track = null; gravity.p.follow = !on; syncControl('follow');
       announce(on ? 'Camera free' : 'Following the centre of mass');
-    } },
-  { id: 'view3d', label: '3D view', icon: 'cube', title: '3D orbit view: drag the axis ball or right-drag to orbit',
-    pressed: () => gravity.p.view3d,
-    run() { setParam(gravity, 'view3d', !gravity.p.view3d); } }],
+    } }],
   camLocked() { return this.p.follow || this.track != null; },
   onUserPan() { if (this.p.follow) { this.p.follow = false; syncControl('follow'); } this.track = null; },
   onCamZoom() { if (Math.abs(this.p.zoom - this.cam.z) > 1e-9) { this.p.zoom = this.cam.z; syncControl('zoom'); } },
@@ -390,12 +382,13 @@ export const gravity = {
     const z = this.viewXf.z;
     this.addBody(this.body(w.x, w.y, (a.x - a.sx) / z * LAUNCH_K, (a.y - a.sy) / z * LAUNCH_K, this.p.launchMass));
   },
-  predict(x0, y0, vx0, vy0) {
+  predict(x0, y0, vx0, vy0, z0 = 0, heights = null) {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
     const X = new Float64Array(N), Y = new Float64Array(N), Z = new Float64Array(N), VX = new Float64Array(N), VY = new Float64Array(N), VZ = new Float64Array(N), M = new Float64Array(N), R = new Float64Array(N);
     for (let i = 0; i < n; i++) { const b = B[i]; X[i] = b.x; Y[i] = b.y; Z[i] = b.z; VX[i] = b.vx; VY[i] = b.vy; VZ[i] = b.vz; M[i] = b.m; R[i] = b.r; }
-    X[n] = x0; Y[n] = y0; VX[n] = vx0; VY[n] = vy0; M[n] = this.p.launchMass;
+    X[n] = x0; Y[n] = y0; Z[n] = z0; VX[n] = vx0; VY[n] = vy0; M[n] = this.p.launchMass;
     const AX = new Float64Array(N), AY = new Float64Array(N), AZ = new Float64Array(N), out = [x0, y0], dt = 1 / 60;
+    if (heights) heights.push(z0);
     for (let s = 0; s < 300; s++) {
       AX.fill(0); AY.fill(0); AZ.fill(0);
       if (dyn) {
@@ -411,6 +404,7 @@ export const gravity = {
       }
       for (let i = dyn ? 0 : n; i < N; i++) { VX[i] += AX[i] * dt; VY[i] += AY[i] * dt; VZ[i] += AZ[i] * dt; X[i] += VX[i] * dt; Y[i] += VY[i] * dt; Z[i] += VZ[i] * dt; }
       out.push(X[n], Y[n]);
+      if (heights) heights.push(Z[n]);
       let hit = false;
       for (let j = 0; j < n; j++) if ((X[j] - X[n]) ** 2 + (Y[j] - Y[n]) ** 2 + (Z[j] - Z[n]) ** 2 < R[j] * R[j]) { hit = true; break; }
       if (hit) break;
@@ -443,8 +437,6 @@ export const gravity = {
     g.drawImage(this.fld.c, 0, 0, fw * cs, fh * cs);
   },
   draw(g, w, h) {
-    if (this.p.view3d && !this.gl3) this.ensure3();
-    if (this.is3D()) { this.draw3(g, w, h); return; }
     const B = this.bodies, cam = this.cam;
     let tb = null;
     if (this.track != null) { tb = B.find(b => b.id === this.track) || null; if (!tb) this.track = null; }
@@ -578,14 +570,12 @@ export const gravity = {
   },
   enabled(key) {
     if (key === 'field' && this.is3D()) return 'Drawn in the flat view only.';
-    if (key === 'view3d' && this.fail3) return 'Unavailable: the 3D library could not load here.';
     if (key === 'zoom' && this.is3D()) return 'Use the mouse wheel or the view controls in 3D.';
     return true;
   },
-  bodyColor3: b => (b.m >= 150 ? '#ffcf7a' : massColor(b.m)),
+  bodyColor3: b => (b.m >= STAR_MASS ? '#ffcf7a' : massColor(b.m)),
   diagnose() {
     const out = [], B = this.bodies, n = B.length;
-    if (this.fail3) out.push({ id: 'g-3d', level: 'info', title: '3D view unavailable', body: `The 3D orbit view needs three.js from the jsDelivr CDN, and it did not load here (${this.fail3.replace(/</g, '&lt;')}). The simulation itself is fully three-dimensional and keeps running in the flat view.` });
     if (!n) { out.push({ id: 'g-empty', level: 'info', title: 'Empty sky', body: 'Drag on the stage to throw a body, or click to drop one in place.' }); return out; }
     if (n > 1) {
       const drift = this.E0 ? (this.E - this.E0) / Math.abs(this.E0) * 100 : 0, ad = Math.abs(drift);
@@ -692,5 +682,5 @@ Object.assign(gravity, {
   trackRows(out) { for (const b of this.bodies) out.push([this.t, b.id, b.m, b.x, b.y, b.vx, b.vy, b.z, b.vz]); },
 });
 
-/* ---------- 3D orbit view: camera, picking and compositing (gravity3d.js) ---------- */
-Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K });
+/* ---------- 3D mode: the lab's own camera, picking and overlays (gravity3d.js) ---------- */
+Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, bodyRadius, massColor });
