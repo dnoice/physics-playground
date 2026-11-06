@@ -40,8 +40,8 @@
 .topbar { display: flex; align-items: center; gap: 18px; padding: 0 var(--gap) 0 18px; min-height: 60px; position: relative; z-index: 5; }
 .brand { display: flex; align-items: center; gap: 10px; flex: none; }
 .brand-mark { color: var(--amber); font-size: 27px; filter: drop-shadow(0 0 12px color-mix(in oklab, var(--amber) 45%, transparent)); }
-.brand h1 { margin: 0; font: 400 26px/1 var(--font-display); letter-spacing: 0.005em; white-space: nowrap; }
-.brand h1 em { color: var(--amber); }
+.brand h1 { margin: 0; font: 700 20px/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
+.brand h1 em { color: var(--amber); font-style: normal; font-weight: 500; }
 .rail { flex: 1; min-width: 0; overflow-x: auto; display: flex; justify-content: center; scrollbar-width: none; }
 .rail::-webkit-scrollbar { display: none; }
 .rail [role="tablist"] { display: flex; align-items: center; gap: 2px; min-width: max-content; padding: 4px; border-radius: 14px; background: color-mix(in oklab, var(--bench) 80%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
@@ -51,7 +51,7 @@
 }
 .tab-n, .tab-eq { display: none; }
 .tab .ms { font-size: 19px; }
-.tab-name { font-weight: 500; font-size: 13px; white-space: nowrap; }
+.tab-name { font-weight: 600; font-size: 13px; white-space: nowrap; }
 .tab:hover { color: var(--text); background: color-mix(in oklab, var(--text) 5%, transparent); }
 .tab[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--amber) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 34%, transparent); }
 .tab[aria-selected="true"] .ms { color: var(--amber); }

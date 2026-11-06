@@ -123,9 +123,9 @@ The workspace is one large stage, an Instruments deck beneath it and a
 full-height Inspector beside them.
 
 - **Stage**: the simulation. The lab's name in the top left holds the scene
-  dropdown; loading a scene restarts the run. The gizmo on the right holds the
-  tools, each with a letter key, above the view controls: the axis ball, zoom,
-  pan, frame and lab extras such as Follow.
+  dropdown; loading a scene restarts the run. The gizmo on the right is laid
+  out the same way in every lab: the axis ball first, then zoom, pan and frame,
+  then what belongs to this lab, such as its tools and Follow.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
   data and save buttons.
 - **Instruments**: every reading as a live tile beside the lab's chart. Click a
@@ -243,5 +243,10 @@ Chrome and Edge 105+, Firefox 110+ and Safari 16.4+: the page needs ES
 modules, import maps and container queries. The 2D fluid surface uses WebGL 2
 or WebGL 1 and draws as particles without either. The 3D mode needs WebGL 2;
 without it the workspace says so and stays in 2D.
+
+## License
+
+Apache 2.0: see [LICENSE](LICENSE). Third-party licences are listed in
+[vendor/VENDOR.md](vendor/VENDOR.md).
 
 <!-- ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once! -->

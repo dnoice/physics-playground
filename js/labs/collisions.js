@@ -269,7 +269,7 @@ export const collisions = {
   inspect() {
     const i = this.picked; if (i < 0 || i >= this.n) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
-    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass', fmtSI(m)], ['Radius', `${r.toFixed(1)} px`], ['Speed', `${v.toFixed(0)} px/s`], ['Spin', `${w.toFixed(2)} rad/s`], ['Kinetic energy', fmtSI(0.5 * m * v * v)], ['Spin energy', fmtSI(0.25 * m * m * w * w)]], actions: [] };
+    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', `${r.toFixed(1)} px`, 'The drawn and collision radius.'], ['Speed across the table', `${v.toFixed(0)} px/s`, 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
   cursorAt(p) { return this.p.tool === 'grab' ? (this.hit(p) >= 0 ? 'grab' : 'copy') : 'crosshair'; },
@@ -446,9 +446,9 @@ export const collisions = {
     const s = this.stats();
     return [
       ['Balls', String(this.n)],
-      ['Kinetic energy', fmtSI(s.etot)],
+      ['Total kinetic energy', fmtSI(s.etot)],
       ...(s.kr > 0 ? [['Share of energy in spin', pct(s.kr / s.etot)]] : []),
-      ['Momentum |p|', fmtSI(s.p)],
+      ['Total momentum |p|', fmtSI(s.p)],
       ['RMS speed', `${s.vrms.toFixed(1)} px/s`],
       ['Packing fraction φ', pct(s.phi)],
       ['Pressure check PA / NkT', this.p.gravity === 0 && Number.isFinite(this.Z) ? this.Z.toFixed(2) : '—'],

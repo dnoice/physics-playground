@@ -61,7 +61,7 @@ function paintDial(renderer, slate) {
     g.strokeStyle = `rgba(214,184,130,${major ? 0.85 : mid ? 0.6 : 0.34})`; g.lineWidth = major ? 3.2 : 1.6;
     g.beginPath(); g.moveTo(Math.sin(a) * r0 * R, -Math.cos(a) * r0 * R); g.lineTo(Math.sin(a) * 0.915 * R, -Math.cos(a) * 0.915 * R); g.stroke();
   }
-  g.fillStyle = 'rgba(226,200,150,0.8)'; g.font = '500 44px "IBM Plex Mono", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = 'rgba(226,200,150,0.8)'; g.font = '500 44px "JetBrains Mono", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
   for (let d = 0; d < 360; d += 30) { const a = d * Math.PI / 180; g.fillText(String(d), Math.sin(a) * 0.82 * R, -Math.cos(a) * 0.82 * R); }
   g.strokeStyle = 'rgba(214,184,130,0.14)'; g.lineWidth = 1.4;
   for (let k = 0; k < 12; k++) { const a = k * TAU / 12; g.beginPath(); g.moveTo(Math.sin(a) * 0.08 * R, -Math.cos(a) * 0.08 * R); g.lineTo(Math.sin(a) * 0.86 * R, -Math.cos(a) * 0.86 * R); g.stroke(); }
@@ -104,7 +104,7 @@ export function createScene(E, lab) {
   const plateCanvas2 = document.createElement('canvas'); plateCanvas2.width = 512; plateCanvas2.height = 160;
   const pg = plateCanvas2.getContext('2d');
   pg.fillStyle = '#7a5a2a'; pg.fillRect(0, 0, 512, 160); pg.strokeStyle = 'rgba(40,26,8,0.8)'; pg.lineWidth = 5; pg.strokeRect(12, 12, 488, 136);
-  pg.fillStyle = 'rgba(30,18,4,0.92)'; pg.textAlign = 'center'; pg.font = '500 54px "Instrument Serif", Georgia, serif'; pg.fillText('Double Pendulum', 256, 82); pg.font = '500 24px "IBM Plex Mono", monospace'; pg.fillText('DETERMINISTIC · UNPREDICTABLE', 256, 124);
+  pg.fillStyle = 'rgba(30,18,4,0.92)'; pg.textAlign = 'center'; pg.font = '600 46px "Raleway", sans-serif'; pg.fillText('Double Pendulum', 256, 82); pg.font = '500 24px "JetBrains Mono", monospace'; pg.fillText('DETERMINISTIC · UNPREDICTABLE', 256, 124);
   const plateTex2 = canvasTexture(plateCanvas2, { renderer: E.renderer, srgb: true });
   const maker = shadow(new THREE.Mesh(roundedBox(0.44, 0.14, 0.012, 0.005, 2), new THREE.MeshStandardMaterial({ map: plateTex2, emissive: 0xffffff, emissiveMap: plateTex2, emissiveIntensity: 0.55, metalness: 0.5, roughness: 0.42 })));
   maker.rotation.y = Math.PI; maker.position.set(0, -0.46, -0.03); rear.add(maker);

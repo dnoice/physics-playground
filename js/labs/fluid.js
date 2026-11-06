@@ -435,7 +435,7 @@ export const fluid = {
       ['Particles', `${this.n} / ${FL_CAP}`],
       ['Mean density ρ / ρ₀', this.mean.toFixed(3)],
       ['Peak compression', pk.toFixed(2) + '×', pk < 1.5 ? 'ok' : pk < 2.2 ? 'warn' : 'crit'],
-      ['Fastest particle', `${(Math.sqrt(vmax) * this.U / this.TICK).toFixed(0)} px/s`],
+      ['Fastest particle speed', `${(Math.sqrt(vmax) * this.U / this.TICK).toFixed(0)} px/s`],
       ['Speed-capped particles', pct(this.clampRate), this.clampRate < 0.002 ? 'ok' : this.clampRate < 0.02 ? 'warn' : 'crit'],
       ['Obstacles', String(this.obs.length)],
     ];

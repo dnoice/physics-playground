@@ -49,7 +49,7 @@
     then open http://localhost:5173/. A #lab hash (#fields) opens that lab.
 
 ✒ Other Important Information:
-    - Dependencies: Google Fonts (IBM Plex, Instrument Serif, Material
+    - Dependencies: Google Fonts (Raleway, JetBrains Mono, Material
       Symbols Rounded), jsDelivr (three@0.187.0, katex@0.19.1 module),
       vendored KaTeX CSS and fonts in vendor/katex
     - Compatible platforms: Evergreen browsers with ES modules, import maps
@@ -68,7 +68,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
 <link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,bookmark,bubble_chart,check_circle,close,close_fullscreen,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,warning,water_drop&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
@@ -135,13 +135,8 @@
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>
       <p class="stage-hint" id="stage-hint"></p>
-      <div class="nav" id="nav" role="group" aria-label="Tools and view">
-        <div class="nav-sec" id="nav-tools">
-          <span class="nav-cap" id="tools-key">Tools</span>
-          <div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div>
-        </div>
+      <div class="nav" id="nav" role="group" aria-label="View and tools">
         <div class="nav-sec">
-          <span class="nav-cap">View</span>
           <div class="orbit" id="nav-orbit" title="Drag to orbit · click an axis to look along it" hidden>
             <svg class="orbit-lines" id="orbit-lines" viewBox="-36 -36 72 72" aria-hidden="true"></svg>
           </div>
@@ -153,8 +148,12 @@
           <div class="nav-row">
             <button type="button" class="nav-btn" id="nav-pan" aria-pressed="false" aria-label="Pan mode" data-tip="Pan · Space-drag anytime"><span class="ms" aria-hidden="true">pan_tool</span></button>
             <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" data-tip="Frame the scene · 0"><span class="ms" aria-hidden="true">fit_screen</span></button>
-            <div class="nav-extra" id="nav-extra"></div>
           </div>
+        </div>
+        <div class="nav-sec" id="nav-tools">
+          <span class="nav-cap" id="tools-key">Tools</span>
+          <div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div>
+          <div class="nav-extra" id="nav-extra"></div>
         </div>
       </div>
       <div class="nav-foot" id="nav-foot">

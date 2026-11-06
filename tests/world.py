@@ -87,6 +87,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(700)
         ok(f"{lab}_renders", up and pg.evaluate(LIT) > 0.02, round(pg.evaluate(LIT), 3))
     ok("orbit_ball_shown", not pg.evaluate("document.getElementById('nav-orbit').hidden"))
+    ok("gizmo_starts_with_the_axis_ball", pg.evaluate("document.querySelector('#nav .nav-sec').firstElementChild.id") == "nav-orbit")
     ok("stage_marked_3d", pg.evaluate("document.getElementById('stage').dataset.mode") == "3d")
 
     # The mode switch leaves the simulation alone, and is remembered.
@@ -239,9 +240,9 @@ with sync_playwright() as p:
     spot = pg.evaluate(f"""(() => {{ const L = {P}.active, B = L.bodies.filter(b => b.m < L.STAR_MASS).sort((a, c) => c.m - a.m)[0], q = L.project3(B.x, B.y, B.z), r = document.getElementById('stage-canvas').getBoundingClientRect(); return {{ x: r.left + q.x, y: r.top + q.y, id: B.id }}; }})()""")
     pg.mouse.click(spot["x"], spot["y"]); pg.wait_for_timeout(900)
     ok("click_shows_the_body", not pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") == spot["id"], pg.inner_text("#details-title"))
-    ok("details_show_its_orbit", "Orbital period" in pg.inner_text("#details-rows") and "Eccentricity" in pg.inner_text("#details-rows"))
+    ok("details_name_their_reference", "Distance from the star" in pg.inner_text("#details-rows") and "Speed relative to the star" in pg.inner_text("#details-rows"))
     orbit = pg.evaluate(f"""(() => {{ const L = {P}.active, b = L.bodies.find(q => q.id === L.track), P = L.bodies.reduce((a, q) => (q !== b && q.m > a.m ? q : a), {{ m: 0 }}), r = Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z), mu = 5000 * L.p.G * (P.m + b.m); return 2 * Math.PI * Math.sqrt(r ** 3 / mu); }})()""")
-    card = float(pg.inner_text("#details-rows").split("Orbital period")[1].split()[0])
+    card = float(pg.inner_text("#details-rows").split("Time for one orbit")[1].split()[0])
     ok("period_matches_kepler", abs(card - orbit) / orbit < 0.2, (card, round(orbit, 2)))
     pg.wait_for_timeout(600)
     ok("portrait_is_drawn", pg.evaluate("""(() => { const d = document.getElementById('details-portrait').getContext('2d').getImageData(44, 44, 88, 88).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 90) lit++; return lit > 200; })()"""))

@@ -60,8 +60,8 @@ host only serves files that have an extension.
 | KaTeX module | 0.19.1 | jsDelivr, `katex@0.19.1/dist/katex.mjs` (import map `katex`) | MIT | `js/core/tex.js`, loaded on first formula |
 | three.js | 0.187.0 | jsDelivr, `three@0.187.0/build/three.module.js` and `examples/jsm/` (import map `three`, `three/addons/`) | MIT | `js/render/world/*`, loaded when the 3D mode is first used |
 | Material Symbols Rounded | Google Fonts, variable | `fonts.googleapis.com/css2?family=Material+Symbols+Rounded…&icon_names=…` | Apache-2.0 | Every icon; the request is subset to the glyphs in use |
-| IBM Plex Sans, IBM Plex Mono | Google Fonts | `fonts.googleapis.com/css2?family=IBM+Plex+…` | SIL OFL 1.1 | Interface and numeric text |
-| Instrument Serif | Google Fonts | `fonts.googleapis.com/css2?family=Instrument+Serif…` | SIL OFL 1.1 | Headings |
+| Raleway | Google Fonts | `fonts.googleapis.com/css2?family=Raleway…` | SIL OFL 1.1 | Headings and interface text, set with lining figures |
+| JetBrains Mono | Google Fonts | `fonts.googleapis.com/css2?family=JetBrains+Mono…` | SIL OFL 1.1 | Numbers and data, with ligatures off |
 
 ## When a CDN is unreachable
 

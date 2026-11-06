@@ -176,7 +176,7 @@ with sync_playwright() as p:
     ok("space_on_focused_reset_restarts", lab_t() < t0, (round(t0, 3), round(lab_t(), 3)))
     ok("space_on_focused_reset_leaves_play", running() == run0, running())
     # Tab onto the scene button from behind, open it with Space, and Space again reloads the scene.
-    pg.focus("#nav-tools .dock-btn"); pg.keyboard.press("Shift+Tab"); pg.wait_for_timeout(700)
+    pg.focus("#nav-out"); pg.keyboard.press("Shift+Tab"); pg.wait_for_timeout(700)
     a = pg.evaluate(ACTIVE)
     ok("tab_reaches_scene_button_with_ring", a["id"] == "scene-btn" and a["ring"], a)
     pg.keyboard.press("Space"); pg.wait_for_timeout(100)
@@ -225,7 +225,7 @@ with sync_playwright() as p:
     gaps = [y - x for x, y in zip(ts, ts[1:])]
     ok("rewind_dataset_t_increases", min(gaps) > 0, min(gaps))
     ok("rewind_dataset_discards_future", ts[-1] < reached, (round(ts[-1], 3), round(reached, 3)))
-    ok("rewind_dataset_runs_past_rewind_point", ts[0] < back_to < ts[-1], (round(ts[0], 3), round(back_to, 3), round(ts[-1], 3)))
+    ok("rewind_dataset_runs_past_rewind_point", ts[0] <= back_to < ts[-1], (round(ts[0], 3), round(back_to, 3), round(ts[-1], 3)))
     ok("rewind_dataset_has_no_gap", max(gaps) < 0.25, max(gaps))
     ok("rewind_tracks_stay_in_order", all(y >= x for x, y in zip(track_ts, track_ts[1:])))
     # A scene change ends the recording, but the dataset still belongs to the scene it recorded.

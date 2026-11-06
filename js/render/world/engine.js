@@ -141,7 +141,8 @@ export function createEngine(tier) {
       if (factories.has(id)) return Promise.resolve(true);
       const load = LOADERS[id];
       if (!load) return Promise.resolve(false);
-      return load().then(m => { factories.set(id, m.createScene); return true; });
+      const faces = document.fonts ? Promise.all([document.fonts.load('500 20px "JetBrains Mono"'), document.fonts.load('600 20px "Raleway"')]).catch(() => null) : null;
+      return Promise.all([load(), faces]).then(([m]) => { factories.set(id, m.createScene); return true; });
     },
     ready: id => factories.has(id),
     canPortrait(lab) { const s = scenes.get(lab.id); return !!(s && s.portrait); },

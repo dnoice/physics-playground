@@ -336,7 +336,7 @@ function paintPanel(renderer, hw, hh) {
   g.strokeStyle = 'rgba(58,74,92,0.26)'; g.lineWidth = 1.6;
   for (let i = 1; i * 0.1 < 2 * hw; i++) if (i % 5) { const x = i * 0.1 * u; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hp); g.stroke(); }
   for (let j = 1; j * 0.1 < 2 * hh; j++) if (j % 5) { const y = Hp - j * 0.1 * u; g.beginPath(); g.moveTo(0, y); g.lineTo(S, y); g.stroke(); }
-  g.fillStyle = '#23303d'; g.font = `500 ${Math.round(0.13 * u)}px "IBM Plex Mono", monospace`; g.textBaseline = 'middle';
+  g.fillStyle = '#23303d'; g.font = `500 ${Math.round(0.13 * u)}px "JetBrains Mono", monospace`; g.textBaseline = 'middle';
   for (let j = 1; j < 2 * hh; j++) { const y = Hp - j * u; g.fillRect(0, y - 2.4, 0.22 * u, 4.8); g.fillRect(S - 0.22 * u, y - 2.4, 0.22 * u, 4.8); g.textAlign = 'left'; g.fillText(String(j), 0.27 * u, y); g.textAlign = 'right'; g.fillText(String(j), S - 0.27 * u, y); }
   const t = canvasTexture(c, { renderer, srgb: true });
   t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;

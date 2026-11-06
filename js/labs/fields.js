@@ -197,7 +197,7 @@ export const fields = {
   inspect() {
     const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
     const en = this.energyOf(i), q = this.qm[i], B = this.p.B;
-    return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge to mass', q.toFixed(2)], ['Speed', `${Math.hypot(this.vx[i], this.vy[i]).toFixed(0)} px/s`], ['Kinetic energy', fmtSI(en.ke)], ['Potential energy', fmtSI(en.pe)], ['Total energy', fmtSI(en.et)], ['Gyro radius', B ? `${(Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)).toFixed(0)} px` : 'no field']], actions: [] };
+    return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', `${Math.hypot(this.vx[i], this.vy[i]).toFixed(0)} px/s`, 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? `${(Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)).toFixed(0)} px` : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
   deselect() { this.picked = false; },
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
@@ -781,10 +781,10 @@ export const fields = {
     return [
       ['Source charges', `${this.charges.length} · net ${s.qnet > 0 ? '+' : s.qnet < 0 ? '−' : ''}${Math.abs(s.qnet)}`],
       ['Test particles', String(this.n)],
-      ['Absorbed · escaped', `${this.absorbed} · ${this.escaped}`],
+      ['Particles absorbed · escaped', `${this.absorbed} · ${this.escaped}`],
       ['Probe |E|', pv ? fmtField(pv.E, this.K() / 1e6) : '—'],
       ['Probe potential V', pv ? fmtField(pv.V, this.Vscale()) : '—'],
-      ['B at centre', s.B === 0 ? '0' : `${s.B > 0 ? '⊗' : '⊙'} ${Math.abs(s.B).toFixed(2)}`],
+      ['Magnetic field at centre', s.B === 0 ? '0' : `${s.B > 0 ? '⊗' : '⊙'} ${Math.abs(s.B).toFixed(2)}`],
       ['Cyclotron period 2πm/|q|B', Number.isFinite(s.T) ? `${s.T.toFixed(2)} s` : '—'],
       ['E × B drift speed E/B', Number.isFinite(s.vd) ? `${s.vd.toFixed(1)} px/s` : '—'],
       ['Energy drift (charted particle)', Number.isFinite(s.drift) ? pct(s.drift) : '—', Number.isFinite(s.drift) ? (Math.abs(s.drift) < 0.01 ? 'ok' : Math.abs(s.drift) < 0.05 ? 'warn' : 'crit') : null],

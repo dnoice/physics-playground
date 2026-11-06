@@ -198,7 +198,7 @@ function paintBed(Nx, Ny, renderer) {
   const line = (x0, y0, x1, y1, w, a) => { g.strokeStyle = `rgba(52,74,88,${a})`; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); };
   for (let i = 0; i <= Nx; i += 10) { const major = i % 50 === 0; line(i * sx, 0, i * sx, H, major ? 2.4 : 1, major ? 0.62 : 0.3); }
   for (let j = 0; j <= Ny; j += 10) { const major = j % 50 === 0; line(0, j * sy, W, j * sy, major ? 2.4 : 1, major ? 0.62 : 0.3); }
-  g.fillStyle = 'rgba(52,74,88,0.62)'; g.font = `500 ${Math.round(sy * 3.4)}px "IBM Plex Mono", monospace`; g.textBaseline = 'top';
+  g.fillStyle = 'rgba(52,74,88,0.62)'; g.font = `500 ${Math.round(sy * 3.4)}px "JetBrains Mono", monospace`; g.textBaseline = 'top';
   for (let i = 50; i < Nx; i += 50) for (let j = 50; j < Ny; j += 50) g.fillText(`${i}·${j}`, i * sx + sx, j * sy + sy);
   const t = canvasTexture(c, { renderer, srgb: true });
   t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.flipY = false;
@@ -226,7 +226,7 @@ function paintFoam(renderer) {
 function paintRuler(cells, renderer) {
   const W = 2048, H = 72, c = document.createElement('canvas'), g = c.getContext('2d'), sx = W / cells;
   c.width = W; c.height = H;
-  g.strokeStyle = g.fillStyle = 'rgba(231,204,150,1)'; g.font = '500 30px "IBM Plex Mono", monospace'; g.textBaseline = 'alphabetic'; g.textAlign = 'center';
+  g.strokeStyle = g.fillStyle = 'rgba(231,204,150,1)'; g.font = '500 30px "JetBrains Mono", monospace'; g.textBaseline = 'alphabetic'; g.textAlign = 'center';
   for (let i = 0; i <= cells; i += 5) {
     const major = i % 50 === 0, mid = i % 10 === 0;
     g.lineWidth = major ? 3 : 1.6; g.beginPath(); g.moveTo(i * sx, 0); g.lineTo(i * sx, major ? 30 : mid ? 20 : 12); g.stroke();

@@ -2,6 +2,7 @@
   "name": "physics-playground",
   "version": "2.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Interactive physics playground: seven live labs in a bento workspace, in 2D and 3D, plain ES modules with no build step.",
   "type": "module",
   "author": "Dennis 'dendogg' Smaltz",

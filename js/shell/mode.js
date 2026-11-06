@@ -114,9 +114,9 @@ export function drawWorld(lab, g, w, h) {
 }
 
 /* ---------- automatic tier ---------- */
-const AUTO = { WINDOW: 3, SLOW_MS: 25, FAST_MS: 17.6, FAST_WINDOWS: 4, SETTLE: 0.08 };
-const auto = { ms: 16, clock: 0, fast: 0, from: null, before: 0, ceil: null, settled: false };
-function resetAuto() { Object.assign(auto, { clock: 0, fast: 0, from: null, before: 0, settled: false }); }
+const AUTO = { WINDOW: 3, SLOW_MS: 25, FAST_MS: 17.6, FAST_WINDOWS: 4, STALL: 5 };
+const auto = { ms: 16, clock: 0, frames: 0, fast: 0, from: null, before: 0, ceil: null, settled: false };
+function resetAuto() { Object.assign(auto, { clock: 0, frames: 0, fast: 0, from: null, before: 0, settled: false }); }
 function setAutoTier(id, why) {
   world.autoTier = id;
   if (world.engine) world.engine.setTier(tierNow());
@@ -126,10 +126,12 @@ function setAutoTier(id, why) {
 }
 /* From the frame loop: raw is the true frame gap in seconds. */
 export function tickWorld(raw) {
-  if (!active || !in3D(active) || world.pick !== 'auto' || auto.settled || raw <= 0 || raw > 0.5 || document.hidden) return;
-  auto.ms += (raw * 1000 - auto.ms) * AUTO.SETTLE;
+  // Only a true stall is ignored: on a machine that cannot cope, every frame is slow, and those are the ones to count.
+  if (!active || !in3D(active) || world.pick !== 'auto' || auto.settled || raw <= 0 || raw > AUTO.STALL || document.hidden) return;
+  auto.frames++;
   if ((auto.clock += raw) < AUTO.WINDOW) return;
-  auto.clock = 0;
+  auto.ms = auto.clock / auto.frames * 1000;
+  auto.clock = 0; auto.frames = 0;
   const cur = tierNow().id;
   // The last step down bought nothing, so the GPU is not the limit: undo it and stop adapting.
   if (auto.from) {

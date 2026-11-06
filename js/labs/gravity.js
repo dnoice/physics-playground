@@ -322,14 +322,22 @@ export const gravity = {
     const b = this.track == null ? null : this.bodies.find(q => q.id === this.track); if (!b) return null;
     let P = null;
     for (const q of this.bodies) if (q !== b && (!P || q.m > P.m)) P = q;
-    const star = b.m >= STAR_MASS, title = star ? 'Star' : b.m >= 1.1 ? 'Gas giant' : b.m < 0.25 ? 'Moon' : b.id % 2 ? 'Ocean world' : 'Rocky world', v = Math.hypot(b.vx, b.vy, b.vz);
-    const rows = [['Mass', fmtSI(b.m)], ['Speed', `${fmtSI(v)} px/s`]];
+    const star = b.m >= STAR_MASS, title = star ? 'Star' : b.m >= 1.1 ? 'Gas giant' : b.m < 0.25 ? 'Moon' : b.id % 2 ? 'Ocean world' : 'Rocky world';
+    const rows = [['Mass of this body', fmtSI(b.m), 'In simulation units. The star in most scenes has mass 1000.']];
     if (P) {
-      const rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz);
-      const mu = G0 * this.p.G * (P.m + b.m), E = (ux * ux + uy * uy + uz * uz) / 2 - mu / r, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
+      const ref = P.m >= STAR_MASS ? 'the star' : `Body ${P.id}`, rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz), u = Math.hypot(ux, uy, uz);
+      const mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
       const a = -mu / (2 * E), e = Math.sqrt(Math.max(0, 1 + 2 * E * h2 / (mu * mu))), bound = E < 0, i = Math.acos(clamp(hz / Math.sqrt(h2 || 1), -1, 1)) * 180 / Math.PI;
-      rows.push(['Distance', `${fmtSI(r)} px`], ['Eccentricity', e.toFixed(3)], ['Orbital period', bound ? `${fmtSI(TAU * Math.sqrt(a * a * a / mu))} s` : 'none'], ['Semi-major axis', bound ? `${fmtSI(a)} px` : 'none'], ['Inclination', `${i.toFixed(1)}°`], ['Orbit', bound ? 'Bound' : 'Escaping']);
-    } else rows.push(['Radius', `${b.r.toFixed(1)} px`]);
+      const shape = !bound ? 'open path' : e < 0.05 ? 'near circle' : e < 0.5 ? 'oval' : 'long ellipse';
+      rows.push(
+        [`Speed relative to ${ref}`, `${fmtSI(u)} px/s`, `How fast this body moves as seen from ${ref}.`],
+        [`Distance from ${ref}`, `${fmtSI(r)} px`, `Centre to centre, between this body and ${ref}.`],
+        ['Time for one orbit', bound ? `${fmtSI(TAU * Math.sqrt(a * a * a / mu))} s` : 'never returns', 'The orbital period, in simulated seconds, from the two-body orbit around the heaviest other body.'],
+        ['Orbit size', bound ? `${fmtSI(a)} px` : 'unbounded', 'The semi-major axis: half the long width of the orbit, which is its average radius.'],
+        ['Orbit shape', `${e.toFixed(3)}, ${shape}`, 'The eccentricity: 0 is a perfect circle, and 1 or more never comes back.'],
+        ['Orbit tilt', `${i.toFixed(1)}°`, 'The inclination: the angle between this orbit and the flat plane. Above 90° it runs backwards.'],
+        ['Orbit status', bound ? `Bound to ${ref}` : `Escaping ${ref}`, `Whether this body has too little energy to leave ${ref}.`]);
+    } else rows.push(['Radius of this body', `${b.r.toFixed(1)} px`, 'The drawn and collision radius.'], ['Speed through space', `${fmtSI(Math.hypot(b.vx, b.vy, b.vz))} px/s`, 'Nothing else is here to measure against.']);
     return { id: b.id, kicker: `Body ${b.id} · camera following`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
       { label: 'Release camera', run: () => this.deselect() },
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
@@ -573,7 +581,7 @@ export const gravity = {
       ['Total energy E', fmtSI(this.E)],
       ['Energy drift since last change', n > 1 ? `${drift >= 0 ? '+' : ''}${drift.toFixed(3)} %` : '—', n > 1 ? (ad < 0.1 ? 'ok' : ad < 1 ? 'warn' : 'crit') : 'idle'],
       ['Virial ratio 2K / |U|', n > 1 && this.PE ? (2 * this.KE / Math.abs(this.PE)).toFixed(3) : '—'],
-      ['Momentum |p|', fmtSI(Math.hypot(px, py, pz))],
+      ['Total momentum |p|', fmtSI(Math.hypot(px, py, pz))],
       ['Merged · escaped', `${this.merged} · ${this.escaped}`],
       ['Orbit tilts vs heaviest body', this.tilts()],
     ];

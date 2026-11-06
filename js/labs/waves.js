@@ -434,7 +434,7 @@ export const waves = {
   readouts() {
     const c = this.p.c, lam = c / this.p.f, hasGlass = this.glass && this.glass.includes(1), st = this.steering();
     return [
-      ['Grid', `${this.Nx} × ${this.Ny} cells · ${this.cs} px`],
+      ['Grid size', `${this.Nx} × ${this.Ny} cells · ${this.cs} px`],
       ['Courant number cΔt/Δx', (c * this.dt()).toFixed(2), 'ok'],
       ['Wavelength λ = c/f', this.sources.length ? `${lam.toFixed(1)} cells${hasGlass ? ` · ${(lam / this.p.glassN).toFixed(1)} in glass` : ''}` : '—', this.sources.length ? (lam / (hasGlass ? this.p.glassN : 1) < 8 ? 'warn' : 'ok') : undefined],
       ['Sources', String(this.sources.length)],

@@ -113,6 +113,19 @@ underdeveloped, the layout was rebuilt around the stage.
   validated for colour-blind separation on the dark surface, and a reading keeps
   its colour when another is removed.
 
+### Type and labels
+
+On Dennis's call that the old stack read as elongated, Raleway and JetBrains
+Mono replace Instrument Serif and IBM Plex. Raleway is set with lining figures,
+because its default numerals bounce on the baseline, and JetBrains ligatures are
+off, so symbols stay as typed. Faces load before a 3D scene paints text into its
+textures.
+
+Also on his call, labels now name what they measure: Distance became Distance
+from the star, and Speed became Speed relative to the star. Orbit figures read in
+plain terms, with the formal name in a hover: Time for one orbit, Orbit size,
+Orbit shape, Orbit tilt.
+
 ### Moving around in 3D
 
 Dennis reported the Collisions camera as all over the place. The cause was

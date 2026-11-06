@@ -25,7 +25,8 @@
 
 ✒ Key Features:
     - One hook, inspect(), so any lab can describe its selection.
-    - Stat rows update in place while the simulation runs.
+    - Stat rows update in place while the simulation runs, and a hover
+      explains each one.
     - A live portrait from the 3D scene when it offers one.
     - Actions from the lab, such as follow and delete, and a close button.
 
@@ -66,6 +67,7 @@ export function updateDetails(lab) {
   info.rows.forEach((r, i) => {
     const n = rows[i]; if (!n) return;
     if (n.dt.textContent !== r[0]) n.dt.textContent = r[0];
+    n.dt.parentElement.title = r[2] || '';
     if (n.dd.textContent !== r[1]) n.dd.textContent = r[1];
   });
   const key = (info.actions || []).map(a => a.label).join('|');

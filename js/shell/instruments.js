@@ -173,7 +173,7 @@ export function drawScope(c) {
       g.stroke();
       if (hover != null) { const k = s.idx(nearest(s, hover)), v = s.v[k]; if (Number.isFinite(v)) { const X = sx(s.t[k]), Y = sy(v); g.fillStyle = THEME.ink; g.beginPath(); g.arc(X, Y, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(X, Y, 3.5, 0, Math.PI * 2); g.fill(); } }
     }
-    g.font = '500 12px "IBM Plex Sans", system-ui, sans-serif'; g.fillStyle = THEME.muted; g.textAlign = 'left';
+    g.font = '500 12px "Raleway", system-ui, sans-serif'; g.fillStyle = THEME.muted; g.textAlign = 'left';
     if (laneH >= 26) g.fillText(label, x0 + 9, y0 + 15);
   });
   g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted;

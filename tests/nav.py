@@ -39,7 +39,7 @@
 """
 import math
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, shot
+from harness import URL, finish, launch, ok, open_page, shot, settle
 with sync_playwright() as p:
     b = launch(p)
     pg = open_page(b, viewport={"width": 1440, "height": 900})
@@ -70,7 +70,7 @@ with sync_playwright() as p:
     # gizmo buttons
     z0 = V()["z"]; pg.click("#nav-in"); pg.wait_for_timeout(600); ok("nav_in", V()["z"] > z0 * 1.4)
     z1 = V()["z"]; pg.click("#nav-out"); pg.wait_for_timeout(600); ok("nav_out", V()["z"] < z1 * 0.75)
-    pg.click("#nav-zoom"); pg.wait_for_timeout(700); ok("readout_click_100", abs(V()["z"] - 1) < 1e-6, V()["z"])
+    pg.click("#nav-zoom"); settle(pg, "Math.abs(PhysicsPlayground.view.get().z - 1) < 1e-6"); ok("readout_click_100", abs(V()["z"] - 1) < 1e-6, V()["z"])
     pg.mouse.wheel(0, -300); pg.wait_for_timeout(400)
     zb = pg.locator("#nav-zoom").bounding_box(); zz = V()["z"]
     pg.mouse.move(zb["x"] + 20, zb["y"] + 10); pg.mouse.down(); pg.mouse.move(zb["x"] + 20, zb["y"] - 50, steps=6); pg.mouse.up()

@@ -143,7 +143,7 @@ function paintBed(renderer, stone, W) {
   for (let y = 10; y < W.h; y += 10) { const t = (y % 100 === 0 ? 26 : y % 50 === 0 ? 18 : 10), a = y % 50 === 0 ? 0.7 : 0.4; rule(0, y * S, t, y * S, a, 1.5); rule(cw, y * S, cw - t, y * S, a, 1.5); }
   g.globalCompositeOperation = 'lighter'; g.drawImage(l, 0, 0); g.globalCompositeOperation = 'source-over';
   // The figures are cut into the stone rather than lit, so they stay quiet until the camera comes close.
-  g.fillStyle = 'rgba(214,190,146,0.46)'; g.font = '500 20px "IBM Plex Mono", monospace'; g.textBaseline = 'top';
+  g.fillStyle = 'rgba(214,190,146,0.46)'; g.font = '500 20px "JetBrains Mono", monospace'; g.textBaseline = 'top';
   g.textAlign = 'center'; for (let x = 200; x < W.w; x += 200) g.fillText(String(x), x * S, 32);
   g.textAlign = 'left'; g.textBaseline = 'middle'; for (let y = 200; y < W.h; y += 200) g.fillText(String(y), 32, y * S);
   const tex = (cv, srgb) => { const t = canvasTexture(cv, { renderer, srgb }); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; };

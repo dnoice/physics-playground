@@ -43,7 +43,7 @@
   box-shadow: inset 0 0 0 1px var(--hair), 0 10px 30px -14px rgba(0, 0, 0, 0.7); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
 }
 .stage-title > .ms { color: var(--amber); font-size: 20px; }
-.stage-title h2 { margin: 0; font: 400 23px/1 var(--font-display); white-space: nowrap; }
+.stage-title h2 { margin: 0; font: 700 17px/1 var(--font-display); letter-spacing: -0.005em; white-space: nowrap; }
 .scene-pick { position: relative; }
 .scene-btn {
   appearance: none; display: inline-flex; align-items: center; gap: 3px; height: 32px; padding: 0 5px 0 11px; border: 0; border-radius: 10px; cursor: pointer;
@@ -118,7 +118,7 @@
   max-width: calc(100% - 170px);
 }
 /* ---------- view gizmo, scale bar and overview ---------- */
-/* ---------- gizmo: tools above view, each group with room to breathe ---------- */
+/* ---------- gizmo: one layout in every lab, the axis ball first, the view next, scene controls last ---------- */
 .nav {
   position: absolute; right: 14px; top: 50%; transform: translateY(-50%); z-index: 2; width: 116px;
   display: flex; flex-direction: column; gap: 12px; padding: 11px 10px 12px; border-radius: 18px; background: var(--glass);
@@ -138,7 +138,8 @@
 .nav-btn:active { transform: scale(0.94); }
 .nav-btn[aria-pressed="true"] { color: #1a1206; background: var(--amber); }
 .nav-zoom { flex: 1; height: 30px; font: 500 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); cursor: ns-resize; touch-action: none; }
-.nav-extra { display: contents; }
+.nav-extra { display: flex; flex-wrap: wrap; gap: 4px; }
+.nav-extra:empty { display: none; }
 .dock { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .dock-btn { appearance: none; position: relative; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 11px; background: color-mix(in oklab, var(--text) 5%, transparent); color: color-mix(in oklab, var(--text) 78%, var(--muted)); cursor: pointer; transition: color 0.15s, background 0.15s, transform 0.12s var(--ease); }
 .dock-btn .ms { font-size: 21px; }
