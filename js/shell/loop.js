@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.0)
+    - Title: Frame Loop (digiSpace Edition - v2.1)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Meters
+      read the true frame gap, so a slow run reports itself; the frame loop
+      drives the automatic graphics tier.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single file; v2.0 runs the guided experiment check with
       the panel update.

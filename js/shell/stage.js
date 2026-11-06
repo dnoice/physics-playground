@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Stage Input (digiSpace Edition - v2.0)
+    - Title: Stage Input (digiSpace Edition - v2.1)
     - File Name: stage.js
     - Relative Path: js/shell/stage.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      Shift-drag pans in 3D, a cancelled pointer never commits, and the
+      stage draws the 3D world.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour
@@ -57,8 +60,8 @@ export function drawVoid(g, x, y, w, h, z) {
 export function drawStage(lab) {
   const d = view.dpr;
   ctx.setTransform(d, 0, 0, d, 0, 0);
-  if (lab.rig3 && in3D(lab)) { drawWorld(lab, ctx, view.w, view.h); return; }
-  if (lab.selfCam || is3D(lab)) { lab.draw(ctx, view.w, view.h); return; }
+  if (in3D(lab)) { drawWorld(lab, ctx, view.w, view.h); return; }
+  if (lab.selfCam) { lab.draw(ctx, view.w, view.h); return; }
   const c = camOf(lab);
   if (c.fit) Object.assign(c, fitCam(lab)); else clampCam(lab);
   const W = worldOf(lab), z = c.z, ox = Math.round((view.w / 2 - c.x * z) * d) / d, oy = Math.round((view.h / 2 - c.y * z) * d) / d;

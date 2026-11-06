@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: View Camera (digiSpace Edition - v2.0)
+    - Title: View Camera (digiSpace Edition - v2.1)
     - File Name: camera.js
     - Relative Path: js/shell/camera.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Zoom
+      limits moved onto each lab.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single file; v2.0 adds the Fields lab's zoom range.
     Earlier entries: see CHANGELOG.md
@@ -47,7 +49,7 @@ import { active } from './state.js';
    transform; cam.x/y is the world point at the stage centre, cam.z the
    screen px per world px, and cam.fit keeps the whole box in view. Gravity
    keeps its own camera fields and draws in screen space (selfCam). The
-   ripple tank's Relief 3D view brings its own orbit camera (is3D). */
+   3D mode brings the plane camera from labs/stage3d.js (is3D). */
 export const is3D = lab => !!(lab && lab.is3D && lab.is3D());
 export const zoomRange = lab => lab.zoomRange || [0.5, 8];
 export function worldOf(lab) { return lab.worldRect ? lab.worldRect() : { w: lab.size.w || view.w, h: lab.size.h || view.h }; }

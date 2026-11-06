@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.0)
+    - Title: Gravity 3D View (digiSpace Edition - v2.1)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Now only
+      the camera, picking and overlay for the world scene; the renderer
+      moved to js/render/world.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: the 3D orbit view behind the gravity
       lab's new 3D switch.
@@ -19,17 +22,18 @@
 
 ✒ Description:
     Mixed into the gravity lab: the orbit camera, picking on the orbital
-    plane, 3D tools and the compositing of the three.js view onto the stage.
+    plane, 3D tools and the screen overlay. The world itself is drawn by
+    js/render/world/scenes/gravity.js.
 
 ✒ Key Features:
-    - Same camera contract as the ripple tank relief: orbit, dolly toward
-      the cursor, pan, frame and axis snaps.
+    - The same camera contract as every other lab in 3D mode: orbit, dolly
+      toward the cursor, pan, frame and axis snaps.
     - Target follows the centre of mass or a tracked body, exactly like the
       flat view.
     - Throw, drop and follow work in 3D by picking on the orbital plane and
       hit-testing projected bodies.
-    - Loads three.js on demand; if it cannot, the lab says why, disables the
-      switch and stays flat.
+    - Gravity is really three-dimensional, so unlike the plane labs it keeps
+      its own camera.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

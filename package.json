@@ -1,8 +1,8 @@
 {
   "name": "physics-playground",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
-  "description": "Interactive physics playground: seven live labs in a bento workspace, plain ES modules with no build step.",
+  "description": "Interactive physics playground: seven live labs in a bento workspace, in 2D and 3D, plain ES modules with no build step.",
   "type": "module",
   "author": "Dennis 'dendogg' Smaltz",
   "scripts": {

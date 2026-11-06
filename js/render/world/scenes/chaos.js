@@ -79,7 +79,7 @@ export function createScene(E, lab) {
 
   /* Apparatus, in units of the dial radius, rebuilt when the stage changes the reach. */
   const face = paintDial(E.renderer, M.map('stone', 1024, { srgb: true }));
-  const dialMat = new THREE.MeshStandardMaterial({ map: face.map, emissive: 0xffffff, emissiveMap: face.lines, emissiveIntensity: 0.55, roughnessMap: M.map('smudge', 512), roughness: 0.62, metalness: 0.15, envMapIntensity: 0.55 });
+  const dialMat = new THREE.MeshStandardMaterial({ map: face.map, emissive: 0xffffff, emissiveMap: face.lines, emissiveIntensity: 0.55, roughnessMap: M.map('smudge', 512), roughness: 0.62, metalness: 0.15 });
   const shadow = o => { o.castShadow = true; o.receiveShadow = true; return o; };
   const dial = shadow(new THREE.Mesh(new THREE.CircleGeometry(1, 128), dialMat));
   const back = shadow(new THREE.Mesh(new THREE.CylinderGeometry(1.01, 1.01, 0.09, 128), M.gunmetal())); back.rotation.x = Math.PI / 2; back.position.z = -0.05;
@@ -127,7 +127,7 @@ export function createScene(E, lab) {
   const phaseFace = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: plateTex, toneMapped: false }));
   rig.add(phaseBack, phaseFace);
   const torus = new THREE.Group(); rig.add(torus);
-  const glassMat = M.glass().clone(); glassMat.opacity = 0.07; glassMat.envMapIntensity = 0.55;
+  const glassMat = M.glass().clone(); glassMat.opacity = 0.07;
   const glass = new THREE.Mesh(new THREE.TorusGeometry(1, 0.42, 40, 96), glassMat); glass.rotation.x = Math.PI / 2; torus.add(glass);
   let plateClock = 1;
 

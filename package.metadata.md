@@ -1,17 +1,19 @@
 <!--
 ✒ Metadata
-    - Title: Package Metadata (digiSpace Edition - v2.0)
+    - Title: Package Metadata (digiSpace Edition - v2.1)
     - File Name: package.metadata.md
     - Relative Path: package.metadata.md
     - Artifact Type: docs
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Version
+      2.1.0; the Node.js floor follows ESLint 10.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: a formal stack.
 

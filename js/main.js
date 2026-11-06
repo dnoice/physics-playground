@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Boot Sequence (digiSpace Edition - v2.0)
+    - Title: Boot Sequence (digiSpace Edition - v2.1)
     - File Name: main.js
     - Relative Path: js/main.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts
+      the mode module and reopens the last lab.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 as the boot sequence of the module split Dennis asked for.
     Earlier entries: see CHANGELOG.md

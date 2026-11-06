@@ -87,7 +87,7 @@ function createFloor(E, o) {
   const smudge = E.mats.map('smudge', 1024, { repeat: o.repeat || 5 }), U = {
     tRefl: { value: null }, uMirror: { value: new THREE.Matrix4() }, uReflect: { value: 0 }, uBlur: { value: o.blur ?? 0.012 }, uF0: { value: o.f0 ?? 0.06 },
   };
-  const mat = new THREE.MeshStandardMaterial({ color: o.color ?? 0x171c24, roughness: o.roughness ?? 0.42, metalness: o.metalness ?? 0.25, roughnessMap: smudge, envMapIntensity: o.env ?? 0.12 });
+  const mat = new THREE.MeshStandardMaterial({ color: o.color ?? 0x171c24, roughness: o.roughness ?? 0.42, metalness: o.metalness ?? 0.25, roughnessMap: smudge });
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWorld;')

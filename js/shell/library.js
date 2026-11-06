@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Library (digiSpace Edition - v2.0)
+    - Title: Library (digiSpace Edition - v2.1)
     - File Name: library.js
     - Relative Path: js/shell/library.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Keyboard
+      focus survives rebuilds; read-only artifacts hide write actions; sync
+      failures are shown; datasets state their real rate.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single file. v2.0 adds the tab count and new-item marker,
       and fixes a rename race that sent the first keys typed to the stage

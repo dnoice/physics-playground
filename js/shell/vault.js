@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Vault (digiSpace Edition - v2.0)
+    - Title: Vault (digiSpace Edition - v2.1)
     - File Name: vault.js
     - Relative Path: js/shell/vault.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Persisted
+      files leave memory, failed uploads leave no orphans, and read-only
+      artifacts refuse writes honestly.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single file; v2.0 flags the Library tab when something new
       is saved.

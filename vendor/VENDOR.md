@@ -1,17 +1,19 @@
 <!--
 ✒ Metadata
-    - Title: Third-Party Register (digiSpace Edition - v2.0)
+    - Title: Third-Party Register (digiSpace Edition - v2.1)
     - File Name: VENDOR.md
     - Relative Path: vendor/VENDOR.md
     - Artifact Type: docs
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — three.js
+      now serves the whole 3D mode.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: the CDN-backed stack he asked for.
 
@@ -56,7 +58,7 @@ host only serves files that have an extension.
 | Package | Version | Source | Licence | Used by |
 | --- | --- | --- | --- | --- |
 | KaTeX module | 0.19.1 | jsDelivr, `katex@0.19.1/dist/katex.mjs` (import map `katex`) | MIT | `js/core/tex.js`, loaded on first formula |
-| three.js | 0.187.0 | jsDelivr, `three@0.187.0/build/three.module.js` and `examples/jsm/` (import map `three`, `three/addons/`) | MIT | `js/render/orbit3d.js`, loaded when the 3D orbit view opens |
+| three.js | 0.187.0 | jsDelivr, `three@0.187.0/build/three.module.js` and `examples/jsm/` (import map `three`, `three/addons/`) | MIT | `js/render/world/*`, loaded when the 3D mode is first used |
 | Material Symbols Rounded | Google Fonts, variable | `fonts.googleapis.com/css2?family=Material+Symbols+Rounded…&icon_names=…` | Apache-2.0 | Every icon; the request is subset to the glyphs in use |
 | IBM Plex Sans, IBM Plex Mono | Google Fonts | `fonts.googleapis.com/css2?family=IBM+Plex+…` | SIL OFL 1.1 | Interface and numeric text |
 | Instrument Serif | Google Fonts | `fonts.googleapis.com/css2?family=Instrument+Serif…` | SIL OFL 1.1 | Headings |
@@ -64,9 +66,8 @@ host only serves files that have an extension.
 ## When a CDN is unreachable
 
 - **KaTeX**: formula cards show their TeX source as readable text.
-- **three.js**: the gravity lab announces that the 3D view is unavailable,
-  disables its switch with the reason, adds a diagnostics insight, and
-  keeps simulating in three dimensions in the flat view.
+- **three.js**: the workspace announces that 3D is unavailable, disables the
+  3D switch with the reason, adds a diagnostics insight, and stays in 2D.
 - **Material Symbols**: after 6 seconds without the font, glyph names are
   hidden so no raw words like `play_arrow` appear; every icon button keeps
   its text label or accessible name.

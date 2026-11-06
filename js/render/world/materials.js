@@ -141,7 +141,7 @@ export function createMaterials(renderer) {
     slate: shop('slate', () => new THREE.MeshStandardMaterial({ map: map('stone', 1024, { srgb: true, repeat: 2 }), roughnessMap: map('smudge', 512, { repeat: 2 }), roughness: 0.82, metalness: 0.1 })),
     felt: (color = 0x17394a) => shop(`felt:${color}`, () => new THREE.MeshStandardMaterial({ color, map: map('felt', 512, { srgb: true, repeat: 6 }), roughness: 0.96, metalness: 0 }))(),
     /* Thin-walled glass: blended, not transmissive, so it costs no extra scene pass. */
-    glass: shop('glass', () => new THREE.MeshPhysicalMaterial({ color: 0xe6f2f6, metalness: 0, roughness: 0.04, transparent: true, opacity: 0.16, envMapIntensity: 1.6, clearcoat: 1, clearcoatRoughness: 0.03, side: THREE.DoubleSide, depthWrite: false })),
+    glass: shop('glass', () => new THREE.MeshPhysicalMaterial({ color: 0xe6f2f6, metalness: 0, roughness: 0.04, transparent: true, opacity: 0.16, clearcoat: 1, clearcoatRoughness: 0.03, side: THREE.DoubleSide, depthWrite: false })),
     dispose() { for (const m of mats.values()) m.dispose(); for (const t of maps.values()) t.dispose(); mats.clear(); maps.clear(); },
   };
 }

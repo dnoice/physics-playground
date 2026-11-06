@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.0)
+    - Title: Project Checker (digiSpace Edition - v2.1)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Covers
+      .gitattributes.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: a formal stack.
 
@@ -58,7 +60,7 @@ function walk(dir, out = []) {
   }
   return out;
 }
-const files = walk(ROOT).filter(p => OWN_EXT.has(extname(p)) || ['.gitignore'].includes(relative(ROOT, p)));
+const files = walk(ROOT).filter(p => OWN_EXT.has(extname(p)) || ['.gitignore', '.gitattributes'].includes(relative(ROOT, p)));
 const rel = p => relative(ROOT, p).split('\\').join('/');
 
 /* 1. Every own file carries the ✒ header and the byte-exact signature. */

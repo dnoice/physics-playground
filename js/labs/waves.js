@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.0)
+    - Title: Waves Lab (digiSpace Edition - v2.1)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      global mode replaces Relief 3D; added the 3D rig and tool overlay;
+      stronger absorbers and a resize that keeps the tank.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour
@@ -20,13 +23,13 @@
 
 ✒ Description:
     The 2-D wave equation on a grid with slits, sources, a phased array, a
-    glass lens, a moving source and a Relief 3D view.
+    glass lens and a moving source.
 
 ✒ Key Features:
     - Second-order finite differences with a Courant check and absorbing
       edges.
     - Detector chart of time-averaged intensity along the screen edge.
-    - Relief 3D view with the shared orbit camera and picking.
+    - In 3D mode, a ripple tank on the shared plane camera.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

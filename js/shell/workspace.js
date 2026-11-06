@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Lab Rail (digiSpace Edition - v2.0)
+    - Title: Lab Rail (digiSpace Edition - v2.1)
     - File Name: workspace.js
     - Relative Path: js/shell/workspace.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A lab
+      switch cancels a gesture instead of committing it; the last lab is
+      remembered; no lab is named here any more.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour

@@ -49,7 +49,7 @@ import { updateDock } from './dock.js';
 import { updateNav } from './navigator.js';
 import { refreshEnabled } from './panel.js';
 import { cancelLabPointer } from './stage.js';
-import { active, announce, canvas, perf, stageEl } from './state.js';
+import { active, announce, canvas, stageEl } from './state.js';
 
 export const world = {
   mode: store.get('mode', '3d') === '2d' ? '2d' : '3d',

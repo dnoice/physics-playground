@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Guided Experiments (digiSpace Edition - v2.0)
+    - Title: Guided Experiments (digiSpace Edition - v2.1)
     - File Name: experiments.js
     - Relative Path: js/labs/experiments.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Checks
+      now measure what they claim: return error, drift against E/B, a real
+      pull, detector and beam readings.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: guided experiments, one of the
       recommendations he asked to implement.

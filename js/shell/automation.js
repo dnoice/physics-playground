@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Automation Surface (digiSpace Edition - v2.0)
+    - Title: Automation Surface (digiSpace Edition - v2.1)
     - File Name: automation.js
     - Relative Path: js/shell/automation.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      mode surface; renderer status comes from the lab rather than a
+      renderer import.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour

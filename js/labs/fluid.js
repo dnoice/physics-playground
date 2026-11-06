@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.0)
+    - Title: Fluid Lab (digiSpace Edition - v2.1)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      3D rig and tool overlay; a seeded generator and Float64 snapshots make
+      replay exact; GPU failure now says so.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour

@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.0)
+    - Title: Fields Lab (digiSpace Edition - v2.1)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      3D rig and tool overlay; the energy baseline follows charge edits, and
+      the beam clock is captured.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: the Fields & charges lab, one of the
       recommendations he asked to implement.
@@ -46,7 +49,7 @@ import { genericState } from '../core/codec.js';
 import { RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing, drawSphere, zoomOf } from '../core/draw.js';
 import { Series } from '../core/series.js';
-import { TAU, clamp, fmtSI, pct } from '../core/util.js';
+import { TAU, clamp, fmtSI, pct, reduceMotion } from '../core/util.js';
 import { announce, canvas } from '../shell/state.js';
 
 /* ================================================================== */
@@ -60,10 +63,14 @@ import { announce, canvas } from '../shell/state.js';
    particle's speed. Test particles feel the field but do not make one. */
 export const FIELD_P_CAP = 320;
 export const FIELD_Q_CAP = 32;
-const TR = 160;                 // trail points per particle
+export const FIELD_TRAIL = 160;
+const TR = FIELD_TRAIL;         // trail points per particle
 const CELL = 4;                 // potential-map cell size, px
 const K0 = 5e5;                 // Coulomb constant at strength 1, px³/s² per unit charge
 const SOFT = 6;                 // softening length ε, px
+const RELIEF = 0.85;            // tallest rise of the 3D potential relief, scene units, before a short stage scales it
+const KNEE = 2.2;               // potential at half the relief height, in units of Vscale
+const BAR3 = 0.13;              // thickness of a 3D plate, scene units
 const RAMP_N = RAMP_WAVE.rgb.length / 3;
 /* Field readings round to zero below a millionth of their natural scale, so a
    point of exact symmetry reads 0 rather than a rounding residue like 9e-13. */
@@ -72,6 +79,7 @@ const fmtField = (v, scale) => (Math.abs(v) < 1e-6 * scale ? '0' : fmtSI(v));
 export const fields = {
   id: 'fields', name: 'Fields', title: 'Electric and magnetic fields',
   zoomRange: [0.5, 10],
+  rig3: { plane: 'floor', yaw: 0.4, pitch: 0.86, fit: 1.52, height: 1.3, pitchMin: 0.16, target: [0, -0.62, 0.08] },
   eq: 'F = q(E + v × B)',
   eqTex: '\\mathbf F = q\\,(\\mathbf E + \\mathbf v \\times \\mathbf B)',
   aria: 'Field simulation: point charges, their electric field and charged particles moving through it',
@@ -130,6 +138,8 @@ export const fields = {
   series: { ke: new Series(900), pe: new Series(900), et: new Series(900) },
   /* derived field geometry, rebuilt when sources change */
   gw: 0, gh: 0, V: null, map: null, mapCtx: null, img: null, contours: null, zero: null, flines: [],
+  /* the same grid as a relief for the 3D scene: height, rows of charges standing in for plates, a revision to watch */
+  H3: null, geoRev: 0, runs: [], runOf: new Map(), relief3: 1, reliefH: RELIEF, clock3: 0, bar3: BAR3,
   probe: null, probeVal: null, w: 800, h: 600, drag: null, brush: null, aim: null,
   dt() { return 1 / 240; }, maxSteps: 48,
 
@@ -290,16 +300,19 @@ export const fields = {
   /* ---------- derived geometry: potential map, equipotentials, field lines ---------- */
   rebuildGeometry() {
     this.dirty = false;
+    // A short stage brings plates and charges closer than the relief is tall, and tall peaks would hide what stands behind them.
+    this.reliefH = Math.min(RELIEF, 1.45 * Math.min(this.w, this.h) / Math.max(this.w, this.h));
     const gw = Math.max(2, Math.ceil(this.w / CELL) + 1), gh = Math.max(2, Math.ceil(this.h / CELL) + 1);
     if (gw !== this.gw || gh !== this.gh || !this.V) {
       this.gw = gw; this.gh = gh; this.V = new Float32Array(gw * gh);
       this.map = document.createElement('canvas'); this.map.width = gw; this.map.height = gh;
       this.mapCtx = this.map.getContext('2d'); this.img = this.mapCtx.createImageData(gw, gh);
+      this.H3 = new Float32Array(gw * gh);
     }
-    const V = this.V, Vs = this.Vscale(), d = this.img.data, R = RAMP_WAVE.rgb, cw = this.w / (gw - 1), ch = this.h / (gh - 1);
+    const V = this.V, H = this.H3, Vs = this.Vscale(), d = this.img.data, R = RAMP_WAVE.rgb, cw = this.w / (gw - 1), ch = this.h / (gh - 1);
     for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
-      const s = Math.tanh(this.Vat(i * cw, j * ch) / Vs), k = j * gw + i;
-      V[k] = s;
+      const v = this.Vat(i * cw, j * ch) / Vs, s = Math.tanh(v), k = j * gw + i;
+      V[k] = s; H[k] = v / (KNEE + Math.abs(v));
       const r = clamp(Math.round((0.5 + 0.5 * s) * (RAMP_N - 1)), 0, RAMP_N - 1) * 3, o = k * 4;
       d[o] = R[r]; d[o + 1] = R[r + 1]; d[o + 2] = R[r + 2]; d[o + 3] = 255;
     }
@@ -307,6 +320,8 @@ export const fields = {
     this.contours = this.march([-0.875, -0.75, -0.625, -0.5, -0.375, -0.25, -0.125, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875], cw, ch);
     this.zero = this.march([0], cw, ch);
     this.traceLines();
+    this.findRuns();
+    this.geoRev++;
   },
   /* Marching squares over the compressed potential grid; returns segment endpoints. */
   march(levels, cw, ch) {
@@ -393,7 +408,7 @@ export const fields = {
     if (t === 'launch') { this.aim = { x0: p.x, y0: p.y, x1: p.x, y1: p.y }; return; }
     const c = this.hitCharge(p);
     if (t === 'move') {
-      if (c) { this.drag = { kind: 'charge', c, dx: c.x - p.x, dy: c.y - p.y }; canvas.style.cursor = 'grabbing'; return; }
+      if (c) { this.drag = { kind: 'charge', c, dx: c.x - p.x, dy: c.y - p.y, hold3: this.lift3(c.x, c.y) }; canvas.style.cursor = 'grabbing'; return; }
       const i = this.hitParticle(p); if (i >= 0) { this.setTrack(this.pid[i]); announce('Charting this particle'); }
       return;
     }
@@ -404,7 +419,7 @@ export const fields = {
       this.probeRead(); this.retrack(); return;
     }
     const nc = this.addCharge(p.x, p.y, dq);
-    if (nc) { this.drag = { kind: 'charge', c: nc, dx: 0, dy: 0 }; this.probeRead(); this.retrack(); }
+    if (nc) { this.drag = { kind: 'charge', c: nc, dx: 0, dy: 0, hold3: this.lift3(p.x, p.y) }; this.probeRead(); this.retrack(); }
   },
   pointerMove(p, e, down) {
     if (!down) return;
@@ -425,6 +440,195 @@ export const fields = {
     this.drag = null;
   },
   pointerCancel() { this.aim = null; this.pointerUp(); },
+
+  /* ---------- 3D: relief, picking and the screen overlay ---------- */
+  /* Rows of five or more like charges, evenly spaced along an axis: the scene lays a metal plate over each. */
+  findRuns() {
+    const runs = [], of = new Map();
+    for (const [a, b] of [['x', 'y'], ['y', 'x']]) {
+      const rows = new Map();
+      for (const c of this.charges) {
+        if (of.has(c.id)) continue;
+        const key = `${Math.sign(c.q)}:${Math.round(c[b] / 3)}`;
+        if (!rows.has(key)) rows.set(key, []);
+        rows.get(key).push(c);
+      }
+      for (const row of rows.values()) {
+        if (row.length < 5) continue;
+        row.sort((p, q) => p[a] - q[a]);
+        const gaps = row.slice(1).map((c, i) => c[a] - row[i][a]).sort((p, q) => p - q), gap = gaps[gaps.length >> 1];
+        for (let i = 0, j = 0; i < row.length; i = j) {
+          j = i + 1;
+          while (j < row.length && row[j][a] - row[j - 1][a] < gap * 1.6) j++;
+          if (j - i < 5) continue;
+          const A = row[i], Z = row[j - 1], run = { ax: A.x, ay: A.y, bx: Z.x, by: Z.y, sign: Math.sign(A.q), n: j - i, h: 0 };
+          for (let k = i; k < j; k++) { of.set(row[k].id, run); run.h += this.height3(row[k].x, row[k].y) / run.n; }
+          runs.push(run);
+        }
+      }
+    }
+    this.runs = runs; this.runOf = of;
+  },
+  /* The relief at a world point, -1 to 1, by bilinear lookup in the same grid the scene uploads. */
+  height3(x, y) {
+    const H = this.H3; if (!H) return 0;
+    const gw = this.gw, fx = clamp(x / this.w, 0, 1) * (gw - 1), fy = clamp(y / this.h, 0, 1) * (this.gh - 1);
+    const i = Math.min(Math.floor(fx), gw - 2), j = Math.min(Math.floor(fy), this.gh - 2), u = fx - i, v = fy - j, o = j * gw + i;
+    const a = H[o] + (H[o + 1] - H[o]) * u, b = H[o + gw] + (H[o + gw + 1] - H[o + gw]) * u, h = a + (b - a) * v;
+    return h === h ? h : 0;
+  },
+  reliefNow3() { return this.reliefH * this.relief3; },
+  lift3(x, y) { return this.height3(x, y) * this.reliefH * this.relief3; },
+  runLift3(run) { return run.h * this.reliefH * this.relief3; },
+  orbR3(c, k) { return this.runOf.has(c.id) ? 0.042 : this.chargeR(c) * k * 1.34; },
+  /* Lift of an orb's centre: seated on its peak or in its well, or along the top of its plate. */
+  seat3(c, r) { const run = this.runOf.get(c.id); return run ? this.runLift3(run) + BAR3 / 2 + r * 0.3 : this.lift3(c.x, c.y) + r * 0.3; },
+  probeLift3() { return this.lift3(this.probe.x, this.probe.y) + 0.17; },
+  /* The pointer lands on what it is seen over: an orb from any angle, otherwise the relief along the ray.
+     A drag that holds a height stays at it, so the peak being dragged cannot push back on the pointer. */
+  pick3(s) {
+    const hit = this.rayHit(s); if (!hit) return null;
+    const { p, P } = hit, e = this.basis3().eye, up = e[1] - p[1];
+    const at = q => ({ x: (e[0] + (p[0] - e[0]) * q) / P.k + P.cx, y: (e[2] + (p[2] - e[2]) * q) / P.k + P.cy });
+    if (up <= 1e-3) return at(1);
+    const hold = this.drag ? this.drag.hold3 : null;
+    if (hold != null) return at(1 - hold / up);
+    if (!this.drag && !this.aim && !this.brush) {
+      let best = null, bd = Infinity;
+      for (const c of this.charges) {
+        const o = this.orbSpot3(c, P.k); if (!o) continue;
+        const d = Math.hypot(s.x - o.x, s.y - o.y);
+        if (d < o.r + 3 && d < bd) { bd = d; best = c; }
+      }
+      if (best) return { x: best.x, y: best.y };
+    }
+    const top = this.reliefNow3(), q0 = Math.max(0.02, 1 - top / up), q1 = 1 + top / up, n = 36, dq = (q1 - q0) / n;
+    if (top <= 0) return at(1);
+    const under = q => { const w = at(q); return up * (1 - q) <= this.lift3(w.x, w.y); };
+    for (let i = 1; i <= n; i++) {
+      let b = q0 + dq * i;
+      if (!under(b)) continue;
+      let a = b - dq;
+      for (let k = 0; k < 6; k++) { const m = (a + b) / 2; if (under(m)) b = m; else a = m; }
+      return at(b);
+    }
+    return at(1);
+  },
+  /* A world-space circle laid on the relief, as a screen path. */
+  ringPath3(g, x, y, r, n = 48) {
+    let on = false;
+    g.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = i / n * TAU, X = x + r * Math.cos(a), Y = y + r * Math.sin(a), s = this.project3(X, Y, this.lift3(X, Y) + 0.035);
+      if (!s) continue;
+      if (on) g.lineTo(s.x, s.y); else g.moveTo(s.x, s.y);
+      on = true;
+    }
+  },
+  orbSpot3(c, k) { const r = this.orbR3(c, k), s = this.project3(c.x, c.y, this.seat3(c, r)); return s && { x: s.x, y: s.y, r: r / k * this.scale3(s) }; },
+  /* Stroke the open path with a dark keyline under it, so it holds over bright light. */
+  keyed3(g, col, w = 1.5) {
+    g.strokeStyle = THEME.ink; g.lineWidth = w + 2.4; g.globalAlpha = 0.6; g.stroke();
+    g.strokeStyle = col; g.lineWidth = w; g.globalAlpha = 1; g.stroke();
+  },
+  label3(g, text, x, y, col) {
+    g.strokeStyle = THEME.ink; g.lineWidth = 3; g.globalAlpha = 0.7; g.strokeText(text, x, y);
+    g.fillStyle = col; g.globalAlpha = 1; g.fillText(text, x, y);
+  },
+  disc3(g, x, y, r, col, w) { g.beginPath(); g.arc(x, y, r, 0, TAU); this.keyed3(g, col, w); },
+  glyph3(g, x, y, sign, r, col) {
+    g.beginPath(); g.moveTo(x - r, y); g.lineTo(x + r, y);
+    if (sign > 0) { g.moveTo(x, y - r); g.lineTo(x, y + r); }
+    this.keyed3(g, col);
+  },
+  drawAim3(g) {
+    const A = this.aim, len = Math.hypot(A.x1 - A.x0, A.y1 - A.y0), col = this.p.sign > 0 ? THEME.amber : THEME.cyan;
+    let a = null, b = null;
+    g.setLineDash([6, 4]); g.beginPath();
+    for (let i = 0; i <= 24; i++) {
+      const X = A.x0 + (A.x1 - A.x0) * i / 24, Y = A.y0 + (A.y1 - A.y0) * i / 24, s = this.project3(X, Y, this.lift3(X, Y) + 0.05);
+      if (!s) continue;
+      if (b) g.lineTo(s.x, s.y); else g.moveTo(s.x, s.y);
+      if (!b || Math.hypot(s.x - b.x, s.y - b.y) > 0.5) { a = b; b = s; }
+    }
+    this.keyed3(g, col, 2); g.setLineDash([]);
+    if (b) {
+      if (len > 4 && a) {
+        const t = Math.atan2(b.y - a.y, b.x - a.x), L = 10;
+        g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x - L * Math.cos(t - 0.45), b.y - L * Math.sin(t - 0.45)); g.moveTo(b.x, b.y); g.lineTo(b.x - L * Math.cos(t + 0.45), b.y - L * Math.sin(t + 0.45)); this.keyed3(g, col, 2);
+      }
+      g.font = `400 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'middle';
+      this.label3(g, `${Math.round(Math.min(600, len * 2))} px/s`, b.x + 12, b.y, col);
+    }
+    const s0 = this.project3(A.x0, A.y0, this.lift3(A.x0, A.y0) + 0.05);
+    if (s0) this.disc3(g, s0.x, s0.y, 4, col, 2);
+  },
+  drawReadout3(g) {
+    const P = this.probe, v = this.probeVal, s = this.project3(P.x, P.y, this.probeLift3()); if (!s) return;
+    const text = [`|E| ${fmtField(v.E, this.K() / 1e6)}`, `V ${fmtField(v.V, this.Vscale())}`], tx = s.x + 18, ty = s.y - 34;
+    g.strokeStyle = THEME.text; g.globalAlpha = 0.5; g.lineWidth = 1; g.beginPath(); g.moveTo(s.x + 5, s.y - 5); g.lineTo(tx - 4, ty + 32); g.stroke();
+    g.font = `400 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'top';
+    g.fillStyle = THEME.ink; g.globalAlpha = 0.82; g.fillRect(tx - 4, ty - 3, 92, 34); g.globalAlpha = 1;
+    g.fillStyle = THEME.text; text.forEach((t, k) => g.fillText(t, tx, ty + k * 14));
+  },
+  /* Screen overlay in 3D: what the scene cannot say in light, and what each tool would do under the pointer. */
+  overlay3(g) {
+    const now = performance.now(), dt = Math.min(0.1, (now - this.clock3) / 1000), want = this.p.map ? 1 : 0;
+    this.clock3 = now;
+    this.relief3 += (want - this.relief3) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 8));
+    if (Math.abs(want - this.relief3) < 0.004) this.relief3 = want;
+    const k = this.plane3().k, H = this.hover, tool = this.p.tool, D = this.drag, pen = sign => (sign > 0 ? THEME.amber : THEME.cyan);
+    g.save(); g.lineCap = 'round';
+    g.font = `500 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'bottom'; g.fillStyle = THEME.text;
+    for (const c of this.charges) {
+      if (Math.abs(c.q) < 2 || this.runOf.has(c.id)) continue;
+      const o = this.orbSpot3(c, k); if (o) this.label3(g, String(Math.abs(c.q)), o.x + o.r * 0.8, o.y - o.r * 0.7, THEME.text);
+    }
+    for (const run of this.runs) {
+      const s = this.project3(run.ax, run.ay, this.runLift3(run) + BAR3); if (!s) continue;
+      g.textAlign = 'right'; g.textBaseline = 'middle'; this.label3(g, `${run.sign > 0 ? '+' : '−'}${run.n}`, s.x - 18, s.y, pen(run.sign));
+    }
+    g.textAlign = 'left'; g.textBaseline = 'bottom';
+    const ti = this.indexOf(this.track);
+    if (ti >= 0) {
+      const s = this.project3(this.x[ti], this.y[ti], this.lift3(this.x[ti], this.y[ti]) + 0.04);
+      if (s) this.disc3(g, s.x, s.y, 9, THEME.text, 1.2);
+    }
+    if (this.probe && this.probeVal) this.drawReadout3(g);
+    if (this.aim) this.drawAim3(g);
+    const onCharge = H && (tool === 'plus' || tool === 'minus' || tool === 'move') ? this.hitCharge(H) : null;
+    if (D && D.kind === 'charge') {
+      const o = this.orbSpot3(D.c, k);
+      if (o) this.disc3(g, o.x, o.y, o.r + 5, pen(D.c.q), 2);
+    } else if (onCharge) {
+      const o = this.orbSpot3(onCharge, k), add = tool === 'plus' ? 1 : -1;
+      if (o) {
+        this.disc3(g, o.x, o.y, o.r + 5, tool === 'move' ? THEME.text : pen(add));
+        if (tool !== 'move') { g.textBaseline = 'middle'; this.label3(g, add > 0 ? '+1' : '−1', o.x + o.r + 10, o.y, pen(add)); }
+      }
+    } else if (H && !this.aim && !this.brush) {
+      if (tool === 'plus' || tool === 'minus') {
+        const add = tool === 'plus' ? 1 : -1, s = this.project3(H.x, H.y, this.lift3(H.x, H.y) + 0.035);
+        this.ringPath3(g, H.x, H.y, this.chargeR({ q: add })); this.keyed3(g, pen(add));
+        if (s) this.glyph3(g, s.x, s.y, add, 5, pen(add));
+      } else if (tool === 'move') {
+        const i = this.hitParticle(H);
+        if (i >= 0) { const s = this.project3(this.x[i], this.y[i], this.lift3(this.x[i], this.y[i]) + 0.04); if (s) this.disc3(g, s.x, s.y, 11, THEME.text); }
+      } else if (tool === 'launch') {
+        const s = this.project3(H.x, H.y, this.lift3(H.x, H.y) + 0.05);
+        if (s) { this.disc3(g, s.x, s.y, 7, pen(this.p.sign)); this.glyph3(g, s.x, s.y, this.p.sign, 3, pen(this.p.sign)); }
+      } else if (tool === 'probe' && !D) {
+        const s = this.project3(H.x, H.y, this.lift3(H.x, H.y) + 0.035);
+        this.ringPath3(g, H.x, H.y, 9, 24); this.keyed3(g, THEME.text, 1.2);
+        if (s) { g.beginPath(); g.moveTo(s.x - 13, s.y); g.lineTo(s.x + 13, s.y); g.moveTo(s.x, s.y - 13); g.lineTo(s.x, s.y + 13); this.keyed3(g, THEME.text, 1.2); }
+      }
+    }
+    if (tool === 'erase' && (this.brush || H)) {
+      const B = this.brush || H;
+      g.setLineDash([4, 4]); this.ringPath3(g, B.x, B.y, 24); this.keyed3(g, THEME.text, this.brush ? 1.8 : 1.2); g.setLineDash([]);
+    }
+    g.restore();
+  },
 
   /* ---------- drawing ---------- */
   draw(g, w, h) {

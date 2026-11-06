@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.0)
+    - Title: Transport and Keys (digiSpace Edition - v2.1)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Space
+      reaches play and pause after a mouse click; held keys act once;
+      CapsLock no longer swaps b and Shift+B; added Z.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour

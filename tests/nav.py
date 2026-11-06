@@ -1,17 +1,22 @@
 """
 ✒ Metadata
-    - Title: Navigation Test (digiSpace Edition - v2.0)
+    - Title: Navigation Test (digiSpace Edition - v2.1)
     - File Name: nav.py
     - Relative Path: tests/nav.py
     - Artifact Type: test
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.1.0
+    - Date: 11/06/2026
+    - Update: Friday, November 06, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
+      starts in flat 2D mode and the relief checks became flat tank checks,
+      since 3D is now a global mode with its own suite. The marks and console
+      watching come from the shared harness, so console errors now count
+      against this suite.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Moved
       into the project in v2.0 with a shared harness; coordinates follow the
       bento stage size.
@@ -19,10 +24,10 @@
 ✒ Description:
     Checks the shared camera and gizmo: wheel zoom at the cursor, pans,
     frame, minimap, keys, tools in world coordinates, gravity follow and
-    tracking, the relief 3D view, cloth cutting and pinch zoom.
+    tracking, the flat tank view, cloth cutting and pinch zoom.
 
 ✒ Key Features:
-    - 40 named checks.
+    - 35 named checks.
     - Coordinates are relative to the stage size.
     - Picks a body that is not under an overlay.
 
@@ -32,17 +37,12 @@
       Windows, macOS and Linux
 ---------
 """
-import json, math
+import math
 from playwright.sync_api import sync_playwright
-from harness import URL, launch, shot
-errors, out = [], {}
-def ok(name, cond, info=""):
-    out[name] = ("PASS" if cond else "FAIL") + (f" {info}" if info != "" else "")
+from harness import URL, finish, launch, ok, open_page, shot
 with sync_playwright() as p:
     b = launch(p)
-    pg = b.new_page(viewport={"width": 1440, "height": 900})
-    pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
-    pg.on("pageerror", lambda e: errors.append(str(e)))
+    pg = open_page(b, viewport={"width": 1440, "height": 900})
     pg.goto(URL + "#collisions"); pg.wait_for_timeout(1500)
     V = lambda: pg.evaluate("PhysicsPlayground.view.get()")
     box = pg.locator("#stage-canvas").bounding_box()
@@ -132,29 +132,18 @@ with sync_playwright() as p:
     pg.screenshot(path=shot("v13_gravity_planet.png"))
     pg.click("#nav-fit"); pg.wait_for_timeout(1000); ok("gravity_frame_releases_track", pg.evaluate("PhysicsPlayground.labs.gravity.track") is None)
     # middle-drag pan in gravity turns follow off (already off) and moves camera
-    # waves 3D: orbit, snap, pick, tool in 3D
+    # waves: 3D belongs to the global mode, which this suite keeps at 2D, so the tank stays flat
     pg.keyboard.press("4"); pg.wait_for_timeout(600); pg.evaluate("PhysicsPlayground.preset('ripple')")
-    pg.click("#nav-relief"); pg.wait_for_timeout(1500)
-    ok("relief_on", V()["mode"] == "3d" and not pg.evaluate("document.getElementById('nav-orbit').hidden") and pg.evaluate("document.getElementById('minimap').hidden && document.getElementById('scalebar').hidden"))
-    y0 = V()["yaw"]; pg.mouse.move(box["x"] + 500, box["y"] + 400); pg.mouse.down(button="right"); pg.mouse.move(box["x"] + 600, box["y"] + 420, steps=5); pg.mouse.up(button="right")
-    v = V(); ok("right_drag_orbits", abs(v["yaw"] - y0 + 0.8) < 0.05 and v["pitch"] > 0.92, (round(v["yaw"], 3), round(v["pitch"], 3)))
-    pg.click("#nav-fit"); pg.wait_for_timeout(1500); v = V(); ok("frame3_resets", abs(v["pitch"] - 0.92) < 0.02 and abs(v["tx"]) < 0.5, (round(v["pitch"],3), round(v["tx"],2)))
-    ob = pg.locator("#nav-orbit").bounding_box(); y1 = V()["yaw"]
-    oc = (ob["x"] + ob["width"] / 2, ob["y"] + ob["height"] / 2)
-    pg.mouse.move(*oc); pg.mouse.down(); pg.mouse.move(oc[0] + 20, oc[1], steps=4); pg.mouse.up()
-    ok("ball_drag_orbits", V()["yaw"] < y1 - 0.1, round(V()["yaw"] - y1, 3))
-    pg.locator(".axis").nth(2).click(); pg.wait_for_timeout(1500); ok("axis_z_top_view", V()["pitch"] > 1.5)
-    pg.click("#nav-fit"); pg.wait_for_timeout(1500)
+    ok("waves_flat_view", V()["mode"] == "2d" and pg.evaluate("document.getElementById('nav-orbit').hidden"))
     # pick: stage centre should map near the tank centre
     c = pg.evaluate(f"PhysicsPlayground.view.toWorld({box['width']/2}, {box['height']/2})"); W = pg.evaluate("PhysicsPlayground.labs.waves.worldRect()")
     ok("pick_centre", abs(c["x"] / W["w"] - 0.5) < 0.02 and abs(c["y"] / W["h"] - 0.5) < 0.02, (round(c["x"]/W["w"],3), round(c["y"]/W["h"],3)))
     pg.click("#dock-waves-source"); ns = pg.evaluate("PhysicsPlayground.labs.waves.sources.length")
     pg.mouse.click(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.5)
-    ok("source_in_3d", pg.evaluate("PhysicsPlayground.labs.waves.sources.length") == ns + 1)
-    z3 = V()["dist"]; pg.mouse.move(box["x"] + 500, box["y"] + 400); pg.mouse.wheel(0, -400); pg.wait_for_timeout(900)
-    ok("wheel_dolly_3d", V()["dist"] < z3 * 0.7, round(V()["dist"] / z3, 3))
-    pg.wait_for_timeout(1500); pg.screenshot(path=shot("v13_relief_zoom.png"))
-    pg.click("#nav-relief"); pg.wait_for_timeout(500); ok("relief_off", V()["mode"] == "2d" and pg.evaluate("document.getElementById('nav-orbit').hidden"))
+    ok("source_at_centre", pg.evaluate("PhysicsPlayground.labs.waves.sources.length") == ns + 1)
+    z3 = V()["z"]; pg.mouse.move(box["x"] + 500, box["y"] + 400); pg.mouse.wheel(0, -400); pg.wait_for_timeout(900)
+    ok("waves_wheel_zooms", V()["z"] > z3 * 1.4, round(V()["z"] / z3, 3))
+    pg.wait_for_timeout(1500); pg.screenshot(path=shot("v21_waves_zoom.png"))
     # cloth keeps right-drag for cutting, middle-drag pans
     pg.keyboard.press("6"); pg.wait_for_timeout(800)
     L = "PhysicsPlayground.labs.cloth.alive.subarray(0, PhysicsPlayground.labs.cloth.L).reduce((a,b)=>a+b,0)"
@@ -171,5 +160,5 @@ with sync_playwright() as p:
     for k in range(1, 7): touch("touchMove", [(400 - 15 * k, 400), (500 + 15 * k, 400)])
     touch("touchEnd", [])
     pg.wait_for_timeout(200); ok("pinch_zoom", V()["z"] > z0 * 1.8, round(V()["z"], 2))
-    print(json.dumps(out, indent=1)); print("errors", errors[:8])
     b.close()
+finish()
