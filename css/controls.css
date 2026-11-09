@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Control Styles (digiSpace Edition - v2.1)
+    - Title: Control Styles (digiSpace Edition - v2.3)
     - File Name: controls.css
     - Relative Path: css/controls.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles the
+      control sections, the switch grid and the quick actions; removed the old
+      actions row.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — One-column
       parameters and larger values for the Inspector.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -21,12 +24,15 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Buttons, segmented choices, sliders, switches and the Parameters grid.
+    Buttons, segmented choices, sliders, switches, and the Controls page:
+    quick actions, then sections.
 
 ✒ Key Features:
-    - Parameters flow into two or three columns as the tile widens.
+    - Sections as soft wells with an uppercase header, a glyph, a fold chevron
+      and a Reset pill.
+    - Switches in an auto-fitting grid, so a lone switch spans the section.
     - Disabled controls keep their reason visible underneath.
-    - Large touch targets on coarse pointers.
+    - Quick actions as compact pills above the sections.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -65,8 +71,38 @@
 .seg-wrap { display: grid; gap: 8px; }
 .seg-label { font-size: 13px; line-height: 1.35; }
 
-/* ---------- parameter controls ---------- */
-.params { display: grid; gap: 20px; }
+/* ---------- parameter controls: quick actions, then sections ---------- */
+.params { display: grid; gap: 10px; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 6px; }
+.btn-quick { min-height: 30px; padding: 6px 11px; font-size: 12.5px; border-radius: 999px; background: color-mix(in oklab, var(--ink) 70%, var(--tile-hi)); }
+.btn-quick:hover { border-color: color-mix(in oklab, var(--amber) 55%, var(--rule)); color: var(--text); }
+.pgroup { border-radius: 14px; background: color-mix(in oklab, var(--well) 60%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.pgroup-head { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; }
+.pgroup-toggle {
+  appearance: none; flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 8px;
+  background: none; border: 0; border-radius: 10px; color: var(--text); cursor: pointer; text-align: left;
+  font: 700 11.5px/1 var(--font-body); letter-spacing: 0.09em; text-transform: uppercase; transition: background 0.2s;
+}
+.pgroup-toggle:hover { background: color-mix(in oklab, var(--text) 5%, transparent); }
+.pgroup-ico { font-size: 18px; color: var(--amber); letter-spacing: normal; text-transform: none; }
+.pgroup-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pgroup-chev { font-size: 19px; color: var(--muted); letter-spacing: normal; text-transform: none; transition: transform 0.22s var(--ease); }
+.pgroup.is-folded .pgroup-chev { transform: rotate(-90deg); }
+.pgroup-reset {
+  appearance: none; display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 9px 0 7px; flex: none;
+  font: 500 11.5px/1 var(--font-body); color: var(--muted); background: none; border: 1px solid var(--rule); border-radius: 999px; cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.pgroup-reset .ms { font-size: 14px; }
+.pgroup-reset:hover { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 50%, var(--rule)); }
+.pgroup-reset[hidden] { display: none; }
+.pgroup-note { margin: -4px 14px 2px 43px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+.pgroup-note[hidden] { display: none; }
+.pgroup-body { display: grid; gap: 18px; padding: 10px 14px 16px; }
+.pgroup-body[hidden] { display: none; }
+.pgroup-switches { display: grid; grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); gap: 12px 14px; align-items: start; }
+.pgroup-switches .switch { align-items: flex-start; }
+.pgroup-switches .switch-track { margin-top: 1px; }
 .ctl { display: grid; gap: 5px; align-content: start; }
 .ctl-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .ctl-head label { font-size: 13.5px; line-height: 1.35; }
@@ -122,5 +158,5 @@ input[type="range"]:disabled { cursor: not-allowed; opacity: 0.4; }
 .switch-thumb { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--muted); transition: transform 0.22s var(--ease), background 0.2s; }
 .switch[aria-checked="true"] .switch-track { background: color-mix(in oklab, var(--amber) 35%, transparent); }
 .switch[aria-checked="true"] .switch-thumb { transform: translateX(12px); background: var(--amber); }
-.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule-soft); }
+
 h4.sub { margin: 0; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }

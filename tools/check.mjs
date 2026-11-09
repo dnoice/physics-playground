@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.2)
+    - Title: Project Checker (digiSpace Edition - v2.3)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.2.0
+    - Version: 2.3.0
     - Date: 11/09/2026
     - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Counts
+      the glyphs that control sections name in each lab's groups list.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Covers
       the Pages workflow (.yml) and .nojekyll; skips the staged _site/
       copy, whose files would otherwise fail Relative Path.
@@ -98,7 +100,10 @@ else {
   for (const p of files.filter(f => extname(f) === '.js')) {
     const s = readFileSync(p, 'utf8');
     for (const call of s.matchAll(/\bms(?:El)?\(([^)]*)\)/g)) for (const q of call[1].matchAll(/'([a-z0-9_]+)'/g)) used.add(q[1]);
+    // Control sections name their glyph in the lab's groups list.
+    for (const g of (s.match(/\n {2}groups: \[([\s\S]*?)\n {2}\],/) || [, ''])[1].matchAll(/icon: '([a-z0-9_]+)'/g)) used.add(g[1]);
   }
+  for (const glyph of ['expand_more', 'tune', 'restart_alt']) used.add(glyph); // the section header, fallback section and reset glyphs in panel.js
   const icons = readFileSync(join(ROOT, 'js/core/icons.js'), 'utf8');
   const block = name => (icons.match(new RegExp(`export const ${name} = ([\\s\\S]*?);\\n`)) || [, ''])[1];
   for (const m of block('ICON').matchAll(/:\s*'([a-z0-9_]+)'/g)) used.add(m[1]);

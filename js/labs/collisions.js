@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.1)
+    - Title: Collisions Lab (digiSpace Edition - v2.3)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
+      are grouped into Setup, Physics, New balls and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig, tilt, sphere picking and tool overlay; snapshots use Float64,
       so rewind replays exactly.
@@ -86,14 +88,20 @@ export const collisions = {
     { id: 'pool', label: 'Billiard break', params: { gravity: 0, e: 0.96, drag: 0.35, mu: 0.15 } },
     { id: 'brownian', label: 'Brownian motion', params: { gravity: 0, e: 1, drag: 0, count: 420, mu: 0 } },
   ],
+  groups: [
+    { id: 'setup', label: 'Setup', icon: 'flag' },
+    { id: 'physics', label: 'Physics', icon: 'balance' },
+    { id: 'spawn', label: 'New balls', icon: 'add_circle' },
+    { id: 'display', label: 'Display', icon: 'visibility' },
+  ],
   controls: [
-    { type: 'seg', key: 'colorBy', label: 'Colour balls by', options: [['speed', 'Speed'], ['mass', 'Mass'], ['spin', 'Spin']] },
-    { type: 'range', key: 'count', label: 'Number of balls', min: 20, max: 1200, step: 10, rebuild: true, note: 'Restarts the scene when released.' },
-    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²' },
-    { type: 'range', key: 'e', label: 'Restitution e', min: 0, max: 1, step: 0.01 },
-    { type: 'range', key: 'mu', label: 'Contact friction μ', min: 0, max: 1, step: 0.01, note: 'Friction at contacts and walls turns sliding into spin.' },
-    { type: 'range', key: 'drag', label: 'Air drag', min: 0, max: 2, step: 0.01, unit: '/s' },
-    { type: 'range', key: 'radius', label: 'Radius of new balls', min: 3, max: 30, step: 1, unit: 'px' },
+    { type: 'seg', key: 'colorBy', label: 'Colour balls by', options: [['speed', 'Speed'], ['mass', 'Mass'], ['spin', 'Spin']], group: 'display' },
+    { type: 'range', key: 'count', label: 'Number of balls', min: 20, max: 1200, step: 10, rebuild: true, group: 'setup' },
+    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²', group: 'physics' },
+    { type: 'range', key: 'e', label: 'Restitution e', min: 0, max: 1, step: 0.01, group: 'physics' },
+    { type: 'range', key: 'mu', label: 'Contact friction μ', min: 0, max: 1, step: 0.01, note: 'Friction at contacts and walls turns sliding into spin.', group: 'physics' },
+    { type: 'range', key: 'drag', label: 'Air drag', min: 0, max: 2, step: 0.01, unit: '/s', group: 'physics' },
+    { type: 'range', key: 'radius', label: 'Radius of new balls', min: 3, max: 30, step: 1, unit: 'px', group: 'spawn' },
   ],
   actions: [
     { label: 'Shake the box', run() { const c = collisions; for (let i = 0; i < c.n; i++) { const a = rand(0, TAU), s = rand(150, 400); c.vx[i] += s * Math.cos(a); c.vy[i] += s * Math.sin(a); } c.KE0 = c.stats().etot; } },

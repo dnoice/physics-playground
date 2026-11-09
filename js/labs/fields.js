@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.1)
+    - Title: Fields Lab (digiSpace Edition - v2.3)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
+      are grouped into Forces, New particles and Display, with short names for
+      the display switches.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig and tool overlay; the energy baseline follows charge edits, and
       the beam clock is captured.
@@ -107,20 +110,25 @@ export const fields = {
     { id: 'exb', label: 'E × B drift', params: { B: 1.5, gradB: 0, E0: 60, beam: false, qm: 1 } },
     { id: 'gradb', label: 'Grad-B drift', params: { B: 1.5, gradB: 0.8, E0: 0, beam: false, qm: 1 } },
   ],
+  groups: [
+    { id: 'forces', label: 'Forces', icon: 'balance' },
+    { id: 'spawn', label: 'New particles', icon: 'add_circle' },
+    { id: 'display', label: 'Display', icon: 'visibility' },
+  ],
   controls: [
-    { type: 'range', key: 'k', label: 'Charge strength k', min: 0.1, max: 3, step: 0.05, fmt: v => v.toFixed(2) + '×' },
-    { type: 'range', key: 'B', label: 'Magnetic field B', min: -3, max: 3, step: 0.05, fmt: v => (v === 0 ? '0' : (v > 0 ? '⊗ ' : '⊙ ') + Math.abs(v).toFixed(2)), note: '⊗ points into the screen, ⊙ out of it.' },
-    { type: 'range', key: 'gradB', label: 'B gradient (down the screen)', min: 0, max: 0.9, step: 0.05, fmt: v => '±' + Math.round(v * 100) + '%' },
-    { type: 'range', key: 'E0', label: 'Uniform field E₀ (down)', min: -150, max: 150, step: 5, unit: 'px/s²' },
-    { type: 'range', key: 'qm', label: 'Charge-to-mass |q|/m of new particles', min: 0.2, max: 4, step: 0.1, fmt: v => v.toFixed(1) },
-    { type: 'seg', key: 'sign', label: 'Sign of new particles', options: [[1, '+ positive'], [-1, '− negative']] },
-    { type: 'range', key: 'v0', label: 'Beam speed', min: 20, max: 400, step: 5, unit: 'px/s' },
-    { type: 'toggle', key: 'beam', label: 'Fire a beam from the left edge' },
-    { type: 'toggle', key: 'map', label: 'Show potential map' },
-    { type: 'toggle', key: 'equip', label: 'Show equipotentials' },
-    { type: 'toggle', key: 'lines', label: 'Show field lines' },
-    { type: 'toggle', key: 'vectors', label: 'Show field vectors' },
-    { type: 'toggle', key: 'trails', label: 'Show particle trails' },
+    { type: 'range', key: 'k', label: 'Charge strength k', min: 0.1, max: 3, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'forces' },
+    { type: 'range', key: 'B', label: 'Magnetic field B', min: -3, max: 3, step: 0.05, fmt: v => (v === 0 ? '0' : (v > 0 ? '⊗ ' : '⊙ ') + Math.abs(v).toFixed(2)), note: '⊗ points into the screen, ⊙ out of it.', group: 'forces' },
+    { type: 'range', key: 'gradB', label: 'B gradient (down the screen)', min: 0, max: 0.9, step: 0.05, fmt: v => '±' + Math.round(v * 100) + '%', group: 'forces' },
+    { type: 'range', key: 'E0', label: 'Uniform field E₀ (down)', min: -150, max: 150, step: 5, unit: 'px/s²', group: 'forces' },
+    { type: 'range', key: 'qm', label: 'Charge-to-mass |q|/m of new particles', min: 0.2, max: 4, step: 0.1, fmt: v => v.toFixed(1), group: 'spawn' },
+    { type: 'seg', key: 'sign', label: 'Sign of new particles', options: [[1, '+ positive'], [-1, '− negative']], group: 'spawn' },
+    { type: 'range', key: 'v0', label: 'Beam speed', min: 20, max: 400, step: 5, unit: 'px/s', group: 'spawn' },
+    { type: 'toggle', key: 'beam', label: 'Fire a beam from the left edge', group: 'spawn', short: 'Beam from the left' },
+    { type: 'toggle', key: 'map', label: 'Show potential map', group: 'display', short: 'Potential map' },
+    { type: 'toggle', key: 'equip', label: 'Show equipotentials', group: 'display', short: 'Equipotentials' },
+    { type: 'toggle', key: 'lines', label: 'Show field lines', group: 'display', short: 'Field lines' },
+    { type: 'toggle', key: 'vectors', label: 'Show field vectors', group: 'display', short: 'Field vectors' },
+    { type: 'toggle', key: 'trails', label: 'Show particle trails', group: 'display', short: 'Particle trails' },
   ],
   actions: [
     { label: 'Clear particles', run() { fields.clearParticles(); } },

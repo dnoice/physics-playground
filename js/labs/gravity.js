@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.1)
+    - Title: Gravity Lab (digiSpace Edition - v2.3)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
+      are grouped into Physics, New bodies, Display and View, with short names
+      for the switches.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       global mode replaces the 3D switch; energy accounting survives culls,
       retrograde inclination reads true, snapshots carry parameters.
@@ -102,18 +105,24 @@ export const gravity = {
     { id: 'tilted', label: 'Tilted orbits', params: { G: 1, soft: 4, merge: true, zoom: 0.85, follow: true, incl: 40 } },
     { id: 'empty', label: 'Empty sky', params: { incl: 0, zoom: 1, follow: true } },
   ],
+  groups: [
+    { id: 'physics', label: 'Physics', icon: 'balance' },
+    { id: 'spawn', label: 'New bodies', icon: 'add_circle' },
+    { id: 'display', label: 'Display', icon: 'visibility' },
+    { id: 'view', label: 'View', icon: 'fit_screen' },
+  ],
   controls: [
-    { type: 'range', key: 'G', label: 'Gravity strength G', min: 0.1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + '×' },
-    { type: 'range', key: 'soft', label: 'Softening length ε', min: 0.5, max: 30, step: 0.5, unit: 'px' },
-    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes has mass 1000.', fmt: v => v.toPrecision(3).replace(/\.?0+$/, '') },
-    { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: TRAIL_CAP, step: 10, fmt: v => (v / 60).toFixed(1) + ' s' },
-    { type: 'range', key: 'zoom', label: 'Zoom', min: 0.1, max: 40, log: true, fmt: v => v.toFixed(v >= 10 ? 1 : 2) + '×' },
-    { type: 'toggle', key: 'merge', label: 'Merge bodies on contact' },
-    { type: 'toggle', key: 'trails', label: 'Show trails' },
-    { type: 'toggle', key: 'follow', label: 'Keep centre of mass in view' },
-    { type: 'toggle', key: 'vectors', label: 'Show velocity vectors' },
-    { type: 'toggle', key: 'field', label: 'Show potential field' },
-    { type: 'range', key: 'incl', label: 'Tilt of new orbits', min: 0, max: 90, step: 1, unit: '°', note: 'Bodies dropped with a click or added from the panel get a random tilt up to this angle.' },
+    { type: 'range', key: 'G', label: 'Gravity strength G', min: 0.1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'physics' },
+    { type: 'range', key: 'soft', label: 'Softening length ε', min: 0.5, max: 30, step: 0.5, unit: 'px', group: 'physics' },
+    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes has mass 1000.', fmt: v => v.toPrecision(3).replace(/\.?0+$/, ''), group: 'spawn' },
+    { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: TRAIL_CAP, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
+    { type: 'range', key: 'zoom', label: 'Zoom', min: 0.1, max: 40, log: true, fmt: v => v.toFixed(v >= 10 ? 1 : 2) + '×', group: 'view' },
+    { type: 'toggle', key: 'merge', label: 'Merge bodies on contact', group: 'physics', short: 'Merge on contact' },
+    { type: 'toggle', key: 'trails', label: 'Show trails', group: 'display', short: 'Trails' },
+    { type: 'toggle', key: 'follow', label: 'Keep centre of mass in view', group: 'view', short: 'Follow the centre of mass' },
+    { type: 'toggle', key: 'vectors', label: 'Show velocity vectors', group: 'display', short: 'Velocity vectors' },
+    { type: 'toggle', key: 'field', label: 'Show potential field', group: 'display', short: 'Potential field' },
+    { type: 'range', key: 'incl', label: 'Tilt of new orbits', min: 0, max: 90, step: 1, unit: '°', note: 'Bodies dropped with a click or added from the panel get a random tilt up to this angle.', group: 'spawn' },
   ],
   actions: [
     { label: 'Add an orbiting body', run() { gravity.addRandom(); } },

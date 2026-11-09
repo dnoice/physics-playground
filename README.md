@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.2)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.3)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.2.0
+    - Version: 2.3.0
     - Date: 11/09/2026
     - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      Described the sectioned Controls page and the new Chaos phase view,
+      with its gallery picture; release badge 2.3.0.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Rebuilt
       the presentation on Dennis's direction: a banner, themed badges,
       framed screenshots of the workspace, a gallery of the labs and the
@@ -57,7 +60,7 @@ Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.2.0][badge-release]](CHANGELOG.md)
+[![Release 2.3.0][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
 <br>
 [![ES modules, no build step][badge-esm]](ARCHITECTURE.md#principles)
@@ -124,9 +127,10 @@ captured in 3D straight from the playground.
     </td>
     <td width="50%" valign="top">
       <img src="docs/media/lab-chaos.webp" width="100%"
-        alt="Chaos in 3D: double pendulums on a slate dial in a brass bezel">
-      <br><b>5 · Chaos</b> ✦ Double pendulums started a hair apart, on a
-      slate dial in a brass bezel.
+        alt="Chaos in 3D: the pendulum on its brass dial beside the phase
+          screen, previewing a start">
+      <br><b>5 · Chaos</b> ✦ Double pendulums started a hair apart, beside
+      the map of their angles and the energy that fences them in.
     </td>
   </tr>
   <tr>
@@ -151,7 +155,7 @@ captured in 3D straight from the playground.
 | 2 | Collisions | Hard discs with restitution and contact friction | Ideal gas, Gravity pile, Billiard break, Brownian motion |
 | 3 | Fluid | Smoothed-particle hydrodynamics with a GPU liquid surface | Dam break, Obstacle course, Droplet splash, Twin columns, Zero-g collision |
 | 4 | Waves | The 2-D wave equation on a grid | Open tank, Double slit, Single slit, Two sources, Phased array, Glass lens, Moving source |
-| 5 | Chaos | Double pendulums started a hair apart | Sensitive start, Near inverted, Small swing, Normal mode |
+| 5 | Chaos | Double pendulums started a hair apart, and the map of their angles on the energy landscape | Sensitive start, Near inverted, Small swing, Normal mode |
 | 6 | Cloth | Verlet cloth that stretches, tears and can be cut | Curtain, Hammock, Flag in wind, Fragile net |
 | 7 | Fields | Point charges, potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
 
@@ -242,7 +246,11 @@ full-height Inspector beside them.
   simulation's health, with the top alert and its fix beside it; click it for
   the full list.
 - **Inspector**: the lab's formula above five tabs: Controls, Experiments,
-  Guide, Math and Library. A disabled control says why underneath.
+  Guide, Math and Library. Controls opens with the lab's quick actions, then
+  its settings in sections such as Setup, Physics and Display. Fold a
+  section away, or use its **Reset** to return it to the scene's values; a
+  section whose changes restart the run says so once. A disabled control
+  says why underneath.
 - **Details**: click a body in Gravity, a ball in Collisions or, with Move, a
   particle in Fields, and a card opens at the top of the Inspector with its
   live stats. Gravity shows a rendered portrait of the body and its orbit:
@@ -343,7 +351,7 @@ and how to add a lab, a tool or an experiment.
 | `npm run site` | Stage the Pages site in `_site/` and prove every reference resolves |
 | `npm run verify` | Lint, check and site: the same gate the Pages workflow runs |
 | `npm test` | Run every browser suite against the running dev server |
-| `npm run media` | Recapture the README banner and screenshots from the running dev server |
+| `npm run media` | Capture the README banner and screenshots from the running dev server; `npm run media -- --headed` renders on the GPU and is much faster |
 
 Install the dev tools with `npm ci`, which installs exactly the versions in
 `package-lock.json`. The browser suites and the media capture need Python 3
@@ -417,7 +425,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.2.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.3.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

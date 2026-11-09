@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.1)
+    - Title: Panel Builder (digiSpace Edition - v2.3)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
+      are laid out in sections on Dennis's call for a more intuitive and
+      cohesive panel: each with a glyph, a fold that is remembered, a Reset
+      that appears once a value leaves the scene's, and one restart note
+      instead of one per slider. Switches share a grid with short names, and
+      actions move to the top as quick actions.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
       control write refreshes disabled states, through one path.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -21,14 +27,21 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Builds the Scene and Parameters tiles, the guide and math notebook
-    pages, the readouts and the chart for the active lab.
+    Builds the Controls page, the guide and math notebook pages, the readouts
+    and the chart for the active lab. Controls are grouped into the sections
+    the lab declares, with quick actions above them.
 
 ✒ Key Features:
-    - Range sliders with typed entry, reset and log scales; segmented
-      choices; switches.
-    - Sliders and switches honour the lab's enabled() and show the reason
-      when disabled.
+    - Range sliders with typed entry, reset and log scales; segmented choices;
+      switches.
+    - Sections from the lab's groups list: a glyph and title, a remembered
+      fold, Reset to the scene's values, and one note when changes restart the
+      run.
+    - Switches sit in a grid under their section, with short names and the
+      full name as tooltip.
+    - Quick actions first, where they are seen without scrolling.
+    - Sliders and switches honour the lab's enabled() and show the reason when
+      disabled.
     - Formula cards typeset with KaTeX; readouts update in place.
 
 ✒ Other Important Information:
@@ -40,7 +53,7 @@
 */
 import { canvasContext, chartMessage } from '../core/chart.js';
 import { typeset } from '../core/tex.js';
-import { $, clamp, decimalsFor, el, reduceMotion } from '../core/util.js';
+import { $, clamp, decimalsFor, el, reduceMotion, store } from '../core/util.js';
 import { evaluateDiagnostics } from './diagnostics.js';
 import { drawScope, resetGauges, scopeOn, updateGauges } from './instruments.js';
 import { renderExperiments } from './experiments.js';
@@ -50,12 +63,17 @@ import { active, announce, ui } from './state.js';
 
 /* ---------- controls ---------- */
 export const RESET_SVG = '<span class="ms" aria-hidden="true">restart_alt</span>';
-export function syncControl(key) { const f = ui.sync.get(key); if (f) f(); }
+export function syncControl(key) { const f = ui.sync.get(key); if (f) f(); refreshGroups(); }
 export function syncPanel() { for (const f of ui.sync.values()) f(); refreshEnabled(); }
 export function refreshEnabled() {
   if (!active) return;
   for (const [key, fn] of ui.enable) { const s = active.enabled ? active.enabled(key) : true; fn(s === undefined ? true : s); }
+  refreshGroups();
 }
+/* Each section's Reset shows only while one of its values differs from the scene's. */
+const groupResets = [];
+function refreshGroups() { for (const f of groupResets) f(); }
+const sameValue = (a, b) => (typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) <= Math.max(1e-12, Math.abs(b) * 1e-9) : a === b);
 export function radioGroup(label, options, get, set, idBase, cls = 'seg') {
   const group = el('div', { class: cls, role: 'radiogroup', 'aria-label': label });
   const buttons = options.map(([value, text]) => {
@@ -144,8 +162,9 @@ export function buildControl(lab, c) {
   const id = `ctl-${lab.id}-${c.key}`;
   if (c.type === 'toggle') {
     const note = el('span', { class: 'switch-note' });
-    const btn = el('button', { type: 'button', role: 'switch', class: 'switch', id },
-      el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-thumb' })), el('span', { class: 'switch-text' }, el('span', { text: c.label }), note));
+    // In a section the heading carries the context, so a switch may show a shorter name; the full one stays as its tooltip.
+    const btn = el('button', { type: 'button', role: 'switch', class: 'switch', id, title: c.short ? c.label : null },
+      el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-thumb' })), el('span', { class: 'switch-text' }, el('span', { text: c.short || c.label }), note));
     const set = () => btn.setAttribute('aria-checked', String(!!lab.p[c.key]));
     btn.addEventListener('click', () => setParam(lab, c.key, !lab.p[c.key]));
     set(); ui.sync.set(c.key, set);
@@ -160,6 +179,53 @@ export function buildControl(lab, c) {
   }
   return null;
 }
+/* ---------- control sections ---------- */
+/* A lab lists its sections in groups ({ id, label, icon }) and tags each control with one; anything untagged lands
+   in a closing "More" section so no control can go missing. A lab with no groups gets one section. */
+export function panelGroups(lab) {
+  if (!lab.groups) return [{ id: 'all', label: 'Controls', icon: 'tune', controls: lab.controls }];
+  const ids = new Set(lab.groups.map(g => g.id)), out = lab.groups.map(g => ({ ...g, controls: lab.controls.filter(c => c.group === g.id) }));
+  const loose = lab.controls.filter(c => !ids.has(c.group));
+  if (loose.length) out.push({ id: 'more', label: 'More', icon: 'tune', controls: loose });
+  return out.filter(g => g.controls.length);
+}
+function buildGroup(lab, g) {
+  const id = `pg-${lab.id}-${g.id}`, key = `${lab.id}.${g.id}`;
+  const body = el('div', { class: 'pgroup-body', id: id + '-body' });
+  for (const c of g.controls.filter(c => c.type !== 'toggle')) { const n = buildControl(lab, c); if (n) body.append(n); }
+  const switches = g.controls.filter(c => c.type === 'toggle').map(c => buildControl(lab, c)).filter(Boolean);
+  if (switches.length) body.append(el('div', { class: 'pgroup-switches' }, ...switches));
+  const toggle = el('button', { type: 'button', class: 'pgroup-toggle', id, 'aria-expanded': 'true', 'aria-controls': body.id },
+    el('span', { class: 'ms pgroup-ico', 'aria-hidden': 'true', text: g.icon || 'tune' }), el('span', { class: 'pgroup-title', text: g.label }),
+    el('span', { class: 'ms pgroup-chev', 'aria-hidden': 'true', text: 'expand_more' }));
+  const reset = el('button', { type: 'button', class: 'pgroup-reset', hidden: true, html: `${RESET_SVG}<span>Reset</span>`, 'aria-label': `Reset ${g.label} to the scene's values`, title: "Back to the scene's values" });
+  // A section whose changes start the run again says so once, instead of a note under every slider.
+  const note = g.controls.some(c => c.rebuild) ? el('p', { class: 'pgroup-note', text: 'Changes here restart the run.' }) : null;
+  const sec = el('section', { class: 'pgroup', 'aria-labelledby': id, 'data-group': g.id }, el('div', { class: 'pgroup-head' }, toggle, reset), ...(note ? [note] : []), body);
+  const fold = f => { toggle.setAttribute('aria-expanded', String(!f)); body.hidden = f; if (note) note.hidden = f; sec.classList.toggle('is-folded', f); };
+  fold(!!store.get('folded', {})[key]);
+  toggle.addEventListener('click', () => {
+    const f = toggle.getAttribute('aria-expanded') === 'true', all = store.get('folded', {});
+    fold(f); if (f) all[key] = true; else delete all[key]; store.set('folded', all);
+  });
+  const keys = g.controls.map(c => c.key).filter(k => k in lab.sceneP), differs = () => keys.filter(k => !sameValue(lab.p[k], lab.sceneP[k]));
+  groupResets.push(() => { reset.hidden = !differs().length; });
+  reset.addEventListener('click', () => {
+    const changed = differs();
+    if (!changed.length) return;
+    let restart = false;
+    for (const k of changed) {
+      const c = g.controls.find(x => x.key === k);
+      lab.p[k] = lab.sceneP[k];
+      if (c.rebuild) restart = true; else if (lab.onParam) lab.onParam(k, lab.p[k]);
+    }
+    if (restart) rebuild(lab);
+    syncPanel(); evaluateDiagnostics(); toggle.focus();
+    announce(`${g.label} set back to the scene's values`);
+  });
+  return sec;
+}
+
 /* ---------- tiles: scene, parameters, guide, math, chart, readouts ---------- */
 export function buildPanel(lab) {
   ui.sync.clear(); ui.enable.clear();
@@ -169,13 +235,12 @@ export function buildPanel(lab) {
   ui.sync.set('__preset', pg.update);
   $('#scene-menu').replaceChildren(pg.group);
   $('#scene-body').replaceChildren(el('h2', { text: lab.title }), eq);
+  groupResets.length = 0;
   const grid = el('div', { class: 'params' });
-  const ranges = lab.controls.filter(c => c.type !== 'toggle'), toggles = lab.controls.filter(c => c.type === 'toggle');
-  for (const c of ranges) { const n = buildControl(lab, c); if (n) grid.append(n); }
-  for (const c of toggles) { const n = buildControl(lab, c); if (n) grid.append(n); }
-  const kids = [grid];
-  if (lab.actions && lab.actions.length) kids.push(el('div', { class: 'actions' }, ...lab.actions.map(a => el('button', { type: 'button', class: 'btn', text: a.label, onclick: () => { a.run(); announce(a.label); evaluateDiagnostics(); } }))));
-  $('#params-body').replaceChildren(...kids);
+  // Actions act on the run now, so they sit first, where they are seen without scrolling past every slider.
+  if (lab.actions && lab.actions.length) grid.append(el('div', { class: 'quick', role: 'group', 'aria-label': 'Quick actions' }, ...lab.actions.map(a => el('button', { type: 'button', class: 'btn btn-quick', text: a.label, onclick: () => { a.run(); announce(a.label); evaluateDiagnostics(); } }))));
+  for (const g of panelGroups(lab)) grid.append(buildGroup(lab, g));
+  $('#params-body').replaceChildren(grid);
   $('#chart-title').textContent = lab.chart ? lab.chart.title : 'Chart';
   $('#chart').setAttribute('aria-label', lab.chart ? lab.chart.title : 'No chart for this lab');
   $('#chart-caption').textContent = lab.chart ? lab.chart.caption : '';

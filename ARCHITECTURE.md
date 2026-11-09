@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.2)
+    - Title: Architecture Guide (digiSpace Edition - v2.3)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.2.0
+    - Version: 2.3.0
     - Date: 11/09/2026
     - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      Documented control sections (groups, group and short), the keep()
+      hook and restart(), the Controls page, and the Chaos phase view.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
       the Deployment section for the GitHub Pages pipeline Dennis asked to
       harden, recipes for the README pictures and new CDN hosts, the
@@ -98,7 +101,7 @@ flowchart TB
 | Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, tools, camera, input, loop, modes, instruments, details, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
-`sticky`, `setParam`, `rebuild`, `syncControl`, `refreshEnabled`,
+`sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
 `updateDock`, `updateNav`, and the camera readers `camOf` and `camXf`.
 They never build shell UI themselves.
 
@@ -147,7 +150,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `eq`, `eqTex` | Equation for the rail (HTML) and the Scene tile (TeX) |
 | `blurb`, `interact[]` | Guide page text: what the lab shows and how to interact |
 | `p`, `presetId`, `presets[]` | Parameters, the current scene, and scenes as `{ id, label, params }` |
-| `controls[]` | `range`, `seg` and `toggle` controls bound to keys of `p` |
+| `controls[]` | `range`, `seg` and `toggle` controls bound to keys of `p`; each names its section with `group`, and a switch may add a `short` name |
 | `dt()`, `maxSteps` | Fixed time step and the per-frame step cap |
 | `build(presetId, w, h)` | Create the scene for a stage of size w × h |
 | `step(dt)` | Advance one fixed step |
@@ -163,7 +166,9 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `dock`, `pointerDown`, `pointerMove`, `pointerUp`, `pointerCancel`, `cursorAt` | Tools on the stage; points arrive in world units unless `screenInput` is set, in 3D through a ray onto the simulation plane. `pointerCancel` drops the gesture without committing it |
 | `rig3`, `tilt3()`, `overlay3(g, w, h)` | Where the plane stands in 3D, its angle if it moves, and screen overlays drawn after the frame |
 | `zoomRange` | `[lo, hi]` zoom limits for the 2D camera |
-| `actions[]` | Buttons under the parameters |
+| `groups[]` | The Controls page's sections in order, as `{ id, label, icon }`; a lab without them gets one section |
+| `actions[]` | Quick actions, shown first on the Controls page |
+| `keep()` | The user's edits to the world that a parameter-driven rebuild should carry over; `build()` reads them back from `lab.kept` (Fluid's posts) |
 | `enabled(key)` | `true`, or a sentence saying why a control is disabled right now |
 | `onParam(key, value)`, `onResize(w, h, ow, oh)`, `after(simDt)` | React to changes |
 | `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, scale bar units |
@@ -232,6 +237,12 @@ key, a polished floor with a planar reflection, and a backdrop the floor
 dissolves into. Rim light lives in the softboxes rather than in lights, so it
 edges the apparatus without a streak across the floor.
 
+A scene can reuse the lab's own 2D drawing instead of rebuilding it in
+three.js. The Chaos phase view paints `drawPhase` onto a screen whose face
+lies exactly over the map's world rectangle on the simulation plane, so
+`pick3` lands clicks and the hover preview on the same angles as in 2D, and
+the scene needs no picking code of its own.
+
 ### Graphics tiers
 
 `js/core/tiers.js` holds the ladder and the device probe, and needs no
@@ -249,6 +260,22 @@ A failed three.js import or missing WebGL 2 keeps the workspace in 2D, disables
 the 3D switch with the reason and adds an insight. A lost WebGL context drops
 to 2D and returns when the context does. A scene that throws sends only its
 own lab back to 2D. The simulation never notices any of this.
+
+## Controls and rebuilds
+
+`js/shell/panel.js` builds the Controls page from the lab: its quick actions
+first, then one section per entry in `groups`, each holding the controls
+whose `group` names it, sliders and choices first and switches in a grid
+below. A section folds (remembered per lab), shows **Reset** while any of its
+values differs from the scene's, and carries one "Changes here restart the
+run" note when a control in it has `rebuild`. Untagged controls land in a
+closing "More" section, so a control can never go missing.
+
+A change to a control with `rebuild` restarts the run through
+`rebuild(lab)`, which keeps the user's edits: the lab's `keep()` hands them
+to `build()` as `lab.kept`, so Fluid's posts outlast a change of Particles.
+Loading a scene, Reset, recovering from a blown-up run and loading a saved
+state call `restart(lab)` instead, which rebuilds from the scene as written.
 
 ## Instruments
 
@@ -394,8 +421,9 @@ recorded.
 
 The banner and screenshots in `docs/media/` are captured from the running
 playground by `tools/media.py`. After a visible change, start the dev
-server and run `npm run media`, or `python tools/media.py --only labs` for
-one set. A new lab joins the gallery by adding a row to `LABS` in
+server and run `python tools/media.py --headed`, which renders on the GPU,
+or add `--only labs` for one set. Headless runs use software WebGL and are
+slow at the Ultra tier. A new lab joins the gallery by adding a row to `LABS` in
 `tools/media.py` and a cell to the gallery table in the README, then
 recapturing. [docs/media/MANIFEST.md](docs/media/MANIFEST.md) lists every
 picture.

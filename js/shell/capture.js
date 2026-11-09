@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Capture (digiSpace Edition - v2.1)
+    - Title: Capture (digiSpace Edition - v2.3)
     - File Name: capture.js
     - Relative Path: js/shell/capture.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Loading a
+      saved state rebuilds fresh before the state is restored.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Datasets
       stay one timeline across a rewind and name their own scene; saved
       states carry their world size; clips stop at 512 MB.
@@ -245,7 +247,7 @@ export async function loadState(item) {
     if (lab.presets.some(p => p.id === obj.preset)) lab.presetId = obj.preset;
     Object.assign(lab.p, obj.params || {});
     lab.sceneP = { ...lab.p };
-    rebuild(lab, obj.built);
+    rebuild(lab, obj.built, { fresh: true });
     const ok = lab.deserialize(obj.state);
     if (ok) lab.t = +obj.t || 0;
     histReset(lab); histCapture(lab, true);

@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.1)
+    - Title: Transport and Keys (digiSpace Edition - v2.3)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Reset
+      restarts the scene clean through restart(), so edits a parameter rebuild
+      keeps never survive it.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Space
       reaches play and pause after a mouse click; held keys act once;
       CapsLock no longer swaps b and Shift+B; added Z.
@@ -44,7 +47,7 @@ import { is3D, navFrame, navPan, navZoomBy } from './camera.js';
 import { histBranch, histCapture, rewindStep, toggleData, toggleVideo, updateRewind } from './capture.js';
 import { evaluateDiagnostics } from './diagnostics.js';
 import { selectDock } from './dock.js';
-import { rebuild } from './lifecycle.js';
+import { restart } from './lifecycle.js';
 import { advance } from './loop.js';
 import { drawChart, rangeMap, updateReadouts } from './panel.js';
 import { ptr, refreshCursor } from './stage.js';
@@ -73,7 +76,7 @@ export function play() { histBranch(active); state.running = true; perf.slow = 0
 export function pause() { state.running = false; updatePlay(); announce('Paused'); }
 export function togglePlay() { state.running ? pause() : play(); }
 export function stepOnce() { if (state.running) pause(); histBranch(active); advance(active, 1 / 60, Infinity); histCapture(active); updateReadouts(); drawChart(); updateRewind(); }
-export function resetActive() { rebuild(active); updateReadouts(); drawChart(); evaluateDiagnostics(); announce(`${active.title} restarted`); }
+export function resetActive() { restart(active); updateReadouts(); drawChart(); evaluateDiagnostics(); announce(`${active.title} restarted`); }
 /* Whether the focused element got focus from a press. A clicked button keeps focus, but Space then
    means play and pause; focus that arrived any other way, by Tab, arrows or from code, keeps Space. */
 let pointerFocus = false, pressing = false;

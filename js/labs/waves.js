@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.1)
+    - Title: Waves Lab (digiSpace Edition - v2.3)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
+      are grouped into Medium, Sources and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       global mode replaces Relief 3D; added the 3D rig and tool overlay;
       stronger absorbers and a resize that keeps the tank.
@@ -86,17 +88,22 @@ export const waves = {
     { id: 'lens', label: 'Glass lens', params: { f: 4, glassN: 1.6, srcSpeed: 0, phaseStep: 0 } },
     { id: 'doppler', label: 'Moving source', params: { f: 3, srcSpeed: 0.6, phaseStep: 0 } },
   ],
+  groups: [
+    { id: 'medium', label: 'Medium', icon: 'balance' },
+    { id: 'sources', label: 'Sources', icon: 'radar' },
+    { id: 'display', label: 'Display', icon: 'visibility' },
+  ],
   controls: [
-    { type: 'seg', key: 'view', label: 'View', options: [['disp', 'Displacement'], ['int', 'Intensity']] },
-    { type: 'range', key: 'c', label: 'Wave speed c', min: 20, max: 120, step: 1, unit: 'cells/s' },
-    { type: 'range', key: 'f', label: 'Source frequency f', min: 0.5, max: 8, step: 0.1, unit: 'Hz' },
-    { type: 'range', key: 'phaseStep', label: 'Source phase step Δφ', min: -180, max: 180, step: 1, unit: '°', note: 'Each point source lags the one before it by Δφ.' },
-    { type: 'range', key: 'srcSpeed', label: 'Source speed', min: 0, max: 1.8, step: 0.01, fmt: v => v.toFixed(2) + '× c' },
-    { type: 'range', key: 'glassN', label: 'Glass refractive index n', min: 1.1, max: 2.5, step: 0.05 },
-    { type: 'range', key: 'damp', label: 'Damping γ', min: 0, max: 1.5, step: 0.01, unit: '/s' },
-    { type: 'range', key: 'gain', label: 'Display gain', min: 0.25, max: 4, log: true, fmt: v => v.toFixed(2) + '×' },
-    { type: 'range', key: 'relief', label: 'Relief height', min: 0.25, max: 4, log: true, fmt: v => v.toFixed(2) + '×', note: 'Vertical exaggeration of the 3D surface.' },
-    { type: 'toggle', key: 'absorb', label: 'Absorbing edges' },
+    { type: 'seg', key: 'view', label: 'View', options: [['disp', 'Displacement'], ['int', 'Intensity']], group: 'display' },
+    { type: 'range', key: 'c', label: 'Wave speed c', min: 20, max: 120, step: 1, unit: 'cells/s', group: 'medium' },
+    { type: 'range', key: 'f', label: 'Source frequency f', min: 0.5, max: 8, step: 0.1, unit: 'Hz', group: 'sources' },
+    { type: 'range', key: 'phaseStep', label: 'Source phase step Δφ', min: -180, max: 180, step: 1, unit: '°', note: 'Each point source lags the one before it by Δφ.', group: 'sources' },
+    { type: 'range', key: 'srcSpeed', label: 'Source speed', min: 0, max: 1.8, step: 0.01, fmt: v => v.toFixed(2) + '× c', group: 'sources' },
+    { type: 'range', key: 'glassN', label: 'Glass refractive index n', min: 1.1, max: 2.5, step: 0.05, group: 'medium' },
+    { type: 'range', key: 'damp', label: 'Damping γ', min: 0, max: 1.5, step: 0.01, unit: '/s', group: 'medium' },
+    { type: 'range', key: 'gain', label: 'Display gain', min: 0.25, max: 4, log: true, fmt: v => v.toFixed(2) + '×', group: 'display' },
+    { type: 'range', key: 'relief', label: 'Relief height', min: 0.25, max: 4, log: true, fmt: v => v.toFixed(2) + '×', note: 'Vertical exaggeration of the 3D surface.', group: 'display' },
+    { type: 'toggle', key: 'absorb', label: 'Absorbing edges', group: 'medium' },
   ],
   actions: [
     { label: 'Calm the water', run() { waves.u.fill(0); waves.u0.fill(0); waves.inten.fill(0); } },

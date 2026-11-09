@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: README Media Capture (digiSpace Edition - v2.2)
+    - Title: README Media Capture (digiSpace Edition - v2.3)
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.2.0
+    - Version: 2.3.0
     - Date: 11/09/2026
     - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
+      --headed, which renders on the GPU, after the headless software run
+      proved too slow to finish in Dennis's session. Frames each picture only
+      after its app page closes, and clips page screenshots instead of waiting
+      for elements to settle, which never happens under a fake clock on a busy
+      software renderer. The Chaos picture shows the new phase view.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's direction to give the README real screenshots with
       thematic borders.
@@ -52,6 +58,7 @@
     $ python tools/media.py http://localhost:8080/
     $ python tools/media.py --only banner,hero
     $ python tools/media.py --only labs
+    $ python tools/media.py --headed
     $ PP_MEDIA=/tmp/pp-media python tools/media.py
     $ PP_CHROME=/usr/bin/chromium python tools/media.py
 
@@ -62,6 +69,9 @@
     Processing:
         --only NAMES           Comma-separated subset of banner, hero, labs,
                                modes.
+        --headed               Open a visible browser that renders on the
+                               GPU; much faster than the default headless
+                               software rendering.
     Output:
         PP_MEDIA (environment) Output folder (default docs/media).
         PP_CHROME (environment) Browser binary (default Playwright's own).
@@ -71,8 +81,10 @@
       for npm test); Google Fonts reachable for the frame type and glyphs;
       the dev server reachable, with jsDelivr reachable from the browser
     - Compatible platforms: Windows, macOS and Linux
-    - Performance: software WebGL (SwiftShader), so results do not depend
-      on the GPU; the full set takes a few minutes.
+    - Performance: headless runs use software WebGL (SwiftShader), so they
+      work anywhere, but the Ultra tier at twice the pixel density is slow:
+      tens of minutes on a laptop CPU. --headed uses the GPU and is the
+      practical choice on a desktop. Leave the window alone while it runs.
     - Output is deterministic in layout but not bit for bit: the scenes
       seed some motion from the clock.
 """
@@ -90,15 +102,18 @@ OUT = os.environ.get('PP_MEDIA', os.path.join(ROOT, 'docs', 'media'))
 VIEW = {'width': 1440, 'height': 900}
 PP = 'PhysicsPlayground'
 
-# lab id, rail name, scene id, scene label, glyph, simulated seconds before the picture
+# lab id, rail name, scene id, scene label, glyph, simulated seconds before the picture, and a setup script run after
+# the scene loads. Chaos shows its phase view with the pointer resting on the map, so the start preview is in frame.
+CHAOS_SETUP = (f"{PP}.tool('phase'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
+               "const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
 LABS = [
-    ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0),
-    ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6),
-    ('fluid', 'Fluid', 'dam', 'Dam break', 'water_drop', 1.4),
-    ('waves', 'Waves', 'double', 'Double slit', 'airwave', 6.0),
-    ('chaos', 'Chaos', 'chaos', 'Sensitive start', 'cyclone', 9.0),
-    ('cloth', 'Cloth', 'flag', 'Flag in wind', 'texture', 4.0),
-    ('fields', 'Fields', 'cyclotron', 'Cyclotron motion', 'electric_bolt', 3.0),
+    ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0, None),
+    ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, None),
+    ('fluid', 'Fluid', 'dam', 'Dam break', 'water_drop', 1.4, None),
+    ('waves', 'Waves', 'double', 'Double slit', 'airwave', 6.0, None),
+    ('chaos', 'Chaos', 'chaos', 'Sensitive start · Phase space', 'cyclone', 9.0, CHAOS_SETUP),
+    ('cloth', 'Cloth', 'flag', 'Flag in wind', 'texture', 4.0, None),
+    ('fields', 'Fields', 'cyclotron', 'Cyclotron motion', 'electric_bolt', 3.0, None),
 ]
 GLYPHS = 'airwave,bubble_chart,coffee,cyclone,electric_bolt,orbit,texture,water_drop'
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600'
@@ -145,10 +160,12 @@ def b64(data):
 class Studio:
     """Pages for capturing the app and for framing and encoding pictures."""
 
-    def __init__(self, p, url):
+    def __init__(self, p, url, headed=False):
         self.url = url
-        self.browser = p.chromium.launch(executable_path=os.environ.get('PP_CHROME') or None,
-                                         args=['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+        # Headless runs use software WebGL, so they work anywhere but render the Ultra tier slowly; a headed window
+        # uses the machine's GPU.
+        args = ['--no-sandbox'] if headed else ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+        self.browser = p.chromium.launch(executable_path=os.environ.get('PP_CHROME') or None, headless=not headed, args=args)
         self.framer = self.browser.new_page(device_scale_factor=1)
 
     # ---------- the app ----------
@@ -164,6 +181,9 @@ class Studio:
         if mode == '3d':
             self.until(pg, f'{PP}.mode.is3D()', 'the 3D world')
         self.until(pg, "document.fonts.status === 'loaded' && document.fonts.check('20px \"Material Symbols Rounded\"')", 'the fonts')
+        # The rail glyphs animate on CSS time, which the fake clock does not hold; pausing them keeps the software
+        # compositor from redrawing a 2880-pixel page while nothing in the picture is moving.
+        pg.add_style_tag(content='*, *::before, *::after { animation-play-state: paused !important; }')
         return pg
 
     @staticmethod
@@ -177,9 +197,11 @@ class Studio:
             time.sleep(0.15)
 
     @staticmethod
-    def run(pg, scene, seconds):
+    def run(pg, scene, seconds, setup=None):
         """Load a scene, simulate it, then let the frame loop draw and the readouts catch up."""
         pg.evaluate(f"{PP}.preset('{scene}')")
+        if setup:
+            pg.evaluate(setup)
         pg.clock.run_for(200)
         # advance() takes at most maxSteps steps a call and drops the rest, as the frame loop does, so feed it in chunks.
         pg.evaluate(f"""s => {{ const L = {PP}.active, end = L.t + s, chunk = L.dt() * (L.maxSteps || 32);
@@ -207,8 +229,8 @@ class Studio:
         pg.evaluate('document.fonts.ready')
         pg.wait_for_function("document.fonts.check('20px \"Material Symbols Rounded\"') && document.fonts.check('700 20px Raleway')")
         pg.evaluate("Promise.all([...document.images].map(i => i.decode()))")
-        png = pg.locator('#shot').screenshot(omit_background=True)
-        pg.close()
+        png = pg.screenshot(clip=pg.locator('#shot').bounding_box(), omit_background=True, timeout=180000)
+        pg.context.close()
         return png
 
     def webp(self, png, name, quality=0.9):
@@ -234,25 +256,34 @@ def element_width(pg, selector):
     return round(pg.locator(selector).bounding_box()['width'])
 
 
+def grab(pg, selector=None):
+    """A page screenshot, clipped to an element when given one. Element screenshots wait for the element to hold
+    still across animation frames, and with the page clock faked those frames never come, so clip instead."""
+    clip = pg.locator(selector).bounding_box() if selector else None
+    return pg.screenshot(clip=clip, timeout=180000)
+
+
 def capture_labs(st, want):
-    """Hero (the whole workspace on Gravity), banner art, and the stage of each other lab for the gallery."""
+    """Hero (the whole workspace on Gravity), banner art, and the stage of each other lab for the gallery. Each app
+    page is closed before its pictures are framed, so the framing never competes with a live 3D page."""
     art = None
-    for lab, name, scene, label, glyph, seconds in LABS:
+    for lab, name, scene, label, glyph, seconds, setup in LABS:
         if not ({'labs', 'hero', 'banner'} & want) or (lab != 'gravity' and 'labs' not in want):
             continue
         log(f'{name}: {label}')
         pg = st.app(lab)
-        st.run(pg, scene, seconds)
-        if lab == 'gravity' and 'hero' in want:
-            st.webp(st.frame([(pg.screenshot(), VIEW['width'], 'Physics <em>Playground</em>', f'{name} · {label}', 'orbit', '3D · ULTRA')], 1.5), 'hero-workspace')
+        st.run(pg, scene, seconds, setup)
+        hero = grab(pg) if lab == 'gravity' and 'hero' in want else None
         if lab == 'gravity' and 'banner' in want:
             pg.add_style_tag(content='#stage > :not(canvas) { visibility: hidden !important; }')
             pg.clock.run_for(100)
-            art = pg.locator('#stage-canvas').screenshot()
-        if 'labs' in want and lab != 'gravity':
-            png = pg.locator('#stage').screenshot()
-            st.webp(st.frame([(png, element_width(pg, '#stage'), name, label, glyph, '3D')], 1), f'lab-{lab}')
+            art = grab(pg, '#stage-canvas')
+        tile = (grab(pg, '#stage'), element_width(pg, '#stage')) if 'labs' in want and lab != 'gravity' else None
         pg.context.close()
+        if hero:
+            st.webp(st.frame([(hero, VIEW['width'], 'Physics <em>Playground</em>', f'{name} · {label}', 'orbit', '3D · ULTRA')], 1.5), 'hero-workspace')
+        if tile:
+            st.webp(st.frame([(tile[0], tile[1], name, label, glyph, '3D')], 1), f'lab-{lab}')
     return art
 
 
@@ -263,11 +294,11 @@ def capture_modes(st):
     st.run(pg, 'double', 6.0)
     pg.evaluate(f'{PP}.pause()')
     pg.clock.run_for(300)
-    flat, width = pg.locator('#stage').screenshot(), element_width(pg, '#stage')
+    flat, width = grab(pg, '#stage'), element_width(pg, '#stage')
     pg.evaluate(f"{PP}.mode.set('3d')")
     st.until(pg, f'{PP}.mode.is3D()', 'the 3D world')
     pg.clock.run_for(1200)
-    deep = pg.locator('#stage').screenshot()
+    deep = grab(pg, '#stage')
     pg.context.close()
     st.webp(st.frame([(flat, width * 0.62, 'Waves', 'Double slit', 'airwave', '2D'),
                       (deep, width * 0.62, 'Waves', 'Double slit', 'airwave', '3D')], 1), 'modes-2d-3d')
@@ -276,18 +307,19 @@ def capture_modes(st):
 def capture_banner(st, art):
     """Title, tagline and the seven labs over a live 3D render of Gravity."""
     log('Banner')
-    rail = ''.join(f'<span class="lab{" on" if i == 0 else ""}"><span class="ms">{g}</span>{n}</span>' for i, (_, n, _, _, g, _) in enumerate(LABS))
+    rail = ''.join(f'<span class="lab{" on" if i == 0 else ""}"><span class="ms">{g}</span>{n}</span>' for i, (_, n, _, _, g, _, _) in enumerate(LABS))
     css = TOKENS + """
     #shot { position: relative; width: 1280px; height: 400px; border-radius: 22px; overflow: hidden; background: var(--ink);
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
     #shot::before { content: ''; position: absolute; inset: 0; padding: 2px; border-radius: 22px; z-index: 3; pointer-events: none;
       background: linear-gradient(120deg, var(--amber), color-mix(in oklab, var(--amber) 50%, var(--cyan)) 40%, var(--cyan));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-    .art { position: absolute; right: -40px; top: -30px; height: 470px;
+    .art { position: absolute; right: -120px; top: -60px; height: 520px; filter: brightness(1.22) saturate(1.1);
       -webkit-mask-image: radial-gradient(70% 82% at 64% 52%, #000 40%, transparent 78%); mask-image: radial-gradient(70% 82% at 64% 52%, #000 40%, transparent 78%); }
     .glow { position: absolute; inset: 0; background: radial-gradient(620px 300px at 6% -10%, color-mix(in oklab, var(--cyan) 13%, transparent), transparent 70%),
       linear-gradient(90deg, var(--ink) 30%, color-mix(in oklab, var(--ink) 55%, transparent) 52%, transparent 70%); }
-    .copy { position: absolute; left: 64px; top: 58px; z-index: 2; width: 720px; }
+    .copy { position: absolute; left: 64px; top: 0; bottom: 6px; z-index: 2; width: 720px;
+      display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
     .mark { display: flex; align-items: center; gap: 16px; }
     .mark .ms { font-size: 58px; color: var(--amber); filter: drop-shadow(0 0 22px color-mix(in oklab, var(--amber) 55%, transparent)); }
     h1 { margin: 0; font: 700 62px/1 Raleway, sans-serif; letter-spacing: -0.015em; color: var(--text); }
@@ -318,6 +350,7 @@ def main():
     ap = argparse.ArgumentParser(description='Capture the README banner and screenshots.')
     ap.add_argument('url', nargs='?', default=os.environ.get('PP_URL', 'http://localhost:5173/'))
     ap.add_argument('--only', default='banner,hero,labs,modes')
+    ap.add_argument('--headed', action='store_true', help='open a visible browser that renders on the GPU (much faster)')
     a = ap.parse_args()
     want = set(a.only.split(','))
     unknown = want - {'banner', 'hero', 'labs', 'modes'}
@@ -325,7 +358,7 @@ def main():
         sys.exit(f'unknown picture set: {", ".join(sorted(unknown))}')
     os.makedirs(OUT, exist_ok=True)
     with sync_playwright() as p:
-        st = Studio(p, a.url.rstrip('/') + '/')
+        st = Studio(p, a.url.rstrip('/') + '/', a.headed)
         try:
             art = capture_labs(st, want)
             if 'banner' in want:

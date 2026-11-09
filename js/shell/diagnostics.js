@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.1)
+    - Title: Diagnostics (digiSpace Edition - v2.3)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Recovery
+      from a blown-up run restarts the scene clean through restart().
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — No lab is
       named here any more; added the graphics tier insight.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -41,7 +43,7 @@ import { canvasContext } from '../core/chart.js';
 
 import { THEME } from '../core/color.js';
 import { $, el } from '../core/util.js';
-import { rebuild } from './lifecycle.js';
+import { restart } from './lifecycle.js';
 import { cheaperTier, in3D, pickTier } from './mode.js';
 
 import { syncPanel } from './panel.js';
@@ -77,7 +79,7 @@ export function evaluateDiagnostics() {
   if (!active) return;
   if (active.watchDraw) active.watchDraw(perf);
   if (active.sane && !active.sane()) {
-    rebuild(active);
+    restart(active);
     sticky({ id: 'nan', level: 'crit', title: 'The simulation blew up and was restarted', body: 'Some values became infinite or undefined, so the scene was rebuilt with the current settings. Pull the most extreme parameter back toward its notch to keep it stable.' }, 12);
   }
   let list = [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])];

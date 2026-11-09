@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.1)
+    - Title: Fluid Lab (digiSpace Edition - v2.3)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Posts
+      survive a rebuild that a parameter asks for, after Dennis found them
+      vanishing when Particles changed: keep() hands them over and build()
+      places them before the liquid. Controls are grouped into Setup, Physics
+      and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig and tool overlay; a seeded generator and Float64 snapshots make
       replay exact; GPU failure now says so.
@@ -28,6 +33,8 @@
 ✒ Key Features:
     - Dam break, obstacle course, droplet, twin columns and zero-g scenes.
     - Stir, push, pull, pour, obstacle and drain tools.
+    - Posts placed by hand outlast a change of Particles; a scene load or
+      Reset starts clean.
     - Diagnostics for compression and speed capping, with fixes.
 
 ✒ Other Important Information:
@@ -96,15 +103,20 @@ export const fluid = {
     { id: 'twin', label: 'Twin columns', params: { gravity: 900, tilt: 0 } },
     { id: 'zerog', label: 'Zero-g collision', params: { gravity: 0, tilt: 0 } },
   ],
+  groups: [
+    { id: 'setup', label: 'Setup', icon: 'flag' },
+    { id: 'physics', label: 'Physics', icon: 'balance' },
+    { id: 'display', label: 'Display', icon: 'visibility' },
+  ],
   controls: [
-    { type: 'seg', key: 'colorBy', label: 'Colour', options: [['water', 'Water'], ['speed', 'Speed'], ['density', 'Density']] },
-    { type: 'range', key: 'count', label: 'Particles', min: 300, max: 3000, step: 50, rebuild: true, note: 'Restarts the scene when released.' },
-    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²' },
-    { type: 'range', key: 'tilt', label: 'Gravity tilt', min: -90, max: 90, step: 1, unit: '°' },
-    { type: 'range', key: 'k', label: 'Stiffness k', min: 0.01, max: 0.2, step: 0.005, note: 'Higher values resist compression more.' },
-    { type: 'range', key: 'kNear', label: 'Near stiffness k-near', min: 0.005, max: 0.3, step: 0.005, note: 'Higher values spread the liquid into a lighter, foamier body.' },
-    { type: 'range', key: 'visc', label: 'Viscosity σ', min: 0, max: 0.8, step: 0.01 },
-    { type: 'toggle', key: 'surface', label: 'Liquid surface rendering (GPU)' },
+    { type: 'seg', key: 'colorBy', label: 'Colour', options: [['water', 'Water'], ['speed', 'Speed'], ['density', 'Density']], group: 'display' },
+    { type: 'range', key: 'count', label: 'Particles', min: 300, max: 3000, step: 50, rebuild: true, group: 'setup' },
+    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²', group: 'physics' },
+    { type: 'range', key: 'tilt', label: 'Gravity tilt', min: -90, max: 90, step: 1, unit: '°', group: 'physics' },
+    { type: 'range', key: 'k', label: 'Stiffness k', min: 0.01, max: 0.2, step: 0.005, note: 'Higher values resist compression more.', group: 'physics' },
+    { type: 'range', key: 'kNear', label: 'Near stiffness k-near', min: 0.005, max: 0.3, step: 0.005, note: 'Higher values spread the liquid into a lighter, foamier body.', group: 'physics' },
+    { type: 'range', key: 'visc', label: 'Viscosity σ', min: 0, max: 0.8, step: 0.01, group: 'physics' },
+    { type: 'toggle', key: 'surface', label: 'Liquid surface rendering (GPU)', group: 'display', short: 'Liquid surface (GPU)' },
   ],
   actions: [
     { label: 'Level the tank', run() { setParam(fluid, 'tilt', 0); } },
@@ -155,11 +167,15 @@ export const fluid = {
     }
     return c;
   },
+  /* The posts are the user's edit to the tank, so a rebuild that a parameter asks for carries them over. */
+  keep() { return { obs: this.obs.map(o => ({ ...o })) }; },
   build(preset, w, h) {
     this.setup(w, h); this.n = 0; this.series.clear(); this.lastSample = -1; this.ptr = null; this.obs = []; this.clamped = 0; this.ticks = 0; this.clampRate = 0; this.seed = rand(0, 4294967296) | 0;
     const s = this.spacing, A = s * s * Math.sqrt(3) / 2, N = Math.round(this.p.count), Wu = this.Wu, Hu = this.Hu, m = 0.45;
+    // Posts go in before the liquid, so no particle starts inside one; kept posts outside a smaller tank are dropped.
+    if (this.kept) this.obs = this.kept.obs.filter(o => o.x - o.r > m && o.x + o.r < Wu - m && o.y - o.r > m && o.y + o.r < Hu - m);
     if (preset === 'dam' || preset === 'posts') {
-      if (preset === 'posts') {
+      if (preset === 'posts' && !this.kept) {
         const r = 1.5;
         this.obs.push({ x: Wu * 0.55, y: Hu * 0.72, r }, { x: Wu * 0.7, y: Hu * 0.5, r }, { x: Wu * 0.84, y: Hu * 0.74, r }, { x: Wu * 0.62, y: Hu * 0.3, r: 1.1 });
       }
