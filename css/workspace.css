@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.1)
+    - Title: Workspace Styles (digiSpace Edition - v2.2)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      digiSpace Studio colophon Dennis asked for; the header now describes
+      the console layout.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       mode switch and Graphics menu, a scroll cue on tiles, and a taller
       Scene row.
@@ -20,14 +23,18 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Top bar, lab rail, icon buttons, the bento grid, tile chrome and the
-    keyboard sheet.
+    Top bar, lab rail, icon buttons, the console grid, tile chrome, the
+    keyboard sheet, the 2D and 3D switch with its Graphics menu, and the
+    colophon.
 
 ✒ Key Features:
-    - Five-column bento grid with focus and no-bay modes.
+    - Console grid: the stage over the instruments deck, beside a
+      full-height inspector, with focus, no-bay and tall-deck modes.
     - Tiles are containers for container queries and never widen their grid
       track.
     - Rail tabs reveal the equation of the selected lab.
+    - Colophon credit that wraps on narrow screens and hides in focus
+      mode.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -114,6 +121,18 @@
 .keys-list { margin: 0; padding: 12px var(--pad) 16px; display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; font-size: 13px; align-items: baseline; }
 .keys-list dt { white-space: nowrap; color: var(--muted); }
 .keys-list dd { margin: 0; color: color-mix(in oklab, var(--text) 88%, var(--muted)); }
+
+/* ---------- colophon: the studio credit under the console ---------- */
+.colophon {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 12px; padding: 0 var(--gap) 8px;
+  font: 500 11.5px/1.5 var(--font-body); letter-spacing: 0.01em; color: var(--muted); text-align: center;
+}
+.colophon strong { font-weight: 600; color: color-mix(in oklab, var(--text) 82%, var(--muted)); }
+.colophon-item { display: inline-flex; align-items: center; gap: 5px; }
+.colophon-ico { font-size: 15px; color: var(--amber); }
+.colophon-sep { font-size: 9px; color: var(--cyan); opacity: 0.7; }
+/* Focus mode gives the stage everything below the top bar. */
+body:has(.bento.focus) .colophon { display: none; }
 
 /* ---------- view mode and graphics tier ---------- */
 .mode-switch { display: inline-flex; padding: 2px; gap: 2px; border-radius: 10px; background: var(--ink, #0b0f15); border: 1px solid var(--rule); }

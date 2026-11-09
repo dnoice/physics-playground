@@ -1,17 +1,20 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.1)
+    - Title: Changelog (digiSpace Edition - v2.2)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.2.0 release and the navigation line shared with the other
+      documents.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.1.0 release.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -34,9 +37,74 @@
 -->
 # Changelog
 
+[README](README.md) ✦ [Architecture](ARCHITECTURE.md) ✦ **Changelog** ✦
+[Third-party](vendor/VENDOR.md) ✦ [Live lab](https://dnoice.github.io/physics-playground/)
+
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.2.0 (11/09/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A presentation and delivery pass on Dennis's direction: lift the look of
+the documentation with screenshots, thematic borders and badges, verify and
+harden the GitHub Pages build, and credit digiSpace Studio in the page. The
+simulations are unchanged.
+
+### Documentation
+
+- The README opens with a banner built from a live 3D render, two rows of
+  badges in the playground's palette, and a framed screenshot of the
+  workspace. A gallery shows six labs in 3D, a pair shows one moment of
+  the double slit in 2D and 3D, and new sections cover deploying, the
+  documentation set and the credits.
+- Every picture is captured from the playground itself by the new
+  `tools/media.py` (`npm run media`) and framed in the app's own tokens:
+  an amber-to-cyan border, a title bar in Raleway with the lab's glyph and
+  the status colours as window dots, and transparent rounded corners. They
+  are WebP files in `docs/media/`, listed in its `MANIFEST.md`.
+- The documents share a navigation line. ARCHITECTURE.md gains a
+  Deployment section with a diagram of the pipeline, and recipes for the
+  README pictures and for new CDN hosts.
+- Corrected along the way: `package.metadata.md` still gave the version as
+  2.0.0 and the Node.js floor as 18; the workspace and responsive
+  stylesheet headers described the pre-2.1 bento grid and breakpoints that
+  no longer exist.
+
+### GitHub Pages
+
+The site was published by GitHub's branch deploy, which ran the whole
+repository through Jekyll and served the tests, tools and package files
+beside the page, with nothing checked first.
+
+- `.nojekyll` makes the branch deploy publish files as they are.
+- `tools/site.mjs` (`npm run site`) stages only what the browser loads into
+  `_site/` and walks every reference from `index.html` through the
+  stylesheets and modules. It fails on a missing file, a letter-case slip,
+  a root-absolute path that would break under the `/physics-playground/`
+  project path, an unpinned import map entry, or a CDN host that
+  `vendor/VENDOR.md` does not list. Its first run found that
+  `js/render/gl.js` is never loaded.
+- `.github/workflows/pages.yml` runs `npm ci`, lint, check and site on every
+  push and pull request, and deploys the verified `_site/` from `main` once
+  the repository's Pages source is set to GitHub Actions. Until then it
+  verifies, and its run summary says how to switch. Permissions are
+  read-only except in the deploy job, deploys never cancel each other, and
+  every job has a timeout.
+- `package-lock.json` pins the dev tools, so the workflow installs exactly
+  what was tested, with the npm cache keyed to it.
+- `npm run verify` now includes the site check, so the local gate and the
+  workflow's are the same.
+
+### The colophon
+
+On Dennis's request the page now credits its makers: "Brought to you by
+digiSpace Studio ✦ Made with epic amounts of coffee by Dennis Smaltz",
+with the orbit mark and a coffee cup from the same Material Symbols set as
+every other icon. It sits in its own row under the console, so it never
+overlaps the stage; it stacks on phones and steps aside in focus mode.
 
 ## 2.1.0 (11/06/2026)
 

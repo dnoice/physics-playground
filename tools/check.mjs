@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.1)
+    - Title: Project Checker (digiSpace Edition - v2.2)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Covers
+      the Pages workflow (.yml) and .nojekyll; skips the staged _site/
+      copy, whose files would otherwise fail Relative Path.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Covers
       .gitattributes.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -23,7 +26,9 @@
     icon font subset covers every glyph, and every module parses.
 
 ✒ Key Features:
-    - Header, signature and Relative Path check on every own file.
+    - Header, signature and Relative Path check on every own file,
+      including the workflow YAML and the .gitignore, .gitattributes and
+      .nojekyll dotfiles.
     - Changelog bound on shipped files: three entries, 40 lines,
       CHANGELOG.md pointer.
     - Material Symbols subset ⊇ glyphs used, sorted as Google Fonts
@@ -34,10 +39,10 @@
     $ npm run check
 
 ✒ Other Important Information:
-    - Dependencies: Node.js 18+ standard library only
-    - Compatible platforms: Node.js 18+ on Windows, macOS and Linux
+    - Dependencies: Node.js 20.19+ standard library only
+    - Compatible platforms: Node.js 20.19+ on Windows, macOS and Linux
     - Exit code 1 lists every problem; 0 means the project is ready to
-      publish.
+      publish. _site/ is a staged copy (tools/site.mjs) and is skipped.
 ---------
 */
 import { execFileSync } from 'node:child_process';
@@ -48,8 +53,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const SIGNATURE = '︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!';
 // vendor/katex holds third-party files kept exactly as published; vendor/VENDOR.md is ours.
-const SKIP_DIRS = new Set(['node_modules', 'katex', '.git', 'shots', '__pycache__']);
-const OWN_EXT = new Set(['.js', '.mjs', '.css', '.html', '.md', '.py', '.jsonc']);
+// _site is the staged Pages copy from tools/site.mjs: every file in it is a duplicate.
+const SKIP_DIRS = new Set(['node_modules', 'katex', '.git', 'shots', '__pycache__', '_site']);
+const OWN_EXT = new Set(['.js', '.mjs', '.css', '.html', '.md', '.py', '.jsonc', '.yml']);
+const DOTFILES = ['.gitignore', '.gitattributes', '.nojekyll'];
 const SHIPPED_EXT = new Set(['.js', '.css', '.html']);
 const problems = [], notes = [];
 
@@ -60,7 +67,7 @@ function walk(dir, out = []) {
   }
   return out;
 }
-const files = walk(ROOT).filter(p => OWN_EXT.has(extname(p)) || ['.gitignore', '.gitattributes'].includes(relative(ROOT, p)));
+const files = walk(ROOT).filter(p => OWN_EXT.has(extname(p)) || DOTFILES.includes(relative(ROOT, p)));
 const rel = p => relative(ROOT, p).split('\\').join('/');
 
 /* 1. Every own file carries the ✒ header and the byte-exact signature. */

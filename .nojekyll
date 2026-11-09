@@ -1,0 +1,33 @@
+# ✒ Metadata
+#     - Title: Jekyll Opt-Out Marker (digiSpace Edition - v2.2)
+#     - File Name: .nojekyll
+#     - Relative Path: .nojekyll
+#     - Artifact Type: config
+#     - Version: 2.2.0
+#     - Date: 11/09/2026
+#     - Update: Monday, November 09, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       on Dennis's direction to harden the GitHub Pages build.
+#
+# ✒ Description:
+#     Tells GitHub Pages to publish the repository as-is instead of running
+#     it through Jekyll. GitHub checks only that this file exists; its
+#     contents are never read, so this header is safe.
+#
+# ✒ Key Features:
+#     - Files are served byte for byte, as the no-build-step stack expects.
+#     - No Liquid pass over the Markdown and no Jekyll exclusion rules, so
+#       nothing can be silently dropped or rewritten.
+#     - Faster branch deploys: there is no site generator to run.
+#
+# ✒ Other Important Information:
+#     - Dependencies: none
+#     - Compatible platforms: GitHub Pages "Deploy from a branch"; ignored
+#       by the GitHub Actions deploy in .github/workflows/pages.yml, which
+#       never runs Jekyll
+# ---------

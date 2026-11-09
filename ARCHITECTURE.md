@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.1)
+    - Title: Architecture Guide (digiSpace Edition - v2.2)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
+      the Deployment section for the GitHub Pages pipeline Dennis asked to
+      harden, recipes for the README pictures and new CDN hosts, the
+      colophon in the styles table, and a navigation line shared with the
+      other documents.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Documented the 3D mode, plane camera, scenes and graphics tiers;
       corrected the claims the audit found false.
@@ -20,13 +25,15 @@
 
 ✒ Description:
     How the modules fit together: layers, boot order, the frame loop, the
-    lab contract, 3D views, experiments, capture, styles, and recipes for
-    extending the playground.
+    lab contract, 3D views, experiments, capture, styles, deployment, and
+    recipes for extending the playground.
 
 ✒ Key Features:
     - Layer diagram and dependency rules.
     - Required and optional lab hooks in two tables.
-    - Recipes for a new lab, icon or third-party library.
+    - The GitHub Pages pipeline: what is staged, what is checked, and
+      which Pages source deploys.
+    - Recipes for a new lab, icon, third-party library or README picture.
 
 ✒ Other Important Information:
     - Dependencies: none
@@ -35,6 +42,9 @@
 ---------
 -->
 # Architecture
+
+[README](README.md) ✦ **Architecture** ✦ [Changelog](CHANGELOG.md) ✦
+[Third-party](vendor/VENDOR.md) ✦ [Live lab](https://dnoice.github.io/physics-playground/)
 
 How the playground is put together, and how to extend it without fighting
 it. The [README](README.md) covers what the playground does and how to run
@@ -289,7 +299,7 @@ The stylesheets load in this order, each building on the last:
 | --- | --- |
 | `tokens.css` | Colours, type, spacing, radius, the page grid |
 | `icons.css` | Material Symbols styling and tab glyph animations |
-| `workspace.css` | Top bar, lab rail, console grid, tile chrome, keys sheet, mode switch |
+| `workspace.css` | Top bar, lab rail, console grid, tile chrome, keys sheet, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, sliders, switches |
 | `stage.css` | Stage title and scene dropdown, HUD, player bar, experiment banner, gizmo |
 | `tiles.css` | Inspector, Details card, instruments deck, diagnostics sheet, tabs |
@@ -299,7 +309,50 @@ The stylesheets load in this order, each building on the last:
 Tiles are inline-size containers, so their contents adapt with container
 queries to the tile's width, not the window's. Grid tracks use `minmax(0, …)` and
 the body grid is pinned to the viewport width, so no content can resize
-the stage.
+the stage. The body grid has three rows: the top bar, the console, and the
+colophon that credits digiSpace Studio, which focus mode hides.
+
+## Deployment
+
+The live lab is the repository served by GitHub Pages at
+<https://dnoice.github.io/physics-playground/>, a project path. Nothing is
+built; three pieces make sure what Pages serves is what runs locally.
+
+```mermaid
+flowchart LR
+  change[push or pull request] --> verify[verify: npm ci, lint, check, site]
+  verify -->|pull request| checked[checks only]
+  verify -->|main, source GitHub Actions| upload[upload _site/] --> deploy[deploy-pages]
+  verify -->|main, source branch| summary[summary explains the switch]
+  branch[GitHub's branch build] -. source branch .-> live[(github.io)]
+  deploy --> live
+```
+
+- **`.nojekyll`** opts the repository out of Jekyll, so a branch deploy
+  publishes files byte for byte instead of rendering the Markdown and
+  applying Jekyll's exclusion rules.
+- **`tools/site.mjs`** (`npm run site`) copies `index.html`, `LICENSE`,
+  `css/`, `js/` and `vendor/katex/` into `_site/`, then walks every
+  reference from `index.html`: link and script tags, the import map, CSS
+  `url()` and `@import`, and static, re-exported and dynamic imports. Each
+  must resolve to a staged file with exact letter case, because Pages is
+  case-sensitive even when a development disk is not. Root-absolute paths
+  fail, because `/css/x.css` would point at `dnoice.github.io/css/x.css`
+  rather than into the project path. Import map entries must be https and
+  pinned to an exact version, and external hosts must be the ones in
+  `HOSTS`, which mirror [vendor/VENDOR.md](vendor/VENDOR.md). KaTeX's
+  `.woff` and `.ttf` fallbacks may be absent behind a shipped `.woff2`.
+  Staged modules nothing loads are listed as notes.
+- **`.github/workflows/pages.yml`** runs the same gate as `npm run verify`
+  on every push and pull request. On `main` it reads the repository's
+  Pages source: under **GitHub Actions** it uploads `_site/` and a deploy
+  job publishes it; under **Deploy from a branch** GitHub's own build
+  publishes the branch, and the run summary explains how to switch. The
+  verify job has read access only; the deploy job alone gets `pages` and
+  `id-token` write. Deploys never cancel each other.
+
+`_site/` is ignored by Git, ESLint and `npm run check`, which would
+otherwise see every file twice.
 
 ## Recipes
 
@@ -317,6 +370,8 @@ the stage.
    the default of 0.5× to 8× suits it.
 5. Add its experiments under its id in `js/labs/experiments.js`.
 6. Run `npm run verify` and `npm test`.
+7. Add it to the README: a row in the labs table and a gallery picture
+   (see "Refresh the README pictures").
 
 ### Add an icon
 
@@ -331,7 +386,19 @@ Pin the exact version in the import map in `index.html`, record it in
 `vendor/VENDOR.md`, and load it with a dynamic `import()` where it is not
 needed at start-up. Stylesheets and fonts must come from Google Fonts or
 the project itself (the artifact host's content policy), so vendor them
-under `vendor/`.
+under `vendor/`. A new CDN host also goes into `HOSTS` in
+`tools/site.mjs`, or `npm run site` fails, as it should for a host nobody
+recorded.
+
+### Refresh the README pictures
+
+The banner and screenshots in `docs/media/` are captured from the running
+playground by `tools/media.py`. After a visible change, start the dev
+server and run `npm run media`, or `python tools/media.py --only labs` for
+one set. A new lab joins the gallery by adding a row to `LABS` in
+`tools/media.py` and a cell to the gallery table in the README, then
+recapturing. [docs/media/MANIFEST.md](docs/media/MANIFEST.md) lists every
+picture.
 
 ## Conventions
 
@@ -339,6 +406,7 @@ under `vendor/`.
   Browser-delivered files keep at most three changelog entries in 40
   lines; the full history is in [CHANGELOG.md](CHANGELOG.md).
 - Dates are written MM/DD/YYYY.
-- `npm run verify` and `npm test` pass before a release.
+- `npm run verify` (lint, check, site) and `npm test` pass before a
+  release; the Pages workflow runs the same verify gate on every push.
 
 <!-- ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once! -->

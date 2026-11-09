@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.1)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.2)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Rebuilt
+      the presentation on Dennis's direction: a banner, themed badges,
+      framed screenshots of the workspace, a gallery of the labs and the
+      2D and 3D pair, plus sections on deploying to GitHub Pages, the
+      documentation set, and the digiSpace Studio credit.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Documented the two modes and the graphics tiers; corrected the
       keyboard table and the Node.js floor.
@@ -19,29 +24,126 @@
       for v2.0 on Dennis's direction: documentation for the formal stack.
 
 ✒ Description:
-    What the playground is, how to run it, how to use the workspace, the
-    keyboard, the stack and the project layout.
+    The front page of the project: what the playground is, what it looks
+    like, how to run, use, develop and deploy it, and where the rest of
+    the documentation lives.
 
 ✒ Key Features:
-    - Lab table with keys and scenes.
-    - Quick start, development commands and browser support.
-    - Workspace, capture and keyboard reference.
+    - Banner, badges and a framed hero screenshot of the 3D workspace.
+    - Lab gallery with framed 3D captures and a reference table of keys
+      and scenes.
+    - Side-by-side 2D and 3D capture of one moment.
+    - Quick start, workspace, keyboard and capture reference.
+    - Development commands, the GitHub Pages pipeline and browser support.
+    - Documentation map and credits.
 
 ✒ Other Important Information:
-    - Dependencies: none
+    - Dependencies: docs/media/*.webp (tools/media.py) and shields.io for
+      the badges
     - Compatible platforms: Any Markdown viewer; written for
-      GitHub-flavoured Markdown
+      GitHub-flavoured Markdown, where the centred blocks and badge rows
+      render as designed
 ---------
 -->
-# Physics Playground
+<h1 align="center">
+  <img src="docs/media/banner.webp" width="100%"
+    alt="Physics Playground: seven live physics labs in one browser workspace">
+</h1>
 
-An interactive physics laboratory in the browser. Seven live simulations
-share one workspace, one capture system and one set of tools, and each can
-be seen in two modes: a flat 2D view, or a rendered 3D world where every lab
-is a physical apparatus. The project is plain ES modules with no build step:
-open it through any static web server and it runs.
+<div align="center">
+
+**Seven live physics labs in one browser workspace.**<br>
+Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
+
+[![Live demo: open the lab][badge-demo]][demo]
+[![Pages workflow status][badge-pages]][pages-workflow]
+[![Release 2.2.0][badge-release]](CHANGELOG.md)
+[![License: Apache 2.0][badge-license]](LICENSE)
+<br>
+[![ES modules, no build step][badge-esm]](ARCHITECTURE.md#principles)
+[![three.js 0.187.0][badge-three]](vendor/VENDOR.md)
+[![KaTeX 0.19.1][badge-katex]](vendor/VENDOR.md)
+[![Node.js 20.19 or later][badge-node]](package.metadata.md)
+[![Browser tests: Playwright][badge-tests]](#development)
+[![Brewed with epic amounts of coffee][badge-coffee]](#credits-and-license)
+
+**[Open the live lab][demo]** ✦ [Quick start](#quick-start) ✦
+[The labs](#the-labs) ✦ [Deploying](#deploying-to-github-pages) ✦
+[Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
+
+</div>
+
+![The Physics Playground workspace in 3D: the Gravity lab's star system on
+the stage, the player bar beneath it, the instruments deck with live
+readings, and the inspector with the lab's controls](docs/media/hero-workspace.webp)
+
+Physics Playground is an interactive physics laboratory in the browser.
+Seven live simulations share one workspace, one capture system and one set
+of tools, and each can be seen in two modes: a flat 2D view, or a rendered
+3D world where every lab is a physical apparatus. The project is plain ES
+modules with no build step: open it through any static web server and it
+runs.
+
+- **Seven labs**, from N-body gravity to the Lorentz force, each with
+  several scenes, live readouts and a page of the maths behind it.
+- **Two modes, one simulation.** Press Z to flip between 2D and 3D in the
+  middle of a run; tools, rewind and recordings work in both.
+- **Instruments that explain themselves.** Plot any reading, and let the
+  diagnostics say why a setting misbehaves and offer the one-click fix.
+- **Guided experiments** with live progress checks that measure the claim
+  they make.
+- **Capture everything**: rewind, WebM video, CSV datasets and exact saved
+  states, all kept in a library.
 
 ## The labs
+
+Gravity is the lab in the picture above. Here are the other six, each
+captured in 3D straight from the playground.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/lab-collisions.webp" width="100%"
+        alt="Collisions in 3D: a billiard break on a slate air table">
+      <br><b>2 · Collisions</b> ✦ Hard discs with restitution and contact
+      friction on a slate air table in walnut and brass.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/lab-fluid.webp" width="100%"
+        alt="Fluid in 3D: a dam break in a glass aquarium">
+      <br><b>3 · Fluid</b> ✦ Smoothed-particle hydrodynamics in a glass
+      aquarium, with refraction and caustics.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/lab-waves.webp" width="100%"
+        alt="Waves in 3D: double-slit interference in a walnut ripple tank">
+      <br><b>4 · Waves</b> ✦ The 2-D wave equation in a ripple tank, with a
+      screen that graphs the fringes.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/lab-chaos.webp" width="100%"
+        alt="Chaos in 3D: double pendulums on a slate dial in a brass bezel">
+      <br><b>5 · Chaos</b> ✦ Double pendulums started a hair apart, on a
+      slate dial in a brass bezel.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/lab-cloth.webp" width="100%"
+        alt="Cloth in 3D: woven fabric streaming from a flagpole">
+      <br><b>6 · Cloth</b> ✦ Verlet cloth that stretches, tears and can be
+      cut, woven and hung from a flagpole.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/lab-fields.webp" width="100%"
+        alt="Fields in 3D: charged particles in cyclotron motion over a glass bench">
+      <br><b>7 · Fields</b> ✦ Point charges, potential and the Lorentz
+      force, on a black glass bench lit by the potential.
+    </td>
+  </tr>
+</table>
 
 | Key | Lab | What it simulates | Scenes |
 | --- | --- | --- | --- |
@@ -60,8 +162,10 @@ keep a running chart.
 
 ## Quick start
 
-The modules load over HTTP only (a `file://` page cannot import them).
-With Node.js 20.19 or later:
+The fastest way in is the **[live lab][demo]**, served by GitHub Pages.
+
+To run it yourself: the modules load over HTTP only (a `file://` page
+cannot import them). With Node.js 20.19 or later:
 
 ```bash
 npm run dev
@@ -72,6 +176,9 @@ it directly, for example <http://localhost:5173/#fields>. Any other static
 server works too, for example `python -m http.server 5173`.
 
 ## Two modes: 2D and 3D
+
+![The same moment of the Waves lab's double slit, in 2D on the left and in
+3D on the right, with the Z key between them](docs/media/modes-2d-3d.webp)
 
 The **2D | 3D** switch in the top bar, or the **Z** key, changes the whole
 workspace. Your choice is remembered.
@@ -195,7 +302,8 @@ otherwise it lives in this browser.
 | Maths | KaTeX 0.19.1 | Real typesetting for formula cards; module from jsDelivr, CSS and fonts vendored |
 | 3D | three.js 0.187.0 | The whole 3D mode, one renderer shared by every lab; loaded only when 3D is first used |
 | 2D fluid surface | Hand-written WebGL | A small, fast shader for the flat view |
-| Tooling | Node.js scripts, ESLint, Playwright tests | Dev server, checks and browser tests with no runtime dependencies |
+| Tooling | Node.js scripts, ESLint, Playwright tests | Dev server, checks, Pages staging and browser tests with no runtime dependencies |
+| Hosting | GitHub Pages | Static files served as they are; see [Deploying](#deploying-to-github-pages) |
 
 The third-party pieces and their licences are listed in
 [vendor/VENDOR.md](vendor/VENDOR.md). If a CDN cannot be reached, the
@@ -205,7 +313,7 @@ names hide, and the workspace says 3D is unavailable and stays in 2D.
 ## Project layout
 
 ```text
-index.html            page, tiles, CDN links and import map
+index.html            page, tiles, colophon, CDN links and import map
 css/                  tokens, icons, workspace, controls, stage, tiles, library, responsive
 js/main.js            boot sequence
 js/core/              pure helpers: DOM, colour, charts, drawing, maths, icons, TeX, graphics tiers
@@ -214,9 +322,12 @@ js/render/world/      the 3D mode: engine, studio, materials, shapes, ribbons
 js/render/world/scenes/  one three.js scene per lab
 js/labs/              one module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry
 js/shell/             workspace: state, panel, tools, camera, stage input, loop, modes, capture, library, experiments
-tools/                dev server and project checker
+tools/                dev server, project checker, Pages stager, README media capture
 tests/                Playwright browser suites and their runner
 vendor/katex/         KaTeX stylesheet, fonts and licence
+docs/media/           README banner and screenshots, with their manifest
+.github/workflows/    the Pages verify-and-deploy workflow
+.nojekyll             tells GitHub Pages to serve files as they are
 ```
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains how the pieces fit together
@@ -229,13 +340,50 @@ and how to add a lab, a tool or an experiment.
 | `npm run dev` | Serve the project on port 5173 (`node tools/serve.mjs 8080` for another port) |
 | `npm run lint` | ESLint over the modules and tools |
 | `npm run check` | Headers, changelog bounds, icon subset and module syntax |
-| `npm run verify` | Lint, then check |
+| `npm run site` | Stage the Pages site in `_site/` and prove every reference resolves |
+| `npm run verify` | Lint, check and site: the same gate the Pages workflow runs |
 | `npm test` | Run every browser suite against the running dev server |
+| `npm run media` | Recapture the README banner and screenshots from the running dev server |
 
-The tests need Python 3 with Playwright (`pip install playwright` and
-`playwright install chromium`). Start the dev server first, then run
-`npm test`. Set `PP_URL` to test another address and `PP_SHOTS` to choose
-where screenshots go.
+Install the dev tools with `npm ci`, which installs exactly the versions in
+`package-lock.json`. The browser suites and the media capture need Python 3
+with Playwright (`pip install playwright` and `playwright install
+chromium`). Start the dev server first, then run `npm test`. Set `PP_URL`
+to test another address and `PP_SHOTS` to choose where screenshots go.
+
+## Deploying to GitHub Pages
+
+The [live lab][demo] is this repository served by GitHub Pages. There is
+nothing to build: Pages serves the same files that run locally, and three
+pieces keep that dependable.
+
+- **`.nojekyll`** tells Pages to publish files as they are. Without it, a
+  branch deploy runs the whole repository through Jekyll first.
+- **`npm run site`** stages exactly what the browser loads (`index.html`,
+  `LICENSE`, `css/`, `js/` and `vendor/katex/`) into `_site/`, then follows
+  every reference from `index.html` through the stylesheets and modules. It
+  fails on a missing file, a letter-case slip, a root-absolute path (which
+  breaks under the `/physics-playground/` project path), an unpinned import
+  map entry, or a CDN that [vendor/VENDOR.md](vendor/VENDOR.md) does not
+  list.
+- **[`.github/workflows/pages.yml`](.github/workflows/pages.yml)** runs
+  `npm ci`, lint, check and site on every push and pull request. On `main`
+  it deploys the verified `_site/` when the repository's Pages source is
+  **GitHub Actions**, and its run summary says what it did.
+
+| Pages source (Settings → Pages) | What publishes a push to `main` | What reaches the site |
+| --- | --- | --- |
+| Deploy from a branch | GitHub's own *pages build and deployment* run; the Pages workflow verifies alongside it | The whole branch, as it is |
+| GitHub Actions (recommended) | The Pages workflow, only after every check passes | Only `_site/`: no tests, tools or docs |
+
+To switch, open **Settings → Pages → Build and deployment** and set
+**Source** to **GitHub Actions**. The next push to `main`, or **Run
+workflow** on the Pages workflow in the Actions tab, deploys. To preview
+the staged site, run `npm run site` and serve the folder:
+
+```bash
+python -m http.server 8080 --directory _site
+```
 
 ## Browser support
 
@@ -244,9 +392,36 @@ modules, import maps and container queries. The 2D fluid surface uses WebGL 2
 or WebGL 1 and draws as particles without either. The 3D mode needs WebGL 2;
 without it the workspace says so and stays in 2D.
 
-## License
+## Documentation
 
-Apache 2.0: see [LICENSE](LICENSE). Third-party licences are listed in
+| Document | What it covers |
+| --- | --- |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Layers, boot order, the frame loop, the lab contract, the 3D mode, deployment, and recipes for extending the playground |
+| [CHANGELOG.md](CHANGELOG.md) | Every release in full, newest first |
+| [vendor/VENDOR.md](vendor/VENDOR.md) | Third-party code: versions, sources, licences and what happens offline |
+| [package.metadata.md](package.metadata.md) | What `package.json` declares, and every npm script |
+| [docs/media/MANIFEST.md](docs/media/MANIFEST.md) | The README pictures: what each shows, where it came from, how to recapture it |
+
+## Credits and license
+
+Brought to you by **digiSpace Studio**, and made with epic amounts of
+coffee by Dennis 'dendogg' Smaltz.
+
+Physics Playground is licensed under the Apache License 2.0: see
+[LICENSE](LICENSE). Third-party licences are listed in
 [vendor/VENDOR.md](vendor/VENDOR.md).
 
-<!-- ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once! -->
+<p align="center"><sub>︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!</sub></p>
+
+[demo]: https://dnoice.github.io/physics-playground/
+[pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
+[badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
+[badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
+[badge-release]: https://img.shields.io/badge/release-v2.2.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
+[badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
+[badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
+[badge-katex]: https://img.shields.io/badge/KaTeX-0.19.1-232c39?style=flat-square&labelColor=0c1118&logo=latex&logoColor=5fd0df
+[badge-node]: https://img.shields.io/badge/Node.js-20.19%2B-232c39?style=flat-square&labelColor=0c1118&logo=nodedotjs&logoColor=6fcf97
+[badge-tests]: https://img.shields.io/badge/tests-Playwright-232c39?style=flat-square&labelColor=0c1118&logo=playwright&logoColor=6fcf97
+[badge-coffee]: https://img.shields.io/badge/brewed_with-epic_amounts_of_coffee-f2a541?style=flat-square&labelColor=0c1118
