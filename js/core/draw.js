@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Shaded Drawing (digiSpace Edition - v2.0)
+    - Title: Shaded Drawing (digiSpace Edition - v2.3)
     - File Name: draw.js
     - Relative Path: js/core/draw.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
+      rrect(), a rounded-rectangle path with a plain fallback for Firefox
+      before 112.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour
@@ -29,6 +32,7 @@
       balls.
     - zoomOf reads the current canvas zoom so strokes stay one screen pixel
       wide.
+    - rrect draws rounded rectangles wherever the browser lacks roundRect.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -54,6 +58,8 @@ export const mixRgb = (c, t, f) => [c[0] + (t[0] - c[0]) * f, c[1] + (t[1] - c[1
 export const css = (c, a = 1) => a >= 1 ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})` : `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 export const rampRgb = (R, i) => [R.rgb[i * 3], R.rgb[i * 3 + 1], R.rgb[i * 3 + 2]];
 /* A lit sphere seen from the front: key light from the upper left, a darkened limb. */
+/* A rounded rectangle path; a plain one where the context lacks roundRect (Firefox before 112). */
+export function rrect(g, x, y, w, h, r) { if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
 export function drawSphere(g, x, y, r, c, alpha = 1, lx = -0.45, ly = -0.55) {
   const grd = g.createRadialGradient(x + lx * r * 0.62, y + ly * r * 0.62, r * 0.03, x + lx * r * 0.2, y + ly * r * 0.2, r * 1.06);
   grd.addColorStop(0, css(mixRgb(c, WHITE, 0.74), alpha));

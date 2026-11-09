@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.1)
+    - Title: Physics Playground (digiSpace Edition - v2.3)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      balance, flag and visibility glyphs the control sections use.
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      digiSpace Studio colophon Dennis asked for, with a coffee glyph.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2D and 3D switch, Graphics menu and Z key; Shift+B is now named
       correctly.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Rebuilt
-      as the entry page of a multi-file project on Dennis's direction: bento
-      layout of tiles, Material Symbols icons, KaTeX math, an import map for
-      three.js, and two new features, the Fields lab and a 3D orbit view for
-      gravity, plus guided experiments.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -42,6 +41,8 @@
       allows fonts from Google or the page itself.
     - Keyboard sheet (?) as the single floating panel; a polite live region
       announces state changes.
+    - A colophon beneath the console credits digiSpace Studio and Dennis
+      Smaltz; it steps aside in focus mode.
 
 ✒ Usage Instructions:
     Serve the folder over HTTP (modules do not load from file://):
@@ -69,7 +70,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,bookmark,bubble_chart,check_circle,close,close_fullscreen,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,warning,water_drop&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,balance,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,visibility,warning,water_drop&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -233,6 +234,12 @@
     </div>
   </aside>
 </main>
+
+<footer class="colophon">
+  <span class="colophon-item"><span class="ms fill colophon-ico" aria-hidden="true">orbit</span>Brought to you by <strong>digiSpace Studio</strong></span>
+  <span class="colophon-sep" aria-hidden="true">✦</span>
+  <span class="colophon-item">Made with epic amounts of coffee <span class="ms fill colophon-ico" aria-hidden="true">coffee</span> by <strong>Dennis Smaltz</strong></span>
+</footer>
 
 <div class="sheet" id="keys-sheet" role="dialog" aria-modal="false" aria-labelledby="keys-title" hidden>
   <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">keyboard</span><h3 id="keys-title">Keyboard and pointer</h3><button type="button" class="icon-btn" id="keys-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>

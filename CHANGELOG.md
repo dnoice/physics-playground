@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.1)
+    - Title: Changelog (digiSpace Edition - v2.3)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.3.0 release.
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.2.0 release and the navigation line shared with the other
+      documents.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.1.0 release.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -34,9 +39,156 @@
 -->
 # Changelog
 
+[README](README.md) ✦ [Architecture](ARCHITECTURE.md) ✦ **Changelog** ✦
+[Third-party](vendor/VENDOR.md) ✦ [Live lab](https://dnoice.github.io/physics-playground/)
+
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.3.0 (11/09/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+An interaction pass on Dennis's direction: make the Chaos phase space
+something you can see and use, give the controls a more intuitive and
+cohesive structure, stop Fluid's obstacles vanishing when a parameter
+changes, and smooth out the quirks found along the way.
+
+### Chaos: the phase space, rebuilt
+
+Dennis found the Phase Space view extremely hard to read or use. It
+replaced the pendulum with a flat plate of faint dots, the 3D torus beside
+it was a ghost, and nothing tied a dot to a pose.
+
+- **The pendulum stays.** The view is now split: the pendulum on one side,
+  its map on the other. Arcs on the pendulum draw θ₁ in amber at the pivot
+  and θ₂ in cyan at the elbow, the same colours as the map's axes, which
+  read in degrees.
+- **The energy landscape.** Behind the map is the potential energy
+  V(θ₁, θ₂): a dark basin where both arms hang, lighter where they stand
+  up. A glowing curve marks V = E, the fence the front pendulum's energy
+  cannot cross, traced by marching squares, and the region beyond it is
+  hatched. Regular motion now visibly traces a figure inside its fence;
+  chaos fills it. With enough energy to flip both arms the map says the
+  whole torus is open.
+- **A preview before you click.** Pointing at the map shows a dashed ghost
+  of that pose on the pendulum, the energy curve that start would have, and
+  its angles. A click or drag starts every copy there, and the bobs can be
+  dragged in both views.
+- **Readable paths.** Trails are lines that fade with age and break where a
+  path wraps across an edge; the front copy is a large ringed dot; matching
+  arrows on opposite edges show that the square is a torus.
+- **In 3D**, the dial follows the pendulum and stays live, the map is a
+  brass-framed screen on its own walnut stand, and a glass torus rests on
+  top with the same paths turning slowly around it. The screen's face lies
+  exactly over the map on the simulation plane, so clicks and the preview
+  work as in 2D.
+
+### Controls in sections
+
+On Dennis's call for a more intuitive, elegant and cohesive layout, the
+Controls page is no longer one long list of sliders.
+
+- Each lab declares its sections: Setup or Starting conditions, Physics,
+  Forces or Medium, New bodies, balls or particles, Sources, Fabric,
+  Display, View. Each has a glyph and folds away, remembered per lab.
+- A section shows **Reset** as soon as one of its values leaves the
+  scene's, and sets them all back in one step.
+- A section whose changes restart the run says so once, replacing the
+  "Restarts the scene when released" note under individual sliders.
+- Switches share a grid under their section with shorter names, the full
+  wording kept as a tooltip.
+- Actions such as Shake the box, Clear trails or Restart from these angles
+  are quick actions at the top, instead of below every slider.
+
+### Fluid keeps its posts
+
+Dennis reported that placing obstacles in the 3D tank and then changing
+Particles removed them. Every rebuild started from the scene as written,
+discarding anything placed by hand. A rebuild a parameter asks for now
+carries the user's edits through the lab's `keep()` hook, and Fluid places
+the kept posts before it pours the liquid, so no particle starts inside
+one. Loading a scene, Reset and recovery still start clean. Rewind is
+unchanged: going back to before a post was placed removes it, because a
+replay restores the world as it was.
+
+### Smoothed along the way
+
+- Rounded rectangles on the canvas (the scope's lanes, the map's preview
+  label) fall back to plain ones where the browser lacks `roundRect`, as
+  Firefox did before 112, inside the supported range.
+- `tools/media.py` frames each picture after its app page closes and clips
+  page screenshots instead of waiting for elements to settle, which never
+  happens under a fake clock on a busy software renderer. A headless
+  software capture of the Ultra tier still proved too slow to finish in the
+  session that built this release, so on Dennis's call the pictures are
+  captured on a machine with a GPU: `--headed` renders there, and
+  `docs/media/MANIFEST.md` lists every picture and how to make it. The
+  Chaos picture shows the new phase view.
+
+## 2.2.0 (11/09/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A presentation and delivery pass on Dennis's direction: lift the look of
+the documentation with screenshots, thematic borders and badges, verify and
+harden the GitHub Pages build, and credit digiSpace Studio in the page. The
+simulations are unchanged.
+
+### Documentation
+
+- The README opens with a banner built from a live 3D render, two rows of
+  badges in the playground's palette, and a framed screenshot of the
+  workspace. A gallery shows six labs in 3D, a pair shows one moment of
+  the double slit in 2D and 3D, and new sections cover deploying, the
+  documentation set and the credits.
+- Every picture is captured from the playground itself by the new
+  `tools/media.py` (`npm run media`) and framed in the app's own tokens:
+  an amber-to-cyan border, a title bar in Raleway with the lab's glyph and
+  the status colours as window dots, and transparent rounded corners. They
+  are WebP files in `docs/media/`.
+- The documents share a navigation line. ARCHITECTURE.md gains a
+  Deployment section with a diagram of the pipeline, and recipes for the
+  README pictures and for new CDN hosts.
+- Corrected along the way: `package.metadata.md` still gave the version as
+  2.0.0 and the Node.js floor as 18; the workspace and responsive
+  stylesheet headers described the pre-2.1 bento grid and breakpoints that
+  no longer exist.
+
+### GitHub Pages
+
+The site was published by GitHub's branch deploy, which ran the whole
+repository through Jekyll and served the tests, tools and package files
+beside the page, with nothing checked first.
+
+- `.nojekyll` makes the branch deploy publish files as they are.
+- `tools/site.mjs` (`npm run site`) stages only what the browser loads into
+  `_site/` and walks every reference from `index.html` through the
+  stylesheets and modules. It fails on a missing file, a letter-case slip,
+  a root-absolute path that would break under the `/physics-playground/`
+  project path, an unpinned import map entry, or a CDN host that
+  `vendor/VENDOR.md` does not list. Its first run found that
+  `js/render/gl.js`, a WebGL program helper, was never loaded:
+  `fluid-gl.js` compiles its own shaders. The dead module is removed.
+- `.github/workflows/pages.yml` runs `npm ci`, lint, check and site on every
+  push and pull request, and deploys the verified `_site/` from `main` once
+  the repository's Pages source is set to GitHub Actions. Until then it
+  verifies, and its run summary says how to switch. Permissions are
+  read-only except in the deploy job, deploys never cancel each other, and
+  every job has a timeout.
+- `package-lock.json` pins the dev tools, so the workflow installs exactly
+  what was tested, with the npm cache keyed to it.
+- `npm run verify` now includes the site check, so the local gate and the
+  workflow's are the same.
+
+### The colophon
+
+On Dennis's request the page now credits its makers: "Brought to you by
+digiSpace Studio ✦ Made with epic amounts of coffee by Dennis Smaltz",
+with the orbit mark and a coffee cup from the same Material Symbols set as
+every other icon. It sits in its own row under the console, so it never
+overlaps the stage; it stacks on phones and steps aside in focus mode.
 
 ## 2.1.0 (11/06/2026)
 

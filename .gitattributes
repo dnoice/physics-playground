@@ -1,16 +1,18 @@
 # ✒ Metadata
-#     - Title: Git Attributes (digiSpace Edition - v2.1)
+#     - Title: Git Attributes (digiSpace Edition - v2.2)
 #     - File Name: .gitattributes
 #     - Relative Path: .gitattributes
 #     - Artifact Type: config
-#     - Version: 2.1.0
-#     - Date: 11/06/2026
-#     - Update: Friday, November 06, 2026
+#     - Version: 2.2.0
+#     - Date: 11/09/2026
+#     - Update: Monday, November 09, 2026
 #     - Author: Dennis 'dendogg' Smaltz
 #     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
 #     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 #
 # ✒ Changelog:
+#     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Marks
+#       the README's WebP pictures binary.
 #     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
 #       with the local repository; pins line endings.
 #
@@ -21,7 +23,8 @@
 #
 # ✒ Key Features:
 #     - LF everywhere, which the shipped modules and tools already use.
-#     - Font and image assets are binary.
+#     - Font, image and video assets are binary, including the WebP
+#       pictures in docs/media.
 #
 # ✒ Other Important Information:
 #     - Dependencies: none
@@ -31,6 +34,7 @@
 * text=auto eol=lf
 *.woff2 binary
 *.png binary
+*.webp binary
 *.webm binary
 
 # ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!

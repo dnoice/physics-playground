@@ -1,17 +1,22 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.1)
+    - Title: Shell Regression Test (digiSpace Edition - v2.3)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
+      checks for Fluid's posts across a Particles rebuild and Reset, the
+      control sections (order, quick actions, one restart note, section
+      Reset, focus, remembered fold) and the Chaos phase view (split layout,
+      reach curve, hover preview, click to start, bob drag).
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       as regression tests for the shell fixes: layout keys, held keys, Space
       after a mouse click, resizing, datasets across a rewind, the B gradient
@@ -33,6 +38,11 @@
     - Enabled controls, cancelled throws, saved-state headers, keyboard
       focus and the remembered lab.
     - The frame-rate meter follows slow frames with the page thread loaded.
+    - Fluid's posts outlast a Particles rebuild; Reset starts clean.
+    - Control sections: order, quick actions, one restart note, section
+      Reset with focus kept, and a remembered fold.
+    - The Chaos phase view: split layout, reach curve, hover preview, click
+      to start, and a bob that still drags.
 
 ✒ Usage Instructions:
     $ python tests/shell.py
@@ -333,6 +343,73 @@ with sync_playwright() as p:
     pg.evaluate("localStorage.setItem('psp:lab', JSON.stringify('cloth')); location.replace('#waves')"); pg.wait_for_timeout(100)
     pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active")
     ok("hash_outranks_last_lab", state("active.id") == "waves", state("active.id"))
+    pg.context.close()
+
+    # ---- Fluid: posts placed by hand outlast a rebuild that Particles asks for, and no particle starts inside one;
+    # Reset starts the scene clean.
+    pg = fresh("fluid")
+    pg.evaluate(P + ".tool('obstacle')")
+    for fx in (0.35, 0.6):
+        x, y = stage_point(fx, 0.5); pg.mouse.click(x, y); pg.wait_for_timeout(150)
+    placed, n0 = pg.evaluate(OBSTACLES), state("labs.fluid.n")
+    ok("fluid_posts_placed", placed.count('"r"') == 2, placed)
+    r = pg.locator("#ctl-fluid-count").bounding_box()
+    pg.mouse.click(r["x"] + r["width"] * 0.3, r["y"] + r["height"] / 2); pg.wait_for_timeout(300)
+    ok("fluid_particles_rebuilt", state("labs.fluid.n") != n0 and lab_t() < 0.5, (n0, state("labs.fluid.n")))
+    ok("fluid_posts_survive_particles", pg.evaluate(OBSTACLES) == placed, pg.evaluate(OBSTACLES))
+    inside = pg.evaluate("(() => { const L = PhysicsPlayground.labs.fluid; let k = 0; for (let i = 0; i < L.n; i++) for (const o of L.obs) if ((L.x[i] - o.x) ** 2 + (L.y[i] - o.y) ** 2 < o.r * o.r) k++; return k; })()")
+    ok("fluid_no_particle_inside_a_post", inside == 0, inside)
+    pg.evaluate(P + ".reset()"); pg.wait_for_timeout(150)
+    ok("fluid_reset_starts_clean", pg.evaluate(OBSTACLES) == "[]", pg.evaluate(OBSTACLES))
+    pg.context.close()
+
+    # ---- Control sections: in the lab's order after the quick actions, one restart note, a Reset that appears
+    # when a value leaves the scene's and sets the section back, and a fold that is remembered.
+    pg = fresh("chaos")
+    groups = pg.evaluate("[...document.querySelectorAll('#params-body .pgroup')].map(s => s.dataset.group)")
+    ok("sections_in_lab_order", groups == ["start", "physics", "display"], groups)
+    ok("quick_actions_first", pg.evaluate("document.querySelector('#params-body .params').firstElementChild.classList.contains('quick')"))
+    ok("restart_note_once", pg.locator("#params-body .pgroup-note").count() == 1 and "restart" in pg.inner_text("[data-group='start'] .pgroup-note"))
+    ok("no_restart_note_per_slider", pg.inner_text("#ctl-chaos-copies-note") == "", pg.inner_text("#ctl-chaos-copies-note"))
+    reset = pg.locator("[data-group='physics'] .pgroup-reset")
+    ok("section_reset_hidden_at_scene_values", reset.is_hidden())
+    pg.focus("#ctl-chaos-g")
+    for _ in range(3): pg.keyboard.press("ArrowRight")
+    ok("section_reset_appears", reset.is_visible() and state("labs.chaos.p.g") != 9.81, state("labs.chaos.p.g"))
+    reset.click(); pg.wait_for_timeout(100)
+    ok("section_reset_restores", state("labs.chaos.p.g") == 9.81 and reset.is_hidden(), state("labs.chaos.p.g"))
+    ok("section_reset_keeps_focus", pg.evaluate("document.activeElement.id") == "pg-chaos-physics", pg.evaluate("document.activeElement.id"))
+    pg.click("#pg-chaos-display")
+    ok("section_folds", pg.is_hidden("#pg-chaos-display-body") and pg.get_attribute("#pg-chaos-display", "aria-expanded") == "false")
+    pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(300)
+    ok("section_fold_remembered", pg.is_hidden("#pg-chaos-display-body") and pg.is_visible("#pg-chaos-physics-body"))
+    pg.context.close()
+
+    # ---- Chaos phase view: the pendulum beside its map, the reach curve, a hover that previews a start, a click
+    # that starts every copy there, and a bob that still drags.
+    pg = fresh("chaos")
+
+    def to_screen(wx, wy):
+        """Screen coordinates of a world point, from two samples of the camera's own toWorld."""
+        r = pg.locator("#stage-canvas").bounding_box()
+        a, c = state("view.toWorld(0, 0)"), state("view.toWorld(100, 100)")
+        return r["x"] + (wx - a["x"]) * 100 / (c["x"] - a["x"]), r["y"] + (wy - a["y"]) * 100 / (c["y"] - a["y"])
+
+    pg.evaluate(P + ".tool('phase')"); pg.wait_for_timeout(300)
+    q, piv = state("labs.chaos.sq"), state("labs.chaos.pivot")
+    ok("phase_pendulum_beside_map", piv["x"] < q["x0"], (round(piv["x"]), round(q["x0"])))
+    ok("phase_reach_curve_drawn", pg.evaluate(P + ".labs.chaos.edgeE.seg.length") > 40)
+    pg.mouse.move(*to_screen(q["x0"] + q["S"] * 0.3, q["y0"] + q["S"] * 0.7)); pg.wait_for_timeout(300)
+    ok("phase_hover_previews", pg.evaluate(P + ".labs.chaos.inSquare(PhysicsPlayground.labs.chaos.hover)") and pg.evaluate("!!" + P + ".labs.chaos.edgeH"))
+    pg.mouse.down(); pg.mouse.up(); pg.wait_for_timeout(200)
+    t1, t2 = state("labs.chaos.p.theta1"), state("labs.chaos.p.theta2")
+    ok("phase_click_starts_there", t1 == -72 and abs(t2 + 72) < 0.6, (t1, t2))
+    ok("phase_click_restarts_the_run", lab_t() < 0.3, lab_t())
+    pg.evaluate(P + ".pause()")
+    b2 = state("labs.chaos.bobs(0)")
+    pg.mouse.move(*to_screen(b2["x2"], b2["y2"])); pg.mouse.down()
+    pg.mouse.move(*to_screen(b2["x1"] + 60, b2["y1"] + 5), steps=6); pg.mouse.up(); pg.wait_for_timeout(150)
+    ok("phase_bob_drags", state("labs.chaos.p.theta2") != t2 and state("labs.chaos.p.theta1") == t1, (state("labs.chaos.p.theta1"), state("labs.chaos.p.theta2")))
     pg.context.close()
 
     # ---- the frame-rate meter reports slow frames. A 100 ms burn sits past the 50 ms cap on the

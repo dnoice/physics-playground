@@ -1,6 +1,6 @@
 {
   "name": "physics-playground",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "private": true,
   "license": "Apache-2.0",
   "description": "Interactive physics playground: seven live labs in a bento workspace, in 2D and 3D, plain ES modules with no build step.",
@@ -10,8 +10,10 @@
     "dev": "node tools/serve.mjs",
     "lint": "eslint .",
     "check": "node tools/check.mjs",
-    "verify": "npm run lint && npm run check",
-    "test": "python tests/run_all.py"
+    "site": "node tools/site.mjs",
+    "verify": "npm run lint && npm run check && npm run site",
+    "test": "python tests/run_all.py",
+    "media": "python tools/media.py"
   },
   "devDependencies": {
     "eslint": "^10.14.0",

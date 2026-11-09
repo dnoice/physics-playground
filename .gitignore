@@ -1,16 +1,18 @@
 # ✒ Metadata
-#     - Title: Git Ignore Rules (digiSpace Edition - v2.0)
+#     - Title: Git Ignore Rules (digiSpace Edition - v2.2)
 #     - File Name: .gitignore
 #     - Relative Path: .gitignore
 #     - Artifact Type: config
-#     - Version: 2.0.0
-#     - Date: 11/05/2026
-#     - Update: Thursday, November 05, 2026
+#     - Version: 2.2.0
+#     - Date: 11/09/2026
+#     - Update: Monday, November 09, 2026
 #     - Author: Dennis 'dendogg' Smaltz
 #     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
 #     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 #
 # ✒ Changelog:
+#     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Ignores
+#       the staged GitHub Pages copy in _site/.
 #     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
 #       with the formal stack Dennis asked for.
 #
@@ -22,6 +24,7 @@
 #     - Ignores node_modules and npm logs.
 #     - Ignores OS and editor files.
 #     - Ignores local test output (screenshots, traces).
+#     - Ignores _site/, the Pages copy tools/site.mjs stages for deploys.
 #
 # ✒ Other Important Information:
 #     - Dependencies: none
@@ -38,3 +41,4 @@ desktop.ini
 shots/
 test-results/
 __pycache__/
+_site/

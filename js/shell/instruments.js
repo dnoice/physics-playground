@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck (digiSpace Edition - v2.1)
+    - Title: Instruments Deck (digiSpace Edition - v2.3)
     - File Name: instruments.js
     - Relative Path: js/shell/instruments.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lane
+      backgrounds use rrect(), so the scope draws in browsers without
+      CanvasRenderingContext2D.roundRect.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created:
       the chart, readouts and diagnostics become one compact instrument, on
       Dennis's call that the panels took more room than they gave back.
@@ -42,6 +45,7 @@
 ---------
 */
 import { THEME } from '../core/color.js';
+import { rrect } from '../core/draw.js';
 import { Series } from '../core/series.js';
 import { $, clamp, el, store } from '../core/util.js';
 import { hist, histSeek } from './capture.js';
@@ -159,7 +163,7 @@ export function drawScope(c) {
   const kept = H.snaps.length ? sx(clamp(H.snaps[0].t, W.beg, W.end)) : x0;
   pins.forEach((label, n) => {
     const s = W.I.series.get(label), y0 = top + n * (laneH + LANE_GAP), y1 = y0 + laneH, a = Math.max(0, nearest(s, W.beg) - 1);
-    g.fillStyle = 'rgba(255,255,255,0.025)'; g.beginPath(); g.roundRect(x0, y0, x1 - x0, laneH, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.025)'; g.beginPath(); rrect(g, x0, y0, x1 - x0, laneH, 7); g.fill();
     // History reaches back less far than the plot: shade what a click cannot rewind to.
     if (kept > x0) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(x0, y0, kept - x0, laneH); }
     let lo = Infinity, hi = -Infinity;

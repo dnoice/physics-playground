@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.1)
+    - Title: Cloth Lab (digiSpace Edition - v2.3)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
+      are grouped into Setup, Forces, Fabric and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig, tool overlay and a stated visual relief; snapshots use
       Float64, and resizing no longer restarts the scene.
@@ -81,15 +83,21 @@ export const cloth = {
     { id: 'flag', label: 'Flag in wind', params: { gravity: 250, wind: 700, tear: 4, spacing: 14, iters: 8 } },
     { id: 'net', label: 'Fragile net', params: { gravity: 900, wind: 0, tear: 1.7, spacing: 22, iters: 8 } },
   ],
+  groups: [
+    { id: 'setup', label: 'Setup', icon: 'flag' },
+    { id: 'forces', label: 'Forces', icon: 'balance' },
+    { id: 'fabric', label: 'Fabric', icon: 'texture' },
+    { id: 'display', label: 'Display', icon: 'visibility' },
+  ],
   controls: [
-    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²' },
-    { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, unit: 'px/s²', note: 'Negative values blow to the left.' },
-    { type: 'range', key: 'iters', label: 'Constraint iterations', min: 1, max: 24, step: 1, note: 'More iterations make the cloth stiffer.' },
-    { type: 'range', key: 'damping', label: 'Damping', min: 0, max: 0.1, step: 0.001 },
-    { type: 'range', key: 'tear', label: 'Tear at stretch', min: 1.3, max: 6, step: 0.05, fmt: v => v.toFixed(2) + '× rest' },
-    { type: 'range', key: 'spacing', label: 'Mesh spacing', min: 8, max: 30, step: 1, unit: 'px', rebuild: true, note: 'Restarts the scene when released.' },
-    { type: 'toggle', key: 'tearable', label: 'Links can tear' },
-    { type: 'toggle', key: 'fabric', label: 'Shaded fabric surface' },
+    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²', group: 'forces' },
+    { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, unit: 'px/s²', note: 'Negative values blow to the left.', group: 'forces' },
+    { type: 'range', key: 'iters', label: 'Constraint iterations', min: 1, max: 24, step: 1, note: 'More iterations make the cloth stiffer.', group: 'fabric' },
+    { type: 'range', key: 'damping', label: 'Damping', min: 0, max: 0.1, step: 0.001, group: 'forces' },
+    { type: 'range', key: 'tear', label: 'Tear at stretch', min: 1.3, max: 6, step: 0.05, fmt: v => v.toFixed(2) + '× rest', group: 'fabric' },
+    { type: 'range', key: 'spacing', label: 'Mesh spacing', min: 8, max: 30, step: 1, unit: 'px', rebuild: true, group: 'setup' },
+    { type: 'toggle', key: 'tearable', label: 'Links can tear', group: 'fabric' },
+    { type: 'toggle', key: 'fabric', label: 'Shaded fabric surface', group: 'display', short: 'Shaded fabric' },
   ],
   actions: [
     { label: 'Release all pins', run() { cloth.pin.fill(0); } },

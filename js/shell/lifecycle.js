@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Lab Lifecycle (digiSpace Edition - v2.1)
+    - Title: Lab Lifecycle (digiSpace Edition - v2.3)
     - File Name: lifecycle.js
     - Relative Path: js/shell/lifecycle.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.3.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
+      rebuild a parameter asks for keeps the user's edits through the
+      lab's keep() hook, after Dennis found Fluid's posts vanishing when
+      Particles changed; scene loads and Reset pass fresh and start clean.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A rebuild
       can take a saved world size and tells the running experiment.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -26,6 +30,8 @@
 
 ✒ Key Features:
     - rebuild() restarts a scene and resets its rewind history and dataset.
+      A parameter-driven rebuild hands the lab's keep() edits to build()
+      as lab.kept; restart() starts from the scene as written.
     - applyPreset() loads a scene's parameters and announces it.
     - setParam() honours rebuild-on-change controls and refreshes enabled
       states.
@@ -47,22 +53,29 @@ import { experimentReset } from './experiments.js';
 import { refreshEnabled, syncControl, syncPanel } from './panel.js';
 import { active, announce } from './state.js';
 
-export function rebuild(lab, world = view) {
+/* A rebuild a parameter asks for keeps what the user built into the world, such as Fluid's posts: the lab hands
+   its edits over with keep(), and build() reads them back from lab.kept before it fills the scene. Loading a scene,
+   Reset and recovery pass fresh, and start from the scene as written. */
+export function rebuild(lab, world = view, { fresh = false } = {}) {
   if (dataRec.on && dataRec.lab === lab) {
     const r = dataRec.rows;
     if (r.length > 1 && r[r.length - 1][0] - r[0][0] >= 1) stopData('The scene restarted, so the dataset so far was saved.');
     else { dataRec.rows = []; dataRec.tracks = []; dataRec.next = 0; }
   }
   lab.t = 0; lab._acc = 0;
+  lab.kept = !fresh && lab.ready && lab.keep ? lab.keep() : null;
   lab.build(lab.presetId, world.w, world.h);
+  lab.kept = null;
   lab.built = { w: world.w, h: world.h };
   lab.size = { w: view.w, h: view.h };
   histReset(lab); histCapture(lab, true);
   experimentReset(lab);
   if (lab === active) { refreshEnabled(); updateRewind(); }
 }
+/* The scene from the top, as Reset and recovery want it: no edits carried over. */
+export function restart(lab) { rebuild(lab, view, { fresh: true }); }
 export function ensureReady(lab) {
-  if (!lab.ready) { rebuild(lab); lab.ready = true; return; }
+  if (!lab.ready) { restart(lab); lab.ready = true; return; }
   if (lab.size.w !== view.w || lab.size.h !== view.h) resizeLab(lab);
 }
 export function resizeLab(lab) {
@@ -77,7 +90,7 @@ export function applyPreset(lab, id) {
   if (lab.cam && !lab.selfCam) { lab.cam.fit = true; if (navAnim.lab === lab) navAnim.lab = null; }
   Object.assign(lab.p, pr.params || {});
   lab.sceneP = { ...lab.p };
-  rebuild(lab);
+  restart(lab);
   if (lab === active) { syncPanel(); updateStageTitle(lab); announce(`${pr.label} loaded`); }
 }
 export function setParam(lab, key, value) {

@@ -1,17 +1,21 @@
 <!--
 ✒ Metadata
-    - Title: Third-Party Register (digiSpace Edition - v2.1)
+    - Title: Third-Party Register (digiSpace Edition - v2.2)
     - File Name: VENDOR.md
     - Relative Path: vendor/VENDOR.md
     - Artifact Type: docs
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      tools and actions used only in development and CI, the README badge
+      service, the rule that tools/site.mjs enforces this register's CDN
+      hosts, and the navigation line shared with the other documents.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — three.js
       now serves the whole 3D mode.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -26,6 +30,7 @@
     - Vendored KaTeX files and why they are vendored.
     - CDN packages with versions and licences.
     - Offline behaviour for each dependency.
+    - Development and CI tools, which never reach the browser.
 
 ✒ Other Important Information:
     - Dependencies: none
@@ -33,6 +38,10 @@
 ---------
 -->
 # Third-party code
+
+[README](../README.md) ✦ [Architecture](../ARCHITECTURE.md) ✦
+[Changelog](../CHANGELOG.md) ✦ **Third-party** ✦
+[Live lab](https://dnoice.github.io/physics-playground/)
 
 Everything the playground uses that it did not write, where it comes from,
 and under which licence. Versions are pinned; upgrade them deliberately
@@ -62,6 +71,30 @@ host only serves files that have an extension.
 | Material Symbols Rounded | Google Fonts, variable | `fonts.googleapis.com/css2?family=Material+Symbols+Rounded…&icon_names=…` | Apache-2.0 | Every icon; the request is subset to the glyphs in use |
 | Raleway | Google Fonts | `fonts.googleapis.com/css2?family=Raleway…` | SIL OFL 1.1 | Headings and interface text, set with lining figures |
 | JetBrains Mono | Google Fonts | `fonts.googleapis.com/css2?family=JetBrains+Mono…` | SIL OFL 1.1 | Numbers and data, with ligatures off |
+
+These hosts (`cdn.jsdelivr.net`, `fonts.googleapis.com` and the
+`fonts.gstatic.com` it serves faces from) are the only external origins the
+page may load from. `HOSTS` in `tools/site.mjs` mirrors this table, and
+`npm run site` fails on any other, so a new CDN is recorded here before it
+can ship.
+
+## Used only in development and CI
+
+None of these reach the browser or the deployed site.
+
+| Package | Version | Source | Licence | Used by |
+| --- | --- | --- | --- | --- |
+| ESLint | 10.14.0 | npm, pinned in `package-lock.json` | MIT | `npm run lint` |
+| globals | 17.14.0 | npm, pinned in `package-lock.json` | MIT | ESLint's browser and Node.js globals |
+| Playwright for Python | as installed | PyPI | Apache-2.0 | `npm test` and `npm run media` |
+| actions/checkout | v7 | GitHub Actions | MIT | Pages workflow |
+| actions/setup-node | v5 | GitHub Actions | MIT | Pages workflow |
+| actions/upload-pages-artifact | v3 | GitHub Actions | MIT | Pages workflow |
+| actions/deploy-pages | v5 | GitHub Actions | MIT | Pages workflow |
+
+The README's badges are images served by
+[shields.io](https://shields.io/); nothing from it runs in the playground
+or in the workflow.
 
 ## When a CDN is unreachable
 

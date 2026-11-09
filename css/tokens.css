@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Design Tokens (digiSpace Edition - v2.1)
+    - Title: Design Tokens (digiSpace Edition - v2.2)
     - File Name: tokens.css
     - Relative Path: css/tokens.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.2.0
+    - Date: 11/09/2026
+    - Update: Monday, November 09, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
+      grid gains a third row for the colophon.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A darker
       bench, hairline edges and more generous spacing.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -27,7 +29,7 @@
     - Dark bench palette with amber and cyan accents.
     - Tile, gap, radius and shadow tokens for the console.
     - Body grid pins content to the viewport width so nothing widens the
-      page.
+      page: top bar, console, then the colophon.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -74,7 +76,7 @@ body {
   color: var(--text); font: 500 14px/1.5 var(--font-body);
   /* Raleway's default numerals are old-style and bounce on the baseline; JetBrains' ligatures would rewrite symbols. */
   font-variant-numeric: lining-nums; font-variant-ligatures: none;
-  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); overflow: hidden; -webkit-font-smoothing: antialiased;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; -webkit-font-smoothing: antialiased;
 }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
