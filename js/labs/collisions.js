@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.6)
+    - Title: Collisions Lab (digiSpace Edition - v2.7)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: balls, kinetic energy, RMS speed and PA / NkT on its tape, and
+      the selected ball as its target, its centre lifted as the 3D table draws
+      it. A scene's balls are numbered from 1 again on every build, where the
+      count ran on across scenes (a 16-ball table could show Ball 276).
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit:
       balls carry a stable identity, so Inspect stays on its ball when another
       is erased, lets go when its ball is erased and clears on a rebuild,
@@ -31,9 +36,6 @@
       and friction's spin share; Inspect follows a ball's speed. Random new
       balls gives each ball added a random size from 4 to 24 px, and so a
       random mass.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
-      radii and speeds follow the chosen units, one pixel being 1.09 cm; the
-      empty Inspect pane says how to select a ball.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -64,7 +66,7 @@ import { TAU, clamp, fmtSI, pct, rand, reduceMotion } from '../core/util.js';
 import { PX_M, fmtQ } from '../core/units.js';
 import { view } from '../core/view.js';
 
-import { camOf, camXf } from '../shell/camera.js';
+import { camOf, camXf, toScreen } from '../shell/camera.js';
 
 import { setParam } from '../shell/lifecycle.js';
 
@@ -181,7 +183,7 @@ export const collisions = {
     }
   },
   build(preset, w, h) {
-    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1 });
+    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1, nextUid: 0 });
     const N = Math.round(this.p.count);
     if (preset === 'gas') this.jitterGrid(N, 5, 170);
     else if (preset === 'pile') {
@@ -314,6 +316,14 @@ export const collisions = {
     return { id: `ball-${this.uid[i]}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${this.uid[i]}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
+  /* The head-up display: its readings, and the selected ball in stage pixels, its centre lifted as the table draws it. */
+  hud: [['Balls', 'BALLS'], ['Total kinetic energy', 'KINETIC E'], ['RMS speed', 'RMS SPEED'], ['Pressure check PA / NkT', 'PA / NkT']],
+  hudTarget(three) {
+    const i = this.picked; if (i < 0 || i >= this.n) return null;
+    const x = this.x[i], y = this.y[i], r = this.r[i];
+    if (three) { const s = this.project3(x, y, r * this.plane3().k); return s && { x: s.x, y: s.y, r: r * this.scale3(s) }; }
+    const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: r * s.z };
+  },
   inspectHint: 'With the Grab tool, click a ball to inspect it here.',
   cursorAt(p) { return this.p.tool === 'grab' ? (this.hit(p) >= 0 ? 'grab' : 'copy') : 'crosshair'; },
   pointerDown(p) {

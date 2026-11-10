@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Automation Surface (digiSpace Edition - v2.5)
+    - Title: Automation Surface (digiSpace Edition - v2.7)
     - File Name: automation.js
     - Relative Path: js/shell/automation.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      PhysicsPlayground.hud reads and sets the head-up display (on, opacity,
+      parts) for tests.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — view.get()
       reports moving while a zoom, frame or recentre is still easing in, so
       tests can wait for the view to come to rest instead of a fixed time.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds
       viewMode() for a lab's view and units.get() and units.set() for the unit
       system.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      mode surface; renderer status comes from the lab rather than a
-      renderer import.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -58,6 +58,7 @@ import { active, perf, state } from './state.js';
 import { pause, play, resetActive, setSpeed, stepOnce } from './transport.js';
 import { vault } from './vault.js';
 import { selectLab } from './workspace.js';
+import { configureHud, hudState } from './headsup.js';
 
 /* ---------- automation surface ---------- */
 
@@ -73,6 +74,7 @@ export function init() {
     tool: id => selectDock(id),
     viewMode: id => selectView(id),
     units: { get: () => unitSystem(), set: id => setUnitSystem(id) },
+    hud: { get: () => hudState(), set: o => configureHud(o || {}) },
     diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
     play, pause, step: stepOnce, reset: resetActive, setSpeed,
     advance: seconds => advance(active, seconds, Infinity),

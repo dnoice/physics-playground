@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.6)
+    - Title: Architecture Guide (digiSpace Edition - v2.7)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The head-up
+      display: its section, the lab hooks hud and hudTarget, the camera reader
+      toScreen, its place in the boot order, frame loop and styles, and the
+      convention that anything over the stage that changes keeps its own
+      compositor layer and opacity, with the measurements behind it.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math
       checks: the scale for a theory that can be zero, and the three rules
       every check keeps (its theory never comes from the measurement beside
@@ -115,11 +120,12 @@ flowchart TB
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
 | Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), live math, guide, units menu, capture, storage, layout, experiments |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
-`updateDock`, `updateNav`, and the camera readers `camOf` and `camXf`.
+`updateDock`, `updateNav`, and the camera readers `camOf`, `camXf` and
+`toScreen`.
 They never build shell UI themselves.
 
 ## Boot order
@@ -133,7 +139,8 @@ before anything else reads it. Then `boot()` runs:
    `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
    (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
-   card), `unitmenu.init` (Units menu), `automation.init`
+   card), `unitmenu.init` (Units menu), `headsup.init` (the head-up
+   display's menu and its remembered settings), `automation.init`
    (`window.PhysicsPlayground`).
 3. `start()` reads the theme, sizes the stage, applies saved parameters
    and presets, builds the orbit ball and library controls, selects the
@@ -151,9 +158,12 @@ lab:
 - **Drawing**: in 2D, `drawStage` applies the camera and calls `lab.draw`.
   In 3D, `drawWorld` renders the lab's scene and composites it into the
   stage canvas, then calls `lab.overlay3`, so video capture and pointer input
-  work the same in both modes.
-- **Rates**: HUD and gizmo every 0.1 s; readouts, chart, capture chips and
-  the experiment check every 0.25 s; diagnostics every 0.5 s.
+  work the same in both modes. After either, `trackHud` places the head-up
+  display's target box on the selected object as it was just drawn.
+- **Rates**: the status chips (time, rate, frame rate) and gizmo every 0.1 s;
+  readouts, chart, capture chips, the head-up display's tape and callout, and
+  the experiment check every 0.25 s; diagnostics and the caution lights every
+  0.5 s.
 
 ## The lab contract
 
@@ -202,6 +212,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
 | `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
 | `primary` | The primary readouts, which lead with larger figures: a list of labels, or a count of leading rows (default 2). A readout row may also end with its tier, `'primary'` or `'derived'` |
+| `hud`, `hudTarget(three)` | The head-up display: `hud` lists the readouts its tape carries as `[label, short name]` pairs (default: the primary readouts under their own names); `hudTarget` returns the inspected object's `{ x, y, r }` in stage pixels for the current mode, or null, so the target box sits on it as drawn (see Head-up display below) |
 
 ## The 3D mode
 
@@ -371,6 +382,29 @@ the nearest snapshot. While the run is replaying the past, sampling stops, so th
 recorded future stays until a new branch discards it. With nothing plotted, the
 lab's own `chart` shows instead.
 
+## Head-up display
+
+`js/shell/headsup.js` lays the run's numbers over the stage, so the eye can stay
+on the simulation. It is one layer above the canvas and below every control,
+hidden from assistive technology (Telemetry, Insights and Inspect already carry
+the same figures) and never clickable.
+
+- **Readings tape**: the readouts a lab names in `hud`, with the text Telemetry
+  shows at the same tick, a trend arrow and a trace from Telemetry's own
+  samples. `updateReadouts` reads the lab once and hands the rows to both.
+- **Caution lights**: the warnings and critical insights by title, two on a
+  wide stage and one on a narrow one, with a count of the rest.
+- **Target box and callout**: each frame, after drawing, `trackHud` asks the lab
+  for `hudTarget(three)` and centres a corner-bracket box on it; an object off
+  the stage gets a dashed box waiting at the nearest edge. At panel rate the
+  callout takes the inspected name, kind and three figures (the `focus` one
+  first). Its corner is chosen from eight positions around the box, each
+  clamped into the free part of the stage and scored by what it would cover:
+  the object most, then the tape, the lights and the overview map.
+- **Settings**: the HUD menu in the top bar and Shift+H. On or off, opacity in
+  four steps (40, 60, 80, 100 %) and each part on or off, kept per browser
+  under `psp:hud`; `PhysicsPlayground.hud` reads and sets them for tests.
+
 ## Units
 
 `js/core/units.js` converts what a lab computes into the chosen system and
@@ -499,7 +533,8 @@ The stylesheets load in this order, each building on the last:
 | `icons.css` | Material Symbols styling and tab glyph animations |
 | `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their card grid, switches, the player bar's native sliders |
-| `stage.css` | Stage title and scene dropdown, HUD, player bar, experiment banner, stage rail and its Random dice |
+| `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
+| `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and the HUD menu |
 | `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), Live Math panels, Guide cards, tabs |
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
@@ -613,5 +648,11 @@ picture.
   the browser interpolate the gradient in Oklab, off its fast path, and was
   measured at about a tenth of the frame rate without a GPU. Static cards
   may use `color-mix()` freely.
+- Anything laid over the stage that changes keeps to its own compositor layer
+  (`will-change: transform`) and takes its opacity on itself, never on a
+  stage-sized parent. The head-up display measured both: without its own
+  layers the moving target box cost 16 % of the frame rate without a GPU and
+  the tape, painted together with the status chips that tick ten times a
+  second, about 5 %; with them the whole display costs 1 to 3 %.
 
 <!-- ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once! -->

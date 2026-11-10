@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Test Runner (digiSpace Edition - v2.5)
+    - Title: Test Runner (digiSpace Edition - v2.7)
     - File Name: run_all.py
     - Relative Path: tests/run_all.py
     - Artifact Type: test
-    - Version: 2.5.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
+      head-up display suite, tests/hud.py.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
       new notebook suite. Runs the new placement suite.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
@@ -53,7 +55,7 @@ import sys
 from harness import NOISE, URL
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement']
+SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement', 'hud']
 TIMEOUT_S = 600
 
 

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Boot Sequence (digiSpace Edition - v2.4)
+    - Title: Boot Sequence (digiSpace Edition - v2.7)
     - File Name: main.js
     - Relative Path: js/main.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,12 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Boot wires
+      the head-up display's menu and remembered settings.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts the
       deck workspace and the Units menu.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts
       the mode module and reopens the last lab.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0 as the boot sequence of the module split Dennis asked for.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -67,6 +67,7 @@ import { init as initInstruments } from './shell/instruments.js';
 import { init as initDeck } from './shell/deck.js';
 import { init as initUnits } from './shell/unitmenu.js';
 import { init as initMode } from './shell/mode.js';
+import { init as initHud } from './shell/headsup.js';
 import { selectLab } from './shell/workspace.js';
 
 /* ---------- boot ---------- */
@@ -92,7 +93,7 @@ export const hot = window.claude && window.claude.hot;
 
 /* Boot: wire every shell module, then start the selected lab. */
 function boot() {
-  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initUnits(); initAutomation();
+  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initUnits(); initHud(); initAutomation();
   if (hot && typeof hot.snapshot === 'function') {
     hot.snapshot(() => ({
       lab: active && active.id, running: state.running, speed: state.speed,

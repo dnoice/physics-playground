@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.4)
+    - Title: Diagnostics (digiSpace Edition - v2.7)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,13 +12,14 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      warnings and critical notices also light the head-up display's caution
+      lights.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Insights
       render in the deck's Insights pane; the HUD alert opens that pane, and
       the summary on its tab is short: a count, or how many need checking.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Recovery
       from a blown-up run restarts the scene clean through restart().
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — No lab is
-      named here any more; added the graphics tier insight.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -51,6 +52,7 @@ import { setSpeed } from './transport.js';
 import { showPane } from './deck.js';
 import { showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
+import { hudCautions } from './headsup.js';
 
 /* ---------- diagnostics ---------- */
 export const insightsEl = $('#insights'), insightCards = new Map();
@@ -91,6 +93,7 @@ export function evaluateDiagnostics() {
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
   sum.dataset.level = worst || 'ok';
   showTopAlert(alerts[0], applyFix);
+  hudCautions(alerts);
   // The summary rides on the Insights tab, so it stays short: the state in words, then the count.
   sum.textContent = worst === 'crit' ? `${alerts.length} critical` : worst === 'warn' ? `${alerts.length} to check` : list.length ? String(list.length) : '';
   sum.title = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable, no insights';

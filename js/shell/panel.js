@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.6)
+    - Title: Panel Builder (digiSpace Edition - v2.7)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      updateReadouts reads the lab once per panel tick and gives the rows to
+      Telemetry and the head-up display's tape, so both show the same text.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Comments
       speak of dials rather than sliders.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Guide
@@ -22,9 +25,6 @@
       two lines; a changed setting also refreshes the rail's Random dice and
       the Guide's cards at once. The dice fades in with the tools when a lab
       opens.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A control
-      with a quantity kind shows its value, and takes typed values, in the
-      chosen unit system; the lab keeps its own units underneath.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -65,6 +65,7 @@ import { drawScope, resetGauges, scopeOn, updateGauges } from './instruments.js'
 import { renderExperiments } from './experiments.js';
 import { makeWheel } from './dial.js';
 import { buildLiveMath } from './livemath.js';
+import { hudReadings } from './headsup.js';
 import { syncDice } from './dock.js';
 import { buildGuide, syncGuide } from './guide.js';
 import { applyPreset, rebuild, setParam } from './lifecycle.js';
@@ -292,7 +293,8 @@ export function markClip(f) {
   else { f.removeAttribute('tabindex'); f.removeAttribute('role'); f.removeAttribute('aria-label'); }
 }
 export const formulaRO = new ResizeObserver(entries => { for (const e of entries) markClip(e.target); });
-export function updateReadouts() { if (active) updateGauges(active, active.readouts()); }
+// Telemetry and the head-up display share one reading of the lab per panel tick.
+export function updateReadouts() { if (!active) return; const rows = active.readouts(); updateGauges(active, rows); hudReadings(active, rows); }
 export function drawChart() {
   if (!active) return;
   const c = canvasContext($('#chart')); if (!c) return;

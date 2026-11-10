@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck (digiSpace Edition - v2.5)
+    - Title: Instruments Deck (digiSpace Edition - v2.7)
     - File Name: instruments.js
     - Relative Path: js/shell/instruments.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exports a
+      reading's sampled history and the figure-and-unit formatter, so the
+      head-up display's tape shows Telemetry's own text and trace.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — sparkPath()
       is shared with the Inspect pane's figure sparklines.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Readings
@@ -20,9 +23,6 @@
       beside the readings (not remembered across visits), every series
       restarts when the units change, and the diagnostics sheet's code moves
       to the deck's Insights pane.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lane
-      backgrounds use rrect(), so the scope draws in browsers without
-      CanvasRenderingContext2D.roundRect.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -80,6 +80,8 @@ function inst(lab) {
   return I;
 }
 export const scopeOn = lab => inst(lab).pins.size > 0;
+/* A reading's history at panel rate, for the head-up display's trend and trace; undefined until it has a sample. */
+export const readingSeries = (lab, label) => inst(lab).series.get(label);
 /* A change of units restarts every plotted series: old samples are numbers in the old units. Pins stay. */
 export function resetSeries() {
   for (const lab of labs) if (lab.inst) { lab.inst.series.clear(); lab.inst.hoverX = null; }
@@ -154,7 +156,7 @@ function gauge(lab, label) {
 }
 /* A figure and its unit: the unit in a smaller face, so "0.5916 J/kg" fits a narrow gauge without losing either. */
 const NUM = /^\s*([-+−]?\d[\d,]*\.?\d*(?:e[-+]?\d+)?[kMGT]?(?![a-zA-Z]))\s*(.*)$/;
-function setValue(dd, text) {
+export function setValue(dd, text) {
   const m = NUM.exec(text);
   if (!m || !m[2]) { dd.textContent = text; return; }
   // One inline run, so the figure and its unit read and copy as one line ("1400 / 4000"), not two flex items.

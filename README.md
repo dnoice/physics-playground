@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.6)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.7)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.7.0: the head-up display in the highlights, the workspace guide, the
+      keyboard table and the project layout.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.6.0: the release badge.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -88,7 +91,7 @@ controls](docs/media/hero-workspace.webp)
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.6.0][badge-release]](CHANGELOG.md)
+[![Release 2.7.0][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
 
 ---
@@ -113,6 +116,10 @@ runs.
 - **Instruments that explain themselves.** Plot any reading, inspect any
   object you click, and let the insights say why a setting misbehaves and
   offer the one-click fix.
+- **A head-up display on the stage.** The lab's key readings, its warnings
+  and the selected object's figures float over the run like a cockpit HUD,
+  with a target box that follows the object in 2D and 3D, so your eyes never
+  have to leave the simulation.
 - **Live maths.** Every formula is wired to the run: its symbols' values,
   dials for its parameters, and a check of theory against the simulation.
 - **Random placement.** Turn on the dice under the tools, and every planet,
@@ -273,6 +280,15 @@ full-height Inspector beside them.
   things (Gravity, Collisions, Fluid, Waves and Fields), the **Random** dice
   under the tools makes each new object different: a random planet type and
   mass, ball size, post size, source frequency and phase, or charge.
+- **Head-up display**: the run's numbers on the stage itself, in thin cyan
+  lines over the simulation. A tape down the left edge carries the lab's key
+  readings, each with its trend and a short trace; caution lights near the
+  top carry the warnings; and selecting an object puts a target box on it,
+  following it in 2D and 3D, with a callout of its figures. The **HUD** menu
+  in the top bar sets its opacity (40 %, 60 %, 80 % or 100 %) and turns each
+  part on or off; **Shift+H** shows or hides it. Your choice is remembered.
+  The display never takes a click, and screen readers get the same figures
+  from Telemetry, Insights and Inspect.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
   data and save buttons.
 - **Instruments**: three panes over one header.
@@ -342,7 +358,8 @@ Collisions and Fields stay in simulation units, since those labs define them
 for the computation rather than from real materials.
 
 Press **F** to give the stage the whole window and **Shift+B** to hide the
-Instruments. The layout reflows to one column below 1180 px.
+Instruments; with the head-up display on, the stage still shows the numbers
+that matter. The layout reflows to one column below 1180 px.
 
 ### Mouse and touch
 
@@ -372,6 +389,7 @@ Instruments. The layout reflows to one column below 1180 px.
 | [ and ] | Halve or double the speed |
 | M and D | Record a video clip, record a dataset |
 | F and Shift+B | Focus the stage, hide the Instruments |
+| Shift+H | Show or hide the head-up display |
 | ? | Keyboard reference |
 
 ## Capturing runs
@@ -419,14 +437,14 @@ names hide, and the workspace says 3D is unavailable and stays in 2D.
 
 ```text
 index.html            page, tiles, colophon, CDN links and import map
-css/                  tokens, icons, workspace, controls, stage, tiles, library, responsive
+css/                  tokens, icons, workspace, controls, stage, head-up display, tiles, library, responsive
 js/main.js            boot sequence
 js/core/              pure helpers: DOM, colour, charts, drawing, maths, icons, TeX, graphics tiers, units
 js/render/            the 2D fluid surface shader
 js/render/world/      the 3D mode: engine, studio, materials, shapes, ribbons
 js/render/world/scenes/  one three.js scene per lab
 js/labs/              one module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry
-js/shell/             workspace: state, panel, rail, deck, camera, stage input, loop, modes, units, capture, library, experiments
+js/shell/             workspace: state, panel, rail, deck, head-up display, camera, stage input, loop, modes, units, capture, library, experiments
 tools/                dev server, project checker, Pages stager, README media capture
 tests/                Playwright browser suites and their runner
 vendor/katex/         KaTeX stylesheet, fonts and licence
@@ -528,7 +546,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.6.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.7.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

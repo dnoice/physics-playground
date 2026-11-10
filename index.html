@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.6)
+    - Title: Physics Playground (digiSpace Edition - v2.7)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -13,6 +13,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
+      call for a cockpit head-up display: the display's layer over the stage
+      canvas (tape, caution lights, target box, leader and callout), the HUD
+      button and menu in the top bar, the centre_focus_strong glyph and
+      headsup.css, and Shift+H on the keyboard sheet.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       keyboard sheet adds ? and Esc, and how to work the dials: drag, nudge,
       scroll once clicked, arrows and typing.
@@ -20,13 +25,6 @@
       card gains its focus chart and a note on how it works; the Library page
       opens with its capture cards. The stage rail gains the Random dice under
       the tools, and the icon subset adds the dice and the dial chevrons.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The stage
-      rail is regrouped on Dennis's brief for one interaction architecture: a
-      fixed Camera group, then the lab's Tools, View and scene groups. The
-      instruments deck gains Telemetry, Inspect and Insights panes, a size
-      button and a resize grip; the Details card moves into Inspect and the
-      diagnostics sheet into Insights. A Units button and menu join the top
-      bar, with U and V on the keyboard sheet.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -83,13 +81,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
 <link rel="stylesheet" href="css/workspace.css">
 <link rel="stylesheet" href="css/controls.css">
 <link rel="stylesheet" href="css/stage.css">
+<link rel="stylesheet" href="css/headsup.css">
 <link rel="stylesheet" href="css/tiles.css">
 <link rel="stylesheet" href="css/library.css">
 <link rel="stylesheet" href="css/responsive.css">
@@ -119,6 +118,7 @@
     </div>
     <button type="button" class="btn gfx-btn" id="btn-gfx" aria-expanded="false" aria-controls="gfx-sheet" title="Graphics tier"><span class="ms" aria-hidden="true">tune</span><span id="btn-gfx-label">Auto</span></button>
     <button type="button" class="btn gfx-btn" id="btn-units" aria-expanded="false" aria-controls="units-sheet" title="Units (U)"><span class="ms" aria-hidden="true">straighten</span><span id="btn-units-label">Metric</span></button>
+    <button type="button" class="btn gfx-btn" id="btn-hud" aria-expanded="false" aria-controls="hud-sheet" title="Head-up display (Shift+H)"><span class="ms" aria-hidden="true">center_focus_strong</span><span id="btn-hud-label">HUD</span></button>
     <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the instruments (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Instruments</span></button>
     <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
     <button type="button" class="icon-btn" id="btn-keys" aria-expanded="false" aria-controls="keys-sheet" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
@@ -129,6 +129,16 @@
   <section class="tile tile-stage" id="tile-stage" aria-labelledby="stage-lab">
     <div class="stage" id="stage">
       <canvas id="stage-canvas" role="img" aria-label="Simulation stage"></canvas>
+      <!-- The head-up display (headsup.js): the lab's key readings, its cautions and the selected object's figures,
+           laid over the stage so the eye can stay on the run. It repeats Telemetry, Insights and Inspect, which
+           assistive technology already reads, so it is hidden from it, and it never takes a click. -->
+      <div class="hu" id="hu" aria-hidden="true" hidden>
+        <dl class="hu-tape" id="hu-tape"></dl>
+        <div class="hu-caution" id="hu-caution"></div>
+        <div class="hu-lead" id="hu-lead" hidden></div>
+        <div class="hu-tgt" id="hu-tgt" hidden><i></i><i></i><i></i><i></i></div>
+        <div class="hu-card" id="hu-card" hidden><p class="hu-card-head"><span id="hu-card-name"></span><span class="hu-card-kind" id="hu-card-kind"></span></p><dl class="hu-card-rows" id="hu-card-rows"></dl></div>
+      </div>
       <div class="stage-top">
         <div class="stage-title">
           <span class="ms" id="stage-icon" aria-hidden="true">orbit</span>
@@ -312,6 +322,7 @@
     <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Switch labs</dd>
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
+    <dt><kbd>Shift</kbd>+<kbd>H</kbd></dt><dd>Show or hide the head-up display on the stage</dd>
     <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
     <dt><kbd>V</kbd></dt><dd>Next view, in a lab with more than one (Chaos, Waves)</dd>
     <dt><kbd>U</kbd></dt><dd>Units: metric, US customary or simulation pixels</dd>
@@ -322,6 +333,15 @@
   </dl>
 </div>
 <!-- Units: what the readings, controls and scale bar are shown in. The simulations always compute in their own units. -->
+<div class="sheet gfx-sheet hud-sheet" id="hud-sheet" role="dialog" aria-modal="false" aria-labelledby="hud-title" hidden>
+  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">center_focus_strong</span><h3 id="hud-title">Head-up display</h3><button type="button" class="icon-btn" id="hud-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+  <div class="hud-opts">
+    <button type="button" role="switch" class="switch" id="hud-on" aria-checked="true"><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span class="switch-text"><span>Show on the stage</span><span class="switch-note">Shift+H turns it on or off from anywhere</span></span></button>
+    <div class="hud-field"><span class="seg-label" id="hud-alpha-key">Opacity</span><div id="hud-alpha"></div></div>
+    <div class="hud-field"><span class="seg-label">Parts</span><div class="hud-parts" id="hud-parts"></div></div>
+  </div>
+  <p class="gfx-note">The display repeats Telemetry, Insights and Inspect on the stage itself, so the eye can stay on the run. Select an object to put a target box on it.</p>
+</div>
 <div class="sheet gfx-sheet units-sheet" id="units-sheet" role="dialog" aria-modal="false" aria-labelledby="units-title" hidden>
   <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">straighten</span><h3 id="units-title">Units</h3><button type="button" class="icon-btn" id="units-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
   <div class="gfx-list" id="units-list" role="radiogroup" aria-labelledby="units-title"></div>

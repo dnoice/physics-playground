@@ -1,0 +1,149 @@
+/*
+✒ Metadata
+    - Title: Head-Up Display Styles (digiSpace Edition - v2.7)
+    - File Name: headsup.css
+    - Relative Path: css/headsup.css
+    - Artifact Type: stylesheet
+    - Version: 2.7.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
+      Dennis's call for a cockpit-style head-up display over the stage: the
+      readings tape, caution lights, target box, leader and callout, and the
+      top-bar menu that sets it.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    The look of the head-up display (headsup.js): thin phosphor-cyan lines
+    and monospaced figures laid straight onto the stage, legible over a dark
+    sky or a bright 3D room, at the opacity chosen in the HUD menu.
+
+✒ Key Features:
+    - One opacity for the whole display, from the --hu-a custom property.
+    - Legibility from a dark text halo and a light scrim fading into the
+      stage, never a backdrop blur: the stage redraws every frame and a blur
+      under the display would cost that frame rate (see ARCHITECTURE.md).
+    - Reading states keep their meaning: amber for warn, red for crit.
+    - Narrow and short stages trim the tape rather than cover the run.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+---------
+*/
+/* ---------- the display: one layer over the canvas, under every control ---------- */
+.hu {
+  --hu: #8fe9f3; --hu-dim: rgba(143, 233, 243, 0.62); --hu-line: rgba(143, 233, 243, 0.42); --hu-fig: #eafcfe;
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; color: var(--hu);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 1px rgba(2, 5, 9, 0.95), 0 1px 3px rgba(2, 5, 9, 0.85), 0 0 9px rgba(95, 208, 223, 0.22);
+}
+/* The opacity sits on each part, never on the whole display: on the full stage it would make one stage-sized layer
+   for the compositor to blend over the canvas every frame, which cost 6 to 9 % of the frame rate without a GPU. */
+.hu > * { opacity: var(--hu-a, 0.8); }
+/* Every part is its own compositor layer. Unlayered, the tape and lights were painted together with the stage's
+   chips, whose clock changes ten times a second, so each tick repainted all of them: about 5 % of the frame rate
+   without a GPU. The moving parts need it most: without it each frame repainted them, 16 %. */
+.hu-tape, .hu-caution { will-change: transform; }
+.hu[hidden], .hu [hidden] { display: none; }
+
+/* ---------- readings tape: a ruled column with a tick at each figure ---------- */
+.hu-tape {
+  position: absolute; left: 16px; top: var(--hu-top, 104px); margin: 0; display: grid; gap: 12px; padding: 6px 22px 8px 13px;
+  border-left: 1px solid var(--hu-line); border-radius: 0 12px 12px 0;
+  background: linear-gradient(90deg, rgba(4, 7, 11, 0.5), rgba(4, 7, 11, 0.28) 62%, rgba(4, 7, 11, 0));
+}
+.hu-tape::before, .hu-tape::after { content: ""; position: absolute; left: -1px; width: 9px; height: 1px; background: var(--hu-line); }
+.hu-tape::before { top: 0; }
+.hu-tape::after { bottom: 0; }
+.hu-read { position: relative; display: grid; gap: 3px; }
+.hu-read::before { content: ""; position: absolute; left: -13px; top: 20px; width: 7px; height: 1px; background: var(--hu); }
+.hu-key { display: flex; align-items: center; gap: 7px; }
+.hu-key dt { font: 500 9.5px/1 var(--font-mono); letter-spacing: 0.15em; color: var(--hu-dim); white-space: nowrap; }
+.hu-trend { width: 9px; text-align: center; font: 600 9px/1 var(--font-mono); }
+.hu-trend[data-dir="up"]::before { content: "▲"; }
+.hu-trend[data-dir="down"]::before { content: "▼"; }
+.hu-trend[data-dir="flat"]::before { content: "–"; opacity: 0.6; }
+.hu-val { margin: 0; font: 500 19px/1.05 var(--font-mono); color: var(--hu-fig); white-space: nowrap; letter-spacing: -0.01em; }
+.hu-val .unit { margin-left: 2px; font-size: 11px; color: var(--hu-dim); letter-spacing: 0.02em; }
+.hu-trace { display: block; width: 96px; height: 12px; }
+.hu-trace svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.hu-trace path { fill: none; stroke: var(--hu); stroke-width: 1.2; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.75; }
+.hu-read[data-state="ok"]::before { background: var(--ok); }
+.hu-read[data-state="warn"] .hu-val, .hu-read[data-state="warn"] .hu-trend { color: var(--warn); }
+.hu-read[data-state="warn"]::before, .hu-read[data-state="warn"] .hu-trace path { background: var(--warn); stroke: var(--warn); }
+.hu-read[data-state="crit"] .hu-val, .hu-read[data-state="crit"] .hu-trend { color: var(--crit); }
+.hu-read[data-state="crit"]::before, .hu-read[data-state="crit"] .hu-trace path { background: var(--crit); stroke: var(--crit); }
+
+/* ---------- caution lights: left of the rail, below an experiment's banner when one shows ---------- */
+.hu-caution { position: absolute; top: 16px; right: 152px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 44%; }
+.stage:has(.exp-banner:not([hidden])) .hu-caution { top: 66px; }
+.hu-ann {
+  position: relative; padding: 6px 10px 6px 21px; border: 1px solid currentColor; border-radius: 3px; color: var(--warn); background: rgba(22, 15, 3, 0.62);
+  font: 600 10px/1 var(--font-mono); letter-spacing: 0.13em; text-transform: uppercase; white-space: nowrap; max-width: 44ch; overflow: hidden; text-overflow: ellipsis;
+}
+.hu-ann::before { content: ""; position: absolute; left: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: currentColor; transform: rotate(45deg); }
+.hu-ann[data-level="crit"] { color: var(--crit); background: rgba(26, 6, 6, 0.66); }
+.hu-ann[data-level="crit"]::before { animation: hu-blink 1.1s steps(2, jump-none) infinite; }
+.hu-more { padding-left: 10px; }
+.hu-more::before { display: none; }
+@keyframes hu-blink { 50% { opacity: 0.15; } }
+@media (prefers-reduced-motion: reduce) { .hu-ann[data-level="crit"]::before { animation: none; } }
+
+/* ---------- target box, leader and callout: placed each frame by transform ---------- */
+.hu-tgt { position: absolute; left: 0; top: 0; width: 40px; height: 40px; will-change: transform; }
+.hu-tgt i { position: absolute; width: 10px; height: 10px; border: 0 solid var(--hu); filter: drop-shadow(0 0 1px rgba(2, 5, 9, 0.9)); }
+.hu-tgt i:nth-child(1) { left: 0; top: 0; border-left-width: 1.5px; border-top-width: 1.5px; }
+.hu-tgt i:nth-child(2) { right: 0; top: 0; border-right-width: 1.5px; border-top-width: 1.5px; }
+.hu-tgt i:nth-child(3) { left: 0; bottom: 0; border-left-width: 1.5px; border-bottom-width: 1.5px; }
+.hu-tgt i:nth-child(4) { right: 0; bottom: 0; border-right-width: 1.5px; border-bottom-width: 1.5px; }
+/* A pip at the centre and a tick on each side, like a gun-sight's designator box. */
+.hu-tgt::before { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; background: var(--hu); border-radius: 50%; }
+.hu-tgt::after { content: ""; position: absolute; inset: -5px; background: linear-gradient(var(--hu), var(--hu)) top / 1.5px 5px no-repeat, linear-gradient(var(--hu), var(--hu)) bottom / 1.5px 5px no-repeat, linear-gradient(var(--hu), var(--hu)) left / 5px 1.5px no-repeat, linear-gradient(var(--hu), var(--hu)) right / 5px 1.5px no-repeat; }
+.hu-tgt.off i { border-style: dashed; }
+.hu-tgt.off::before { background: transparent; box-shadow: inset 0 0 0 1px var(--hu); width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; }
+.hu-lead { position: absolute; left: 0; top: 0; height: 1px; background: var(--hu-line); transform-origin: 0 50%; will-change: transform; }
+.hu-card {
+  position: absolute; left: 0; top: 0; min-width: 168px; max-width: 236px; padding: 8px 11px 9px; will-change: transform;
+  border: 1px solid var(--hu-line); border-radius: 4px; background: linear-gradient(180deg, rgba(5, 10, 16, 0.72), rgba(5, 10, 16, 0.5));
+}
+.hu-card::before { content: ""; position: absolute; left: -1px; top: -1px; width: 18px; height: 2px; background: var(--hu); }
+.hu-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 7px; font: 600 10.5px/1.2 var(--font-mono); letter-spacing: 0.12em; color: var(--hu); text-transform: uppercase; white-space: nowrap; }
+.hu-card-kind { font-weight: 500; letter-spacing: 0.08em; color: var(--hu-dim); overflow: hidden; text-overflow: ellipsis; }
+.hu-card-rows { display: grid; margin: 0; }
+/* Each figure's name above its value, so the lab's full names fit and the values line up down the left. */
+.hu-card-rows dt { margin-top: 6px; font: 400 9.5px/1.2 var(--font-mono); letter-spacing: 0.05em; color: var(--hu-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hu-card-rows dt:first-of-type { margin-top: 0; color: var(--hu); }
+.hu-card-rows dd { margin: 1px 0 0; font: 500 13px/1.15 var(--font-mono); color: var(--hu-fig); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hu-card-rows dd:first-of-type { font-size: 16px; color: var(--hu-fig); }
+
+/* ---------- narrow and short stages: the rail runs along the foot, so the cautions go right, the tape slims ---------- */
+@container stage (max-width: 720px) {
+  .hu-tape { left: 10px; gap: 8px; padding: 4px 14px 6px 10px; }
+  .hu-read::before { left: -10px; top: 17px; }
+  .hu-val { font-size: 15px; }
+  .hu-trace { display: none; }
+  .hu-caution { top: var(--hu-top, 104px); right: 10px; flex-direction: column; align-items: flex-end; max-width: 52%; }
+  .hu-card { min-width: 140px; max-width: 196px; }
+  .hu-card-rows dd:first-of-type { font-size: 14px; }
+  /* Two figures, and one caution with its count, leave the run room on a phone. */
+  .hu-card-rows dt:nth-of-type(n + 3), .hu-card-rows dd:nth-of-type(n + 3) { display: none; }
+  .hu-ann { max-width: 22ch; padding-block: 5px; }
+}
+@container stage (max-height: 430px) {
+  .hu-read:nth-child(n + 3) { display: none; }
+  .hu-trace { display: none; }
+}
+
+/* ---------- the HUD menu in the top bar ---------- */
+.hud-opts { display: grid; gap: 14px; padding: 12px 16px 10px; }
+.hud-field { display: grid; gap: 8px; }
+.hud-parts { display: grid; gap: 10px; }
+.hud-sheet .gfx-note:last-child { font-family: inherit; font-size: 12px; overflow-wrap: normal; }

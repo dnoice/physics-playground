@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.6)
+    - Title: Gravity Lab (digiSpace Edition - v2.7)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: bodies, energy, drift and virial ratio on its tape, and the
+      followed body as its target, in 2D and 3D.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
       Math page's Kepler panel now times a full turn of the followed planet,
       in its own orbital plane, against 2π√(a³/μ) instead of restating the
@@ -32,11 +35,6 @@
       bodies draws a type and a mass in its range; a Type of new bodies choice
       and the drop speed, in times the circular speed, join New bodies and the
       Math page.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Real-world
-      units are astronomical: the Star system's third planet orbits at 1 AU
-      around a one-solar-mass star, which sets the year, speeds in km/s or
-      mi/s, masses in solar, Jupiter or Earth masses, and the HUD's days or
-      years.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -454,6 +452,13 @@ export const gravity = {
     ] };
   },
   deselect() { this.track = null; updateNav(); },
+  /* The head-up display: its readings, and the followed body in stage pixels, where the stage draws it. */
+  hud: [['Bodies', 'BODIES'], ['Total energy E', 'ENERGY E'], ['Energy drift since last change', 'E DRIFT'], ['Virial ratio 2K / |U|', 'VIRIAL 2K/|U|']],
+  hudTarget(three) {
+    const b = this.track == null ? null : this.bodies.find(q => q.id === this.track); if (!b) return null;
+    if (three) { const s = this.project3(b.x, b.y, b.z); return s && { x: s.x, y: s.y, r: this.radius3(b, s) }; }
+    const { ox, oy, z } = this.viewXf; return { x: b.x * z + ox, y: b.y * z + oy, r: Math.max(1.4, b.r * z) };
+  },
   /* Real-world units are astronomical here; Simulation keeps pixels and simulated seconds. */
   unitTable(sys) {
     if (sys === 'sim') return null;

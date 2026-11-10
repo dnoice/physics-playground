@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.6)
+    - Title: Fields Lab (digiSpace Edition - v2.7)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: probe field and potential, particles and E × B drift on its
+      tape, and the charted particle as its target, riding the field's relief
+      in 3D.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
       E × B check measures the drift by guiding centres, x + v_y / ω, so
       particles of other charge-to-mass ratios, as Random particles have,
@@ -24,10 +28,6 @@
       of new charges sets how many units a click places, and Random gives each
       charge 1 to 4 units and each launched particle a random charge-to-mass
       ratio and sign.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lengths,
-      speeds and E₀ follow the chosen units, with q/m in C/kg so E reads in
-      N/C and B in tesla; the empty Inspect pane says how to select a
-      particle.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -64,6 +64,7 @@ import { Series } from '../core/series.js';
 import { PX_M, fmtQ, unitSystem } from '../core/units.js';
 import { TAU, clamp, fmtSI, pct, reduceMotion } from '../core/util.js';
 import { announce, canvas } from '../shell/state.js';
+import { toScreen } from '../shell/camera.js';
 
 /* ================================================================== */
 /*  Lab 7 · Fields & charges                                           */
@@ -232,6 +233,14 @@ export const fields = {
     return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, focus: 'Kinetic energy per mass', title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', fmtQ(this, 'speed', Math.hypot(this.vx[i], this.vy[i])), 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? fmtQ(this, 'len', Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)) : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
   deselect() { this.picked = false; },
+  /* The head-up display: its readings, and the charted particle in stage pixels, riding the field's relief in 3D. */
+  hud: [['Probe |E|', 'PROBE |E|'], ['Probe potential V', 'PROBE V'], ['Test particles', 'PARTICLES'], ['E × B drift speed E/B', 'DRIFT E/B']],
+  hudTarget(three) {
+    const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
+    const x = this.x[i], y = this.y[i];
+    if (three) { const s = this.project3(x, y, this.lift3(x, y) + 0.04); return s && { x: s.x, y: s.y, r: 7 }; }
+    const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: 6 };
+  },
   inspectHint: 'With the Move tool, click a test particle to chart and inspect it here.',
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
   retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },

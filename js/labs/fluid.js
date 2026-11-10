@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.6)
+    - Title: Fluid Lab (digiSpace Edition - v2.7)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: particles, mean and peak density and top speed on its tape, and
+      the selected post as its target, on the tank's mid-plane in 3D.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: a
       settled tank rests about a tenth under ρ₀ throughout, near-pressure
       holding neighbours apart, with gravity or without, so the density check
@@ -26,10 +29,6 @@
       Inspect follows a post's contact. A New posts section: the radius of new
       posts, and Random posts for a random size each time, previewed by the
       ring under the pointer.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Any tool
-      but Obstacle selects a post for the Inspect pane, with figures measured
-      from the liquid around it and a remove action; speeds, lengths and
-      gravity follow the chosen units, one pixel being 1.09 cm.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -64,7 +63,7 @@ import { view } from '../core/view.js';
 
 
 import { FL_CAP, fluidGL } from '../render/fluid-gl.js';
-import { camOf, camXf, is3D } from '../shell/camera.js';
+import { camOf, camXf, is3D, toScreen } from '../shell/camera.js';
 import { sticky } from '../shell/diagnostics.js';
 import { setParam } from '../shell/lifecycle.js';
 
@@ -404,6 +403,17 @@ export const fluid = {
     ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selAt = null; } }] };
   },
   deselect() { this.selAt = null; },
+  /* The head-up display: its readings, and the selected post in stage pixels, on the tank's mid-plane in 3D. */
+  hud: [['Particles', 'PARTICLES'], ['Mean density ρ / ρ₀', 'MEAN ρ/ρ₀'], ['Peak compression', 'PEAK ρ/ρ₀'], ['Fastest particle speed', 'TOP SPEED']],
+  hudTarget(three) {
+    const o = this.post(); if (!o) return null;
+    const U = this.U;
+    if (three) {
+      const d = this.rig3.depth / 2 + 0.05, c = this.project3(o.x * U, o.y * U, d), e = c && this.project3((o.x + o.r) * U, o.y * U, d);
+      return c && e && { x: c.x, y: c.y, r: Math.hypot(e.x - c.x, e.y - c.y) };
+    }
+    const s = toScreen(this, o.x * U, o.y * U); return { x: s.x, y: s.y, r: o.r * U * s.z };
+  },
   pointerUp() { this.ptr = null; this.vel.vx = 0; this.vel.vy = 0; },
   draw(g, w, h) {
     const px = 1 / camOf(this).z;

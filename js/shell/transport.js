@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.4)
+    - Title: Transport and Keys (digiSpace Edition - v2.7)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Shift+H
+      shows or hides the head-up display, ahead of the tool letters so a lab
+      whose tool is H keeps it; Escape also closes the HUD menu; a held H acts
+      once.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — V steps
       through the active lab's views and U opens the Units menu; Escape closes
       the Units menu. The diagnostics sheet it used to close is now the deck's
@@ -19,9 +23,6 @@
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Reset
       restarts the scene clean through restart(), so edits a parameter rebuild
       keeps never survive it.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Space
-      reaches play and pause after a mouse click; held keys act once;
-      CapsLock no longer swaps b and Shift+B; added Z.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -56,6 +57,7 @@ import { selectLab } from './workspace.js';
 import { closeSceneMenu, hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
 import { closeGfx, toggleMode } from './mode.js';
 import { closeUnits, setUnits } from './unitmenu.js';
+import { closeHudSheet, toggleHud } from './headsup.js';
 
 /* ---------- transport and keys ---------- */
 export const speedInput = $('#ctl-speed'), speedMap = rangeMap({ min: 0.1, max: 4, log: true });
@@ -97,7 +99,7 @@ export function init() {
     if (typing) return;
     const k = e.key;
     // One action per press: holding a key must not chain clips or flip the layout back and forth.
-    if (e.repeat && (/^[rfmdz?]$/i.test(k) || e.code === 'KeyB')) return;
+    if (e.repeat && (/^[rfmdz?]$/i.test(k) || e.code === 'KeyB' || e.code === 'KeyH')) return;
     if (k === ' ' || e.code === 'Space') {
       if (tag === 'BUTTON' && pointerFocus) t.blur();
       else if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'A' || tag === 'SUMMARY') return;
@@ -115,10 +117,12 @@ export function init() {
     else if (k === 'r' || k === 'R') resetActive();
     else if (k === 'f' || k === 'F') { setFocus(!isFocus()); announce(isFocus() ? 'Stage focused' : 'Workspace restored'); }
     else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); }
+    // Shift+H, ahead of the tool letters, so a lab whose tool is H keeps it on the plain key.
+    else if (e.code === 'KeyH' && e.shiftKey) toggleHud();
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
     else if (k === 'z' || k === 'Z') toggleMode();
     else if (k === 'u' || k === 'U') setUnits(document.getElementById('units-sheet').hidden);
-    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeUnits()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeUnits() || closeHudSheet()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();
