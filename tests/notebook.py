@@ -12,9 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for release 2.5.0: the Math page's live panels, the Guide's cards, the
-      Library's capture cards and the Inspect pane's focus chart.
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created for
+      release 2.5.0: the Math page's live panels, the Guide's cards, the
+      Library's capture cards and the Inspect pane's focus chart. The Guide's
+      Tools now include the Random card.
 
 ✒ Description:
     Checks that the notebook is wired to the simulation in the flat view:
@@ -103,7 +104,8 @@ with sync_playwright() as p:
     pg = fresh("waves")
     pg.click("#nt-guide"); pg.wait_for_timeout(300)
     cards = pg.locator("#guide .g-card")
-    ok("guide_has_tool_and_view_cards", cards.count() == 7, cards.count())
+    # Five tools, the Random switch that sits with them, and two views.
+    ok("guide_has_tool_and_view_cards", cards.count() == 8 and pg.locator("#guide .g-switch").count() == 1, cards.count())
     cards.nth(1).click(); pg.wait_for_timeout(300)
     ok("tool_card_selects_tool", state("active.p.tool") == "wall" and cards.nth(1).get_attribute("aria-pressed") == "true")
     pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("e"); pg.wait_for_timeout(600)

@@ -15,7 +15,9 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       densities plotted around rest, k and k-near as sliders with the pressure
       they give, viscosity, and the share of particles at the speed cap;
-      Inspect follows a post's contact.
+      Inspect follows a post's contact. A New posts section: the radius of new
+      posts, and Random posts for a random size each time, previewed by the
+      ring under the pointer.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Any tool
       but Obstacle selects a post for the Inspect pane, with figures measured
       from the liquid around it and a remove action; speeds, lengths and
@@ -34,6 +36,8 @@
 ✒ Key Features:
     - Dam break, obstacle course, droplet, twin columns and zero-g scenes.
     - Stir, push, pull, pour, obstacle and drain tools.
+    - Posts of a chosen radius, or of a random size with Random posts; the
+      ring under the pointer shows the next post.
     - Posts placed by hand outlast a change of Particles; a scene load or
       Reset starts clean.
     - Diagnostics for compression and speed capping, with fixes.
@@ -87,6 +91,7 @@ export const fluid = {
     'Pick a tool from the dock, then drag inside the tank.',
     '<b>Stir</b> drags the liquid along. <b>Push</b> and <b>Pull</b> blow it apart or draw it in. <b>Pour</b> adds liquid and <b>Drain</b> removes it.',
     '<b>Obstacle</b> places a fixed post where you click; click a post again to remove it. Tilt gravity to slosh the tank.',
+    'Set the size of new posts under Controls, or turn on <b>Random</b>, under the tools, for a random size each time; the ring under the pointer shows the next post.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'stir', label: 'Stir', key: 's', icon: 'stir', hint: 'Drag to stir the liquid along with the pointer · click a post to inspect it' },
@@ -96,7 +101,8 @@ export const fluid = {
     { id: 'obstacle', label: 'Obstacle', key: 'b', icon: 'obstacle', hint: 'Click to place a post · click a post to remove it' },
     { id: 'drain', label: 'Drain', key: 'x', icon: 'drain', hint: 'Hold to remove liquid under the pointer' },
   ] },
-  p: { tool: 'stir', colorBy: 'water', count: 1400, gravity: 900, tilt: 0, k: 0.08, kNear: 0.05, visc: 0.08, surface: true },
+  p: { tool: 'stir', colorBy: 'water', count: 1400, gravity: 900, tilt: 0, k: 0.08, kNear: 0.05, visc: 0.08, surface: true, postR: 1.5, rand: false },
+  random: { key: 'rand', label: 'Random posts', tip: 'Random posts: each post you place gets a random size' },
   presetId: 'dam',
   presets: [
     { id: 'dam', label: 'Dam break', params: { gravity: 900, tilt: 0 } },
@@ -108,6 +114,7 @@ export const fluid = {
   groups: [
     { id: 'setup', label: 'Setup', icon: 'flag' },
     { id: 'physics', label: 'Physics', icon: 'balance' },
+    { id: 'posts', label: 'New posts', icon: 'radio_button_checked' },
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
@@ -119,6 +126,8 @@ export const fluid = {
     { type: 'range', key: 'kNear', label: 'Near stiffness k-near', min: 0.005, max: 0.3, step: 0.005, note: 'Higher values spread the liquid into a lighter, foamier body.', group: 'physics' },
     { type: 'range', key: 'visc', label: 'Viscosity σ', min: 0, max: 0.8, step: 0.01, group: 'physics' },
     { type: 'toggle', key: 'surface', label: 'Liquid surface rendering (GPU)', group: 'display', short: 'Liquid surface (GPU)' },
+    { type: 'range', key: 'postR', label: 'Radius of new posts', min: 0.6, max: 3, step: 0.1, fmt: v => (fluid.U ? fmtQ(fluid, 'len', v * fluid.U) : v.toFixed(1)), note: 'Place posts with the Obstacle tool; a larger post parts the flow more widely.', group: 'posts' },
+    { type: 'toggle', key: 'rand', label: 'Random posts: a random size for each post placed', short: 'Random sizes', group: 'posts' },
   ],
   actions: [
     { label: 'Level the tank', run() { setParam(fluid, 'tilt', 0); } },
@@ -201,7 +210,19 @@ export const fluid = {
     }
   },
   worldRect() { return { w: this.Wu * this.U, h: this.Hu * this.U }; },
-  enabled(key) { return key === 'surface' && is3D(this) ? 'Shapes the 2D view; the 3D tank always draws the water.' : true; },
+  enabled(key) {
+    if (key === 'surface' && is3D(this)) return 'Shapes the 2D view; the 3D tank always draws the water.';
+    if (key === 'postR' && this.p.rand) return 'Random posts picks each size.';
+    return true;
+  },
+  /* The radius the next post will have, in particle spacings. With Random posts on it is drawn ahead, so the
+     preview ring shows the post that a click will place. */
+  pendR: null,
+  nextPostR() {
+    if (!this.p.rand) return this.p.postR;
+    if (this.pendR == null) this.pendR = Number((0.8 + Math.random() * 1.8).toFixed(2));
+    return this.pendR;
+  },
   buildGrid() {
     const n = this.n, cols = this.cols, rows = this.rows, start = this.cellStart, fill = this.fillPos, cellOf = this.cellOf, items = this.cellItems;
     start.fill(0);
@@ -350,7 +371,7 @@ export const fluid = {
     if (this.p.tool === 'obstacle') {
       const hit = post, ux = p.x / this.U, uy = p.y / this.U;
       if (hit >= 0) { if (this.post() === this.obs[hit]) this.selAt = null; this.obs.splice(hit, 1); }
-      else if (this.obs.length < 24) this.obs.push({ x: ux, y: uy, r: 1.5 });
+      else if (this.obs.length < 24) { this.obs.push({ x: ux, y: uy, r: this.nextPostR() }); this.pendR = null; }
       else announce('Obstacle limit reached (24).');
     }
   },
@@ -415,7 +436,7 @@ export const fluid = {
     }
     const hv = this.hover, tool = this.p.tool;
     if (hv && tool !== 'obstacle') brushRing(g, hv, tool === 'pour' ? 0.6 * U : tool === 'drain' ? 2 * U : 3.2 * U, tool === 'drain' ? THEME.crit : THEME.text);
-    if (hv && tool === 'obstacle') brushRing(g, hv, 1.5 * U, THEME.amber);
+    if (hv && tool === 'obstacle') brushRing(g, hv, this.nextPostR() * U, THEME.amber);
   },
   /* Screen overlay in 3D: each tool's reach, drawn where it acts, on the tank's mid-plane.
      A post is previewed at both its ends; red marks the post a click would remove. */
@@ -445,7 +466,7 @@ export const fluid = {
     g.save(); g.lineWidth = 1.5; g.lineCap = 'round';
     if (tool === 'obstacle') {
       const hit = this.obs.find(o => (o.x - hv.x / U) ** 2 + (o.y - hv.y / U) ** 2 < (o.r + 0.3) ** 2);
-      const x = hit ? hit.x * U : hv.x, y = hit ? hit.y * U : hv.y, r = (hit ? hit.r : 1.5) * U;
+      const x = hit ? hit.x * U : hv.x, y = hit ? hit.y * U : hv.y, r = (hit ? hit.r : this.nextPostR()) * U;
       g.strokeStyle = hit ? THEME.crit : THEME.amber; g.globalAlpha = 0.85;
       if (!hit) g.setLineDash([5, 5]);
       ring(x, y, r, d);

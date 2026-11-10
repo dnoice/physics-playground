@@ -15,7 +15,10 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       Coulomb at the probe, the Lorentz force's fields as sliders, the
       cyclotron period and radius, the E × B drift measured over a full period
-      against E/B, and the grad-B drift; Inspect follows kinetic energy.
+      against E/B, and the grad-B drift; Inspect follows kinetic energy. Size
+      of new charges sets how many units a click places, and Random gives each
+      charge 1 to 4 units and each launched particle a random charge-to-mass
+      ratio and sign.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lengths,
       speeds and E₀ follow the chosen units, with q/m in C/kg so E reads in
       N/C and B in tesla; the empty Inspect pane says how to select a
@@ -35,12 +38,14 @@
       direction arrows, and an optional vector grid.
     - Six scenes: dipole, quadrupole, parallel plates with a beam, cyclotron
       motion, E × B drift and grad-B drift.
-    - Tools: add +, add −, move, launch, probe and erase; clicking a charge
-      changes it by one unit.
+    - Tools: add +, add −, move, launch, probe and erase; a click places a
+      charge of the chosen size, and a click on a charge changes it by one
+      unit.
+    - Random: 1 to 4 units for each charge placed, and a random charge-to-mass
+      ratio and sign for each particle launched.
     - Energy chart of the ringed particle (kinetic, potential, total) and
       readouts for the probe, cyclotron period and drift speed.
-    - Rewind, datasets, particle tracks and saved states like every other
-      lab.
+    - Rewind, datasets, particle tracks and saved states like every other lab.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -94,6 +99,7 @@ export const fields = {
     '<b>Add +</b> and <b>Add −</b> place a source charge; click an existing charge to add or remove one unit. Keep dragging to position it.',
     '<b>Move</b> drags charges around, and clicking a particle charts its energy. <b>Launch</b>: press and drag to fire a test particle; the arrow is its starting velocity.',
     '<b>Probe</b> pins a field meter that reads |E| and the potential V. <b>Erase</b> brushes away charges and particles.',
+    'Set the size of new charges under Controls, or turn on <b>Random</b>, under the tools: each charge gets 1 to 4 units, and each particle launched a random charge-to-mass ratio and sign.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'plus', label: 'Add +', key: 'p', icon: 'plus', hint: 'Click to place a positive charge · click a charge to add one unit' },
@@ -106,7 +112,8 @@ export const fields = {
   // Lengths share the mechanical labs' pixel. With q/m read as C/kg, a field that accelerates one C/kg by 1 m/s² is
   // 1 N/C, and B, which turns a velocity into an acceleration per C/kg, is already in tesla.
   units: { len: 'px', m: PX_M }, scaleNote: 'In Fields one pixel is 1.09 cm, as in the mechanical labs. Charge-to-mass ratios read as C/kg, so E is in N/C and B in tesla; source charges and potentials stay in simulation units.',
-  p: { tool: 'plus', k: 1, B: 0, gradB: 0, E0: 0, qm: 1, sign: 1, v0: 120, beam: false, map: true, equip: true, lines: true, vectors: false, trails: true },
+  p: { tool: 'plus', k: 1, B: 0, gradB: 0, E0: 0, qm: 1, sign: 1, v0: 120, beam: false, map: true, equip: true, lines: true, vectors: false, trails: true, qNew: 1, rand: false },
+  random: { key: 'rand', label: 'Random charges and particles', tip: 'Random: each charge you place gets a size from 1 to 4 units, and each particle you launch a random charge-to-mass ratio and sign' },
   presetId: 'dipole',
   presets: [
     { id: 'dipole', label: 'Dipole', params: { B: 0, gradB: 0, E0: 0, beam: false, k: 1, sign: 1 } },
@@ -118,7 +125,7 @@ export const fields = {
   ],
   groups: [
     { id: 'forces', label: 'Forces', icon: 'balance' },
-    { id: 'spawn', label: 'New particles', icon: 'add_circle' },
+    { id: 'spawn', label: 'New charges and particles', icon: 'add_circle' },
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
@@ -126,10 +133,12 @@ export const fields = {
     { type: 'range', key: 'B', label: 'Magnetic field B', min: -3, max: 3, step: 0.05, fmt: v => (v === 0 ? '0' : (v > 0 ? '⊗ ' : '⊙ ') + Math.abs(v).toFixed(2) + (unitSystem() === 'sim' ? '' : ' T')), note: '⊗ points into the screen, ⊙ out of it.', group: 'forces' },
     { type: 'range', key: 'gradB', label: 'B gradient (down the screen)', min: 0, max: 0.9, step: 0.05, fmt: v => '±' + Math.round(v * 100) + '%', group: 'forces' },
     { type: 'range', key: 'E0', label: 'Uniform field E₀ (down)', min: -150, max: 150, step: 5, qty: 'efield', group: 'forces' },
-    { type: 'range', key: 'qm', label: 'Charge-to-mass |q|/m of new particles', min: 0.2, max: 4, step: 0.1, fmt: v => v.toFixed(1) + (unitSystem() === 'sim' ? '' : ' C/kg'), group: 'spawn' },
+    { type: 'range', key: 'qNew', label: 'Size of new charges', min: 1, max: 5, step: 1, fmt: v => `${v} unit${v > 1 ? 's' : ''}`, note: 'A click with Add + or Add − places a charge this large; a click on a charge still adds or takes one unit.', group: 'spawn' },
+    { type: 'range', key: 'qm', label: 'Charge-to-mass |q|/m of new particles', short: 'Charge-to-mass |q|/m', min: 0.2, max: 4, step: 0.1, fmt: v => v.toFixed(1) + (unitSystem() === 'sim' ? '' : ' C/kg'), group: 'spawn' },
     { type: 'seg', key: 'sign', label: 'Sign of new particles', options: [[1, '+ positive'], [-1, '− negative']], group: 'spawn' },
     { type: 'range', key: 'v0', label: 'Beam speed', min: 20, max: 400, step: 5, qty: 'speed', group: 'spawn' },
     { type: 'toggle', key: 'beam', label: 'Fire a beam from the left edge', group: 'spawn', short: 'Beam from the left' },
+    { type: 'toggle', key: 'rand', label: 'Random charges and particles: a random size for each charge placed, and a random |q|/m and sign for each particle launched', short: 'Random sizes and charges', group: 'spawn' },
     { type: 'toggle', key: 'map', label: 'Show potential map', group: 'display', short: 'Potential map' },
     { type: 'toggle', key: 'equip', label: 'Show equipotentials', group: 'display', short: 'Equipotentials' },
     { type: 'toggle', key: 'lines', label: 'Show field lines', group: 'display', short: 'Field lines' },
@@ -179,6 +188,13 @@ export const fields = {
   },
   Vscale() { return this.K() / 70; },
   chargeR(c) { return 9 + 2.2 * Math.min(5, Math.abs(c.q)); },
+  /* The size of the next charge placed, in units. With Random on it is drawn ahead, so the 3D preview ring shows it. */
+  pendQ: null,
+  nextQ() {
+    if (!this.p.rand) return this.p.qNew;
+    if (this.pendQ == null) this.pendQ = 1 + Math.floor(Math.random() * 4);
+    return this.pendQ;
+  },
 
   /* ---------- scene building ---------- */
   addCharge(x, y, q) {
@@ -265,6 +281,7 @@ export const fields = {
     if (key === 'gradB' && this.p.B === 0) return 'Needs a magnetic field B.';
     if (key === 'v0' && !this.p.beam) return 'Sets the speed of beam particles; turn the beam on.';
     if (key === 'equip' && !this.charges.length && this.p.E0 === 0) return 'Place a charge or set E₀ first.';
+    if (key === 'qNew' && this.p.rand) return 'Random picks each charge\'s size.';
     return true;
   },
 
@@ -441,7 +458,7 @@ export const fields = {
       if (c.q === 0) { this.charges.splice(this.charges.indexOf(c), 1); announce('Charge removed'); } else announce(`Charge now ${c.q > 0 ? '+' : '−'}${Math.abs(c.q)}`);
       this.probeRead(); this.retrack(); return;
     }
-    const nc = this.addCharge(p.x, p.y, dq);
+    const nc = this.addCharge(p.x, p.y, dq * this.nextQ()); this.pendQ = null;
     if (nc) { this.drag = { kind: 'charge', c: nc, dx: 0, dy: 0, hold3: this.lift3(p.x, p.y) }; this.probeRead(); this.retrack(); }
   },
   pointerMove(p, e, down) {
@@ -456,7 +473,9 @@ export const fields = {
     this.brush = null;
     if (this.aim) {
       const A = this.aim, vx = (A.x1 - A.x0) * 2, vy = (A.y1 - A.y0) * 2, s = Math.hypot(vx, vy), k = s > 600 ? 600 / s : 1;
-      const i = this.addParticle(A.x0, A.y0, vx * k, vy * k, this.p.sign * this.p.qm);
+      // Random: a charge-to-mass ratio spread evenly in log from 0.2 to 4, of either sign.
+      const qm = this.p.rand ? (Math.random() < 0.5 ? -1 : 1) * Number((0.2 * Math.pow(20, Math.random())).toFixed(2)) : this.p.sign * this.p.qm;
+      const i = this.addParticle(A.x0, A.y0, vx * k, vy * k, qm);
       if (i < 0) announce(`Particle limit reached (${FIELD_P_CAP}).`); else this.setTrack(this.pid[i]);
       this.aim = null;
     }
@@ -632,7 +651,7 @@ export const fields = {
     } else if (H && !this.aim && !this.brush) {
       if (tool === 'plus' || tool === 'minus') {
         const add = tool === 'plus' ? 1 : -1, s = this.project3(H.x, H.y, this.lift3(H.x, H.y) + 0.035);
-        this.ringPath3(g, H.x, H.y, this.chargeR({ q: add })); this.keyed3(g, pen(add));
+        this.ringPath3(g, H.x, H.y, this.chargeR({ q: add * this.nextQ() })); this.keyed3(g, pen(add));
         if (s) this.glyph3(g, s.x, s.y, add, 5, pen(add));
       } else if (tool === 'move') {
         const i = this.hitParticle(H);

@@ -15,7 +15,9 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
       the Math page's live panels, the Guide's tool, view and scene cards, the
       Inspect figures' sparklines and focus chart, and the sheen on gauges and
-      the deck tabs.
+      the deck tabs. The Guide's Random card reads On or Off and is dashed
+      while off; the Math page's parameters are compact dials in an
+      auto-filling grid.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
       the deck's panes, segmented tabs, resize grip and short mode, the
       Inspect card with plottable figures, primary and derived gauges, and
@@ -260,6 +262,12 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .g-card .ms { font-size: 19px; color: color-mix(in oklab, var(--text) 75%, var(--muted)); }
 .g-name { font-weight: 600; font-size: 13px; }
 .g-card kbd { justify-self: end; }
+.g-switch { border: 1px dashed color-mix(in oklab, var(--text) 18%, transparent); box-shadow: var(--card-sheen); }
+.g-switch[aria-pressed="true"] { border-color: transparent; }
+.g-state { justify-self: end; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.g-state::before { content: "Off"; }
+.g-switch[aria-pressed="true"] .g-state { color: var(--amber); }
+.g-switch[aria-pressed="true"] .g-state::before { content: "On"; }
 .g-hint { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
 .g-card[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 16%, transparent), color-mix(in oklab, var(--amber) 6%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 45%, transparent), var(--card-sheen); }
 .g-card[aria-pressed="true"] .ms { color: var(--amber); }
@@ -304,10 +312,10 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .fl-var dt { font: italic 500 13px/1.25 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
 .fl-var dt.word { font: 500 11px/1.25 var(--font-body); font-style: normal; color: var(--muted); }
 .fl-var dd { margin: 0; font: 500 11.5px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
-.fl-params { display: grid; gap: 2px; padding-top: 2px; }
-.fl-param { display: grid; grid-template-columns: minmax(26px, max-content) minmax(0, 1fr) minmax(64px, max-content); align-items: center; gap: 10px; cursor: pointer; }
+.fl-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 6px 14px; padding-top: 2px; }
+.fl-param { display: grid; grid-template-columns: minmax(22px, max-content) minmax(0, 1fr); align-items: center; gap: 10px; }
+.fl-param .dial-wheel { height: 30px; }
 .fl-sym { font: italic 500 13.5px/1 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
-.fl-param output { font: 500 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--amber); text-align: right; white-space: nowrap; }
 .fl-check { margin: 0; display: flex; align-items: baseline; gap: 8px; padding: 6px 9px; border-radius: 7px; font: 500 11.5px/1.45 var(--font-mono); color: color-mix(in oklab, var(--text) 86%, var(--muted)); background: color-mix(in oklab, var(--ink) 60%, transparent); }
 .fl-check[hidden] { display: none; }
 .fl-check::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transform: translateY(-1px); }

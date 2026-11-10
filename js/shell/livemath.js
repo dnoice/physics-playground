@@ -12,28 +12,29 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      on Dennis's call for a Math page wired to the simulations: each formula
-      can carry the running numbers, sliders for its parameters, a check of
-      theory against the run and a plot of both.
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
+      Dennis's call for a Math page wired to the simulations: each formula can
+      carry the running numbers, sliders for its parameters, a check of theory
+      against the run and a plot of both. Its parameters are compact
+      thumbwheel dials, the same control as on the Controls page.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Turns the Math page's formula cards into instruments. A formula element
     marked data-live="name" gets a panel from the lab's mathLive[name]: the
-    values of its symbols in the running simulation, sliders for the
-    parameters it contains (the same parameters as the Controls page, kept in
-    step with it), a check that sets the formula's prediction beside what the
-    simulation measures, and a small plot.
+    values of its symbols in the running simulation, dials for the parameters
+    it contains (the same parameters as the Controls page, kept in step with
+    it), a check that sets the formula's prediction beside what the simulation
+    measures, and a small plot.
 
 ✒ Key Features:
     - Symbols with live values, refreshed with the readouts while the Math
       page is open, and paused otherwise.
-    - Parameter sliders that change the run as the Controls page does,
-      through setParam, so both stay in step; only parameters that do not
-      restart the run are offered.
-    - A check line: theory, simulation and how far apart, coloured by how
-      well they agree, or a note when the run cannot show it yet.
+    - Parameter dials that change the run as the Controls page does, through
+      setParam, so both stay in step; only parameters that do not restart the
+      run are offered.
+    - A check line: theory, simulation and how far apart, coloured by how well
+      they agree, or a note when the run cannot show it yet.
     - An optional plot drawn by the lab, at the device's pixel ratio.
 
 ✒ Usage Instructions:
@@ -50,24 +51,25 @@
 */
 import { canvasContext } from '../core/chart.js';
 import { $, clamp, el } from '../core/util.js';
+import { makeWheel } from './dial.js';
 import { setParam } from './lifecycle.js';
 import { controlFormat, rangeMap } from './panel.js';
 import { announce } from './state.js';
 
 let panels = [], shownLab = null;
 
-/* One slider for a parameter the formula contains, a compact twin of the one on the Controls page. The symbol is
+/* One dial for a parameter the formula contains, a compact twin of the one on the Controls page. The symbol is
    given, or the label's last word when that is a symbol (Restitution e), or else the whole label. */
 function param(lab, spec) {
   const [key, given] = Array.isArray(spec) ? spec : [spec, null];
   const c = lab.controls.find(k => k.key === key && k.type === 'range');
   if (!c || c.rebuild) return null;
   const { toS, fromS } = rangeMap(c), fmt = controlFormat(lab, c), id = `fl-${lab.id}-${key}`;
-  const input = el('input', { type: 'range', id, min: c.log ? 0 : c.min, max: c.log ? 1000 : c.max, step: c.log ? 1 : (c.step || 'any'), 'aria-label': c.label });
-  const out = el('output', { for: id });
+  const W = makeWheel({ id, min: c.log ? 0 : c.min, max: c.log ? 1000 : c.max, step: c.log ? 1 : (c.step || 'any'), label: c.label, editable: false });
+  const { input, val } = W;
   const last = (c.label.match(/\s([^\s]+)$/) || [, c.label])[1], sym = given || (last.length <= 3 ? last : c.label);
-  const node = el('label', { class: 'fl-param', title: `${c.label}: the same setting as on the Controls page` }, el('span', { class: 'fl-sym', text: sym }), input, out);
-  const show = v => { out.textContent = fmt(v); input.style.setProperty('--fill', `${(toS(v) - +input.min) / (+input.max - +input.min) * 100}%`); input.setAttribute('aria-valuetext', fmt(v)); };
+  const node = el('div', { class: 'fl-param', title: `${c.label}: the same setting as on the Controls page` }, el('label', { class: 'fl-sym', for: id, text: sym }), W.wheel);
+  const show = v => { val.textContent = fmt(v); input.setAttribute('aria-valuetext', fmt(v)); W.paint(typeof lab.sceneP[key] === 'number' ? toS(lab.sceneP[key]) : null); };
   input.addEventListener('input', () => {
     let v = clamp(fromS(+input.value), c.min, c.max);
     if (c.log) v = Number(v.toPrecision(3)); else if (c.step) v = Math.round(v / c.step) * c.step;

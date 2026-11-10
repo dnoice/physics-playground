@@ -15,7 +15,9 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       the impulse with e and the energy it keeps, the speed distribution
       checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
-      and friction's spin share; Inspect follows a ball's speed.
+      and friction's spin share; Inspect follows a ball's speed. Random new
+      balls gives each ball added a random size from 4 to 24 px, and so a
+      random mass.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       radii and speeds follow the chosen units, one pixel being 1.09 cm; the
       empty Inspect pane says how to select a ball.
@@ -31,6 +33,8 @@
     - Sweep-and-prune broad phase for up to 1500 discs.
     - Maxwell–Boltzmann speed histogram and an ideal-gas pressure check.
     - Grab, heat, cool and erase tools; a Brownian tracer with its path.
+    - Random new balls: a random size, and so a random mass, for each ball
+      added.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -74,6 +78,7 @@ export const collisions = {
     '<b>Grab</b>: drag a ball to throw it, or click empty space to add one and keep dragging to throw it.',
     '<b>Heat</b> and <b>Cool</b> brushes speed up or slow down every ball under them; watch the energy spread out.',
     '<b>Erase</b> removes balls under the brush. Lower restitution <i>e</i> to watch kinetic energy drain away; raise friction μ to make balls roll and spin, marked by the dot on each one.',
+    '<b>Random</b>, under the tools, gives each ball you add a random size, and so a random mass.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'grab', label: 'Grab', key: 'g', icon: 'grab', hint: 'Drag a ball to throw it · click empty space to add one' },
@@ -81,7 +86,8 @@ export const collisions = {
     { id: 'cool', label: 'Cool', key: 'c', icon: 'cool', hint: 'Hold over the gas to slow balls down' },
     { id: 'erase', label: 'Erase', key: 'x', icon: 'erase', hint: 'Brush over balls to remove them' },
   ] },
-  p: { tool: 'grab', colorBy: 'speed', count: 260, gravity: 0, e: 1, drag: 0, radius: 9, mu: 0 },
+  p: { tool: 'grab', colorBy: 'speed', count: 260, gravity: 0, e: 1, drag: 0, radius: 9, mu: 0, rand: false },
+  random: { key: 'rand', label: 'Random new balls', tip: 'Random new balls: each ball you add gets a random size, and so a random mass' },
   presetId: 'gas',
   presets: [
     { id: 'gas', label: 'Ideal gas', params: { gravity: 0, e: 1, drag: 0, count: 260, mu: 0 } },
@@ -103,6 +109,7 @@ export const collisions = {
     { type: 'range', key: 'mu', label: 'Contact friction μ', min: 0, max: 1, step: 0.01, note: 'Friction at contacts and walls turns sliding into spin.', group: 'physics' },
     { type: 'range', key: 'drag', label: 'Air drag', min: 0, max: 2, step: 0.01, unit: '/s', group: 'physics' },
     { type: 'range', key: 'radius', label: 'Radius of new balls', min: 3, max: 30, step: 1, qty: 'len', group: 'spawn' },
+    { type: 'toggle', key: 'rand', label: 'Random new balls: a random size, and so mass, for each one added', short: 'Random sizes', group: 'spawn' },
   ],
   actions: [
     { label: 'Shake the box', run() { const c = collisions; for (let i = 0; i < c.n; i++) { const a = rand(0, TAU), s = rand(150, 400); c.vx[i] += s * Math.cos(a); c.vy[i] += s * Math.sin(a); } c.KE0 = c.stats().etot; } },
@@ -177,7 +184,11 @@ export const collisions = {
   onResize(w, h) { this.w = w; this.h = h; },
   worldRect() { return { w: this.w, h: this.h }; },
   onParam(key) { if (key === 'e' || key === 'gravity' || key === 'drag' || key === 'mu') { this.KE0 = this.stats().etot; this.wallImp = 0; this.wallTime = 0; this.Z = NaN; } },
-  enabled(key) { return key === 'count' && this.presetId === 'pool' ? 'Fixed by the 15-ball rack in this scene.' : true; },
+  enabled(key) {
+    if (key === 'count' && this.presetId === 'pool') return 'Fixed by the 15-ball rack in this scene.';
+    if (key === 'radius' && this.p.rand) return 'Random new balls picks each size.';
+    return true;
+  },
   step(dt) {
     const n = this.n, g = this.p.gravity, damp = Math.max(0, 1 - this.p.drag * dt), X = this.x, Y = this.y, VX = this.vx, VY = this.vy, R = this.r, IM = this.im;
     const G = this.grab, ANG = this.ang, OM = this.om, mu = this.p.mu;
@@ -292,7 +303,8 @@ export const collisions = {
     let i = this.hit(p);
     this.picked = i;
     if (i < 0) {
-      const r = this.p.radius;
+      // Random sizes spread evenly in log from 4 to 24 px, so small and large balls come up about as often.
+      const r = this.p.rand ? Math.round(4 * Math.pow(6, Math.random())) : this.p.radius;
       i = this.add(clamp(p.x, r, this.w - r), clamp(p.y, r, this.h - r), 0, 0, r);
       if (i < 0) { announce(`Ball limit reached (${COLL_CAP}).`); return; }
     }

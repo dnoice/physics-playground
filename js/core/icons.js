@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Icon Glyphs (digiSpace Edition - v2.4)
+    - Title: Icon Glyphs (digiSpace Edition - v2.5)
     - File Name: icons.js
     - Relative Path: js/core/icons.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
+      dice glyph for random placement.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
       the view modes: pendulum, phase map, both, height and intensity.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -47,7 +49,7 @@ export const ICON = {
   drain: 'format_color_reset', pulse: 'radar', wall: 'view_column', eraser: 'ink_eraser', source: 'adjust', glass: 'lens_blur',
   pend: 'linear_scale', phase: 'scatter_plot', both: 'vertical_split', disp: 'waves', int: 'blur_on', cut: 'content_cut', pin: 'keep', ball: 'sports_baseball',
   plus: 'add_circle', minus: 'do_not_disturb_on', move: 'open_with', launch: 'rocket_launch', probe: 'point_scan',
-  clip: 'movie', data: 'monitoring', state: 'bookmark', follow: 'my_location', cube: 'deployed_code',
+  clip: 'movie', data: 'monitoring', state: 'bookmark', follow: 'my_location', cube: 'deployed_code', dice: 'casino',
   crit: 'error', warn: 'warning', info: 'info',
 };
 /* Lab glyph and the CSS animation it plays on the selected tab. */

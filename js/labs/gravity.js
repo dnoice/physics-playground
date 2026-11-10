@@ -15,7 +15,12 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       G and ε as sliders, the leapfrog's energy, circular speed and Kepler's
       period for the followed or heaviest planet, and the virial ratio;
-      Inspect follows a body's distance.
+      Inspect follows a body's distance. On Dennis's call for random
+      placement, every body has a planet type (rocky, ocean, ice giant, gas
+      giant, brown dwarf or star) with its own colour in 2D and 3D; Random new
+      bodies draws a type and a mass in its range; a Type of new bodies choice
+      and the drop speed, in times the circular speed, join New bodies and the
+      Math page.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Real-world
       units are astronomical: the Star system's third planet orbits at 1 AU
       around a one-solar-mass star, which sets the year, speeds in km/s or
@@ -32,16 +37,21 @@
     field view and click-to-follow.
 
 ✒ Key Features:
-    - Full 3D dynamics: flat scenes add exact zeros and step bit-for-bit as
-      in v1.3.
+    - Full 3D dynamics: flat scenes add exact zeros and step bit-for-bit as in
+      v1.3.
     - Seven scenes, including Tilted orbits with inclinations from 0° to 70°
       and a polar comet.
-    - Tilt of new orbits: dropped bodies get a random inclination about
-      their line of nodes.
-    - Readouts for energy drift, virial ratio, momentum and the range of
-      orbit tilts.
+    - Planet types (rocky, ocean, ice giant, gas giant, brown dwarf, star),
+      each with its colour in 2D and its surface in 3D; a merger that crosses
+      a class boundary becomes the heavier class.
+    - New bodies: their mass, a chosen type, the drop speed in times the
+      circular speed, and the tilt of new orbits; Random new bodies draws each
+      type and mass instead, and the throw preview shows the body that will
+      fly.
+    - Readouts for energy drift, virial ratio, momentum and the range of orbit
+      tilts.
     - Datasets and tracks carry z and vz; saved states and rewind keep the
-      third dimension.
+      third dimension and each body's type.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -83,6 +93,30 @@ export const bodyRadius = m => 1.5 + 1.65 * Math.cbrt(m);
 export const massIdx = m => clamp(Math.round(70 + 185 * Math.log10(m + 1) / Math.log10(2001)), 0, 255);
 export const massColor = m => RAMP_HEAT.css[massIdx(m)];
 export const massRgb = m => rampRgb(RAMP_HEAT, massIdx(m));
+/* Planet types. A body knows its type: the scenes' bodies are typed by mass, as the inspector always named them
+   (rocky and ocean worlds alternate below 1.1 Jupiter masses); bodies dropped with Random new bodies on draw a
+   type by its odds, then a mass spread evenly in log across its range (1 is Jupiter's mass, 1000 the Sun's).
+   The surface is the 3D world's: 0 rocky, 1 ocean, 2 banded. */
+export const KINDS = {
+  rocky: { label: 'Rocky world', short: 'Rocky', m: [0.0005, 0.012], rgb: [186, 140, 108], surface: 0, odds: 0.24, rank: 0 },
+  ocean: { label: 'Ocean world', short: 'Ocean', m: [0.002, 0.03], rgb: [78, 156, 228], surface: 1, odds: 0.16, rank: 0 },
+  ice: { label: 'Ice giant', short: 'Ice giant', m: [0.03, 0.12], rgb: [124, 214, 212], surface: 2, odds: 0.2, rank: 1 },
+  gas: { label: 'Gas giant', short: 'Gas giant', m: [0.2, 10], rgb: [224, 178, 122], surface: 2, odds: 0.3, rank: 2 },
+  brown: { label: 'Brown dwarf', short: 'Brown dwarf', m: [13, 70], rgb: [178, 86, 80], surface: 2, odds: 0.1, rank: 3 },
+  star: { label: 'Star', short: 'Star', surface: -1, rank: 4 },
+};
+export const STAR_LIMIT = 80;
+export const kindOf = (m, id) => (m > STAR_LIMIT ? 'star' : m >= 13 ? 'brown' : m >= 1.1 ? 'gas' : m < 0.25 || id % 2 === 0 ? 'rocky' : 'ocean');
+const hash01 = n => { let x = Math.imul(n + 1, 2654435761) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
+/* A body's colour: its type's, a shade lighter or darker by its id, in eight steps so the 3D tint cache stays
+   small; a star keeps the heat ramp of its mass. Cached on the body until its type or id changes. */
+export function bodyRgb(b) {
+  if (b.kind === 'star') return massRgb(b.m);
+  const key = b.kind + b.id;
+  if (b.ck !== key) { const k = 0.84 + 0.045 * Math.floor(hash01(b.id) * 8); b.rgb = KINDS[b.kind].rgb.map(c => Math.min(255, Math.round(c * k))); b.css = `rgb(${b.rgb})`; b.ck = key; }
+  return b.rgb;
+}
+export const bodyCss = b => (b.kind === 'star' ? massColor(b.m) : (bodyRgb(b), b.css));
 
 export const gravity = {
   id: 'gravity', name: 'Gravity', title: 'N-body gravity',
@@ -93,7 +127,8 @@ export const gravity = {
   aria: 'Gravity simulation: bodies orbiting under mutual Newtonian attraction',
   blurb: 'Newtonian gravity between every pair of bodies, stepped with a kick-drift-kick leapfrog that keeps orbital energy from creeping away. Throw bodies, build systems, and watch the three-body figure-eight hold its choreography.',
   interact: [
-    '<b>Throw</b>: drag to launch a body along the dashed 5-second preview, or click empty sky to drop one into a circular orbit around the heaviest mass.',
+    '<b>Throw</b>: drag to launch a body along the dashed 5-second preview, or click empty sky to drop one into orbit around the heaviest mass: a circle at a drop speed of 1×, an ellipse slower or faster.',
+    '<b>Random</b>, under the tools, gives each body you place a random planet type (rocky, ocean, ice giant, gas giant or brown dwarf) and a mass to suit it. Off, the type and mass come from New bodies in Controls.',
     '<b>Click a body</b> to follow it with the camera, then zoom in to see its sunlit face. Click it again, or press Follow in the view controls, to let go.',
     '<b>Delete</b> removes bodies you click or brush over. <b>Pan</b> drags the view. Hover a body to read its mass and speed.',
   ],
@@ -102,7 +137,8 @@ export const gravity = {
     { id: 'erase', label: 'Delete', key: 'x', icon: 'erase', hint: 'Click or brush over bodies to delete them' },
     { id: 'pan', label: 'Pan', key: 'h', icon: 'pan', hint: 'Drag to move the view · scroll to zoom at the cursor' },
   ] },
-  p: { tool: 'throw', G: 1, soft: 4, launchMass: 2, merge: true, trails: true, trailLen: 360, follow: true, zoom: 1, vectors: false, field: false, incl: 0 },
+  p: { tool: 'throw', G: 1, soft: 4, launchMass: 2, kind: 'auto', rand: false, orbitK: 1, merge: true, trails: true, trailLen: 360, follow: true, zoom: 1, vectors: false, field: false, incl: 0 },
+  random: { key: 'rand', label: 'Random new bodies', tip: 'Random new bodies: each one you place gets a random planet type and mass' },
   presetId: 'solar',
   presets: [
     { id: 'solar', label: 'Star system', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.85, follow: true } },
@@ -131,7 +167,11 @@ export const gravity = {
     { type: 'toggle', key: 'follow', label: 'Keep centre of mass in view', group: 'view', short: 'Follow the centre of mass' },
     { type: 'toggle', key: 'vectors', label: 'Show velocity vectors', group: 'display', short: 'Velocity vectors' },
     { type: 'toggle', key: 'field', label: 'Show potential field', group: 'display', short: 'Potential field' },
+    { type: 'range', key: 'orbitK', label: 'Speed of dropped bodies', min: 0.5, max: 1.5, step: 0.01, fmt: v => v.toFixed(2) + '×',
+      note: 'At 1× a dropped body circles its host; slower falls into an ellipse inside, faster swings out, and √2 ≈ 1.41× escapes.', group: 'spawn' },
     { type: 'range', key: 'incl', label: 'Tilt of new orbits', min: 0, max: 90, step: 1, unit: '°', note: 'Bodies dropped with a click or added from the panel get a random tilt up to this angle.', group: 'spawn' },
+    { type: 'seg', key: 'kind', label: 'Type of new bodies', options: [['auto', 'By mass'], ...Object.entries(KINDS).filter(([, k]) => k.odds).map(([id, k]) => [id, k.short])], group: 'spawn' },
+    { type: 'toggle', key: 'rand', label: 'Random new bodies: a random planet type and mass for each one placed', short: 'Random type and mass', group: 'spawn' },
   ],
   actions: [
     { label: 'Add an orbiting body', run() { gravity.addRandom(); } },
@@ -147,9 +187,24 @@ export const gravity = {
   /* z and vz carry motion out of the orbital plane. A body with z = vz = 0
      adds exact zeros to every sum below, so flat scenes step bit-for-bit as
      they did in two dimensions. */
-  body(x, y, vx, vy, m, z = 0, vz = 0) {
-    return { x, y, z, vx, vy, vz, ax: 0, ay: 0, az: 0, m, r: bodyRadius(m), trail: new Float32Array(TRAIL_CAP * 2), trailZ: new Float32Array(TRAIL_CAP), tn: 0, th: 0, dead: false, id: ++this.uid };
+  body(x, y, vx, vy, m, z = 0, vz = 0, kind = null) {
+    const id = ++this.uid;
+    return { x, y, z, vx, vy, vz, ax: 0, ay: 0, az: 0, m, r: bodyRadius(m), kind: kind || kindOf(m, id), trail: new Float32Array(TRAIL_CAP * 2), trailZ: new Float32Array(TRAIL_CAP), tn: 0, th: 0, dead: false, id };
   },
+  /* The mass and type of the next body placed: drawn at random with Random new bodies on, else the panel's. */
+  drawNew() {
+    if (!this.p.rand) return { m: this.p.launchMass, kind: this.p.kind === 'auto' ? null : this.p.kind };
+    let u = Math.random() * Object.values(KINDS).reduce((t, k) => t + (k.odds || 0), 0), kind = 'gas';
+    for (const [id, k] of Object.entries(KINDS)) if (k.odds && (u -= k.odds) < 0) { kind = id; break; }
+    const [a, b] = KINDS[kind].m;
+    return { m: Number((a * Math.pow(b / a, Math.random())).toPrecision(3)), kind };
+  },
+  /* How the body about to be placed looks, for the throw preview. */
+  nextLook() {
+    const nb = this.next || this.drawNew(), id = this.uid + 1, b = { m: nb.m, kind: nb.kind || kindOf(nb.m, id), id };
+    return { css: bodyCss(b), r: bodyRadius(nb.m) };
+  },
+  surfaceOf(b) { return KINDS[b.kind].surface; },
   vCirc(M, d) { const G = G0 * this.p.G, e2 = this.p.soft * this.p.soft; return Math.sqrt(G * M * d * d / Math.pow(d * d + e2, 1.5)); },
   orbit(host, d, ang, m, dir = 1) {
     const v = this.vCirc(host.m + m, d);
@@ -253,6 +308,8 @@ export const gravity = {
       big.x = (big.x * big.m + small.x * small.m) / m; big.y = (big.y * big.m + small.y * small.m) / m; big.z = (big.z * big.m + small.z * small.m) / m;
       big.vx = (big.vx * big.m + small.vx * small.m) / m; big.vy = (big.vy * big.m + small.vy * small.m) / m; big.vz = (big.vz * big.m + small.vz * small.m) / m;
       big.m = m; big.r = bodyRadius(m); small.dead = true; this.merged++;
+      // A merger that crosses into a heavier class becomes it: gas giants into brown dwarfs, brown dwarfs into stars.
+      const grown = kindOf(m, big.id); if (KINDS[grown].rank > KINDS[big.kind].rank) big.kind = grown;
       if (small.id === this.track) this.track = big.id;
     }
     this.bodies = this.bodies.filter(b => !b.dead);
@@ -293,27 +350,28 @@ export const gravity = {
     if (this.bodies.length >= BODY_CAP) { announce(`Body limit reached (${BODY_CAP}). Delete some or reset the scene.`); return false; }
     this.bodies.push(b); this.accDirty = true; this.E0 = this.energy(); return true;
   },
-  dropOrbit(wx, wy, wz = 0) {
-    const m = this.p.launchMass, H = this.heaviest();
-    if (!H) { this.addBody(this.body(wx, wy, 0, 0, m, wz)); return; }
+  dropOrbit(wx, wy, wz = 0, nb = this.drawNew()) {
+    const m = nb.m, H = this.heaviest();
+    if (!H) { this.addBody(this.body(wx, wy, 0, 0, m, wz, 0, nb.kind)); return; }
     const dx = wx - H.x, dy = wy - H.y, d = Math.hypot(dx, dy);
     if (d < H.r + 4) return;
     let L = 0;
     for (const b of this.bodies) if (b !== H) L += b.m * ((b.x - H.x) * (b.vy - H.vy) - (b.y - H.y) * (b.vx - H.vx));
-    const dir = L < 0 ? -1 : 1, v = this.vCirc(H.m + m, d);
+    const dir = L < 0 ? -1 : 1, v = this.vCirc(H.m + m, d) * this.p.orbitK;
     if (this.p.incl > 0) {
       // Tilt the orbit about the line from the host to the drop point, so the body starts where it was dropped.
       const i = rand(-1, 1) * this.p.incl * Math.PI / 180, ci = Math.cos(i), si = Math.sin(i);
-      this.addBody(this.body(wx, wy, H.vx - dir * v * dy / d * ci, H.vy + dir * v * dx / d * ci, m, wz, H.vz + v * si));
+      this.addBody(this.body(wx, wy, H.vx - dir * v * dy / d * ci, H.vy + dir * v * dx / d * ci, m, wz, H.vz + v * si, nb.kind));
       return;
     }
-    this.addBody(this.body(wx, wy, H.vx - dir * v * dy / d, H.vy + dir * v * dx / d, m, wz));
+    this.addBody(this.body(wx, wy, H.vx - dir * v * dy / d, H.vy + dir * v * dx / d, m, wz, 0, nb.kind));
   },
   addRandom() {
     const H = this.heaviest();
-    if (!H) { this.addBody(this.body(rand(-150, 150), rand(-100, 100), 0, 0, this.p.launchMass)); return; }
+    const nb = this.drawNew();
+    if (!H) { this.addBody(this.body(rand(-150, 150), rand(-100, 100), 0, 0, nb.m, 0, 0, nb.kind)); return; }
     const d = rand(H.r + 50, 380), a = rand(0, TAU);
-    this.dropOrbit(H.x + d * Math.cos(a), H.y + d * Math.sin(a));
+    this.dropOrbit(H.x + d * Math.cos(a), H.y + d * Math.sin(a), 0, nb);
   },
   toWorld(p) { const { ox, oy, z } = this.viewXf; return { x: (p.x - ox) / z, y: (p.y - oy) / z }; },
   bodyAt(p, slack = 6) {
@@ -340,10 +398,10 @@ export const gravity = {
     const b = this.track == null ? null : this.bodies.find(q => q.id === this.track); if (!b) return null;
     let P = null;
     for (const q of this.bodies) if (q !== b && (!P || q.m > P.m)) P = q;
-    const star = b.m >= STAR_MASS, title = star ? 'Star' : b.m >= 1.1 ? 'Gas giant' : b.m < 0.25 ? 'Moon' : b.id % 2 ? 'Ocean world' : 'Rocky world';
+    const title = KINDS[b.kind].label;
     const rows = [['Mass of this body', this.massText(b.m), unitSystem() === 'sim' ? 'In simulation units. The star in most scenes has mass 1000.' : 'The star in most scenes is one solar mass; a planet of mass 1 is about Jupiter\'s.']];
     if (P) {
-      const ref = P.m >= STAR_MASS ? 'the star' : `Body ${P.id}`, rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz), u = Math.hypot(ux, uy, uz);
+      const ref = P.kind === 'star' ? 'the star' : `Body ${P.id}`, rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz), u = Math.hypot(ux, uy, uz);
       const mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
       const a = -mu / (2 * E), e = Math.sqrt(Math.max(0, 1 + 2 * E * h2 / (mu * mu))), bound = E < 0, i = Math.acos(clamp(hz / Math.sqrt(h2 || 1), -1, 1)) * 180 / Math.PI;
       const shape = !bound ? 'open path' : e < 0.05 ? 'near circle' : e < 0.5 ? 'oval' : 'long ellipse';
@@ -419,15 +477,18 @@ export const gravity = {
   },
   mini(g, k) {
     for (const b of this.bodies) {
-      g.fillStyle = b.m > 80 ? THEME.amber : massColor(b.m);
+      g.fillStyle = b.kind === 'star' ? THEME.amber : bodyCss(b);
       g.beginPath(); g.arc(b.x, b.y, Math.max(1.6 / k, b.r), 0, TAU); g.fill();
     }
   },
   pointerDown(p) {
     if (this.p.tool === 'erase') { this.erasing = true; this.eraseAt(p); return; }
     this.aim = { sx: p.x, sy: p.y, x: p.x, y: p.y, moved: false };
+    // The body is drawn when the aim starts, so the preview shows the one that will fly.
+    this.next = this.drawNew();
   },
-  pointerCancel() { this.aim = null; this.erasing = false; },
+  next: null,
+  pointerCancel() { this.aim = null; this.erasing = false; this.next = null; },
   pointerMove(p, e, down) {
     if (!down) return;
     if (this.erasing) { this.eraseAt(p); return; }
@@ -437,23 +498,23 @@ export const gravity = {
   },
   pointerUp() {
     if (this.erasing) { this.erasing = false; return; }
-    const a = this.aim; this.aim = null;
+    const a = this.aim, nb = this.next || this.drawNew(); this.aim = null; this.next = null;
     if (!a) return;
-    if (this.is3D()) { this.pointerUp3(a); return; }
+    if (this.is3D()) { this.pointerUp3(a, nb); return; }
     const w = this.toWorld({ x: a.sx, y: a.sy });
     if (!a.moved) {
       const hit = this.bodyAt({ x: a.sx, y: a.sy });
-      if (hit) this.followBody(hit); else this.dropOrbit(w.x, w.y);
+      if (hit) this.followBody(hit); else this.dropOrbit(w.x, w.y, 0, nb);
       return;
     }
     const z = this.viewXf.z;
-    this.addBody(this.body(w.x, w.y, (a.x - a.sx) / z * LAUNCH_K, (a.y - a.sy) / z * LAUNCH_K, this.p.launchMass));
+    this.addBody(this.body(w.x, w.y, (a.x - a.sx) / z * LAUNCH_K, (a.y - a.sy) / z * LAUNCH_K, nb.m, 0, 0, nb.kind));
   },
   predict(x0, y0, vx0, vy0, z0 = 0, heights = null) {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
     const X = new Float64Array(N), Y = new Float64Array(N), Z = new Float64Array(N), VX = new Float64Array(N), VY = new Float64Array(N), VZ = new Float64Array(N), M = new Float64Array(N), R = new Float64Array(N);
     for (let i = 0; i < n; i++) { const b = B[i]; X[i] = b.x; Y[i] = b.y; Z[i] = b.z; VX[i] = b.vx; VY[i] = b.vy; VZ[i] = b.vz; M[i] = b.m; R[i] = b.r; }
-    X[n] = x0; Y[n] = y0; Z[n] = z0; VX[n] = vx0; VY[n] = vy0; M[n] = this.p.launchMass;
+    X[n] = x0; Y[n] = y0; Z[n] = z0; VX[n] = vx0; VY[n] = vy0; M[n] = this.next ? this.next.m : this.p.launchMass;
     const AX = new Float64Array(N), AY = new Float64Array(N), AZ = new Float64Array(N), out = [x0, y0], dt = 1 / 60;
     if (heights) heights.push(z0);
     for (let s = 0; s < 300; s++) {
@@ -526,7 +587,7 @@ export const gravity = {
       for (const b of B) {
         const len = Math.min(b.tn, len0);
         if (len < 2) continue;
-        g.strokeStyle = massColor(b.m);
+        g.strokeStyle = bodyCss(b);
         const chunks = 6, per = Math.ceil(len / chunks);
         for (let c = 0; c < chunks; c++) {
           const k0 = c * per, k1 = Math.min(len - 1, (c + 1) * per);
@@ -542,23 +603,23 @@ export const gravity = {
       }
       g.globalAlpha = 1;
     }
-    const S = B.filter(b => b.m > 80);
+    const S = B.filter(b => b.kind === 'star');
     for (const b of B) {
       const X = b.x * z + ox, Y = b.y * z + oy, R = Math.max(1.4, b.r * z);
       if (X < -R * 4 || Y < -R * 4 || X > w + R * 4 || Y > h + R * 4) continue;
-      if (b.m > 80) {
+      if (b.kind === 'star') {
         const grd = g.createRadialGradient(X, Y, R * 0.6, X, Y, R * 3.4);
         grd.addColorStop(0, 'rgba(242,165,65,0.32)'); grd.addColorStop(1, 'rgba(242,165,65,0)');
         g.fillStyle = grd; g.beginPath(); g.arc(X, Y, R * 3.4, 0, TAU); g.fill();
         drawStar(g, X, Y, R);
       } else if (R < 2.6) {
-        g.fillStyle = massColor(b.m); g.beginPath(); g.arc(X, Y, R, 0, TAU); g.fill();
+        g.fillStyle = bodyCss(b); g.beginPath(); g.arc(X, Y, R, 0, TAU); g.fill();
       } else {
         let lx = 0, ly = 0;
         for (const s of S) { const dx = s.x - b.x, dy = s.y - b.y, d2 = dx * dx + dy * dy + 1, f = s.m / (d2 * Math.sqrt(d2)); lx += dx * f; ly += dy * f; }
         const L = Math.hypot(lx, ly);
         if (L > 0) { lx /= L; ly /= L; } else { lx = -0.6; ly = -0.8; }
-        drawLit(g, X, Y, R, massRgb(b.m), lx, ly);
+        drawLit(g, X, Y, R, bodyRgb(b), lx, ly);
       }
       if (this.p.vectors) {
         const vx = b.vx * 0.3 * z, vy = b.vy * 0.3 * z, L = Math.hypot(vx, vy);
@@ -603,7 +664,8 @@ export const gravity = {
       const ang = Math.atan2(a.y - a.sy, a.x - a.sx);
       g.fillStyle = THEME.text; g.beginPath();
       g.moveTo(a.x, a.y); g.lineTo(a.x - 9 * Math.cos(ang - 0.4), a.y - 9 * Math.sin(ang - 0.4)); g.lineTo(a.x - 9 * Math.cos(ang + 0.4), a.y - 9 * Math.sin(ang + 0.4)); g.fill();
-      g.fillStyle = massColor(this.p.launchMass); g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, bodyRadius(this.p.launchMass) * z), 0, TAU); g.fill();
+      const look = this.nextLook();
+      g.fillStyle = look.css; g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, look.r * z), 0, TAU); g.fill();
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
       g.fillText(fmtQ(this, 'speed', Math.hypot(vx, vy)), a.x + 10, a.y - 6);
     }
@@ -640,9 +702,10 @@ export const gravity = {
   enabled(key) {
     if (key === 'field' && this.is3D()) return 'Drawn in the flat view only.';
     if (key === 'zoom' && this.is3D()) return 'Use the mouse wheel or the view controls in 3D.';
+    if (key === 'launchMass' && this.p.rand) return 'Random new bodies picks each mass.';
     return true;
   },
-  bodyColor3: b => (b.m >= STAR_MASS ? '#ffcf7a' : massColor(b.m)),
+  bodyColor3: b => (b.kind === 'star' ? '#ffcf7a' : bodyCss(b)),
   diagnose() {
     const out = [], B = this.bodies, n = B.length;
     if (!n) { out.push({ id: 'g-empty', level: 'info', title: 'Empty sky', body: 'Drag on the stage to throw a body, or click to drop one in place.' }); return out; }
@@ -691,12 +754,12 @@ export const gravity = {
   },
   /* The body the live formulas follow: the one the camera follows, else the heaviest planet, and what it orbits. */
   orbitOf() {
-    const b = (this.track != null && this.bodies.find(q => q.id === this.track)) || this.bodies.filter(q => q.m < STAR_MASS).sort((x, y) => y.m - x.m)[0];
+    const b = (this.track != null && this.bodies.find(q => q.id === this.track)) || this.bodies.filter(q => q.kind !== 'star').sort((x, y) => y.m - x.m)[0];
     if (!b) return null;
     let P = null; for (const q of this.bodies) if (q !== b && (!P || q.m > P.m)) P = q;
     if (!P) return null;
     const r = Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z), u = Math.hypot(b.vx - P.vx, b.vy - P.vy, b.vz - P.vz), mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r;
-    return { b, P, r, u, mu, a: E < 0 ? -mu / (2 * E) : Infinity, name: `Body ${b.id}`, ref: P.m >= STAR_MASS ? 'the star' : `Body ${P.id}` };
+    return { b, P, r, u, mu, a: E < 0 ? -mu / (2 * E) : Infinity, name: `Body ${b.id}`, ref: P.kind === 'star' ? 'the star' : `Body ${P.id}` };
   },
   /* The Math page's live panels (livemath.js). */
   mathLive: {
@@ -709,7 +772,7 @@ export const gravity = {
       check: L => { const d = L.E0 ? Math.abs((L.E - L.E0) / L.E0) : NaN; return Number.isFinite(d) ? { text: d < 0.001 ? `Energy holds to ${(d * 100).toFixed(3)} %: a symplectic step lets the error swing, never pile up.` : `Energy has moved ${(d * 100).toFixed(2)} %: a close pass or a merger, larger than a step can follow exactly.`, state: d < 0.001 ? 'ok' : d < 0.01 ? 'warn' : 'crit' } : null; },
     },
     vcirc: {
-      params: ['G'],
+      params: ['G', ['orbitK', 'drop']],
       vars: L => { const o = L.orbitOf(); return o ? [['M', L.massText(o.P.m, true), `The mass of ${o.ref}.`], ['r', fmtQ(L, 'len', o.r), `${o.name}'s distance from ${o.ref}.`], ['v', fmtQ(L, 'speed', o.u), `${o.name}'s speed relative to ${o.ref}.`]] : []; },
       check: L => { const o = L.orbitOf(); return o ? { what: `${o.name}, circular speed at its r`, theory: Math.sqrt(o.mu / o.r), sim: o.u, fmt: v => fmtQ(L, 'speed', v), tol: 0.05 } : { text: 'Add a planet around a star to compare.' }; },
     },
@@ -727,7 +790,7 @@ export const gravity = {
     <div class="f" data-live="accel" data-tex="\\mathbf a_i = \\sum_{j \\ne i} \\frac{G\\, m_j\\,(\\mathbf r_j - \\mathbf r_i)}{\\left(|\\mathbf r_j - \\mathbf r_i|^2 + \\varepsilon^2\\right)^{3/2}}"></div>
     <p>Each step is a kick–drift–kick leapfrog with Δt = 1/480 s. It is symplectic, so the energy error oscillates instead of piling up.</p>
     <div class="f" data-live="leapfrog" data-tex="\\begin{aligned} \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\\\ \\mathbf x &amp;\\leftarrow \\mathbf x + \\mathbf v\\,\\Delta t \\\\ \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\end{aligned}"></div>
-    <p>Clicking places a body at the circular-orbit speed:</p>
+    <p>Clicking drops a body at this speed times the drop-speed setting, so at 1× its orbit is a circle:</p>
     <div class="f" data-live="vcirc" data-tex="v = \\sqrt{\\frac{G\\,(M + m)}{r}}"></div>
     <p>Kepler’s third law ties the period to the semi-major axis alone. The Kepler scene gives three eccentricities one axis, so all three share one period.</p>
     <div class="f" data-live="kepler" data-tex="T = 2\\pi \\sqrt{\\frac{a^3}{G M}}"></div>
@@ -743,13 +806,13 @@ Object.assign(gravity, {
   snapshot() {
     const B = this.bodies, n = B.length, a = new Float64Array(n * 7), { G, soft, merge } = this.p;
     for (let i = 0; i < n; i++) { const b = B[i], o = i * 7; a[o] = b.x; a[o + 1] = b.y; a[o + 2] = b.vx; a[o + 3] = b.vy; a[o + 4] = b.m; a[o + 5] = b.z; a[o + 6] = b.vz; }
-    return { stride: 7, a, ids: B.map(b => b.id), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount, p: { G, soft, merge } };
+    return { stride: 7, a, ids: B.map(b => b.id), kinds: B.map(b => b.kind), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount, p: { G, soft, merge } };
   },
   restore(s) {
     Object.assign(this.p, s.p);
     const B = [];
     const st = s.stride || 5;
-    for (let i = 0; i < s.ids.length; i++) { const o = i * st, b = this.body(s.a[o], s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4], st >= 7 ? s.a[o + 5] : 0, st >= 7 ? s.a[o + 6] : 0); b.id = s.ids[i]; B.push(b); }
+    for (let i = 0; i < s.ids.length; i++) { const o = i * st, b = this.body(s.a[o], s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4], st >= 7 ? s.a[o + 5] : 0, st >= 7 ? s.a[o + 6] : 0); b.id = s.ids[i]; b.kind = (s.kinds && KINDS[s.kinds[i]] ? s.kinds[i] : null) || kindOf(b.m, b.id); B.push(b); }
     Object.assign(this, { bodies: B, merged: s.merged, escaped: s.escaped, cam: { ...this.cam, ...s.cam }, stepCount: s.stepCount, aim: null, pan: null, accDirty: true });
     if (this.track != null && !B.some(b => b.id === this.track)) this.track = null;
     this.p.zoom = this.cam.z; if (this === active) syncControl('zoom');
@@ -759,11 +822,11 @@ Object.assign(gravity, {
     return true;
   },
   serialize() {
-    return { bodies: this.bodies.map(b => ({ id: b.id, m: b.m, x: b.x, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz })), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount };
+    return { bodies: this.bodies.map(b => ({ id: b.id, kind: b.kind, m: b.m, x: b.x, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz })), merged: this.merged, escaped: this.escaped, E0: this.E0, cam: { ...this.cam }, stepCount: this.stepCount };
   },
   deserialize(o) {
     if (!o || !Array.isArray(o.bodies)) return false;
-    this.bodies = o.bodies.map(d => { const b = this.body(+d.x, +d.y, +d.vx, +d.vy, +d.m, +d.z || 0, +d.vz || 0); if (d.id != null) b.id = d.id; return b; });
+    this.bodies = o.bodies.map(d => { const b = this.body(+d.x, +d.y, +d.vx, +d.vy, +d.m, +d.z || 0, +d.vz || 0); if (d.id != null) b.id = d.id; b.kind = KINDS[d.kind] ? d.kind : kindOf(b.m, b.id); return b; });
     this.uid = Math.max(this.uid, ...this.bodies.map(b => +b.id || 0));
     this.merged = o.merged || 0; this.escaped = o.escaped || 0; this.stepCount = o.stepCount || 0;
     if (o.cam) this.cam = { x: +o.cam.x || 0, y: +o.cam.y || 0, z: clamp(+o.cam.z || this.p.zoom, 0.1, 40) };
@@ -785,4 +848,4 @@ Object.assign(gravity, {
 });
 
 /* ---------- 3D mode: the lab's own camera, picking and overlays (gravity3d.js) ---------- */
-Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, bodyRadius, massColor });
+Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, KINDS, bodyRadius, massColor, bodyCss });

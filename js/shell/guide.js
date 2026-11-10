@@ -12,9 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      on Dennis's call for a Guide wired to the simulation: the lab's tools,
-      views and scenes as cards that pick them, beside the lab's own notes.
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
+      Dennis's call for a Guide wired to the simulation: the lab's tools,
+      views and scenes as cards that pick them, beside the lab's own notes. A
+      lab that places things shows a Random card with its tools, which turns
+      random placement on and off as the rail's dice does.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -25,11 +27,14 @@
     chosen.
 
 ✒ Key Features:
-    - Tool and view cards with icon, name, key and what a click on the
-      stage does; a click picks it, the same as on the stage rail.
+    - Tool and view cards with icon, name, key and what a click on the stage
+      does; a click picks it, the same as on the stage rail.
+    - A Random card beside the tools in labs that place things, reading On or
+      Off, the same switch as the rail's dice.
     - Scene cards that load a scene, marked when it is the current one.
     - The lab's own notes and the navigation help keep their place below.
-    - syncGuide() keeps the marks current at panel rate.
+    - syncGuide() keeps the marks current at panel rate and after every
+      setting change.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -40,7 +45,7 @@
 */
 import { icon } from '../core/icons.js';
 import { $, el } from '../core/util.js';
-import { selectDock, selectView } from './dock.js';
+import { selectDock, selectView, toggleRandom } from './dock.js';
 import { applyPreset } from './lifecycle.js';
 import { navHelp } from './panel.js';
 import { announce } from './state.js';
@@ -59,6 +64,13 @@ export function buildGuide(lab) {
       cards.push({ b, on: () => lab.p[lab.dock.key] === o.id });
       return b;
     }));
+    // Random placement modifies every tool that places something, so it sits with them, as on the rail.
+    if (lab.random) {
+      const R = lab.random, b = el('button', { type: 'button', class: 'g-card g-switch', 'aria-pressed': 'false', html: `${icon('dice')}<span class="g-name">Random</span><span class="g-state" aria-hidden="true"></span><span class="g-hint">${R.tip || R.label}</span>` });
+      b.addEventListener('click', () => { toggleRandom(); syncGuide(); });
+      cards.push({ b, on: () => !!lab.p[R.key] });
+      list.append(b);
+    }
     parts.push(section('Tools', list));
   }
   if (lab.views) {

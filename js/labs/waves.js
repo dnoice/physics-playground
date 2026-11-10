@@ -16,7 +16,9 @@
       c and damping with the Courant number, Snell's index, the double slit's
       fringe spacing measured against λL/d with the detector plotted, the
       phased array's beam angle, and the Mach cone; Inspect follows a source's
-      drive.
+      drive. Random sources gives each source added its own frequency, from
+      half to twice f, and a random phase; Inspect shows a source's own
+      frequency.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Displacement and Intensity become the rail's Height and Intensity views;
       any tool selects a source it lands on for the Inspect pane, which
@@ -34,6 +36,8 @@
     - Second-order finite differences with a Courant check and absorbing
       edges.
     - Detector chart of time-averaged intensity along the screen edge.
+    - Random sources: each new source runs at its own multiple of f, from half
+      to twice, with a random phase.
     - In 3D mode, a ripple tank on the shared plane camera.
 
 ✒ Other Important Information:
@@ -73,6 +77,7 @@ export const waves = {
     'Pick a tool from the dock, then click or drag on the tank.',
     '<b>Pulse</b> drops a disturbance. <b>Wall</b> and <b>Erase</b> paint barriers. <b>Source</b> adds an oscillator, or removes one you click. <b>Glass</b> paints a slower medium.',
     'Switch the view to <b>Intensity</b> to see the time-averaged interference pattern. Every tool works in 3D too.',
+    '<b>Random</b>, under the tools, gives each source you add its own frequency, from half to twice f, and a random phase; sources of different frequencies beat instead of holding a still pattern.',
   ],
   views: { key: 'view', label: 'View', options: [
     { id: 'disp', label: 'Height', icon: 'disp', tip: 'Height: the displacement of the surface right now, up and down' },
@@ -87,7 +92,8 @@ export const waves = {
   ] },
   // A ripple-tank scale: one grid cell is 4 mm, so the default 60 cells/s is 24 cm/s, about the slowest real ripples.
   units: { len: 'cells', m: 0.004 }, scaleNote: 'In Waves one grid cell is 4 mm, a ripple-tank scale: the default wave speed of 60 cells/s is 24 cm/s and a 2.5 Hz source sends out 9.6 cm waves.',
-  p: { tool: 'pulse', view: 'disp', c: 60, f: 2.5, gain: 1, damp: 0.02, absorb: true, glassN: 1.6, srcSpeed: 0, phaseStep: 0, relief: 1 },
+  p: { tool: 'pulse', view: 'disp', c: 60, f: 2.5, gain: 1, damp: 0.02, absorb: true, glassN: 1.6, srcSpeed: 0, phaseStep: 0, relief: 1, rand: false },
+  random: { key: 'rand', label: 'Random sources', tip: 'Random sources: each source you add gets its own frequency, from half to twice f, and a random phase' },
   presetId: 'double',
   presets: [
     { id: 'ripple', label: 'Open tank', params: { srcSpeed: 0, phaseStep: 0 } },
@@ -113,6 +119,7 @@ export const waves = {
     { type: 'range', key: 'gain', label: 'Display gain', min: 0.25, max: 4, log: true, fmt: v => v.toFixed(2) + '×', group: 'display' },
     { type: 'range', key: 'relief', label: 'Relief height', min: 0.25, max: 4, log: true, fmt: v => v.toFixed(2) + '×', note: 'Vertical exaggeration of the 3D surface.', group: 'display' },
     { type: 'toggle', key: 'absorb', label: 'Absorbing edges', group: 'medium' },
+    { type: 'toggle', key: 'rand', label: 'Random sources: a frequency from half to twice f and a random phase for each one added', short: 'Random frequency and phase', group: 'sources' },
   ],
   actions: [
     { label: 'Calm the water', run() { waves.u.fill(0); waves.u0.fill(0); waves.inten.fill(0); } },
@@ -177,7 +184,7 @@ export const waves = {
   /* What source s, the k-th point source, is driving the water to right now; the solver's own expression. */
   signal3(s, k) {
     const t = this.time - s.t0, phase = s.type === 'point' ? s.phase - k * this.p.phaseStep * Math.PI / 180 : s.phase;
-    return clamp(t / 0.6, 0, 1) * Math.sin(TAU * this.p.f * t + phase);
+    return clamp(t / 0.6, 0, 1) * Math.sin(TAU * this.p.f * (s.fm || 1) * t + phase);
   },
   /* The tank lies across the view on a wide stage, so the whole apparatus has to fit, not just the plane under it. */
   dist0() {
@@ -298,7 +305,8 @@ export const waves = {
         if (s.x > hi) { s.x = hi; s.dir = -1; } else if (s.x < lo) { s.x = lo; s.dir = 1; }
       }
       const phase = s.type === 'point' ? s.phase - k++ * dphi : s.phase;
-      const env = Math.min(1, (t - s.t0) / 0.6), val = env * Math.sin(w * (t - s.t0) + phase);
+      // A source placed with Random sources on runs at its own multiple fm of the shared frequency.
+      const env = Math.min(1, (t - s.t0) / 0.6), val = env * Math.sin(w * (s.fm || 1) * (t - s.t0) + phase);
       if (s.type === 'line') {
         const x = Math.round(s.x);
         for (let y = 1; y < Ny - 1; y++) { const i = y * Nx + x; if (!wall[i]) u[i] = val; }
@@ -350,7 +358,9 @@ export const waves = {
     }
     if (tool === 'source') {
       if (!first) return;
-      this.sources.push({ id: ++this.srcId, type: 'point', x: c.x, y: c.y, phase: 0, t0: this.time, dir: 1 });
+      // Random sources: a frequency from half to twice f, spread evenly in log, and any phase.
+      const r = this.p.rand, fm = r ? Number(Math.pow(2, Math.random() * 2 - 1).toFixed(2)) : 1, phase = r ? Math.random() * TAU : 0;
+      this.sources.push({ id: ++this.srcId, type: 'point', x: c.x, y: c.y, phase, fm, t0: this.time, dir: 1 });
       refreshEnabled();
       return;
     }
@@ -378,17 +388,18 @@ export const waves = {
   },
   source() { return this.selSrc == null ? null : this.sources.find(s => s.id === this.selSrc) || null; },
   inspectHint: 'Click a source with any tool to inspect it here.',
-  /* Read-only figures of the selected source. Frequency and phase step are shared settings, so they stay in Controls. */
+  /* Read-only figures of the selected source. Frequency and phase step are shared settings, so they stay in Controls;
+     a source placed with Random sources on runs at its own multiple of the shared frequency. */
   inspect() {
     const s = this.source(); if (!s) return null;
     const pts = this.sources.filter(q => q.type === 'point'), k = pts.indexOf(s), point = s.type === 'point', p = this.p;
     const phase = point ? s.phase - k * p.phaseStep * Math.PI / 180 : s.phase, deg = ((phase * 180 / Math.PI) % 360 + 360) % 360;
-    const age = this.time - s.t0, out = Math.min(1, age / 0.6) * Math.sin(TAU * p.f * age + phase);
+    const fm = s.fm || 1, f = p.f * fm, age = this.time - s.t0, out = Math.min(1, age / 0.6) * Math.sin(TAU * f * age + phase);
     const cx = clamp(Math.round(s.x), 0, this.Nx - 1), cy = clamp(Math.round(point ? s.y : this.Ny / 2), 0, this.Ny - 1), I = this.inten[cy * this.Nx + cx];
     const rows = [
       [point ? 'Position' : 'Line at', point ? fmtPos(this, s.x, s.y) : `x = ${fmtQ(this, 'len', s.x)}`, 'Across and down from the tank\'s top-left corner.'],
-      ['Frequency f', `${p.f.toFixed(1)} Hz`, 'Shared by every source; set it under Controls.'],
-      ['Wavelength λ = c/f', fmtQ(this, 'len', p.c / p.f), 'The distance between crests this source sends out, in open water.'],
+      ['Frequency f', `${f.toFixed(fm === 1 ? 1 : 2)} Hz`, fm === 1 ? 'Shared by every source; set it under Controls.' : `Its own: ${fm.toFixed(2)}× the shared f, drawn when Random sources placed it.`],
+      ['Wavelength λ = c/f', fmtQ(this, 'len', p.c / f), 'The distance between crests this source sends out, in open water.'],
       ['Phase', `${deg.toFixed(0)}°`, point && pts.length > 1 ? 'Its own phase, after the phase step Δφ for its place in the row.' : 'Where in its cycle it started.'],
       ['Driving now', out.toFixed(2), 'The displacement this source is holding its cells at this instant, between −1 and 1.'],
       ['Running for', `${age.toFixed(1)} s`, 'Simulated time since it started.'],

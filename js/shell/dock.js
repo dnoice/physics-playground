@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Tool Dock (digiSpace Edition - v2.4)
+    - Title: Tool Dock (digiSpace Edition - v2.5)
     - File Name: dock.js
     - Relative Path: js/shell/dock.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
+      call for random placement, a lab that declares random gets a dice under
+      its tools that turns it on and off; it stays in step with the Controls
+      switch and the Guide's card.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tools and
       views are separate radio groups on the rail, each with the full keyboard
       contract: the checked option is the one tab stop, arrows move and
@@ -20,21 +24,20 @@
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tool
       changes refresh disabled controls; the 3D hint knows when middle-drag
       orbits.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Builds the lab's region of the stage rail: its pointer tools and its view
-    modes, and keeps the pointer hint on the stage current.
+    Builds the lab's region of the stage rail: its pointer tools, the Random
+    dice for labs that place things, and its view modes, and keeps the pointer
+    hint on the stage current.
 
 ✒ Key Features:
     - Tools (what the pointer does) and views (what the stage shows) as two
       radio groups with separate state keys.
     - Arrow keys, Home and End select within a group; only the checked option
       takes a tab stop.
+    - The Random dice, shown when the lab declares random, toggles that
+      setting through setParam; syncDice() keeps it current.
     - selectView() never restarts or rewinds the run; nextView() backs the V
       key.
     - The hint follows the tool, else the view, else the lab, with the pan and
@@ -51,6 +54,7 @@ import { icon } from '../core/icons.js';
 import { $, coarsePointer, el } from '../core/util.js';
 import { is3D } from './camera.js';
 import { updateNav } from './navigator.js';
+import { setParam } from './lifecycle.js';
 import { refreshEnabled } from './panel.js';
 import { ptr } from './stage.js';
 import { active, announce, ui } from './state.js';
@@ -58,7 +62,7 @@ import { active, announce, ui } from './state.js';
 /* ---------- the lab's region of the rail: pointer tools and view modes ---------- */
 /* Tools decide what the pointer does to the simulation; views decide what the stage shows. They are separate
    groups with separate state keys, so a lab can have either, both or neither without one disturbing the other. */
-export const dockEl = $('#dock'), viewsEl = $('#views');
+export const dockEl = $('#dock'), viewsEl = $('#views'), diceEl = $('#dock-dice');
 export let dockButtons = [], viewButtons = [];
 
 /* A radio group with the whole keyboard contract: the checked option is the single tab stop, arrows move and
@@ -86,8 +90,26 @@ export function buildDock(lab) {
     html: `${icon(o.icon)}<span class="view-name">${o.label}</span>` }), selectView) : (viewsEl.replaceChildren(), []);
   if (d) { dockEl.setAttribute('aria-label', d.label); ui.sync.set(d.key, updateDock); }
   if (v) ui.sync.set(v.key, updateDock);
-  updateDock();
+  // A lab that places things can randomize what it places; the dice under its tools turns that on and off.
+  const R = lab.random;
+  diceEl.hidden = !R;
+  if (R) { diceEl.setAttribute('aria-label', R.label); diceEl.dataset.tip = R.tip || R.label; }
+  updateDock(); syncDice();
 }
+/* Panel rate and on every press: the dice shows the lab's setting, whether it was changed here, in Controls or
+   in the Guide. */
+export function syncDice() {
+  const R = active && active.random; if (!R) return;
+  const on = String(!!active.p[R.key]);
+  if (diceEl.getAttribute('aria-pressed') !== on) diceEl.setAttribute('aria-pressed', on);
+}
+export function toggleRandom() {
+  const R = active && active.random; if (!R) return false;
+  setParam(active, R.key, !active.p[R.key]); syncDice();
+  announce(`${R.label} ${active.p[R.key] ? 'on' : 'off'}`);
+  return true;
+}
+diceEl.addEventListener('click', toggleRandom);
 export function selectDock(id) {
   const d = active && active.dock;
   if (!d || !d.options.some(o => o.id === id)) { selectView(id); return; }
