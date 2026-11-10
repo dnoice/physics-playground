@@ -77,14 +77,14 @@ the stage with the stage rail at its top right, the player bar beneath it,
 the instruments deck with live readings, and the inspector with the lab's
 controls](docs/media/hero-workspace.webp)
 
----
-
 <div align="center">
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
 [![Release 2.4.1][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
+
+---
 
 **Seven live physics labs in one browser workspace.**<br>
 Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
