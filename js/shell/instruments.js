@@ -158,7 +158,8 @@ const NUM = /^\s*([-+−]?\d[\d,]*\.?\d*(?:e[-+]?\d+)?[kMGT]?(?![a-zA-Z]))\s*(.*
 function setValue(dd, text) {
   const m = NUM.exec(text);
   if (!m || !m[2]) { dd.textContent = text; return; }
-  dd.replaceChildren(el('span', { class: 'num', text: m[1] }), ' ', el('span', { class: 'unit', text: m[2] }));
+  // One inline run, so the figure and its unit read and copy as one line ("1400 / 4000"), not two flex items.
+  dd.replaceChildren(el('span', { class: 'val' }, el('span', { class: 'num', text: m[1] }), ' ', el('span', { class: 'unit', text: m[2] })));
 }
 function sparkPath(s) {
   if (!s || s.n < 2) return '';

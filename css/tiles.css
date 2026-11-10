@@ -152,7 +152,8 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .gauge-hit { position: absolute; inset: 0; appearance: none; background: none; border: 0; border-radius: inherit; cursor: pointer; }
 .gauge-hit:disabled { cursor: default; }
 /* Primary readings lead with larger figures; derived ones say so in italics (and in their tooltip). */
-.gauge dd .unit { font-size: 0.74em; letter-spacing: 0; color: var(--muted); margin-left: -0.15em; }
+.gauge dd .val { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gauge dd .unit { font-size: 0.74em; letter-spacing: 0; color: var(--muted); }
 .gauge.primary dd { font-size: 16.5px; letter-spacing: -0.035em; }
 .gauge.primary { background: color-mix(in oklab, var(--bench) 85%, var(--amber) 4%); }
 .gauge.derived dt { font-style: italic; }
