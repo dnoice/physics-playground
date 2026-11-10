@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Automation Surface (digiSpace Edition - v2.4)
+    - Title: Automation Surface (digiSpace Edition - v2.5)
     - File Name: automation.js
     - Relative Path: js/shell/automation.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,16 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — view.get()
+      reports moving while a zoom, frame or recentre is still easing in, so
+      tests can wait for the view to come to rest instead of a fixed time.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds
       viewMode() for a lab's view and units.get() and units.set() for the unit
       system.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       mode surface; renderer status comes from the lab rather than a
       renderer import.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -47,7 +46,7 @@
 
 import { globalInsights } from './diagnostics.js';
 import { labsById } from '../labs/index.js';
-import { camOf, is3D, navActual, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
+import { camOf, is3D, navActual, navAnim, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
 import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
 import { selectDock, selectView } from './dock.js';
 import { setUnitSystem, unitSystem } from '../core/units.js';
@@ -84,7 +83,8 @@ export function init() {
     view: {
       get() {
         if (is3D(active)) { const c = active.c3(); return { mode: '3d', yaw: c.yaw, pitch: c.pitch, dist: c.dist, tx: c.tx, tz: c.tz, zoom: zoomPct(active) }; }
-        const c = camOf(active); return { mode: '2d', x: c.x, y: c.y, z: c.z, fit: !!c.fit, zoom: zoomPct(active), panMode: ptr.panMode };
+        // moving: a zoom, frame or recentre is still easing in, so a test can wait for the view to come to rest.
+        const c = camOf(active); return { mode: '2d', x: c.x, y: c.y, z: c.z, fit: !!c.fit, zoom: zoomPct(active), panMode: ptr.panMode, moving: navAnim.lab === active };
       },
       zoomBy: (f, x, y) => navZoomBy(f, x == null ? null : { x, y }, true),
       pan: (dx, dy) => navPan(dx, dy), frame: () => navFrame(), actual: () => navActual(),

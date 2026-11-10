@@ -15,7 +15,9 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The frame,
       key 0 and follow checks wait for the end state (the view fitted, the
       camera on the body) instead of a fixed 800 to 1500 ms, which a renderer
-      without a GPU could need more than; the assertions are unchanged.
+      without a GPU could need more than; the assertions are unchanged. The
+      wheel-zoom and middle-drag checks wait for the view to come to rest
+      (view.get().moving) before measuring.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
       starts in flat 2D mode and the relief checks became flat tank checks,
       since 3D is now a global mode with its own suite. The marks and console
@@ -53,7 +55,8 @@ with sync_playwright() as p:
     sx, sy = 300, 250
     # wheel zoom keeps the world point under the cursor fixed
     w0 = pg.evaluate(f"PhysicsPlayground.view.toWorld({sx},{sy})")
-    pg.mouse.move(box["x"] + sx, box["y"] + sy); pg.mouse.wheel(0, -400); pg.wait_for_timeout(700)
+    # The zoom eases in per drawn frame; wait until the view is at rest before measuring it, or the pan after it.
+    pg.mouse.move(box["x"] + sx, box["y"] + sy); pg.mouse.wheel(0, -400); pg.wait_for_timeout(300); settle(pg, "!PhysicsPlayground.view.get().moving", 8000)
     w1 = pg.evaluate(f"PhysicsPlayground.view.toWorld({sx},{sy})"); v = V()
     ok("wheel_zoom_in", v["z"] > 1.5, round(v["z"], 3))
     ok("wheel_anchor_fixed", math.hypot(w1["x"] - w0["x"], w1["y"] - w0["y"]) < 1.0, round(math.hypot(w1["x"] - w0["x"], w1["y"] - w0["y"]), 3))
