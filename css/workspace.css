@@ -12,9 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tiles are
-      frosted glass over the page's light, with a sheen along the top edge and
-      upper-left corner drawn beneath their content.
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tiles take
+      the glass look over the page's light: a faint cool light at the top and
+      a sheen along the top edge, drawn as background layers so that no extra
+      layer is painted per tile.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
       custom deck heights join the tall one, set through --bay.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -90,15 +91,13 @@
 .bento.focus { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage"; }
 .bento.focus .tile:not(.tile-stage) { display: none; }
 
+/* The sheen is the top background layer, so no extra layer is painted per tile (see --glass-tile in tokens.css). */
 .tile {
-  position: relative; isolation: isolate;
   min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); overflow: hidden;
-  background: var(--glass-tile); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  background: var(--sheen), var(--glass-tile);
   border: 0; border-radius: var(--radius); outline: 1px solid var(--hair); outline-offset: -1px;
   box-shadow: var(--tile-shadow); container: tile / inline-size; animation: tile-in 0.42s var(--ease) both;
 }
-/* The sheen sits under the tile's content and over its glass. */
-.tile::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--sheen); pointer-events: none; }
 .tile:nth-child(2) { animation-delay: 0.03s; } .tile:nth-child(3) { animation-delay: 0.06s; } .tile:nth-child(4) { animation-delay: 0.09s; }
 .tile:nth-child(5) { animation-delay: 0.12s; } .tile:nth-child(6) { animation-delay: 0.15s; } .tile:nth-child(7) { animation-delay: 0.18s; } .tile:nth-child(8) { animation-delay: 0.21s; }
 @keyframes tile-in { from { opacity: 0; transform: translateY(8px) scale(0.99); } }
