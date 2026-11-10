@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.5)
+    - Title: Fields Lab (digiSpace Edition - v2.6)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
+      E × B check measures the drift by guiding centres, x + v_y / ω, so
+      particles of other charge-to-mass ratios, as Random particles have,
+      count as well as the scene's, where before their circling left a residue
+      over the panel's one period.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       Coulomb at the probe, the Lorentz force's fields as dials, the
       cyclotron period and radius, the E × B drift measured over a full period
@@ -23,9 +28,6 @@
       speeds and E₀ follow the chosen units, with q/m in C/kg so E reads in
       N/C and B in tesla; the empty Inspect pane says how to select a
       particle.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are grouped into Forces, New particles and Display, with short names for
-      the display switches.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -877,18 +879,20 @@ export const fields = {
     exb: {
       params: ['E0', 'B'],
       vars: L => [['E / B', Number.isFinite(L.stats().vd) ? fmtQ(L, 'speed', L.stats().vd) : '—', 'The drift speed this law gives.']],
-      /* The drift is measured as it is defined: how far the particles' guiding centres move in one full cyclotron
-         period, averaged over every particle present at both ends, so the circling cancels out. */
+      /* The drift is measured as it is defined: how far the particles' guiding centres, x + v_y / ω, move over at
+         least one cyclotron period, averaged over every particle present at both ends. The guiding centre has no
+         circling in it, so particles with other charge-to-mass ratios, as Random particles have, count as well. */
       check: L => {
         const s = L.stats(); if (!Number.isFinite(s.vd)) { L.driftLog = null; return { text: 'Needs both E₀ and B: load the E × B drift scene.' }; }
         if (L.n < 2) return { text: 'Release a few particles to measure their drift.' };
-        const T = TAU / (L.p.qm * Math.abs(s.B)), d = L.driftLog;
-        if (!d || L.t < d.t || d.key !== `${L.p.E0}|${L.p.B}|${L.p.qm}`) {
-          L.driftLog = { t: L.t, key: `${L.p.E0}|${L.p.B}|${L.p.qm}`, x: new Map([...Array(L.n).keys()].map(i => [L.pid[i], L.x[i]])), v: d && d.key === `${L.p.E0}|${L.p.B}|${L.p.qm}` ? d.v : NaN };
+        const T = TAU / (L.p.qm * Math.abs(s.B)), d = L.driftLog, key = `${L.p.E0}|${L.p.B}`;
+        const centres = () => new Map([...Array(L.n).keys()].map(i => [L.pid[i], L.x[i] + L.vy[i] / (L.qm[i] * L.p.B)]));
+        if (!d || L.t < d.t || d.key !== key) {
+          L.driftLog = { t: L.t, key, x: centres(), v: d && d.key === key ? d.v : NaN };
         } else if (L.t - d.t >= T) {
-          let sum = 0, k = 0;
-          for (let i = 0; i < L.n; i++) { const x0 = d.x.get(L.pid[i]); if (x0 != null) { sum += L.x[i] - x0; k++; } }
-          L.driftLog = { t: L.t, key: d.key, x: new Map([...Array(L.n).keys()].map(i => [L.pid[i], L.x[i]])), v: k ? Math.abs(sum / k / (L.t - d.t)) : d.v };
+          const now = centres(); let sum = 0, k = 0;
+          for (const [id, x] of now) { const x0 = d.x.get(id); if (x0 != null) { sum += x - x0; k++; } }
+          L.driftLog = { t: L.t, key, x: now, v: k ? Math.abs(sum / k / (L.t - d.t)) : d.v };
         }
         return { what: 'Drift speed over one period', theory: s.vd, sim: L.driftLog.v, fmt: v => fmtQ(L, 'speed', v), tol: 0.1, wait: `Drift speed: measuring over one cyclotron period (${T.toFixed(1)} s)…` };
       },

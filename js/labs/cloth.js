@@ -15,7 +15,10 @@
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
       speed-cap Insight gives the per-step limit in the chosen units. The Wind
       control and the Math page's wind value say that the push averages 0.62
-      of the setting and gusts swing it about that.
+      of the setting and gusts swing it about that. The stretch check gives
+      the mean beside the peak and says where the peak gathers, so a hammock
+      hanging from two pins reads as a loaded corner rather than a cloth
+      holding within 44 %.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       gravity, wind and damping as dials for the Verlet step, and the
       constraint passes with the stretch they leave. Gustiness scales how much
@@ -398,7 +401,10 @@ export const cloth = {
     constraint: {
       params: ['iters', 'tear'],
       vars: L => [['passes', String(L.p.iters), 'Constraint passes per step: each pulls every link halfway back to its rest length.'], ['mean', `${(L.meanStretch * 100).toFixed(2)} %`, 'Mean stretch of the intact links.'], ['peak', `${(L.maxStretch * 100).toFixed(1)} %`, 'The most stretched link.']],
-      check: L => ({ text: L.maxStretch > 0.8 ? 'Links are stretched far past their rest length: more passes per step pull them back.' : `Links hold within ${(L.maxStretch * 100).toFixed(1)} % of their rest length.`, state: L.maxStretch < 0.25 ? 'ok' : L.maxStretch < 0.8 ? 'warn' : 'crit' }),
+      // The peak sits where the load gathers, often a link hanging from a pin, so the text gives the mean beside it.
+      check: L => ({ text: L.maxStretch > 0.8 ? `The most stretched link is ${(L.maxStretch * 100).toFixed(0)} % past its rest length: more passes per step pull the links back.`
+        : L.maxStretch >= 0.25 ? `Links average ${(L.meanStretch * 100).toFixed(1)} % past rest, but the most loaded one, often where the cloth hangs from a pin, stretches ${(L.maxStretch * 100).toFixed(0)} %: more passes per step stiffen it.`
+        : `Links hold within ${(L.maxStretch * 100).toFixed(1)} % of their rest length, ${(L.meanStretch * 100).toFixed(1)} % on average.`, state: L.maxStretch < 0.25 ? 'ok' : L.maxStretch < 0.8 ? 'warn' : 'crit' }),
     },
   },
   math: `
