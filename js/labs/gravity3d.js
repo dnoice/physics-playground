@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.5)
+    - Title: Gravity 3D View (digiSpace Edition - v2.8)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,14 +12,17 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
+      System in 3D: the first frame reaches Saturn and the zoom out reaches
+      the Kuiper belt; bodies keep their own pixel floor; a moon inside its
+      planet's disc is hidden and cannot be picked (apart3); the near plane
+      follows the camera in to a moon; names in the overlay, and the hover
+      readout names the body.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Throws and
       drops in 3D place the body drawn for the throw, random or set, and the
       preview shows its colour and size.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hover
       and throw labels in 3D give mass and speed in the chosen units.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Now only
-      the camera, picking and overlay for the world scene; the renderer
-      moved to js/render/world.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -34,6 +37,11 @@
       flat view.
     - Throw, drop and follow work in 3D by picking on the orbital plane and
       hit-testing projected bodies.
+    - Real-sized worlds: each body is drawn and picked at its own radius above
+      its pixel floor, a moon waits inside its planet's disc until the camera
+      draws them apart, and the near plane follows the camera in.
+    - Names of named bodies in the overlay, ranked so a moon's never covers
+      its planet's.
     - Gravity is really three-dimensional, so unlike the plane labs it keeps
       its own camera.
 

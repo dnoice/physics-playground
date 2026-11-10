@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Solar System Tests (digiSpace Edition - v2.7)
+    - Title: Solar System Tests (digiSpace Edition - v2.8)
     - File Name: solar.py
     - Relative Path: tests/solar.py
     - Artifact Type: test
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,8 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for release 2.7.0: Gravity's Our Solar System scene.
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+      for release 2.8.0: Gravity's Our Solar System scene.
 
 ✒ Description:
     Checks Gravity's Our Solar System scene (js/labs/solarsystem.js and the

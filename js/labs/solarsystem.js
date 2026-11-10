@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Our Solar System (digiSpace Edition - v2.7)
+    - Title: Our Solar System (digiSpace Edition - v2.8)
     - File Name: solarsystem.js
     - Relative Path: js/labs/solarsystem.js
     - Artifact Type: javascript
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,17 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for our own Solar System as a Gravity scene, from the Sun
-      to the moons of the giants, the Kuiper belt and beyond.
+      to the moons of the giants, the Kuiper belt and beyond. The Moon starts
+      from its osculating elements at J2000.0, from its geocentric state by
+      Meeus's lunar theory, as its mean elements ran the month 1.1 % long.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     The data and the builder behind Gravity's "Our Solar System" scene: the
-    Sun, the eight planets from JPL's J2000 mean elements, eighteen major
-    moons in their planets' equatorial planes, Pluto and Charon, four more
+    Sun, the eight planets and Pluto from JPL's J2000 mean elements, seventeen
+    moons (Charon among them) in their planets' equatorial planes, four more
     dwarf planets, Sedna and Halley's Comet, and massless test particles for
     the main asteroid belt, Jupiter's Trojans, the Kuiper belt's plutinos and
     classical objects, and the scattered disc. Everything is placed by its
@@ -32,10 +34,12 @@
       Planets", Table 1 (Standish, valid 1800 to 2050), at J2000. Each planet
       with moons is placed as its system's barycentre, as the elements are.
     - Moons: real distances, eccentricities and masses; each in its planet's
-      equatorial plane from the IAU pole (our Moon from its own J2000
-      elements). Uranus's moons and Triton go round backwards, as they do.
-      The Galilean moons start in their 1:2:4 Laplace resonance; other moons'
-      starting phases are illustrative.
+      equatorial plane from the IAU pole. Uranus's moons and Triton go round
+      backwards, as they do. The Galilean moons start in their 1:2:4 Laplace
+      resonance; other moons' starting phases are illustrative.
+    - Our Moon: osculating elements at J2000.0 from its geocentric state by
+      Meeus's lunar theory (Astronomical Algorithms, ch. 47, all 120 terms),
+      so its month runs true where the mean elements ran it 1.1 % long.
     - Dwarf planets, Sedna and Halley: published orbits, with positions for
       about the year 2000 that are approximate.
     - Belts: seeded, so every load is the same sky. The main belt keeps the

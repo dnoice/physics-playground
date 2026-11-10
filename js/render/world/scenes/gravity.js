@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.5)
+    - Title: Gravity Scene (digiSpace Edition - v2.8)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
+      System: each world at its real radius above its own pixel floor,
+      Saturn's real rings at their tilt, moons hidden inside their planet's
+      disc, no depth marks from moons or belt bodies, the Orbits switch drawn
+      as depth-tested ribbons, and a portrait near plane small enough for a
+      moon.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A planet's
       surface and colour come from its type, read from the lab, instead of
       from its mass and id; stars are the bodies typed as stars, and only gas
@@ -36,8 +42,12 @@
       are banded in their own colours); close bodies move to a finer sphere in
       a second batch.
     - Up to three star lights, a soft terminator, a real night side, an
-      atmospheric rim, a shell of air on close worlds and rings on gas giants.
-    - Trails, drop lines and velocity arrows as ribbons, thinned by tier.
+      atmospheric rim, a shell of air on close worlds and rings on gas giants
+      (on Saturn alone in the Solar System).
+    - Real-sized worlds above a pixel floor; a moon is hidden while inside its
+      planet's disc, its orbit with it.
+    - Trails, drop lines, velocity arrows and orbits as ribbons, thinned by
+      tier.
     - A faint polar grid on the orbital plane, drawn analytically.
     - Merges flash and pulse the bloom; the flash is watched from the lab's
       merge count, never written back.

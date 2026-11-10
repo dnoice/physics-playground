@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.7)
+    - Title: Gravity Lab (digiSpace Edition - v2.8)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,14 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
+      System (built by solarsystem.js): body metadata carried through rewind
+      and saved states and checked on load; massless test bodies; moons on
+      their own substeps inside each step (r-RESPA); the sky frame seen from
+      the north; bodies drawn at real size above a pixel floor, a moon hidden
+      in its planet until a zoom parts them; the Orbits and Names switches;
+      the date on the clock; and a speed fix that removes the belts and keeps
+      the moons.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: bodies, energy, drift and virial ratio on its tape, and the
       followed body as its target, in 2D and 3D.
@@ -26,27 +34,24 @@
       the whole system drifting no longer reads as heat; the circular-speed
       check compares with the softened speed the run uses and names an
       eccentric orbit as an ellipse rather than a miss.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      G and ε as dials, the leapfrog's energy, circular speed and Kepler's
-      period for the followed or heaviest planet, and the virial ratio;
-      Inspect follows a body's distance. On Dennis's call for random
-      placement, every body has a planet type (rocky, ocean, ice giant, gas
-      giant, brown dwarf or star) with its own colour in 2D and 3D; Random new
-      bodies draws a type and a mass in its range; a Type of new bodies choice
-      and the drop speed, in times the circular speed, join New bodies and the
-      Math page.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    N-body Newtonian gravity stepped with a kick-drift-kick leapfrog in
-    three dimensions, with merging, escapes, an energy chart, a potential
-    field view and click-to-follow.
+    N-body Newtonian gravity stepped with a kick-drift-kick leapfrog in three
+    dimensions, moons on their own substeps, with merging, escapes, an energy
+    chart, a potential field view and click-to-follow.
 
 ✒ Key Features:
     - Full 3D dynamics: flat scenes add exact zeros and step bit-for-bit as in
       v1.3.
-    - Seven scenes, including Tilted orbits with inclinations from 0° to 70°
-      and a polar comet.
+    - Eight scenes, including Tilted orbits with inclinations from 0° to 70°
+      and a polar comet, and Our Solar System at J2000 from
+      js/labs/solarsystem.js.
+    - Multi-scale stepping: massless test bodies feel every pull and pull
+      nothing, and each moon and its planet take their own substeps inside a
+      step (r-RESPA), so Phobos and the Kuiper belt share one run.
+    - Real-sized named worlds above a pixel floor, osculating orbits and
+      ranked names in 2D, and the date on the clock.
     - Planet types (rocky, ocean, ice giant, gas giant, brown dwarf, star),
       each with its colour in 2D and its surface in 3D; a merger that crosses
       a class boundary becomes the heavier class.
@@ -57,7 +62,7 @@
     - Readouts for energy drift, virial ratio, momentum and the range of orbit
       tilts.
     - Datasets and tracks carry z and vz; saved states and rewind keep the
-      third dimension and each body's type.
+      third dimension, each body's type and its metadata.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -178,7 +183,8 @@ export const gravity = {
     '<b>Throw</b>: drag to launch a body along the dashed 5-second preview, or click empty sky to drop one into orbit around the heaviest mass: a circle at a drop speed of 1×, an ellipse slower or faster.',
     '<b>Random</b>, under the tools, gives each body you place a random planet type (rocky, ocean, ice giant, gas giant or brown dwarf) and a mass to suit it. Off, the type and mass come from New bodies in Controls.',
     '<b>Click a body</b> to follow it with the camera, then zoom in to see its sunlit face. Click it again, or press Follow in the view controls, to let go.',
-    '<b>Delete</b> removes bodies you click or brush over. <b>Pan</b> drags the view. Hover a body to read its mass and speed.',
+    '<b>Delete</b> removes bodies you click or brush over. <b>Pan</b> drags the view. Hover a body to read its name, mass and speed.',
+    '<b>Our Solar System</b>: click a planet to follow it, then zoom in; its moons appear once they stand clear of it. <b>Orbits</b> and <b>Names</b> under Display draw each named body\'s ellipse and name, and the clock reads the date.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'throw', label: 'Throw', key: 't', icon: 'throw', hint: 'Drag to throw a body · click empty sky to drop one into orbit · click a body to follow it' },
