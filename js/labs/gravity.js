@@ -375,7 +375,8 @@ export const gravity = {
   massText(m, short) {
     if (unitSystem() === 'sim') return short ? `m ${m < 10 ? m.toFixed(2) : m.toFixed(0)}` : fmtSI(m);
     const sun = m / 1000, jup = sun / 9.546e-4, earth = sun / 3.003e-6;
-    return sun >= 0.05 ? `${sig(sun)} M☉` : jup >= 0.03 ? `${sig(jup)} ${short ? 'M♃' : 'Jupiter masses'}` : `${sig(earth)} ${short ? 'M⊕' : 'Earth masses'}`;
+    // Abbreviations in plain letters: the astronomical symbols for the Sun, Jupiter and Earth are missing from many fonts.
+    return sun >= 0.05 ? `${sig(sun)} ${short ? 'Msun' : 'solar masses'}` : jup >= 0.03 ? `${sig(jup)} ${short ? 'MJup' : 'Jupiter masses'}` : `${sig(earth)} ${short ? 'MEarth' : 'Earth masses'}`;
   },
   inspectHint: 'Click a body to follow it and inspect it here.',
   stateSummary() { return { bodies: this.bodies.length }; },
