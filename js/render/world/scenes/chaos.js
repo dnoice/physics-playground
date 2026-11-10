@@ -283,11 +283,13 @@ export function createScene(E, lab) {
     tube.strip();
     if (lab.p.trails && lab.tn > 1) {
       const len = Math.min(lab.tn, Math.round(lab.p.trailLen)), per = Math.floor(TORUS_POINTS * E.tier.detail / Math.max(1, N)), step = Math.max(1, Math.ceil(len / Math.max(2, per)));
+      // Additive light: many copies on one path would stack to white, so each one is dimmer the more there are.
+      const base = N > 8 ? 0.3 : 0.7;
       for (let i = N - 1; i >= 0; i--) {
         const col = colorFor(i), w = i === lab.sel ? 1.6 : 1;
         for (let c = 0; c < len; c += step) {
           const idx = (lab.th - len + c + 900) % 900, o = (i * 900 + idx) * 2, f = c / Math.max(1, len - 1);
-          at(lab.phist[o], lab.phist[o + 1], f, col, (i === lab.sel ? 1 : 0.75) * f + 0.06, (0.8 + f) * w);
+          at(lab.phist[o], lab.phist[o + 1], f, col, (i === lab.sel ? 1 : base) * f + 0.04, (0.8 + f) * w);
         }
         tube.strip();
       }

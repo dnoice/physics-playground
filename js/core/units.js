@@ -136,10 +136,11 @@ export function fmtPos(lab, x, y) {
 /* Decimals to show for a control's step once converted, so a slider moving in 10 px/s² steps shows 0.11 m/s². */
 export function unitDecimals(lab, kind, step) {
   if (!step) return 2;
-  const s = Math.abs(step * unitOf(lab, kind)[0]);
+  const k = unitOf(lab, kind)[0], s = Math.abs(step * k);
   if (s >= 1) return 0;
-  // Enough decimals to tell neighbouring steps apart; one more when the step starts with a 1 (0.109 shows as 0.11).
+  // Enough decimals to tell neighbouring steps apart; one more when a converted step starts with a 1 (10 px/s² is
+  // 0.109 m/s², shown as 0.11), but not for a step the lab chose in these very units (0.01 m/s² stays 0.01).
   let d = Math.ceil(-Math.log10(s) - 1e-9);
-  if (s * Math.pow(10, d) < 2) d++;
+  if (Math.abs(k - 1) > 1e-9 && s * Math.pow(10, d) < 2) d++;
   return Math.min(4, d);
 }

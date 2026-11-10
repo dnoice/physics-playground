@@ -217,7 +217,10 @@ export const pendulum = {
     if (v === 'pend') { const S = Math.min(w, h) * 0.78; this.sq = { x0: (w - S) / 2, y0: (h - S) / 2, S }; return; }
     // The rail sits on the right edge of a wide stage and along the bottom of one 720 px or narrower (stage.css),
     // the title and readout chips cover the top left and the hint the bottom left: everything keeps clear of them.
-    const bar = w <= 720, right = bar ? 0 : Math.min(150, 0.14 * w), bottom = bar ? 74 : 0, top = 0.16 * h, hh = h - bottom;
+    // The rail is 124 px wide, 14 px in from the edge (stage.css), so beside it the layout keeps 152 px clear; the
+    // title row and its readout chips end about 92 px down.
+    const bar = w <= 720, right = bar ? 0 : 152, bottom = bar ? 74 : 0, top = Math.max(0.16 * h, 92);
+    let hh = h - bottom;
     if (v === 'phase') {
       // Room for the axis labels: θ₂ and its ticks on the left, θ₁ and its ticks below, the caption above; the hint
       // sits under the θ₁ label. The map and the torus panel are centred together in what is left.
@@ -235,6 +238,8 @@ export const pendulum = {
       }
       return;
     }
+    // Both: the hint bar sits along the bottom left of a wide stage, under the map's θ₁ label, so it keeps 44 px.
+    if (!bar) { hh -= 44; }
     if (w - right >= hh * 1.15) {
       const pw = (w - right) * 0.46, aw = w - right - pw, S = Math.min(aw * 0.84, hh * 0.72);
       this.scale = 0.86 * Math.min(pw / 2, hh / 2) / (1 + L);
