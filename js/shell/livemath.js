@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Live Math (digiSpace Edition - v2.5)
+    - Title: Live Math (digiSpace Edition - v2.6)
     - File Name: livemath.js
     - Relative Path: js/shell/livemath.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A parameter
+      in more than one formula gets a dial in each with its own id, numbered
+      after the first, so no two dials share an id and each symbol's label
+      focuses its own dial.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for a Math page wired to the simulations: each formula can
       carry the running numbers, sliders for its parameters, a check of theory
@@ -60,11 +64,14 @@ let panels = [], shownLab = null;
 
 /* One dial for a parameter the formula contains, a compact twin of the one on the Controls page. The symbol is
    given, or the label's last word when that is a symbol (Restitution e), or else the whole label. */
-function param(lab, spec) {
+function param(lab, spec, ids) {
   const [key, given] = Array.isArray(spec) ? spec : [spec, null];
   const c = lab.controls.find(k => k.key === key && k.type === 'range');
   if (!c || c.rebuild) return null;
-  const { toS, fromS } = rangeMap(c), fmt = controlFormat(lab, c), id = `fl-${lab.id}-${key}`;
+  // A parameter in several formulas gets a dial in each; the first keeps the plain id, later ones are numbered.
+  const base = `fl-${lab.id}-${key}`, n = (ids.get(base) || 0) + 1, id = n > 1 ? `${base}-${n}` : base;
+  ids.set(base, n);
+  const { toS, fromS } = rangeMap(c), fmt = controlFormat(lab, c);
   const W = makeWheel({ id, min: c.log ? 0 : c.min, max: c.log ? 1000 : c.max, step: c.log ? 1 : (c.step || 'any'), label: c.label, editable: false });
   const { input, val } = W;
   const last = (c.label.match(/\s([^\s]+)$/) || [, c.label])[1], sym = given || (last.length <= 3 ? last : c.label);
@@ -82,11 +89,11 @@ function param(lab, spec) {
 /* Build a panel under every formula the lab wires up; formulas without a binding stay as they are. */
 export function buildLiveMath(lab, root = $('#math')) {
   panels = []; shownLab = lab;
-  const spec = lab.mathLive || {};
+  const spec = lab.mathLive || {}, ids = new Map();
   for (const f of root.querySelectorAll('[data-live]')) {
     const s = spec[f.dataset.live]; if (!s) continue;
     const vars = el('dl', { class: 'fl-vars' }), check = el('p', { class: 'fl-check', hidden: true });
-    const params = (s.params || []).map(k => param(lab, k)).filter(Boolean);
+    const params = (s.params || []).map(k => param(lab, k, ids)).filter(Boolean);
     const plot = s.plot ? el('canvas', { class: 'fl-plot', role: 'img', 'aria-label': s.plotLabel || 'Plot from the running simulation' }) : null;
     const head = el('div', { class: 'fl-head' }, el('span', { class: 'fl-dot', 'aria-hidden': 'true' }), el('span', { text: 'Live' }), el('span', { class: 'fl-note', text: s.note || 'from the running simulation' }));
     const box = el('div', { class: 'f-live' }, head, vars);
@@ -99,7 +106,7 @@ export function buildLiveMath(lab, root = $('#math')) {
   updateLiveMath(lab, true);
 }
 
-/* Panel rate, and only while the Math page shows: values, sliders, the check and the plot. */
+/* Panel rate, and only while the Math page shows: values, dials, the check and the plot. */
 export function updateLiveMath(lab, force = false) {
   if (!lab || lab !== shownLab || !panels.length) return;
   if (!force && $('#np-math').hidden) return;

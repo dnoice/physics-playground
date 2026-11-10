@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Lab Rail (digiSpace Edition - v2.5)
+    - Title: Lab Rail (digiSpace Edition - v2.6)
     - File Name: workspace.js
     - Relative Path: js/shell/workspace.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,13 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Selecting a
+      lab scrolls its tab into view when the top bar is too narrow for every
+      tab.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
       labs rebuilds the Library's capture cards.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
       labs refreshes the Units menu's scale note.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A lab
-      switch cancels a gesture instead of committing it; the last lab is
-      remembered; no lab is named here any more.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -76,6 +76,7 @@ export function selectLab(id, opts = {}) {
   setActive(lab);
   store.set('lab', lab.id);
   tabs.forEach((t, i) => { const on = labs[i] === lab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+  revealTab(tabs[labs.indexOf(lab)]);
   updateStageTitle(lab);
   canvas.setAttribute('aria-label', lab.aria);
   canvas.style.cursor = 'crosshair';
@@ -90,6 +91,14 @@ export function selectLab(id, opts = {}) {
   updateRewind(); updateTracksNote(); renderLibrary(); buildLibraryCapture(lab); updateDetails(lab); renderUnits();
   if (!opts.silent) announce(`${lab.title} lab`);
   if (location.hash.slice(1) !== lab.id) { try { location.replace('#' + lab.id); } catch (_) { /* hash routing unavailable */ } }
+}
+
+/* On a narrow top bar the lab tabs scroll sideways; keep the selected one in view, without scrolling the page. */
+function revealTab(t) {
+  const strip = $('#rail').parentElement; if (!t || !strip || strip.scrollWidth <= strip.clientWidth) return;
+  const r = t.getBoundingClientRect(), box = strip.getBoundingClientRect(), a = r.left - box.left + strip.scrollLeft, pad = 8;
+  if (a < strip.scrollLeft + pad) strip.scrollLeft = a - pad;
+  else if (a + r.width > strip.scrollLeft + strip.clientWidth - pad) strip.scrollLeft = a + r.width - strip.clientWidth + pad;
 }
 
 /* Wiring: run once from main.js after every module has evaluated. */

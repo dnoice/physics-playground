@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.5)
+    - Title: Workspace Styles (digiSpace Edition - v2.6)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,16 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The lab tab
+      strip is centred by auto margins instead of justify-content, so when it
+      overflows it scrolls from its first tab rather than pushing the first
+      tabs out of reach; removed the unused .tile-meta.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tiles take
       the glass look over the page's light: a faint cool light at the top and
       a warm sheen along the top edge, drawn as one background layer and an
       inset shadow so that a tile costs no more to paint than before.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
       custom deck heights join the tall one, set through --bay.
-    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      digiSpace Studio colophon Dennis asked for; the header now describes
-      the console layout.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -50,9 +51,11 @@
 .brand-mark { color: var(--amber); font-size: 27px; filter: drop-shadow(0 0 12px color-mix(in oklab, var(--amber) 45%, transparent)); }
 .brand h1 { margin: 0; font: 700 20px/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
 .brand h1 em { color: var(--amber); font-style: normal; font-weight: 500; }
-.rail { flex: 1; min-width: 0; overflow-x: auto; display: flex; justify-content: center; scrollbar-width: none; }
+/* Centred by auto margins, not justify-content: when the tabs overflow, the margins collapse and the strip scrolls
+   from its first tab, where centring would push the first tabs out of reach to the left. */
+.rail { flex: 1; min-width: 0; overflow-x: auto; display: flex; scrollbar-width: none; }
 .rail::-webkit-scrollbar { display: none; }
-.rail [role="tablist"] { display: flex; align-items: center; gap: 2px; min-width: max-content; padding: 4px; border-radius: 14px; background: color-mix(in oklab, var(--bench) 80%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.rail [role="tablist"] { display: flex; align-items: center; gap: 2px; min-width: max-content; margin-inline: auto; padding: 4px; border-radius: 14px; background: color-mix(in oklab, var(--bench) 80%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
 .tab {
   appearance: none; background: none; border: 0; font: inherit; color: var(--muted); cursor: pointer; position: relative;
   display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border-radius: 10px; transition: color 0.2s, background 0.2s;
@@ -105,7 +108,6 @@
 .tile-head { display: flex; align-items: center; gap: 9px; padding: 0 var(--pad); min-height: 46px; }
 .tile-head h3 { margin: 0; font: 500 13px/1 var(--font-body); color: var(--text); white-space: nowrap; }
 .tile-ico { color: var(--amber); font-size: 18px; }
-.tile-meta { margin-left: auto; font: 400 11px/1 var(--font-mono); color: var(--muted); }
 /* A soft shadow at the bottom edge shows there is more to scroll; the local layer rides over it at the end of the content. */
 .tile-body {
   background: linear-gradient(transparent, var(--tile) 70%) center bottom / 100% 30px no-repeat local, radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.55), transparent) center bottom / 100% 13px no-repeat scroll;

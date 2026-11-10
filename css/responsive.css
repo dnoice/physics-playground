@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Responsive Styles (digiSpace Edition - v2.4)
+    - Title: Responsive Styles (digiSpace Edition - v2.6)
     - File Name: responsive.css
     - Relative Path: css/responsive.css
     - Artifact Type: stylesheet
-    - Version: 2.4.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,14 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On phones
+      (560 px and below) the lab tabs take a row of their own, where all seven
+      fit with the selected lab's name; beside the actions they had 77 px.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
       custom deck heights apply in the stacked layout too, and the Units
       button keeps only its glyph on narrow screens.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Stacks
       the colophon's two credits on phones; the header now lists the
       breakpoints as they are.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fits the
-      mode switch at phone width and reflows the Instruments deck.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -83,6 +84,13 @@
 @media (max-width: 620px) {
   .colophon { flex-direction: column; }
   .colophon-sep { display: none; }
+}
+/* A phone's top bar cannot spare the lab tabs room beside the actions, so they take a row of their own, where all
+   seven fit with the selected lab's name. */
+@media (max-width: 560px) {
+  .topbar { flex-wrap: wrap; row-gap: 2px; padding-bottom: 6px; }
+  .rail { order: 3; flex: 1 0 100%; }
+  .top-actions { margin-left: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
