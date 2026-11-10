@@ -116,7 +116,9 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
   - The zoom reaches from Sedna's orbit to Charon beside Pluto, and in 3D
     the near plane follows the camera in to a moon.
   - Saturn's rings sit at their real tilt in 3D.
-  - Moons drop no depth mark in 3D, and the belts' bodies drop none.
+  - Moons drop no depth mark in 3D, and the belts' bodies drop none. A
+    mark taller than most of the stage, with its foot out of sight, is
+    left out, so a close look at Jupiter has no line rising from it.
 - **Orbits and Names** switches under Display:
   - each named body's present (osculating) ellipse about what it circles,
     drawn in 3D as ribbons that a planet can hide;

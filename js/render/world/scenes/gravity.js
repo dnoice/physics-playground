@@ -17,7 +17,8 @@
       Saturn's real rings at their tilt, moons hidden inside their planet's
       disc, no depth marks from moons or belt bodies, the Orbits switch drawn
       as depth-tested ribbons, and a portrait near plane small enough for a
-      moon.
+      moon. A depth mark taller than most of the stage, its foot out of sight,
+      is left out.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A planet's
       surface and colour come from its type, read from the lab, instead of
       from its mass and id; stars are the bodies typed as stars, and only gas
@@ -714,9 +715,12 @@ export function createScene(E, lab) {
   const heroes = new Array(HERO_CAP).fill(null);
 
   /* A drop line and a small foot ring on the plane, sized in stage pixels. */
-  function dropMark(b, plane, depth, px, c) {
+  function dropMark(b, plane, depth, px, c, stageH) {
     const X = b.x, Y = b.z, Z = b.y, h = Y - plane;
-    if (Math.abs(h) < 0.6) return;
+    // A mark shows where a body stands over the plane by the ring at its foot; one taller than most of the stage
+    // (Jupiter's, a few pixels off the ecliptic, seen from beside its moons) has its foot out of sight and only
+    // crosses the picture.
+    if (Math.abs(h) < 0.6 || Math.abs(h) * px / depth > stageH * 0.75) return;
     const r = c[0] * 0.5 + 0.24, g = c[1] * 0.5 + 0.28, bl = c[2] * 0.5 + 0.34;
     marks.point(X, Y, Z, r, g, bl, 0.46, 0.55); marks.point(X, plane + h * 0.5, Z, r, g, bl, 0.3, 0.55); marks.point(X, plane, Z, r, g, bl, 0.2, 0.55); marks.strip();
     const rad = 3.2 * depth / px;
@@ -770,7 +774,7 @@ export function createScene(E, lab) {
         }
         // The belts' marks would hide the planets', and a moon's would reach from its planet to the ecliptic: only
         // bodies with mass or a name drop one, and never a moon.
-        if ((b.m > 0 || b.label) && !b.host) dropMark(b, plane, depth, px, c);
+        if ((b.m > 0 || b.label) && !b.host) dropMark(b, plane, depth, px, c, view.h);
       }
       if (vectors) arrow(b, depth, px);
     }
