@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.6)
+    - Title: Chaos Lab (digiSpace Edition - v2.7)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: energy, drift, Lyapunov estimate and divergence on its tape,
+      and the selected copy as its target: its lower bob, or its dot in the
+      Phase map view.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
       predictability check was circular, its λ taken from the same separation
       at the moment the copies parted, so it always agreed; λ is now the
@@ -25,12 +29,6 @@
       the equations with their ratios as dials, the predictability horizon
       checked against when the copies part, the energy fence and the normal
       modes; Inspect follows the lower angle.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Three views
-      on Dennis's brief: Pendulum, Phase map and Both, switched without
-      touching the run. The map is labelled as a projection of the 4-D state;
-      the Phase map view sets the torus it wraps onto beside it, with the same
-      paths and its two seams; a click on a dot or a pendulum selects that
-      copy everywhere and inspects it. Units follow the chosen system.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -67,7 +65,7 @@ import { Series } from '../core/series.js';
 import { fmtPos, fmtQ } from '../core/units.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
 
-import { camOf, is3D, navFrame } from '../shell/camera.js';
+import { camOf, is3D, navFrame, toScreen } from '../shell/camera.js';
 import { rebuild, setParam } from '../shell/lifecycle.js';
 
 
@@ -350,6 +348,16 @@ export const pendulum = {
       actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
   },
   deselect() { this.sel = -1; },
+  /* The head-up display: its readings, and the selected copy in stage pixels: its lower bob where the pendulums
+     show, its dot on the map in the Phase map view. */
+  hud: [['Energy E (front pendulum)', 'ENERGY E'], ['Energy drift', 'E DRIFT'], ['Lyapunov estimate λ', 'LYAPUNOV λ'], ['Copies diverged (δ ≥ 0.1)', 'DIVERGED']],
+  hudTarget(three) {
+    const i = this.sel; if (i < 0 || i >= this.N) return null;
+    if (this.p.view === 'phase') { if (three) return null; const d = this.dotAt(i), s = toScreen(this, d.x, d.y); return { x: s.x, y: s.y, r: 7 }; }
+    const b = this.bobs(i), r = this.bobR()[1];
+    if (three) { const s = this.project3(b.x2, b.y2, 0.2); return s && { x: s.x, y: s.y, r: 12 }; }
+    const s = toScreen(this, b.x2, b.y2); return { x: s.x, y: s.y, r: r * s.z };
+  },
   inspectHint: 'Click a pendulum on the stage, or a dot on the phase map, to inspect that copy here.',
   colorOf(i) { return this.N === 1 ? THEME.text : RAMP_HEAT.css[Math.round(70 + 185 * i / Math.max(1, this.N - 1))]; },
   rgbOf(i) { return this.N === 1 ? [222, 228, 236] : rampRgb(RAMP_HEAT, Math.round(70 + 185 * i / Math.max(1, this.N - 1))); },

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.6)
+    - Title: Waves Lab (digiSpace Edition - v2.7)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: wavelength, sources, Courant number and beam angle on its tape,
+      and the selected source as its target, a line source at its middle.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
       phased-array formula, its readout, Insight and check apply only to a row
       of like sources, evenly spaced and started together, and say so when
@@ -25,11 +28,6 @@
       drive. Random sources gives each source added its own frequency, from
       half to twice f, and a random phase; Inspect shows a source's own
       frequency.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
-      Displacement and Intensity become the rail's Height and Intensity views;
-      any tool selects a source it lands on for the Inspect pane, which
-      removes it; lengths and speeds follow the chosen units at a ripple-tank
-      scale of 4 mm per cell.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -59,7 +57,7 @@ import { FOV3 } from '../core/math3d.js';
 import { fmtPos, fmtQ, unitSystem } from '../core/units.js';
 import { TAU, clamp, rand } from '../core/util.js';
 import { view } from '../core/view.js';
-import { camOf } from '../shell/camera.js';
+import { camOf, toScreen } from '../shell/camera.js';
 import { setParam } from '../shell/lifecycle.js';
 import { refreshEnabled } from '../shell/panel.js';
 import { active } from '../shell/state.js';
@@ -414,6 +412,14 @@ export const waves = {
       actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
   },
   deselect() { this.selSrc = null; },
+  /* The head-up display: its readings, and the selected source in stage pixels; a line source at its middle. */
+  hud: [['Wavelength λ = c/f', 'WAVELENGTH λ'], ['Sources', 'SOURCES'], ['Courant number cΔt/Δx', 'COURANT'], ['Beam steering angle', 'BEAM θ']],
+  hudTarget(three) {
+    const s = this.source(); if (!s) return null;
+    const cs = this.cs, x = s.x * cs, y = (s.type === 'point' ? s.y : this.Ny / 2) * cs;
+    if (three) { const c = this.project3(x, y, 0.05), e = c && this.project3(x + 5.5 * cs, y, 0.05); return c && e && { x: c.x, y: c.y, r: Math.hypot(e.x - c.x, e.y - c.y) }; }
+    const p = toScreen(this, x, y); return { x: p.x, y: p.y, r: 9 };
+  },
   pointerMove(p, e, down) { if (down && this.drawing) this.applyTool(p, false); },
   pointerUp() { this.drawing = false; this.last = null; this.lastPulse = null; },
   draw(g, w, h) {

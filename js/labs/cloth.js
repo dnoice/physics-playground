@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.6)
+    - Title: Cloth Lab (digiSpace Edition - v2.7)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
+      display: mean and peak stretch, torn links and tearing rate on its tape;
+      with nothing to select, no target.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
       speed-cap Insight gives the per-step limit in the chosen units. The Wind
       control and the Math page's wind value say that the push averages 0.62
@@ -24,8 +27,6 @@
       constraint passes with the stretch they leave. Gustiness scales how much
       the wind rises and falls about its mean, and Ball size scales the Ball
       tool's collider.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
-      wind and mesh spacing follow the chosen units, one pixel being 1.09 cm.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -357,6 +358,8 @@ export const cloth = {
   pins() { let p = 0; for (let i = 0; i < this.n; i++) p += this.pin[i]; return p; },
   // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
   primary: ['Mean stretch', 'Peak stretch'],
+  // The head-up display's readings; Cloth has nothing to select, so it has no target.
+  hud: [['Mean stretch', 'MEAN STRETCH'], ['Peak stretch', 'PEAK STRETCH'], ['Links torn or cut', 'TORN'], ['Tearing rate', 'TEAR RATE']],
   readouts() {
     const alive = this.aliveCount, mx = this.maxStretch * 100;
     return [
