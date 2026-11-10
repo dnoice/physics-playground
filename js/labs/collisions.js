@@ -541,18 +541,60 @@ export const collisions = {
       g.textAlign = 'center'; g.fillText('speed →', (box.x0 + box.x1) / 2, c.h - 5);
     },
   },
+  /* The Math page's live panels: what each formula is doing in the run right now (livemath.js). */
+  mathLive: {
+    impulse: {
+      params: ['e'],
+      vars: L => { const s = L.stats(); return [
+        ['e', L.p.e.toFixed(2), 'Restitution: the share of the approach speed each contact gives back.'],
+        ['e²', L.p.e ** 2 < 0.995 ? `${(L.p.e ** 2 * 100).toFixed(0)} %` : '100 %', 'The share of the relative-motion energy along the normal a contact keeps.'],
+        ['contacts', `${fmtSI(L.hitRate)} /s`, 'Contacts resolved per simulated second.'],
+        ['energy now', L.KE0 > 0 ? `${(s.etot / L.KE0 * 100).toFixed(1)} %` : '—', 'Total kinetic energy, against its value when the scene or a setting last changed.'],
+      ]; },
+      check: L => (L.p.gravity === 0 && L.p.drag === 0 && L.p.e === 1 && L.KE0 > 0
+        ? { what: 'Energy kept with e = 1', theory: 1, sim: L.stats().etot / L.KE0, fmt: v => `${(v * 100).toFixed(1)} %`, tol: 0.01 }
+        : { text: L.p.e < 1 ? `With e = ${L.p.e.toFixed(2)} every head-on contact keeps ${(L.p.e ** 2 * 100).toFixed(0)} % of its relative-motion energy, so the total drains away.` : 'Gravity or drag adds or removes energy, so the total is not conserved here.' }),
+    },
+    mb: {
+      vars: L => {
+        let v2 = 0, v1 = 0, n = 0;
+        for (let i = 0; i < L.n; i++) { if (i === L.tracer) continue; const s2 = L.vx[i] ** 2 + L.vy[i] ** 2; v2 += s2; v1 += Math.sqrt(s2); n++; }
+        const sig = n ? Math.sqrt(v2 / n / 2) : NaN;
+        return [['σ', fmtQ(L, 'speed', sig), 'From σ² = ½⟨v²⟩: the most likely speed.'], ['⟨v⟩', fmtQ(L, 'speed', n ? v1 / n : NaN), 'The mean speed of the balls now.'], ['N', String(n), 'Balls counted (the Brownian tracer is left out).']];
+      },
+      check: L => {
+        let v2 = 0, v1 = 0, n = 0, m0 = -1, equal = true;
+        for (let i = 0; i < L.n; i++) { if (i === L.tracer) continue; const s2 = L.vx[i] ** 2 + L.vy[i] ** 2; v2 += s2; v1 += Math.sqrt(s2); n++; if (m0 < 0) m0 = L.r[i]; else if (Math.abs(L.r[i] - m0) > 1e-6) equal = false; }
+        if (n < 20) return { text: 'Needs twenty or more balls to compare.' };
+        if (!equal) return { text: 'The balls differ in mass, so the Rayleigh curve does not apply.' };
+        return { what: 'Mean speed σ√(π/2)', theory: Math.sqrt(v2 / n / 2) * Math.sqrt(Math.PI / 2), sim: v1 / n, fmt: v => fmtQ(L, 'speed', v), tol: 0.03 };
+      },
+      plot: (c, L) => L.chart.draw(c),
+      plotLabel: 'Histogram of ball speeds against the Maxwell–Boltzmann curve for the same mean energy',
+    },
+    gas: {
+      vars: L => { const s = L.stats(); return [['N', String(L.n), 'Balls in the box.'], ['φ', `${(s.phi * 100).toFixed(1)} %`, 'Packing fraction: the share of the box the balls cover.'], ['PA / NkT', Number.isFinite(L.Z) ? L.Z.toFixed(3) : '—', 'Measured from the momentum the balls deliver to the walls.']]; },
+      check: L => (L.p.gravity !== 0 ? { text: 'Set gravity to 0: the law describes a gas at rest in an empty box.' }
+        : { what: 'PA / NkT ≈ 1 + 2φ', theory: 1 + 2 * L.stats().phi, sim: L.Z, fmt: v => v.toFixed(3), tol: 0.06, wait: 'PA / NkT: collecting wall impacts…' }),
+    },
+    friction: {
+      params: ['mu'],
+      vars: L => { const s = L.stats(); return [['μ', L.p.mu.toFixed(2), 'Contact friction: the most the tangential impulse may be, as a share of the normal one.'], ['spin share', s.etot > 0 ? `${(s.kr / s.etot * 100).toFixed(1)} %` : '—', 'The share of the energy in spin rather than motion.']]; },
+      check: L => ({ text: L.p.mu > 0 ? 'Friction turns sliding into spin: watch the spin share climb toward its steady value.' : 'With μ = 0 contacts cannot spin the balls; raise μ to see the spin share grow.' }),
+    },
+  },
   math: `
     <p>Each contact gets an impulse along its normal <i>n</i>, set by the restitution <i>e</i> and the reduced mass μ:</p>
-    <div class="f" data-tex="\\begin{aligned} J &amp;= -(1 + e)\\,\\mu\\,(\\mathbf v_2 - \\mathbf v_1)\\cdot\\hat{\\mathbf n} \\\\ \\mu &amp;= \\frac{m_1 m_2}{m_1 + m_2} \\end{aligned}"></div>
+    <div class="f" data-live="impulse" data-tex="\\begin{aligned} J &amp;= -(1 + e)\\,\\mu\\,(\\mathbf v_2 - \\mathbf v_1)\\cdot\\hat{\\mathbf n} \\\\ \\mu &amp;= \\frac{m_1 m_2}{m_1 + m_2} \\end{aligned}"></div>
     <div class="f" data-tex="\\mathbf v_1 \\leftarrow \\mathbf v_1 - \\frac{J}{m_1}\\,\\hat{\\mathbf n}, \\qquad \\mathbf v_2 \\leftarrow \\mathbf v_2 + \\frac{J}{m_2}\\,\\hat{\\mathbf n}"></div>
     <p><i>e</i> = 1 is perfectly elastic; <i>e</i> = 0 removes all relative speed along the normal. Disc mass grows with area, m ∝ r².</p>
     <p>With equal masses, speeds settle into the two-dimensional Maxwell–Boltzmann (Rayleigh) distribution:</p>
-    <div class="f" data-tex="f(v) = \\frac{v}{\\sigma^2}\\, e^{-v^2/2\\sigma^2}, \\qquad \\sigma^2 = \\tfrac12 \\langle v^2 \\rangle"></div>
+    <div class="f" data-live="mb" data-tex="f(v) = \\frac{v}{\\sigma^2}\\, e^{-v^2/2\\sigma^2}, \\qquad \\sigma^2 = \\tfrac12 \\langle v^2 \\rangle"></div>
     <p>Pressure is the momentum delivered to the walls per unit length per second. In two dimensions the ideal-gas law reads:</p>
-    <div class="f" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
+    <div class="f" data-live="gas" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
     <p>Hard discs raise it by roughly a factor 1 + 2φ, where φ is the packing fraction. In the Brownian scene the heavy disc’s mean-squared displacement grows linearly with time, ⟨Δr<sup>2</sup>⟩ ∝ t.</p>
     <p>With contact friction μ, a tangential impulse stops the two surfaces sliding past each other, but never more than μ times the normal impulse (Coulomb’s law). Each ball is a uniform disc, I = ½ m r², so the impulse also spins it:</p>
-    <div class="f" data-tex="\\begin{aligned} J_t &amp;= -\\frac{v_t}{3\\,(1/m_1 + 1/m_2)}, \\quad |J_t| \\le \\mu J \\\\ \\Delta\\omega_k &amp;= -\\frac{J_t\\, r_k}{I_k} \\end{aligned}"></div>
+    <div class="f" data-live="friction" data-tex="\\begin{aligned} J_t &amp;= -\\frac{v_t}{3\\,(1/m_1 + 1/m_2)}, \\quad |J_t| \\le \\mu J \\\\ \\Delta\\omega_k &amp;= -\\frac{J_t\\, r_k}{I_k} \\end{aligned}"></div>
     <p>Here v<sub>t</sub> is the sliding speed of the touching surfaces, including ω r from each spin. Walls work the same way with an infinitely heavy partner.</p>`,
 };
 

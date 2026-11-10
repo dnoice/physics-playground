@@ -72,18 +72,35 @@
 .details-name h3 { margin: 0; font: 700 17px/1.15 var(--font-display); letter-spacing: -0.005em; }
 .details .icon-btn { position: absolute; top: 0; right: 0; width: 28px; height: 28px; }
 /* Each figure is a small read-only gauge; the chart button plots it under Telemetry in the object's own colour. */
-.details-rows { grid-column: 2; grid-row: 1 / span 2; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
-.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.details-rows { grid-column: 2; grid-row: 1; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
+/* A figure: name, value and the sparkline of its history; the whole tile focuses it, the chart button plots it. */
+.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, white 2.5%, transparent), transparent 30px), color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
+.drow:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .drow.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
-.drow dt { grid-column: 1; font-size: 11.5px; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow.focus { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 60%, transparent), 0 0 18px -8px color-mix(in oklab, var(--cyan) 60%, transparent); }
+.drow dt { grid-column: 1 / 3; font-size: 11.5px; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drow dd { grid-column: 1; margin: 2px 0 0; font: 500 13.5px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.drow-plot { grid-column: 2; grid-row: 1 / span 2; align-self: center; appearance: none; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; opacity: 0.6; transition: opacity 0.15s, background 0.15s, color 0.15s; }
+.drow-spark { grid-column: 2; grid-row: 2; align-self: end; height: 16px; pointer-events: none; }
+.drow-spark svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.drow-spark path { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.75; }
+.drow.focus .drow-spark path { stroke: var(--cyan); opacity: 1; }
+.drow-pick { position: absolute; inset: 0; appearance: none; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
+.drow-pick[hidden] { display: none; }
+.drow-pick:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.drow-plot { position: relative; z-index: 1; grid-column: 3; grid-row: 1 / span 2; align-self: center; appearance: none; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; opacity: 0.6; transition: opacity 0.15s, background 0.15s, color 0.15s; }
 .drow-plot[hidden] { display: none; }
 .drow-plot .ms { font-size: 17px; }
 .drow:hover .drow-plot, .drow-plot:focus-visible { opacity: 1; }
 .drow-plot:hover { color: var(--text); background: color-mix(in oklab, var(--text) 9%, transparent); }
 .drow-plot[aria-pressed="true"] { opacity: 1; color: var(--series); }
 .details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; margin-left: -68px; }
+/* The focus chart takes the rest of the pane, so a tall deck shows the object's history instead of empty space. */
+.details-focus { grid-column: 2; grid-row: 2; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding-right: 34px; }
+.details-focus-cap { margin: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The canvas fills a positioned box, so its own pixel size can never feed back into the layout. */
+.details-plot-wrap { position: relative; min-height: 70px; }
+.details-plot { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: 10px; background: color-mix(in oklab, var(--ink) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.tile-deck.deck-short .details-focus { display: none; }
 .details-actions .btn { min-height: 30px; border-radius: 9px; font-size: 12.5px; }
 .details-actions:empty { display: none; }
 .inspect-empty { display: flex; align-items: flex-start; gap: 12px; max-width: 640px; padding: 4px 2px; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
@@ -100,7 +117,7 @@
 .deck-pane[hidden] { display: none; }
 .deck-telemetry { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
 /* The panes' names, as a segmented control: what the deck shows is always in view. */
-.deck-tabs { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); }
+.deck-tabs { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 11px; background: color-mix(in oklab, var(--well) 80%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); }
 .deck-tab { appearance: none; position: relative; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: 500 12.5px/1 var(--font-body); white-space: nowrap; cursor: pointer; transition: background 0.15s; }
 .deck-tab .ms { font-size: 17px; }
 .deck-tab:hover { color: var(--text); }
@@ -128,7 +145,7 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .deck-insights { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .deck-insights .insights { align-content: start; }
 .deck-insights .insights:empty { display: grid; }
-@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } }
+@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(110px, 1fr); } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } .details-focus { grid-column: 1; grid-row: 3; padding-right: 0; } }
 .deck-chart { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; }
 .deck-chart canvas { width: 100%; height: 100%; min-height: 0; display: block; }
 .scoping .deck-chart canvas { cursor: crosshair; touch-action: none; }
@@ -136,7 +153,7 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .scoping .caption { display: none; }
 .readouts { margin: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(158px, 1fr); gap: 8px; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 1px; }
 .readouts::-webkit-scrollbar { display: none; }
-.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 30px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: box-shadow 0.15s, background 0.15s; }
+.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 30px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: linear-gradient(180deg, color-mix(in oklab, white 2.5%, transparent), transparent 36px), color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: box-shadow 0.15s, background 0.15s; }
 .gauge:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .gauge.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
 .gauge dt { grid-column: 1 / -1; color: var(--muted); font-size: 12px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -221,8 +238,38 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .tabs [role="tab"].has-new::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
 .notes-body [role="tabpanel"] { display: grid; gap: 14px; align-content: start; }
 .notes-body [role="tabpanel"][hidden] { display: none; }
-.guide { display: grid; gap: 12px; }
+.guide { display: grid; gap: 16px; }
 .guide .blurb { margin: 0; font-size: 13.5px; line-height: 1.65; color: color-mix(in oklab, var(--text) 90%, var(--muted)); }
+/* The Guide's sections: the lab's tools, views and scenes as cards that pick them, then its notes. */
+.g-sec { display: grid; gap: 8px; }
+.g-title { margin: 0; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.g-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--rule), transparent); }
+.g-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.g-card {
+  appearance: none; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 2px 8px;
+  padding: 9px 10px 10px; border: 0; border-radius: 11px; text-align: left; cursor: pointer; color: var(--text); font: inherit;
+  background: linear-gradient(180deg, color-mix(in oklab, white 3%, transparent), transparent 40px), color-mix(in oklab, var(--well) 70%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
+}
+.g-card:hover { background: color-mix(in oklab, var(--text) 7%, var(--well)); }
+.g-card:active { transform: scale(0.985); }
+.g-card .ms { font-size: 19px; color: color-mix(in oklab, var(--text) 75%, var(--muted)); }
+.g-name { font-weight: 600; font-size: 13px; }
+.g-card kbd { justify-self: end; }
+.g-hint { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
+.g-card[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 16%, transparent), color-mix(in oklab, var(--amber) 6%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 45%, transparent), var(--card-sheen); }
+.g-card[aria-pressed="true"] .ms { color: var(--amber); }
+.g-scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+.g-scene {
+  appearance: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; cursor: pointer; font: 500 12.5px/1 var(--font-body);
+  color: color-mix(in oklab, var(--text) 85%, var(--muted)); background: color-mix(in oklab, var(--well) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: background 0.15s, color 0.15s;
+}
+.g-scene .ms { font-size: 17px; color: var(--muted); }
+.g-scene:hover { color: var(--text); background: color-mix(in oklab, var(--text) 8%, var(--well)); }
+.g-scene[aria-pressed="true"] { color: var(--text); background: color-mix(in oklab, var(--cyan) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 45%, transparent); }
+.g-scene[aria-pressed="true"] .ms { color: var(--cyan); }
+.g-nav { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+.g-nav b { color: var(--text); font-weight: 600; }
 .interact { margin: 0; padding: 12px 14px 12px 30px; color: var(--muted); display: grid; gap: 8px; font-size: 13px; line-height: 1.55; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }
 .interact li::marker { color: color-mix(in oklab, var(--amber) 80%, transparent); }
 .interact b { color: var(--text); font-weight: 600; }
@@ -237,6 +284,33 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .f .katex { font-size: 1.12em; }
 .f.is-clipped { -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
 .f.tex-fallback { font: 400 12.5px/1.6 var(--font-mono); white-space: pre-wrap; color: var(--muted); }
+/* Live Math: a formula wired to the run carries a panel joined beneath it, in the cyan of measurement. */
+.f:has(+ .f-live) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.f-live {
+  margin-top: -13px; display: grid; gap: 9px; padding: 9px 12px 11px; border: 1px solid var(--rule); border-top: 1px dashed color-mix(in oklab, var(--cyan) 32%, var(--rule));
+  border-radius: 0 0 10px 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--cyan) 6%, var(--well)), var(--well) 60px);
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--cyan) 70%, transparent), var(--card-sheen);
+}
+.fl-head { display: flex; align-items: center; gap: 7px; font: 600 10px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
+.fl-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: ping 2.2s ease-out infinite; }
+.fl-note { font: 400 11px/1 var(--font-body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.fl-vars { margin: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.fl-vars[hidden] { display: none; }
+.fl-var { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 8px 4px; border-radius: 7px; background: color-mix(in oklab, var(--ink) 72%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.fl-var dt { font: italic 500 13px/1.25 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
+.fl-var dt.word { font: 500 11px/1.25 var(--font-body); font-style: normal; color: var(--muted); }
+.fl-var dd { margin: 0; font: 500 11.5px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.fl-params { display: grid; gap: 2px; padding-top: 2px; }
+.fl-param { display: grid; grid-template-columns: minmax(26px, max-content) minmax(0, 1fr) minmax(64px, max-content); align-items: center; gap: 10px; cursor: pointer; }
+.fl-sym { font: italic 500 13.5px/1 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
+.fl-param output { font: 500 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--amber); text-align: right; white-space: nowrap; }
+.fl-check { margin: 0; display: flex; align-items: baseline; gap: 8px; padding: 6px 9px; border-radius: 7px; font: 500 11.5px/1.45 var(--font-mono); color: color-mix(in oklab, var(--text) 86%, var(--muted)); background: color-mix(in oklab, var(--ink) 60%, transparent); }
+.fl-check[hidden] { display: none; }
+.fl-check::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transform: translateY(-1px); }
+.fl-check[data-state="ok"]::before { background: var(--ok); box-shadow: 0 0 8px color-mix(in oklab, var(--ok) 70%, transparent); }
+.fl-check[data-state="warn"]::before { background: var(--warn); }
+.fl-check[data-state="crit"]::before { background: var(--crit); }
+.fl-plot { display: block; width: 100%; height: 132px; border-radius: 8px; background: color-mix(in oklab, var(--ink) 78%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
 .experiment {
   display: grid; gap: 8px; padding: 12px 13px; border: 1px solid var(--rule); border-radius: 11px;
   background: linear-gradient(180deg, color-mix(in oklab, var(--ink) 92%, white 2%), var(--ink)); animation: rise 0.3s var(--ease) both;

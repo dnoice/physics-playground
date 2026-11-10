@@ -91,10 +91,14 @@
 .bento.focus .tile:not(.tile-stage) { display: none; }
 
 .tile {
+  position: relative; isolation: isolate;
   min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); overflow: hidden;
-  background: linear-gradient(180deg, var(--tile-hi), var(--tile) 180px); border: 0; border-radius: var(--radius); outline: 1px solid var(--hair); outline-offset: -1px;
+  background: var(--glass-tile); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 0; border-radius: var(--radius); outline: 1px solid var(--hair); outline-offset: -1px;
   box-shadow: var(--tile-shadow); container: tile / inline-size; animation: tile-in 0.42s var(--ease) both;
 }
+/* The sheen sits under the tile's content and over its glass. */
+.tile::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--sheen); pointer-events: none; }
 .tile:nth-child(2) { animation-delay: 0.03s; } .tile:nth-child(3) { animation-delay: 0.06s; } .tile:nth-child(4) { animation-delay: 0.09s; }
 .tile:nth-child(5) { animation-delay: 0.12s; } .tile:nth-child(6) { animation-delay: 0.15s; } .tile:nth-child(7) { animation-delay: 0.18s; } .tile:nth-child(8) { animation-delay: 0.21s; }
 @keyframes tile-in { from { opacity: 0; transform: translateY(8px) scale(0.99); } }
@@ -104,7 +108,7 @@
 .tile-meta { margin-left: auto; font: 400 11px/1 var(--font-mono); color: var(--muted); }
 /* A soft shadow at the bottom edge shows there is more to scroll; the local layer rides over it at the end of the content. */
 .tile-body {
-  background: linear-gradient(transparent, var(--tile) 70%) center bottom / 100% 30px no-repeat local, radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.55), transparent) center bottom / 100% 13px no-repeat scroll;
+  background: linear-gradient(transparent, color-mix(in oklab, var(--tile) 92%, transparent) 70%) center bottom / 100% 30px no-repeat local, radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.55), transparent) center bottom / 100% 13px no-repeat scroll;
   min-height: 0; overflow: auto; padding: var(--pad); overscroll-behavior: contain; line-height: 1.6; }
 .tile-body p, .tile-body li { text-wrap: pretty; }
 .tile-body sub, .tile-body sup { line-height: 0; }

@@ -57,6 +57,8 @@ import { $, clamp, decimalsFor, el, reduceMotion, store } from '../core/util.js'
 import { evaluateDiagnostics } from './diagnostics.js';
 import { drawScope, resetGauges, scopeOn, updateGauges } from './instruments.js';
 import { renderExperiments } from './experiments.js';
+import { buildLiveMath } from './livemath.js';
+import { buildGuide } from './guide.js';
 import { applyPreset, rebuild, setParam } from './lifecycle.js';
 
 import { active, announce, ui } from './state.js';
@@ -99,13 +101,18 @@ export function rangeMap({ min, max, log }) {
     fromS: log ? s => min * Math.exp(s / 1000 * Math.log(max / min)) : s => +s,
   };
 }
+/* How a range control shows its value: its own fmt, its quantity in the chosen units, or a number and its unit. */
+export function controlFormat(lab, c) {
+  const q = c.qty, dec = q ? unitDecimals(lab, q, c.step) : decimalsFor(c.step);
+  return c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + (c.unit ? ' ' + c.unit : ''));
+}
 export function buildRange(lab, c) {
   const id = `ctl-${lab.id}-${c.key}`, { toS, fromS } = rangeMap(c);
   const input = el('input', { type: 'range', id, min: c.log ? 0 : c.min, max: c.log ? 1000 : c.max, step: c.log ? 1 : (c.step || 'any'), 'aria-describedby': id + '-note' });
   const wrap = el('div', { class: 'range-wrap' }, input);
   // A control with a quantity kind shows, and takes typed values in, the chosen unit system; the lab keeps its own.
-  const q = c.qty, dec = q ? unitDecimals(lab, q, c.step) : decimalsFor(c.step), shown = v => (q ? toDisplay(lab, q, v) : v);
-  const fmt = c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + (c.unit ? ' ' + c.unit : ''));
+  const q = c.qty, shown = v => (q ? toDisplay(lab, q, v) : v);
+  const fmt = controlFormat(lab, c);
   const val = el('button', { type: 'button', class: 'ctl-val', id: id + '-out', 'aria-label': `${c.label}: edit value` });
   const reset = el('button', { type: 'button', class: 'ctl-reset', html: RESET_SVG, hidden: true });
   const tools = el('span', { class: 'ctl-tools' }, reset, val);
@@ -247,11 +254,11 @@ export function buildPanel(lab) {
   $('#chart').setAttribute('aria-label', lab.chart ? lab.chart.title : 'No chart for this lab');
   $('#chart-caption').textContent = lab.chart ? lab.chart.caption : '';
   $('#chart-caption').title = lab.chart ? lab.chart.caption : '';
-  $('#guide').replaceChildren(el('div', { class: 'guide' }, el('p', { class: 'blurb', text: lab.blurb }),
-    el('ul', { class: 'interact', html: [...lab.interact, navHelp(lab)].map(s => `<li>${s}</li>`).join('') })));
+  buildGuide(lab);
   const math = $('#math');
   math.innerHTML = lab.math;
   typeset(math); typeset($('#scene-body'));
+  buildLiveMath(lab, math);
   renderExperiments(lab);
   refreshEnabled();
   resetGauges();

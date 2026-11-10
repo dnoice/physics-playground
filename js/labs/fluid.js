@@ -547,17 +547,53 @@ export const fluid = {
       drawSeries(c.g, box, s, 0, hi * 1.08, THEME.amber, { fill: true });
     },
   },
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    density: {
+      vars: L => [['ρ₀', L.rho0.toFixed(2), 'Rest density, in neighbour-weight units.'], ['ρ̄ / ρ₀', L.mean.toFixed(3), 'Mean density of the liquid over the rest density.'], ['peak', `${L.peak.toFixed(2)}×`, 'The densest particle.']],
+      check: L => ({ what: 'Mean density at rest', theory: 1, sim: L.mean, fmt: v => `${v.toFixed(3)} ρ₀`, tol: 0.12, wait: 'Waiting for liquid…' }),
+      /* How the particles' densities spread around ρ₀: a narrow peak at 1 is a calm, incompressible liquid. */
+      plot: (c, L) => {
+        const { g, w, h } = c, B = 40, top = 2.5, hist = new Float64Array(B);
+        for (let i = 0; i < L.n; i++) hist[Math.min(B - 1, Math.max(0, Math.floor(L.rho[i] / L.rho0 / top * B)))]++;
+        let mx = 1; for (const v of hist) mx = Math.max(mx, v);
+        const x0 = 8, x1 = w - 8, y1 = h - 18, bw = (x1 - x0) / B;
+        g.fillStyle = THEME.cyan; g.globalAlpha = 0.6;
+        hist.forEach((v, k) => { const hh = v / mx * (y1 - 10); g.fillRect(x0 + k * bw + 0.5, y1 - hh, bw - 1, hh); });
+        g.globalAlpha = 1; const xr = x0 + (1 / top) * (x1 - x0);
+        g.strokeStyle = THEME.amber; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(xr, 6); g.lineTo(xr, y1); g.stroke(); g.setLineDash([]);
+        g.font = `400 10px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textBaseline = 'alphabetic';
+        g.textAlign = 'left'; g.fillText('0', x0, h - 5); g.textAlign = 'center'; g.fillStyle = THEME.amber; g.fillText('ρ₀', xr, h - 5);
+        g.fillStyle = THEME.muted; g.textAlign = 'right'; g.fillText(`${top} ρ₀`, x1, h - 5);
+      },
+      plotLabel: 'Histogram of particle densities, with the rest density marked',
+    },
+    pressure: {
+      params: ['k', ['kNear', 'k-near']],
+      vars: L => [['k', L.p.k.toFixed(3), 'Stiffness: pressure per unit of excess density.'], ['k-near', L.p.kNear.toFixed(3), 'Near stiffness: keeps neighbours from clumping.'], ['P̄', (L.p.k * (L.mean - 1) * L.rho0).toFixed(4), 'The pressure at the mean density, k (ρ̄ − ρ₀), in solver units.']],
+      check: L => ({ text: L.peak > 1.5 ? `The bottom is squeezed to ${L.peak.toFixed(2)} ρ₀: raise k to stiffen the liquid against gravity.` : `Densities stay within ${((L.peak - 1) * 100).toFixed(0)} % of rest: k holds the liquid nearly incompressible.`, state: L.peak > 2.2 ? 'crit' : L.peak > 1.5 ? 'warn' : 'ok' }),
+    },
+    visc: {
+      params: ['visc'],
+      vars: L => [['σ', L.p.visc.toFixed(2), 'Linear viscosity: how strongly approaching neighbours lose relative speed.'], ['Δt', `${(L.TICK * 1000).toFixed(2)} ms`, 'One solver tick.']],
+      check: L => ({ text: L.p.visc > 0.3 ? 'High σ: ripples die within a few sloshes, like syrup.' : L.p.visc > 0 ? 'Some σ: splashes settle while the liquid still flows freely.' : 'σ = 0: only the near-pressure damps motion, so the liquid sloshes for a long time.' }),
+    },
+    velocity: {
+      vars: L => { let vmax = 0; for (let i = 0; i < L.n; i++) vmax = Math.max(vmax, L.vx[i] ** 2 + L.vy[i] ** 2); return [['v max', fmtQ(L, 'speed', Math.sqrt(vmax) * L.U / L.TICK), 'The fastest particle now.'], ['capped', `${(L.clampRate * 100).toFixed(2)} %`, 'Particles that hit the per-tick speed cap.']]; },
+      check: L => ({ what: 'Particles at the speed cap', theory: 0, sim: L.clampRate, fmt: v => `${(v * 100).toFixed(2)} %`, text: L.clampRate < 0.002 ? `Only ${(L.clampRate * 100).toFixed(2)} % of particles touch the cap: velocities are the liquid's own.` : `${(L.clampRate * 100).toFixed(2)} % of particles hit the cap: the motion is faster than a tick can follow.`, state: L.clampRate < 0.002 ? 'ok' : L.clampRate < 0.02 ? 'warn' : 'crit' }),
+    },
+  },
   math: `
     <p>Density and near-density sum over neighbours closer than the interaction radius <i>h</i>, with q = r<sub>ij</sub> / h:</p>
-    <div class="f" data-tex="\\rho_i = \\sum_j (1 - q)^2, \\qquad \\rho_i^{\\text{near}} = \\sum_j (1 - q)^3"></div>
+    <div class="f" data-live="density" data-tex="\\rho_i = \\sum_j (1 - q)^2, \\qquad \\rho_i^{\\text{near}} = \\sum_j (1 - q)^3"></div>
     <p>They set a pressure and a near-pressure:</p>
-    <div class="f" data-tex="P_i = k\\,(\\rho_i - \\rho_0), \\qquad P_i^{\\text{near}} = k^{\\text{near}}\\,\\rho_i^{\\text{near}}"></div>
+    <div class="f" data-live="pressure" data-tex="P_i = k\\,(\\rho_i - \\rho_0), \\qquad P_i^{\\text{near}} = k^{\\text{near}}\\,\\rho_i^{\\text{near}}"></div>
     <p>Each neighbour pair is pushed apart along r̂<sub>ij</sub>, half to each particle:</p>
     <div class="f" data-tex="\\mathbf D_{ij} = \\Delta t^2 \\left[ P_i\\,(1 - q) + P_i^{\\text{near}}\\,(1 - q)^2 \\right] \\hat{\\mathbf r}_{ij}"></div>
     <p>Approaching pairs lose relative speed <i>u</i> to viscosity:</p>
-    <div class="f" data-tex="\\mathbf I = \\Delta t\\,(1 - q)\\,(\\sigma u + \\beta u^2)\\,\\hat{\\mathbf r}_{ij}"></div>
+    <div class="f" data-live="visc" data-tex="\\mathbf I = \\Delta t\\,(1 - q)\\,(\\sigma u + \\beta u^2)\\,\\hat{\\mathbf r}_{ij}"></div>
     <p>Velocities come back from positions, capped at 0.6 h per tick so one bad step cannot explode. Method of <cite>Clavet, Beaudoin &amp; Poulin (2005)</cite>.</p>
-    <div class="f" data-tex="\\mathbf v = \\frac{\\mathbf x - \\mathbf x_{\\text{prev}}}{\\Delta t}"></div>
+    <div class="f" data-live="velocity" data-tex="\\mathbf v = \\frac{\\mathbf x - \\mathbf x_{\\text{prev}}}{\\Delta t}"></div>
     <p>The water surface is drawn on the GPU. Each particle adds a smooth bump to a density field, the liquid is wherever that sum crosses a threshold, and the field’s slope and depth give the highlights and colour.</p>`,
 };
 

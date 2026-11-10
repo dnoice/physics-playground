@@ -161,7 +161,7 @@ function setValue(dd, text) {
   // One inline run, so the figure and its unit read and copy as one line ("1400 / 4000"), not two flex items.
   dd.replaceChildren(el('span', { class: 'val' }, el('span', { class: 'num', text: m[1] }), ' ', el('span', { class: 'unit', text: m[2] })));
 }
-function sparkPath(s) {
+export function sparkPath(s) {
   if (!s || s.n < 2) return '';
   const n = Math.min(s.n, SPARK);
   let lo = Infinity, hi = -Infinity, d = '';

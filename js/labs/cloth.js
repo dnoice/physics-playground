@@ -379,11 +379,23 @@ export const cloth = {
   perfFixes() { return this.p.iters > 10 || this.p.spacing < 12 ? [{ label: 'Iterations 8, spacing 14', run() { cloth.p.iters = 8; syncControl('iters'); setParam(cloth, 'spacing', 14); } }] : []; },
   sane() { for (let i = 0; i < this.n; i++) if (!Number.isFinite(this.x[i]) || !Number.isFinite(this.y[i])) return false; return true; },
   chart: null,
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    verlet: {
+      params: ['gravity', 'wind', 'damping'],
+      vars: L => [['Δt', `${(L.dt() * 1000).toFixed(2)} ms`, 'One step.'], ['g', fmtQ(L, 'acc', L.p.gravity), 'Gravity.'], ['wind', fmtQ(L, 'acc', L.p.wind), 'The wind\'s push, as an acceleration.'], ['damping', L.p.damping.toFixed(3), 'The share of each step\'s motion lost.']],
+    },
+    constraint: {
+      params: ['iters', 'tear'],
+      vars: L => [['passes', String(L.p.iters), 'Constraint passes per step: each pulls every link halfway back to its rest length.'], ['mean', `${(L.meanStretch * 100).toFixed(2)} %`, 'Mean stretch of the intact links.'], ['peak', `${(L.maxStretch * 100).toFixed(1)} %`, 'The most stretched link.']],
+      check: L => ({ text: L.maxStretch > 0.8 ? 'Links are stretched far past their rest length: more passes per step pull them back.' : `Links hold within ${(L.maxStretch * 100).toFixed(1)} % of their rest length.`, state: L.maxStretch < 0.25 ? 'ok' : L.maxStretch < 0.8 ? 'warn' : 'crit' }),
+    },
+  },
   math: `
     <p>Position Verlet stores each point’s previous position instead of a velocity, with Δt = 1/120 s:</p>
-    <div class="f" data-tex="\\mathbf x_{n+1} = \\mathbf x_n + (\\mathbf x_n - \\mathbf x_{n-1})(1 - \\text{damping}) + \\mathbf a\\,\\Delta t^2"></div>
+    <div class="f" data-live="verlet" data-tex="\\mathbf x_{n+1} = \\mathbf x_n + (\\mathbf x_n - \\mathbf x_{n-1})(1 - \\text{damping}) + \\mathbf a\\,\\Delta t^2"></div>
     <p>Each link with rest length L<sub>0</sub> moves its two ends back toward that length, half each unless one end is pinned:</p>
-    <div class="f" data-tex="\\Delta = \\frac{|\\mathbf d| - L_0}{|\\mathbf d|}\\cdot\\frac{\\mathbf d}{2}"></div>
+    <div class="f" data-live="constraint" data-tex="\\Delta = \\frac{|\\mathbf d| - L_0}{|\\mathbf d|}\\cdot\\frac{\\mathbf d}{2}"></div>
     <p>Repeating that relaxation <i>k</i> times per step converges toward a stiff sheet; fewer iterations give stretchier fabric. Technique after <cite>Jakobsen (2001), Advanced Character Physics</cite>.</p>
     <p>A link tears once |d| passes the tear factor × L<sub>0</sub>. The ball collider pushes any point inside it back to its surface on every iteration, and a per-step cap of ${CL_MAXSTEP} px keeps extreme wind from flinging points off the stage.</p>
     <p>The fabric shade comes from each panel’s area A against its rest area A<sub>0</sub>: a sheet seen edge-on looks smaller, so bunching into folds reads as cloth turning away from the light. A negative area means the panel has flipped over, and the warm lining shows.</p>

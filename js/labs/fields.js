@@ -838,18 +838,59 @@ export const fields = {
       drawSeries(c.g, box, S.et, lo, hi, THEME.text, { width: 1.3 });
     },
   },
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    coulomb: {
+      params: ['k'],
+      vars: L => { const s = L.stats(), pv = L.probeVal; return [['N', String(L.charges.length), 'Source charges.'], ['Σq', String(s.qnet), 'Net charge.'], ['|E|', pv ? fmtField(pv.E, L.K() / 1e6) : '—', 'Field at the probe.'], ['V', pv ? fmtField(pv.V, L.Vscale()) : '—', 'Potential at the probe.']]; },
+      check: L => ({ text: L.probeVal ? 'Move the probe with the Probe tool: E points down the slope of V, and the two fall off as 1/r² and 1/r.' : 'Place the field meter with the Probe tool to read E and V.', state: L.probeVal ? 'ok' : 'idle' }),
+    },
+    lorentz: {
+      params: ['B', 'E0'],
+      vars: L => [['B', `${L.p.B.toFixed(2)}${unitSystem() === 'sim' ? '' : ' T'}`, 'Magnetic field (into the screen when positive).'], ['E₀', fmtQ(L, 'efield', L.p.E0), 'Uniform field, pointing down.'], ['q/m', `${L.p.qm.toFixed(1)}${unitSystem() === 'sim' ? '' : ' C/kg'}`, 'Charge-to-mass of new particles.']],
+    },
+    cyclotron: {
+      params: ['B', 'qm'],
+      vars: L => { const B = Math.abs(L.stats().B), w = L.p.qm * B; return [['ω_c', B ? `${w.toFixed(2)} rad/s` : '—', 'Angular frequency of the circling.'], ['T', B ? `${(TAU / w).toFixed(2)} s` : '—', 'One full circle.'], ['r_L', B ? fmtQ(L, 'len', L.p.v0 / w) : '—', 'Radius for a particle at the beam speed.']]; },
+      check: L => ({ text: L.p.B ? 'Every particle with this q/m circles in the same time, whatever its speed: faster ones just draw bigger circles.' : 'Set B above 0 to make particles circle.', state: L.p.B ? 'ok' : 'idle' }),
+    },
+    exb: {
+      params: ['E0', 'B'],
+      vars: L => [['E / B', Number.isFinite(L.stats().vd) ? fmtQ(L, 'speed', L.stats().vd) : '—', 'The drift speed this law gives.']],
+      /* The drift is measured as it is defined: how far the particles' guiding centres move in one full cyclotron
+         period, averaged over every particle present at both ends, so the circling cancels out. */
+      check: L => {
+        const s = L.stats(); if (!Number.isFinite(s.vd)) { L.driftLog = null; return { text: 'Needs both E₀ and B: load the E × B drift scene.' }; }
+        if (L.n < 2) return { text: 'Release a few particles to measure their drift.' };
+        const T = TAU / (L.p.qm * Math.abs(s.B)), d = L.driftLog;
+        if (!d || L.t < d.t || d.key !== `${L.p.E0}|${L.p.B}|${L.p.qm}`) {
+          L.driftLog = { t: L.t, key: `${L.p.E0}|${L.p.B}|${L.p.qm}`, x: new Map([...Array(L.n).keys()].map(i => [L.pid[i], L.x[i]])), v: d && d.key === `${L.p.E0}|${L.p.B}|${L.p.qm}` ? d.v : NaN };
+        } else if (L.t - d.t >= T) {
+          let sum = 0, k = 0;
+          for (let i = 0; i < L.n; i++) { const x0 = d.x.get(L.pid[i]); if (x0 != null) { sum += L.x[i] - x0; k++; } }
+          L.driftLog = { t: L.t, key: d.key, x: new Map([...Array(L.n).keys()].map(i => [L.pid[i], L.x[i]])), v: k ? Math.abs(sum / k / (L.t - d.t)) : d.v };
+        }
+        return { what: 'Drift speed over one period', theory: s.vd, sim: L.driftLog.v, fmt: v => fmtQ(L, 'speed', v), tol: 0.1, wait: `Drift speed: measuring over one cyclotron period (${T.toFixed(1)} s)…` };
+      },
+    },
+    gradb: {
+      params: ['gradB'],
+      vars: L => [['∇B', L.p.gradB.toFixed(2), 'How much B grows down the screen, as a share across the bench.']],
+      check: L => ({ text: L.p.gradB > 0 ? 'Circles tighten where B is strong, so each loop closes a little sideways: positive and negative charges drift apart.' : 'Raise the B gradient to make charges drift sideways.', state: L.p.gradB > 0 ? 'ok' : 'idle' }),
+    },
+  },
   math: `
     <p>Each source charge contributes a Coulomb field, and fields add as vectors (superposition). The potential adds as plain numbers:</p>
-    <div class="f" data-tex="\\mathbf E(\\mathbf r) = \\sum_i k\\,q_i\\,\\frac{\\mathbf r - \\mathbf r_i}{|\\mathbf r - \\mathbf r_i|^3}, \\qquad V(\\mathbf r) = \\sum_i \\frac{k\\,q_i}{|\\mathbf r - \\mathbf r_i|}"></div>
+    <div class="f" data-live="coulomb" data-tex="\\mathbf E(\\mathbf r) = \\sum_i k\\,q_i\\,\\frac{\\mathbf r - \\mathbf r_i}{|\\mathbf r - \\mathbf r_i|^3}, \\qquad V(\\mathbf r) = \\sum_i \\frac{k\\,q_i}{|\\mathbf r - \\mathbf r_i|}"></div>
     <p>The field is minus the gradient of the potential, <span data-tex="\\mathbf E = -\\nabla V" data-inline="true"></span>, so field lines always cross equipotentials at right angles. A softening length ε = 6 px keeps the field finite at a charge.</p>
     <p>A particle of charge <i>q</i> and mass <i>m</i> feels the Lorentz force:</p>
-    <div class="f" data-tex="m\\,\\frac{d\\mathbf v}{dt} = q\\,(\\mathbf E + \\mathbf v \\times \\mathbf B)"></div>
+    <div class="f" data-live="lorentz" data-tex="m\\,\\frac{d\\mathbf v}{dt} = q\\,(\\mathbf E + \\mathbf v \\times \\mathbf B)"></div>
     <p>The magnetic part is always perpendicular to <b>v</b>, so it bends the path without changing the speed. In a uniform field a particle circles at the cyclotron frequency, the same for every speed; faster particles just draw bigger circles:</p>
-    <div class="f" data-tex="\\omega_c = \\frac{|q|\\,B}{m}, \\qquad r_L = \\frac{v_\\perp}{\\omega_c}, \\qquad T = \\frac{2\\pi m}{|q|\\,B}"></div>
+    <div class="f" data-live="cyclotron" data-tex="\\omega_c = \\frac{|q|\\,B}{m}, \\qquad r_L = \\frac{v_\\perp}{\\omega_c}, \\qquad T = \\frac{2\\pi m}{|q|\\,B}"></div>
     <p>Crossed electric and magnetic fields make every particle drift sideways at the same velocity, whatever its charge or mass:</p>
-    <div class="f" data-tex="\\mathbf v_{E} = \\frac{\\mathbf E \\times \\mathbf B}{B^2}"></div>
+    <div class="f" data-live="exb" data-tex="\\mathbf v_{E} = \\frac{\\mathbf E \\times \\mathbf B}{B^2}"></div>
     <p>A magnetic field that grows across the orbit makes the circle tighter on its strong side, and the guiding centre creeps along the field contours. Positive and negative charges creep in opposite directions:</p>
-    <div class="f" data-tex="\\mathbf v_{\\nabla B} = \\frac{m\\,v_\\perp^2}{2\\,q\\,B^3}\\;\\mathbf B \\times \\nabla B"></div>
+    <div class="f" data-live="gradb" data-tex="\\mathbf v_{\\nabla B} = \\frac{m\\,v_\\perp^2}{2\\,q\\,B^3}\\;\\mathbf B \\times \\nabla B"></div>
     <p>Particles move with the Boris pusher: half an electric kick, an exact rotation by the magnetic field, then the other half kick. The rotation keeps the speed fixed to rounding error, which is why gyration stays stable for thousands of turns:</p>
     <div class="f" data-tex="\\begin{aligned} \\mathbf v^- &amp;= \\mathbf v_n + \\tfrac{q}{m}\\mathbf E\\,\\tfrac{\\Delta t}{2}, \\quad \\mathbf t = \\tfrac{q}{m}\\mathbf B\\,\\tfrac{\\Delta t}{2}, \\quad \\mathbf s = \\frac{2\\mathbf t}{1 + t^2} \\\\ \\mathbf v^+ &amp;= \\mathbf v^- + (\\mathbf v^- + \\mathbf v^- \\times \\mathbf t) \\times \\mathbf s \\\\ \\mathbf v_{n+1} &amp;= \\mathbf v^+ + \\tfrac{q}{m}\\mathbf E\\,\\tfrac{\\Delta t}{2} \\end{aligned}"></div>
     <p>Charges here are point charges in three dimensions seen in a plane, so the field falls off as 1/r². The drawn line density is a guide, not an exact flux count, because a flat slice cannot hold all the lines of a 3-D field.</p>`,

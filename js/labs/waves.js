@@ -541,18 +541,48 @@ export const waves = {
       g.textAlign = 'left'; g.fillText('top', box.x0, c.h - 5); g.textAlign = 'right'; g.fillText('bottom', box.x1, c.h - 5);
     },
   },
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    waveeq: {
+      params: ['c', 'damp'],
+      vars: L => [['c', fmtQ(L, 'speed', L.p.c), 'Wave speed in open water.'], ['Δt', `${(L.dt() * 1000).toFixed(2)} ms`, 'One solver step.'], ['cΔt/Δx', (L.p.c * L.dt()).toFixed(3), 'The Courant number: how many cells a crest crosses per step.'], ['λ', fmtQ(L, 'len', L.p.c / L.p.f), 'Wavelength c / f of the sources.']],
+      check: L => ({ text: `Courant number ${(L.p.c * L.dt()).toFixed(3)}, under the stability limit 1/√2 ≈ 0.707: the step adapts to c, so the scheme stays stable at any speed.`, state: 'ok' }),
+    },
+    snell: {
+      params: [['glassN', 'n₂']],
+      vars: L => [['n₁', '1', 'Open water.'], ['n₂', L.p.glassN.toFixed(2), 'Glass: waves there travel at c / n.'], ['c / n₂', fmtQ(L, 'speed', L.p.c / L.p.glassN), 'Wave speed inside the glass.'], ['θc', `${(Math.asin(1 / L.p.glassN) * 180 / Math.PI).toFixed(1)}°`, 'Critical angle from glass to water: beyond it, waves reflect back inside.']],
+      check: L => ({ text: L.glass && L.glass.includes(1) ? `Waves in the glass are ${L.p.glassN.toFixed(2)}× shorter, so the lens bends them to a focus.` : 'Paint glass with the Glass tool, or load the Glass lens scene, to watch waves bend.', state: L.glass && L.glass.includes(1) ? 'ok' : 'idle' }),
+    },
+    slits: {
+      params: ['f'],
+      vars: L => (L.slits ? [['λ', fmtQ(L, 'len', L.p.c / L.p.f), 'Wavelength c / f.'], ['d', fmtQ(L, 'len', L.slits.d), 'Distance between the slit centres.'], ['L', fmtQ(L, 'len', L.detectorX() - L.slits.x), 'From the slits to the detector line.']] : []),
+      check: L => (L.slits ? { what: 'Fringe spacing Δy', theory: L.fringeTheory(L.p.f), sim: L.fringeSpacing(), fmt: v => fmtQ(L, 'len', v), tol: 0.12, wait: 'Fringe spacing: waiting for the pattern to build up on the detector…' } : { text: 'Load the Double slit scene to measure the fringes.' }),
+      plot: (c, L) => L.chart.draw(c),
+      plotLabel: 'Time-averaged intensity along the detector line',
+    },
+    phased: {
+      params: ['phaseStep', 'f'],
+      vars: L => { const st = L.steering(); return st ? [['Δφ', `${L.p.phaseStep}°`, 'Each source lags the one before it by this much.'], ['d', fmtQ(L, 'len', st.d), 'Spacing of the sources.'], ['λ', fmtQ(L, 'len', st.lam), 'Wavelength.']] : []; },
+      check: L => { const st = L.steering(); if (!st) return { text: 'Needs two or more point sources: load the Phased array scene.' }; if (Math.abs(st.s) > 1) return { text: 'Δφ λ / 2πd is beyond 1: no main beam can form at this setting.', state: 'warn' }; return { what: 'Beam angle θ', theory: Math.asin(st.s) * 180 / Math.PI, sim: L.beamAngle(), fmt: v => `${v.toFixed(1)}°`, tol: 0.15, wait: 'Beam angle: waiting for the waves to reach the arc…' }; },
+    },
+    mach: {
+      params: ['srcSpeed'],
+      vars: L => [['v_s', fmtQ(L, 'speed', L.p.srcSpeed * L.p.c), 'Speed of the moving sources.'], ['c', fmtQ(L, 'speed', L.p.c), 'Wave speed.'], ['v_s / c', L.p.srcSpeed.toFixed(2), 'The Mach number.']],
+      check: L => ({ text: L.p.srcSpeed > 1 ? `Faster than its own waves: they pile into a cone with half-angle ${(Math.asin(1 / L.p.srcSpeed) * 180 / Math.PI).toFixed(1)}°.` : L.p.srcSpeed > 0 ? 'Slower than its waves: crests bunch up ahead and spread out behind (the Doppler effect), but no cone forms.' : 'Raise Source speed above 1× c to form a Mach cone.', state: L.p.srcSpeed > 1 ? 'ok' : 'idle' }),
+    },
+  },
   math: `
     <p>The tank steps the wave equation with leapfrog finite differences, the five-point Laplacian and damping γ:</p>
-    <div class="f" data-tex="u^{n+1} = 2u^n - u^{n-1} + \\frac{c^2\\,\\Delta t^2}{\\Delta x^2}\\,\\nabla^2 u^n"></div>
+    <div class="f" data-live="waveeq" data-tex="u^{n+1} = 2u^n - u^{n-1} + \\frac{c^2\\,\\Delta t^2}{\\Delta x^2}\\,\\nabla^2 u^n"></div>
     <p>It is stable while the Courant number cΔt/Δx stays at or below 1/√2; this tank always steps at 0.5. Accuracy needs about eight cells per wavelength.</p>
     <p>Glass of index <i>n</i> slows the wave to c/n, shortening the wavelength and bending wavefronts by Snell’s law:</p>
-    <div class="f" data-tex="n_1 \\sin\\theta_1 = n_2 \\sin\\theta_2"></div>
+    <div class="f" data-live="snell" data-tex="n_1 \\sin\\theta_1 = n_2 \\sin\\theta_2"></div>
     <p>Fringe spacing on a screen at distance <i>L</i> from two slits <i>d</i> apart:</p>
-    <div class="f" data-tex="\\Delta y \\approx \\frac{\\lambda L}{d}"></div>
+    <div class="f" data-live="slits" data-tex="\\Delta y \\approx \\frac{\\lambda L}{d}"></div>
     <p>A row of sources spaced <i>d</i> apart, each lagging the last by Δφ, steers its beam to:</p>
-    <div class="f" data-tex="\\sin\\theta = \\frac{\\Delta\\varphi\\,\\lambda}{2\\pi d}"></div>
+    <div class="f" data-live="phased" data-tex="\\sin\\theta = \\frac{\\Delta\\varphi\\,\\lambda}{2\\pi d}"></div>
     <p>A source faster than the wave (v<sub>s</sub> &gt; c) leaves a Mach cone of half-angle:</p>
-    <div class="f" data-tex="\\sin\\theta = \\frac{c}{v_s}"></div>
+    <div class="f" data-live="mach" data-tex="\\sin\\theta = \\frac{c}{v_s}"></div>
     <p>The 3D view lifts each cell to a compressed height, so strong sources stay readable, and refracts the lamp through the surface onto the bed. A crest focuses light, which is why a ripple tank projects its waves as bright lines. Walls stand as blocks in the water; glass is a shallow slab, which is what slows a real ripple.</p>
     <div class="f" data-tex="h = \\frac{H\\,u}{1 + |u|}, \\qquad \\hat{\\mathbf n} \\propto \\left(-\\frac{\\partial h}{\\partial x},\\ 1,\\ -\\frac{\\partial h}{\\partial y}\\right)"></div>`,
 };

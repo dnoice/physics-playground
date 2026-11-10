@@ -688,17 +688,50 @@ export const gravity = {
       drawSeries(c.g, box, s.e, lo, hi, THEME.text, { width: 1.3 });
     },
   },
+  /* The body the live formulas follow: the one the camera follows, else the heaviest planet, and what it orbits. */
+  orbitOf() {
+    const b = (this.track != null && this.bodies.find(q => q.id === this.track)) || this.bodies.filter(q => q.m < STAR_MASS).sort((x, y) => y.m - x.m)[0];
+    if (!b) return null;
+    let P = null; for (const q of this.bodies) if (q !== b && (!P || q.m > P.m)) P = q;
+    if (!P) return null;
+    const r = Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z), u = Math.hypot(b.vx - P.vx, b.vy - P.vy, b.vz - P.vz), mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r;
+    return { b, P, r, u, mu, a: E < 0 ? -mu / (2 * E) : Infinity, name: `Body ${b.id}`, ref: P.m >= STAR_MASS ? 'the star' : `Body ${P.id}` };
+  },
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    accel: {
+      params: ['G', 'soft'],
+      vars: L => [['N', String(L.bodies.length), 'Bodies pulling on each other: every pair is summed.'], ['G', `${L.p.G.toFixed(2)}×`, 'Gravity strength, as a multiple of the scenes\' own.'], ['ε', fmtQ(L, 'len', L.p.soft), 'Softening length: keeps a close pass from flinging bodies apart.']],
+    },
+    leapfrog: {
+      vars: L => [['Δt', `${(L.dt() * 1000).toFixed(2)} ms`, 'One kick–drift–kick step.'], ['E', fmtSI(L.E), 'Total energy now, in simulation units.'], ['drift', L.E0 ? `${((L.E - L.E0) / Math.abs(L.E0) * 100).toFixed(3)} %` : '—', 'Energy change since the scene or a setting last changed.']],
+      check: L => { const d = L.E0 ? Math.abs((L.E - L.E0) / L.E0) : NaN; return Number.isFinite(d) ? { text: d < 0.001 ? `Energy holds to ${(d * 100).toFixed(3)} %: a symplectic step lets the error swing, never pile up.` : `Energy has moved ${(d * 100).toFixed(2)} %: a close pass or a merger, larger than a step can follow exactly.`, state: d < 0.001 ? 'ok' : d < 0.01 ? 'warn' : 'crit' } : null; },
+    },
+    vcirc: {
+      params: ['G'],
+      vars: L => { const o = L.orbitOf(); return o ? [['M', L.massText(o.P.m, true), `The mass of ${o.ref}.`], ['r', fmtQ(L, 'len', o.r), `${o.name}'s distance from ${o.ref}.`], ['v', fmtQ(L, 'speed', o.u), `${o.name}'s speed relative to ${o.ref}.`]] : []; },
+      check: L => { const o = L.orbitOf(); return o ? { what: `${o.name}, circular speed at its r`, theory: Math.sqrt(o.mu / o.r), sim: o.u, fmt: v => fmtQ(L, 'speed', v), tol: 0.05 } : { text: 'Add a planet around a star to compare.' }; },
+    },
+    kepler: {
+      vars: L => { const o = L.orbitOf(); return o ? [['a', Number.isFinite(o.a) ? fmtQ(L, 'len', o.a) : 'unbound', `Semi-major axis of ${o.name}'s orbit.`], ['M', L.massText(o.P.m, true), `The mass of ${o.ref}.`], ['T', Number.isFinite(o.a) ? L.timeText(TAU * Math.sqrt(o.a ** 3 / o.mu)) : '—', 'The period this law gives.']] : []; },
+      check: L => { const o = L.orbitOf(); return o && Number.isFinite(o.a) ? { text: `${o.name} goes round ${o.ref} once every ${L.timeText(TAU * Math.sqrt(o.a ** 3 / o.mu))}; double a and the period grows 2^1.5 ≈ 2.8 times.`, state: 'ok' } : null; },
+    },
+    virial: {
+      vars: L => [['K', fmtSI(L.KE), 'Kinetic energy of every body.'], ['U', fmtSI(L.PE), 'Potential energy of every pair.'], ['2K / |U|', L.PE ? (2 * L.KE / Math.abs(L.PE)).toFixed(3) : '—', 'The virial ratio.']],
+      check: L => (L.bodies.length > 1 && L.E < 0 ? { what: 'Virial ratio 2K / |U|', theory: 1, sim: L.PE ? 2 * L.KE / Math.abs(L.PE) : NaN, fmt: v => v.toFixed(3), tol: 0.1 } : { text: 'The virial theorem describes a settled, bound system: total energy below zero.' }),
+    },
+  },
   math: `
     <p>Acceleration of body <i>i</i>, with a softening length ε that keeps close passes finite:</p>
-    <div class="f" data-tex="\\mathbf a_i = \\sum_{j \\ne i} \\frac{G\\, m_j\\,(\\mathbf r_j - \\mathbf r_i)}{\\left(|\\mathbf r_j - \\mathbf r_i|^2 + \\varepsilon^2\\right)^{3/2}}"></div>
+    <div class="f" data-live="accel" data-tex="\\mathbf a_i = \\sum_{j \\ne i} \\frac{G\\, m_j\\,(\\mathbf r_j - \\mathbf r_i)}{\\left(|\\mathbf r_j - \\mathbf r_i|^2 + \\varepsilon^2\\right)^{3/2}}"></div>
     <p>Each step is a kick–drift–kick leapfrog with Δt = 1/480 s. It is symplectic, so the energy error oscillates instead of piling up.</p>
-    <div class="f" data-tex="\\begin{aligned} \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\\\ \\mathbf x &amp;\\leftarrow \\mathbf x + \\mathbf v\\,\\Delta t \\\\ \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\end{aligned}"></div>
+    <div class="f" data-live="leapfrog" data-tex="\\begin{aligned} \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\\\ \\mathbf x &amp;\\leftarrow \\mathbf x + \\mathbf v\\,\\Delta t \\\\ \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\end{aligned}"></div>
     <p>Clicking places a body at the circular-orbit speed:</p>
-    <div class="f" data-tex="v = \\sqrt{\\frac{G\\,(M + m)}{r}}"></div>
+    <div class="f" data-live="vcirc" data-tex="v = \\sqrt{\\frac{G\\,(M + m)}{r}}"></div>
     <p>Kepler’s third law ties the period to the semi-major axis alone. The Kepler scene gives three eccentricities one axis, so all three share one period.</p>
-    <div class="f" data-tex="T = 2\\pi \\sqrt{\\frac{a^3}{G M}}"></div>
+    <div class="f" data-live="kepler" data-tex="T = 2\\pi \\sqrt{\\frac{a^3}{G M}}"></div>
     <p>The potential field draws Φ for the 24 heaviest bodies. Each contour band is a factor of 10<sup>¼</sup> in |Φ|.</p>
-    <div class="f" data-tex="\\Phi(\\mathbf r) = -\\sum_j \\frac{G\\, m_j}{|\\mathbf r - \\mathbf r_j|}"></div>
+    <div class="f" data-live="virial" data-tex="\\Phi(\\mathbf r) = -\\sum_j \\frac{G\\, m_j}{|\\mathbf r - \\mathbf r_j|}"></div>
     <p>A settled, bound system satisfies the virial theorem, 2K ≈ |U|. The figure-eight uses the initial conditions of <cite>Chenciner &amp; Montgomery (2000)</cite>.</p>`,
 };
 

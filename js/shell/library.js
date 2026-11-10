@@ -41,7 +41,7 @@
 import { icon } from '../core/icons.js';
 import { $, clamp, el, fmtSI, keepFocus, store } from '../core/util.js';
 import { labsById } from '../labs/index.js';
-import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, vrec } from './capture.js';
+import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, saveState, toggleData, toggleVideo, vrec } from './capture.js';
 import { radioGroup } from './panel.js';
 import { active, announce } from './state.js';
 import { vault } from './vault.js';
@@ -69,7 +69,7 @@ export function renderLibrary() {
   storeEl.replaceChildren(...kids); storeEl.dataset.mode = vault.mode;
   const items = vault.list().filter(i => lib.filter === 'all' || !active || i.lab === active.id);
   emptyEl.hidden = items.length > 0;
-  emptyEl.textContent = lib.filter === 'all' ? 'Nothing saved yet. Record a clip or a dataset, or save a state.' : `Nothing saved for ${active ? active.name : 'this lab'} yet. Record a clip or a dataset, or save a state.`;
+  emptyEl.textContent = lib.filter === 'all' ? 'Nothing saved yet: clips, datasets and saved states from any lab will gather here.' : `Nothing saved for ${active ? active.name : 'this lab'} yet: the clips, datasets and states you capture above will gather here.`;
   const keep = new Map([...listEl.children].map(li => [li.dataset.id, li]));
   const rows = items.map(item => {
     const li = keep.get(item.id) || el('li', { class: 'lib-item', 'data-id': item.id });
@@ -147,6 +147,39 @@ export function renderItem(li, item) {
     }
   }
   keepFocus(li, () => li.replaceChildren(...kids));
+}
+/* ---------- capture cards: the three ways to keep a run, one press each ---------- */
+let capCards = null;
+export function buildLibraryCapture(lab) {
+  const host = $('#lib-capture'); if (!host || !lab) return;
+  const card = (kind, title, key, run) => {
+    const name = el('span', { class: 'cap-name', text: title }), sub = el('span', { class: 'cap-sub' });
+    const b = el('button', { type: 'button', class: 'cap-card', 'data-kind': kind, 'aria-pressed': 'false' }, el('span', { class: 'cap-ico', html: icon(KIND[kind].icon) }), name, key ? el('kbd', { text: key }) : el('span'), sub);
+    b.addEventListener('click', () => { run(); syncLibraryCapture(); });
+    return { b, name, sub };
+  };
+  const cols = (lab.dataColumns || []).length;
+  capCards = {
+    clip: card('clip', 'Record a clip', 'M', toggleVideo),
+    run: card('run', 'Record a dataset', 'D', toggleData),
+    state: card('state', 'Save this state', null, () => saveState()),
+    cols, lab,
+  };
+  host.replaceChildren(capCards.clip.b, capCards.run.b, capCards.state.b,
+    el('p', { class: 'cap-cols', text: cols ? `A dataset holds ${cols} columns for ${lab.name}: ${lab.dataColumns.join(', ')}.` : '' }));
+  syncLibraryCapture();
+}
+/* Panel rate: each card says what it will do, or what it is doing now. */
+export function syncLibraryCapture() {
+  if (!capCards) return;
+  const { clip, run, state, cols } = capCards, set = (c, name, sub, on) => {
+    if (c.name.textContent !== name) c.name.textContent = name;
+    if (c.sub.textContent !== sub) c.sub.textContent = sub;
+    c.b.setAttribute('aria-pressed', String(!!on));
+  };
+  set(clip, vrec.mr ? 'Stop the clip' : 'Record a clip', vrec.mr ? `${fmtDur((performance.now() - vrec.t0) / 1000)} · ${fmtBytes(vrec.bytes)}` : `WebM of the stage, ${vrec.quality} quality${vrec.overlay ? ', labelled' : ''}`, vrec.mr);
+  set(run, dataRec.on ? 'Stop the dataset' : 'Record a dataset', dataRec.on ? `${dataRec.rows.length.toLocaleString()} rows so far` : `${cols} columns at ${dataRec.rate} Hz of simulated time`, dataRec.on);
+  set(state, 'Save this state', 'The exact scene, to reload later or share', false);
 }
 export function buildCaptureSettings() {
   const host = $('#capture-settings'); if (!host) return;

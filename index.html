@@ -237,6 +237,10 @@
             <div class="details-actions" id="details-actions"></div></div>
           <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
           <dl class="details-rows" id="details-rows"></dl>
+          <div class="details-focus" id="details-focus">
+            <p class="details-focus-cap" id="details-focus-cap"></p>
+            <div class="details-plot-wrap"><canvas class="details-plot" id="details-plot" role="img" aria-label="The focused figure of the selected object over time"></canvas></div>
+          </div>
         </article>
         <div class="inspect-empty" id="inspect-empty">
           <span class="ms" aria-hidden="true">ads_click</span>
@@ -273,6 +277,7 @@
       <div role="tabpanel" id="np-guide" aria-labelledby="nt-guide" hidden><div id="guide"></div></div>
       <div role="tabpanel" id="np-math" aria-labelledby="nt-math" hidden><div class="math" id="math"></div></div>
       <div role="tabpanel" id="np-library" aria-labelledby="nt-library" hidden>
+        <div class="lib-capture" id="lib-capture" role="group" aria-label="Capture this run"></div>
         <div class="lib-store" id="lib-store" role="status">Connecting to storage…</div>
         <div id="lib-filter"></div>
         <ul class="lib-list" id="lib-list" aria-label="Saved clips, datasets and states"></ul>

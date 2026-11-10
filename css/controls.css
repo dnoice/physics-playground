@@ -76,7 +76,7 @@
 .quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 6px; }
 .btn-quick { min-height: 30px; padding: 6px 11px; font-size: 12.5px; border-radius: 999px; background: color-mix(in oklab, var(--ink) 70%, var(--tile-hi)); }
 .btn-quick:hover { border-color: color-mix(in oklab, var(--amber) 55%, var(--rule)); color: var(--text); }
-.pgroup { border-radius: 14px; background: color-mix(in oklab, var(--well) 60%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.pgroup { border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, white 2.5%, transparent), transparent 70px), color-mix(in oklab, var(--well) 55%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); }
 .pgroup-head { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; }
 .pgroup-toggle {
   appearance: none; flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 8px;

@@ -48,7 +48,7 @@ import { dataRec, stopData, stopVideo, updateRewind, vrec } from './capture.js';
 import { updateDetails } from './details.js';
 import { evaluateDiagnostics, insightCards } from './diagnostics.js';
 import { buildDock } from './dock.js';
-import { renderLibrary, updateTracksNote } from './library.js';
+import { buildLibraryCapture, renderLibrary, updateTracksNote } from './library.js';
 import { ensureReady } from './lifecycle.js';
 import { prepareLab, renderMode } from './mode.js';
 import { buildNav } from './navigator.js';
@@ -89,7 +89,7 @@ export function selectLab(id, opts = {}) {
   insightCards.forEach(c => c.el.remove()); insightCards.clear();
   perf.slow = 0; perf.rate = state.speed;
   evaluateDiagnostics();
-  updateRewind(); updateTracksNote(); renderLibrary(); updateDetails(lab); renderUnits();
+  updateRewind(); updateTracksNote(); renderLibrary(); buildLibraryCapture(lab); updateDetails(lab); renderUnits();
   if (!opts.silent) announce(`${lab.title} lab`);
   if (location.hash.slice(1) !== lab.id) { try { location.replace('#' + lab.id); } catch (_) { /* hash routing unavailable */ } }
 }
