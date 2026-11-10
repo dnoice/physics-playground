@@ -70,6 +70,10 @@ export const waves = {
     '<b>Pulse</b> drops a disturbance. <b>Wall</b> and <b>Erase</b> paint barriers. <b>Source</b> adds an oscillator, or removes one you click. <b>Glass</b> paints a slower medium.',
     'Switch the view to <b>Intensity</b> to see the time-averaged interference pattern. Every tool works in 3D too.',
   ],
+  views: { key: 'view', label: 'View', options: [
+    { id: 'disp', label: 'Height', icon: 'disp', tip: 'Height: the displacement of the surface right now, up and down' },
+    { id: 'int', label: 'Intensity', icon: 'int', tip: 'Intensity: the time-averaged energy, where fringes show' },
+  ] },
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'pulse', label: 'Pulse', key: 'p', icon: 'pulse', hint: 'Click to drop a pulse · drag to leave a wake' },
     { id: 'wall', label: 'Wall', key: 'w', icon: 'wall', hint: 'Drag to paint a barrier' },
@@ -94,7 +98,6 @@ export const waves = {
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
-    { type: 'seg', key: 'view', label: 'View', options: [['disp', 'Displacement'], ['int', 'Intensity']], group: 'display' },
     { type: 'range', key: 'c', label: 'Wave speed c', min: 20, max: 120, step: 1, unit: 'cells/s', group: 'medium' },
     { type: 'range', key: 'f', label: 'Source frequency f', min: 0.5, max: 8, step: 0.1, unit: 'Hz', group: 'sources' },
     { type: 'range', key: 'phaseStep', label: 'Source phase step Δφ', min: -180, max: 180, step: 1, unit: '°', note: 'Each point source lags the one before it by Δφ.', group: 'sources' },

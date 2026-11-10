@@ -115,7 +115,7 @@ PP = 'PhysicsPlayground'
 
 # lab id, rail name, scene id, scene label, glyph, simulated seconds before the picture, and a setup script run after
 # the scene loads. Chaos shows its phase view with the pointer resting on the map, so the start preview is in frame.
-CHAOS_SETUP = (f"{PP}.tool('phase'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
+CHAOS_SETUP = (f"{PP}.viewMode('both'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
                f"const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
 LABS = [
     ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0, None),

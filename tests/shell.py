@@ -395,7 +395,7 @@ with sync_playwright() as p:
         a, c = state("view.toWorld(0, 0)"), state("view.toWorld(100, 100)")
         return r["x"] + (wx - a["x"]) * 100 / (c["x"] - a["x"]), r["y"] + (wy - a["y"]) * 100 / (c["y"] - a["y"])
 
-    pg.evaluate(P + ".tool('phase')"); pg.wait_for_timeout(300)
+    pg.evaluate(P + ".viewMode('both')"); pg.wait_for_timeout(300)
     q, piv = state("labs.chaos.sq"), state("labs.chaos.pivot")
     ok("phase_pendulum_beside_map", piv["x"] < q["x0"], (round(piv["x"]), round(q["x0"])))
     ok("phase_reach_curve_drawn", pg.evaluate(P + ".labs.chaos.edgeE.seg.length") > 40)

@@ -46,7 +46,7 @@ import { globalInsights } from './diagnostics.js';
 import { labsById } from '../labs/index.js';
 import { camOf, is3D, navActual, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
 import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
-import { selectDock } from './dock.js';
+import { selectDock, selectView } from './dock.js';
 import { applyPreset, setParam } from './lifecycle.js';
 import { advance } from './loop.js';
 import { ptr } from './stage.js';
@@ -68,6 +68,7 @@ export function init() {
     preset: id => applyPreset(active, id),
     setParam: (key, value) => setParam(active, key, value),
     tool: id => selectDock(id),
+    viewMode: id => selectView(id),
     diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
     play, pause, step: stepOnce, reset: resetActive, setSpeed,
     advance: seconds => advance(active, seconds, Infinity),

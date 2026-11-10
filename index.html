@@ -70,7 +70,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,balance,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,visibility,warning,water_drop&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -136,8 +136,11 @@
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>
       <p class="stage-hint" id="stage-hint"></p>
+      <!-- The rail is anchored to the stage's top right and fills downward in a fixed order: the camera, then what
+           belongs to this lab (pointer tools, view modes, scene actions). A lab without one of those simply has no
+           such group, so the camera never moves and the lab's own controls always start right beneath it. -->
       <div class="nav" id="nav" role="group" aria-label="View and tools">
-        <div class="nav-sec">
+        <div class="nav-sec nav-camera" id="nav-camera" role="group" aria-label="Camera">
           <div class="orbit" id="nav-orbit" title="Drag to orbit · click an axis to look along it" hidden>
             <svg class="orbit-lines" id="orbit-lines" viewBox="-36 -36 72 72" aria-hidden="true"></svg>
           </div>
@@ -151,9 +154,15 @@
             <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" data-tip="Frame the scene · 0"><span class="ms" aria-hidden="true">fit_screen</span></button>
           </div>
         </div>
-        <div class="nav-sec" id="nav-tools">
+        <div class="nav-sec nav-tools" id="nav-tools" role="group" aria-labelledby="tools-key" hidden>
           <span class="nav-cap" id="tools-key">Tools</span>
-          <div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div>
+          <div class="dock" id="dock" role="radiogroup" aria-labelledby="tools-key"></div>
+        </div>
+        <div class="nav-sec nav-views" id="nav-views" role="group" aria-labelledby="views-key" hidden>
+          <span class="nav-cap" id="views-key">View</span>
+          <div class="views" id="views" role="radiogroup" aria-labelledby="views-key"></div>
+        </div>
+        <div class="nav-sec nav-context" id="nav-context" role="group" aria-label="This scene" hidden>
           <div class="nav-extra" id="nav-extra"></div>
         </div>
       </div>
@@ -255,6 +264,7 @@
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
     <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
+    <dt><kbd>V</kbd></dt><dd>Next view, in a lab with more than one (Chaos, Waves)</dd>
     <dt>Scroll</dt><dd>Zoom at the cursor; middle or right drag pans</dd>
     <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>
   </dl>

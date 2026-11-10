@@ -55,9 +55,9 @@ import { RAMP_HEAT, THEME } from '../core/color.js';
 import { drawSphere, mixRgb, rampRgb, rrect } from '../core/draw.js';
 
 import { Series } from '../core/series.js';
-import { TAU, clamp, wrapAngle } from '../core/util.js';
+import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
 
-import { camOf } from '../shell/camera.js';
+import { camOf, is3D, navFrame } from '../shell/camera.js';
 import { rebuild, setParam } from '../shell/lifecycle.js';
 
 
@@ -78,14 +78,18 @@ export const pendulum = {
   aria: 'Chaos simulation: several double pendulums starting almost identically',
   blurb: 'A double pendulum is fully deterministic and still unpredictable. Several copies start a hair apart; the gap between them grows exponentially until they share nothing but their energy. The front pendulum is drawn as solid steel, its bobs sized by mass.',
   interact: [
-    '<b>Pendulums</b> view: drag either bob of the front pendulum to set new starting angles; every copy restarts from there.',
-    '<b>Phase space</b> view: the pendulum stands beside its map, where each copy is a dot at its two angles, θ₁ of the upper arm (amber) and θ₂ of the lower (cyan). Opposite edges of the map join, as the matching arrows show, so it is really a torus.',
-    'The shading behind the map is the potential energy. The bright curve is as far as the front pendulum\'s energy can reach: regular motion traces a tidy figure inside it, chaos fills it. Point at the map to preview a start (its pose and its own curve), then click or drag to start every copy there. The bobs can still be dragged too.',
+    'Three views of the same run, under <b>View</b> on the stage rail (or V): <b>Pendulum</b>, <b>Phase map</b> and <b>Both</b>. Switching never restarts the run or clears its trails.',
+    '<b>Pendulum</b>: drag either bob of the front pendulum to set new starting angles; every copy restarts from there.',
+    '<b>Phase map</b>: each copy is a dot at its two angles, θ₁ of the upper arm (amber) and θ₂ of the lower (cyan). That is a projection: the full state also has the two spin rates, so the map shows four numbers as two and paths may cross on it. Opposite edges join, as the matching arrows show, so the square is really a torus, drawn beside it with the same paths. <b>Both</b> puts the pendulum beside its map, so a dot reads as a pose.',
+    'The shading behind the map is the potential energy. The bright curve is as far as the front pendulum\'s energy can reach: regular motion traces a tidy figure inside it, chaos fills it. Point at the map to preview a start (its pose and its own curve), then click or drag to start every copy there.',
+    'Click a dot on the map, or a pendulum on the stage, to inspect that copy: its angles, spins, energy and how far it has drifted from the front one. The same copy is ringed in every view.',
     'Shrink <b>Perturbation</b> to see how little a smaller error buys you: each factor of ten adds the same few seconds.',
   ],
-  dock: { key: 'view', label: 'View', options: [
-    { id: 'pend', label: 'Pendulums', key: 'v', icon: 'pend', hint: 'Drag a bob of the front pendulum to set the starting angles' },
-    { id: 'phase', label: 'Phase space', key: 'q', icon: 'phase', hint: 'Point at the map to preview a start · click or drag to start every copy there' },
+  // Views change only what is drawn: the run, its history and its trails are the same in all three.
+  views: { key: 'view', label: 'View', options: [
+    { id: 'pend', label: 'Pendulum', icon: 'pend', tip: 'Pendulum only', hint: 'Drag a bob of the front pendulum to set the starting angles · click a pendulum to inspect it' },
+    { id: 'phase', label: 'Phase map', icon: 'phase', tip: 'The angle map alone, with the torus it wraps onto', hint: 'Point at the map to preview a start · click a dot to inspect that copy · click anywhere else on the map to start every copy there' },
+    { id: 'both', label: 'Both', icon: 'both', tip: 'The pendulum beside its angle map', hint: 'Point at the map to preview a start · click a dot or a pendulum to inspect it · click elsewhere on the map to start there' },
   ] },
   p: { view: 'pend', theta1: 120, theta2: -20, copies: 24, delta: 1e-4, mass: 1, len: 1, g: 9.81, damp: 0, trails: true, trailLen: 300 },
   presetId: 'chaos',
@@ -116,7 +120,7 @@ export const pendulum = {
   N: 0, s: new Float64Array(240), trails: null, phist: null, tn: 0, th: 0, trailClock: 0, E0: 0, holding: false, drag: null, wmax: 0,
   sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN,
   k1: new Float64Array(4), k2: new Float64Array(4), k3: new Float64Array(4), k4: new Float64Array(4), tmp: new Float64Array(4),
-  pivot: { x: 0, y: 0 }, scale: 100, sq: { x0: 0, y0: 0, S: 1 },
+  pivot: { x: 0, y: 0 }, scale: 100, sq: { x0: 0, y0: 0, S: 1 }, tor: null, sel: -1, pressAt: null,
   dt() { return 1 / 600; }, maxSteps: 64,
 
   build() {
@@ -182,21 +186,42 @@ export const pendulum = {
       }
     }
   },
-  onParam(key) { if (key === 'mass' || key === 'len' || key === 'g') this.E0 = this.energy(0); },
+  onParam(key) {
+    if (key === 'mass' || key === 'len' || key === 'g') this.E0 = this.energy(0);
+    // Each view has its own composition, so a view change brings the camera home to frame it.
+    if (key === 'view') { if (is3D(this)) this.frame3(); else if (!camOf(this).fit) navFrame(); }
+  },
   /* Drift in percent of the energy above the hanging rest state: E's zero sits at the pivot, an arbitrary height, so |E0| can be almost nothing. */
   driftPct(E) { const M = this.p.mass, g = this.p.g, ref = this.E0 + (1 + M) * g + M * g * this.p.len; return ref > 0 ? (E - this.E0) / ref * 100 : 0; },
-  /* Pendulums alone, or the split phase view: the pendulum beside its map, so a dot on the map reads as a pose. */
+  /* Three ways to look at one run. Pendulum: the pendulum fills the stage. Both: the pendulum beside its map, so a
+     dot on the map reads as a pose. Phase map: the map alone and large, with the torus it wraps onto beside it. The
+     pendulum keeps its centred geometry while hidden, so the 3D dial, the units and the bobs never jump. */
   layout(w, h) {
-    const L = this.p.len;
-    if (this.p.view !== 'phase') {
-      this.scale = 0.9 * Math.min(w / 2, h / 2) / (1 + L);
-      this.pivot = { x: w / 2, y: h / 2 };
-      const S = Math.min(w, h) * 0.78; this.sq = { x0: (w - S) / 2, y0: (h - S) / 2, S };
+    const L = this.p.len, v = this.p.view;
+    this.tor = null;
+    this.scale = 0.9 * Math.min(w / 2, h / 2) / (1 + L);
+    this.pivot = { x: w / 2, y: h / 2 };
+    if (v === 'pend') { const S = Math.min(w, h) * 0.78; this.sq = { x0: (w - S) / 2, y0: (h - S) / 2, S }; return; }
+    // The rail sits on the right edge of a wide stage and along the bottom of one 720 px or narrower (stage.css),
+    // the title and readout chips cover the top left and the hint the bottom left: everything keeps clear of them.
+    const bar = w <= 720, right = bar ? 0 : Math.min(150, 0.14 * w), bottom = bar ? 74 : 0, top = 0.16 * h, hh = h - bottom;
+    if (v === 'phase') {
+      // Room for the axis labels: θ₂ and its ticks on the left, θ₁ and its ticks below, the caption above; the hint
+      // sits under the θ₁ label. The map and the torus panel are centred together in what is left.
+      const aw = w - right, padL = 66, padB = bar ? 50 : 88, padT = 22, uh = hh - top;
+      if (aw >= uh * 1.45) {
+        const S = Math.max(60, Math.min(uh - padT - padB, (aw - padL) * 0.58)), R = Math.min((aw - padL - S - 40) / 3.4, S * 0.3);
+        const span = padL + S + (R >= 34 ? 32 + R * 3.24 : 0), x0 = Math.max(0, (aw - span) / 2) + padL, y0 = top + padT + (uh - padT - padB - S) / 2;
+        this.sq = { x0, y0, S };
+        if (R >= 34) this.tor = { x: x0 + S + 32 + R * 1.62, y: y0 + S / 2 - 25, R };
+      } else {
+        const S = Math.max(60, Math.min(aw - padL - 24, (uh - padT - padB) * (uh > aw * 1.25 ? 0.68 : 1))), x0 = padL + (aw - padL - 24 - S) / 2, y0 = top + padT;
+        this.sq = { x0, y0, S };
+        const room = uh - padT - S - padB, R = Math.min(aw * 0.2, (room - 50) / 2.8);
+        if (R >= 30) this.tor = { x: x0 + S / 2, y: y0 + S + padB - 30 + R * 1.3, R };
+      }
       return;
     }
-    // The view gizmo sits on the right edge of a wide stage and along the bottom of one 720 px or narrower (stage.css),
-    // and the title and readout chips cover the top left: the pendulum and its map keep clear of all of them.
-    const bar = w <= 720, right = bar ? 0 : Math.min(140, 0.13 * w), bottom = bar ? 74 : 0, top = 0.16 * h, hh = h - bottom;
     if (w - right >= hh * 1.15) {
       const pw = (w - right) * 0.46, aw = w - right - pw, S = Math.min(aw * 0.84, hh * 0.72);
       this.scale = 0.86 * Math.min(pw / 2, hh / 2) / (1 + L);
@@ -221,36 +246,82 @@ export const pendulum = {
   bobR() { return [10, clamp(10 * Math.cbrt(this.p.mass), 5, 22)]; },
   unit() { return { name: 'm', k: 1 / this.scale }; },
   hitBob(p) {
-    if (!this.N) return null;
+    if (!this.N || this.p.view === 'phase') return null;
     const b = this.bobs(0), [r1, r2] = this.bobR(), sl = 12 / camOf(this).z;
     if (Math.hypot(p.x - b.x2, p.y - b.y2) < r2 + sl) return 2;
     if (Math.hypot(p.x - b.x1, p.y - b.y1) < r1 + sl) return 1;
     return null;
   },
-  inSquare(p) { const q = this.sq; return this.p.view === 'phase' && p.x >= q.x0 && p.x <= q.x0 + q.S && p.y >= q.y0 && p.y <= q.y0 + q.S; },
+  inSquare(p) { const q = this.sq; return this.p.view !== 'pend' && p.x >= q.x0 && p.x <= q.x0 + q.S && p.y >= q.y0 && p.y <= q.y0 + q.S; },
   anglesAt(p) { const q = this.sq; return [clamp((p.x - q.x0) / q.S, 0, 1) * TAU - Math.PI, Math.PI - clamp((p.y - q.y0) / q.S, 0, 1) * TAU]; },
-  cursorAt(p) { return this.inSquare(p) ? 'crosshair' : this.hitBob(p) ? 'grab' : 'default'; },
+  dotAt(i) { const q = this.sq, o = i * 4; return { x: q.x0 + (wrapAngle(this.s[o]) + Math.PI) / TAU * q.S, y: q.y0 + (Math.PI - wrapAngle(this.s[o + 1])) / TAU * q.S }; },
+  /* The copy whose dot on the map is under the pointer, nearest first; -1 for none. */
+  hitDot(p) {
+    if (!this.inSquare(p)) return -1;
+    let best = -1, bd = 10 / camOf(this).z;
+    for (let i = 0; i < this.N; i++) { const d = this.dotAt(i), r = Math.hypot(d.x - p.x, d.y - p.y); if (r < bd) { bd = r; best = i; } }
+    return best;
+  },
+  /* A copy behind the front pendulum, by either of its bobs; -1 for none. */
+  hitCopy(p) {
+    if (this.p.view === 'phase') return -1;
+    const [r1, r2] = this.bobR(), sl = 7 / camOf(this).z;
+    let best = -1, bd = Infinity;
+    for (let i = 1; i < this.N; i++) {
+      const b = this.bobs(i), d = Math.min(Math.hypot(p.x - b.x2, p.y - b.y2) - r2 * 0.7, Math.hypot(p.x - b.x1, p.y - b.y1) - r1 * 0.7);
+      if (d < sl && d < bd) { bd = d; best = i; }
+    }
+    return best;
+  },
+  cursorAt(p) { return this.hitDot(p) >= 0 ? 'pointer' : this.inSquare(p) ? 'crosshair' : this.hitBob(p) ? 'grab' : this.hitCopy(p) >= 0 ? 'pointer' : 'default'; },
   setFromSquare(p) {
     const [t1, t2] = this.anglesAt(p), r2d = 180 / Math.PI;
     this.p.theta1 = Math.round(t1 * r2d);
     this.p.theta2 = Math.round(t2 * r2d * 10) / 10;
     rebuild(this); syncControl('theta1'); syncControl('theta2');
   },
+  /* A click on a dot or a pendulum selects that copy; a press elsewhere on the map starts there; a front bob drags
+     the start, and a front bob clicked without moving selects the front pendulum. Empty stage clears the selection. */
   pointerDown(p) {
+    const dot = this.hitDot(p);
+    if (dot >= 0) { this.sel = dot; return; }
     if (this.inSquare(p)) { this.drag = 'sq'; this.holding = true; this.setFromSquare(p); return; }
-    const k = this.hitBob(p); if (!k) return;
-    this.drag = k; this.holding = true; canvas.style.cursor = 'grabbing';
+    const k = this.hitBob(p);
+    if (k) { this.drag = k; this.pressAt = { ...p }; this.holding = true; canvas.style.cursor = 'grabbing'; return; }
+    this.sel = this.hitCopy(p);
   },
   pointerMove(p, e, down) {
     if (!down || !this.drag) return;
     if (this.drag === 'sq') { this.setFromSquare(p); return; }
+    if (this.pressAt) { if (Math.hypot(p.x - this.pressAt.x, p.y - this.pressAt.y) < 3 / camOf(this).z) return; this.pressAt = null; }
     const r2d = 180 / Math.PI;
     if (this.drag === 1) this.p.theta1 = Math.round(Math.atan2(p.x - this.pivot.x, p.y - this.pivot.y) * r2d);
     else { const b = this.bobs(0); this.p.theta2 = Math.round(Math.atan2(p.x - b.x1, p.y - b.y1) * r2d * 10) / 10; }
     rebuild(this); syncControl('theta1'); syncControl('theta2');
   },
-  pointerUp() { this.drag = null; this.holding = false; },
+  pointerUp() { if (this.pressAt && (this.drag === 1 || this.drag === 2)) this.sel = 0; this.drag = null; this.pressAt = null; this.holding = false; },
+  /* The selected copy, for the Details card: read-only figures, plus one action that reuses its pose as a start. */
+  inspect() {
+    const i = this.sel; if (i < 0 || i >= this.N) return null;
+    const s = this.s, o = i * 4, L = this.p.len, deg = t => `${(wrapAngle(t) * 180 / Math.PI).toFixed(1)}°`, r2d = 180 / Math.PI;
+    const a = wrapAngle(s[o] - s[0]), b = wrapAngle(s[o + 1] - s[1]), tau = Math.sqrt(1 / this.p.g), c = (s[o + 2] - s[2]) * tau, d = (s[o + 3] - s[3]) * tau, gap = Math.sqrt(a * a + b * b + c * c + d * d);
+    const x = Math.sin(s[o]) + L * Math.sin(s[o + 1]), y = -(Math.cos(s[o]) + L * Math.cos(s[o + 1]));
+    const rows = [
+      ['Upper angle θ₁', deg(s[o]), 'The upper arm, measured from straight down, wrapped to ±180°. The map\'s horizontal axis.'],
+      ['Lower angle θ₂', deg(s[o + 1]), 'The lower arm, measured from straight down, wrapped to ±180°. The map\'s vertical axis.'],
+      ['Upper spin ω₁', `${s[o + 2].toFixed(2)} rad/s`, 'How fast the upper arm turns. Not on the map: it is one of the two hidden coordinates of the 4-D state.'],
+      ['Lower spin ω₂', `${s[o + 3].toFixed(2)} rad/s`, 'How fast the lower arm turns. Not on the map: the other hidden coordinate.'],
+      ['Energy E', `${this.energy(i).toFixed(4)} J/kg`, 'Kinetic plus potential, per kilogram of the upper bob, with the zero at the pivot.'],
+      ['Lower bob position', `${x.toFixed(2)}, ${y.toFixed(2)} m`, 'Across and up from the pivot, with the upper arm 1 m long.'],
+    ];
+    if (i > 0) rows.push(['Started apart by', `${(i * this.p.delta).toExponential(1)} rad`, 'This copy began with θ₂ larger than the front one\'s by this much, and nothing else different.'],
+      ['Distance from the front copy', gap < 1e-3 ? gap.toExponential(2) : gap.toFixed(3), 'The distance between the two states in all four coordinates (spins in units of √(L/g)), as the separation chart measures it.']);
+    return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
+      actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
+  },
+  deselect() { this.sel = -1; },
   colorOf(i) { return this.N === 1 ? THEME.text : RAMP_HEAT.css[Math.round(70 + 185 * i / Math.max(1, this.N - 1))]; },
+  rgbOf(i) { return this.N === 1 ? [222, 228, 236] : rampRgb(RAMP_HEAT, Math.round(70 + 185 * i / Math.max(1, this.N - 1))); },
 
   /* ---------- phase map: the energy landscape the copies move on ---------- */
   /* Potential energy per unit m₁ with L₁ = 1, zero at the pivot; E = kinetic + this, as in energy(). */
@@ -349,10 +420,12 @@ export const pendulum = {
     for (const y of [q.y0, q.y0 + q.S]) { chev(q.x0 + q.S / 2 - 4 * px, y, 1, 0); chev(q.x0 + q.S / 2 + 4 * px, y, 1, 0); }
     // Trails as lines that fade with age and break where a path wraps across an edge.
     if (this.p.trails && this.tn > 1) {
-      const len = Math.min(this.tn, Math.round(this.p.trailLen)), C = 6, base = N > 8 ? 0.5 : 0.85;
-      g.lineWidth = 1.3 * px; g.lineJoin = 'round';
-      for (let i = N - 1; i >= 0; i--) {
-        g.strokeStyle = this.colorOf(i);
+      const len = Math.min(this.tn, Math.round(this.p.trailLen)), C = 6, sel = this.sel < N ? this.sel : -1, dim = sel >= 0 ? 0.55 : 1;
+      g.lineJoin = 'round';
+      // The selected copy's path goes last and brightest, over the others, which step back a little.
+      for (const i of [...Array(N).keys()].reverse().filter(k => k !== sel).concat(sel >= 0 ? [sel] : [])) {
+        const base = i === sel ? 1 : (N > 8 ? 0.5 : 0.85) * dim;
+        g.strokeStyle = this.colorOf(i); g.lineWidth = (i === sel ? 2 : 1.3) * px;
         for (let c = 0; c < C; c++) {
           const k0 = Math.floor(c * len / C), k1 = Math.min(len - 1, Math.floor((c + 1) * len / C));
           g.globalAlpha = base * (0.1 + 0.9 * Math.pow((c + 1) / C, 1.6));
@@ -375,6 +448,14 @@ export const pendulum = {
       g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fill(); g.shadowBlur = 0;
       g.strokeStyle = THEME.text; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y, 8.5, 0, TAU); g.stroke();
     }
+    // The selected copy: a dashed ring and its number, the same mark it carries on the pendulum and the torus.
+    if (this.sel >= 0 && this.sel < N) {
+      const d = this.dotAt(this.sel), r = (this.sel ? 9 : 13) * px;
+      g.strokeStyle = THEME.amber; g.lineWidth = 1.6 * px; g.setLineDash([3 * px, 2.5 * px]);
+      g.beginPath(); g.arc(d.x, d.y, r, 0, TAU); g.stroke(); g.setLineDash([]);
+      g.font = `600 ${10.5 * px}px ${font}`; g.fillStyle = THEME.amber; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillText(this.sel ? `#${this.sel + 1}` : 'front', d.x + r + 4 * px, d.y);
+    }
     // Pointing at the map previews that start: crosshair, its own reach (dashed) and the angles.
     const hv = o.hover !== undefined ? o.hover : this.hover;
     if (hv && this.inSquare(hv) && this.drag !== 'sq') {
@@ -383,15 +464,23 @@ export const pendulum = {
       g.strokeStyle = THEME.amber; g.globalAlpha = 0.55; g.lineWidth = px; g.setLineDash([3 * px, 4 * px]);
       g.beginPath(); g.moveTo(hv.x, q.y0); g.lineTo(hv.x, q.y0 + q.S); g.moveTo(q.x0, hv.y); g.lineTo(q.x0 + q.S, hv.y); g.stroke();
       g.setLineDash([]); g.globalAlpha = 1;
-      const lines = [`θ₁ ${deg(t1)}°   θ₂ ${deg(t2)}°`, 'click to start here'];
+      const lines = [`θ₁ ${deg(t1)}°   θ₂ ${deg(t2)}°`, 'click to start here'], glyph = this.p.view === 'phase' && !o.noGlyph;
       g.font = `500 ${11 * px}px ${font}`;
-      const bw = Math.max(...lines.map(l => g.measureText(l).width)) + 16 * px, bh = 38 * px;
+      const bw = Math.max(...lines.map(l => g.measureText(l).width)) + (glyph ? 54 : 16) * px, bh = (glyph ? 44 : 38) * px;
       const bx = hv.x + 14 * px + bw > q.x0 + q.S ? hv.x - 14 * px - bw : hv.x + 14 * px, by = hv.y + 12 * px + bh > q.y0 + q.S ? hv.y - 12 * px - bh : hv.y + 12 * px;
       g.fillStyle = 'rgba(8,11,17,0.88)'; g.strokeStyle = 'rgba(242,165,65,0.6)'; g.lineWidth = px;
       g.beginPath(); rrect(g, bx, by, bw, bh, 6 * px); g.fill(); g.stroke();
       g.textAlign = 'left'; g.textBaseline = 'top';
       g.fillStyle = THEME.text; g.fillText(lines[0], bx + 8 * px, by + 6 * px);
       g.fillStyle = THEME.muted; g.font = `400 ${10 * px}px ${font}`; g.fillText(lines[1], bx + 8 * px, by + 21 * px);
+      // With no pendulum on the stage, the box shows the pose itself: a small pendulum hanging from its pivot.
+      if (glyph) {
+        const k = 18 * px / (1 + this.p.len), cx = bx + bw - 25 * px, cy = by + bh / 2, x1 = cx + k * Math.sin(t1), y1 = cy + k * Math.cos(t1);
+        const x2 = x1 + k * this.p.len * Math.sin(t2), y2 = y1 + k * this.p.len * Math.cos(t2);
+        g.strokeStyle = THEME.amber; g.lineWidth = 1.6 * px; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(cx, cy); g.lineTo(x1, y1); g.lineTo(x2, y2); g.stroke(); g.lineCap = 'butt';
+        g.fillStyle = THEME.text; for (const [x, y, r] of [[cx, cy, 1.8], [x1, y1, 2.6], [x2, y2, 2.6]]) { g.beginPath(); g.arc(x, y, r * px, 0, TAU); g.fill(); }
+      }
     }
     if (o.labels !== false) {
       g.font = `400 ${10 * px}px ${font}`; g.fillStyle = THEME.muted;
@@ -408,9 +497,12 @@ export const pendulum = {
         const tri = (x, y, dx, dy, c) => { const a = 5 * px; g.fillStyle = c; g.beginPath(); g.moveTo(x, y); g.lineTo(x + dx * a - dy * a, y + dy * a + dx * a); g.lineTo(x + dx * a + dy * a, y + dy * a - dx * a); g.fill(); };
         tri(mx(wrapAngle(this.s[0])), q.y0 + q.S + 1, 0, 1, THEME.amber); tri(q.x0 - 1, my(wrapAngle(this.s[1])), -1, 0, THEME.cyan);
       }
-      if (open && N) {
-        g.font = `400 ${10.5 * px}px ${font}`; g.fillStyle = THEME.cyan; g.textAlign = 'center'; g.textBaseline = 'bottom';
-        g.fillText('enough energy to flip both arms: the whole map is open', q.x0 + q.S / 2, q.y0 - 6 * px);
+      // What the map is: two of the state's four coordinates, so it is a projection and paths may cross on it.
+      g.font = `400 ${10.5 * px}px ${font}`; g.textAlign = 'center'; g.textBaseline = 'bottom';
+      if (open && N) { g.fillStyle = THEME.cyan; g.fillText('enough energy to flip both arms: the whole map is open', q.x0 + q.S / 2, q.y0 - 6 * px); }
+      else {
+        const say = ['angles (θ₁, θ₂) of the 4-D state (θ₁, θ₂, ω₁, ω₂): a projection, so paths may cross', 'θ₁, θ₂ of the 4-D state: a projection, so paths may cross', 'a projection of the 4-D state'].find(t => g.measureText(t).width <= q.S + 30 * px);
+        if (say) { g.fillStyle = THEME.muted; g.fillText(say, q.x0 + q.S / 2, q.y0 - 6 * px); }
       }
     }
     g.restore();
@@ -432,10 +524,10 @@ export const pendulum = {
       }
       g.globalAlpha = 1;
     }
-    const [r1, r2] = this.bobR();
+    const [r1, r2] = this.bobR(), sel = this.sel < N ? this.sel : -1;
     for (let i = N - 1; i >= 1; i--) {
       const b = this.bobs(i), c = this.colorOf(i);
-      g.strokeStyle = c; g.globalAlpha = 0.7; g.lineWidth = 1.6;
+      g.strokeStyle = c; g.globalAlpha = i === sel ? 1 : 0.7; g.lineWidth = i === sel ? 2.6 : 1.6;
       g.beginPath(); g.moveTo(P.x, P.y); g.lineTo(b.x1, b.y1); g.lineTo(b.x2, b.y2); g.stroke();
       g.fillStyle = c;
       g.beginPath(); g.arc(b.x1, b.y1, r1 * 0.7, 0, TAU); g.fill();
@@ -459,6 +551,85 @@ export const pendulum = {
     }
     drawSphere(g, P.x, P.y, 6.5, [242, 165, 65]);
     g.fillStyle = '#1d252f'; g.beginPath(); g.arc(P.x, P.y, 2.2, 0, TAU); g.fill();
+    // The selected copy carries the same dashed ring and number as its dot on the map.
+    if (sel >= 0) {
+      const b = this.bobs(sel), r = (sel ? r2 * 0.7 : r2) + 6 * px;
+      g.strokeStyle = THEME.amber; g.lineWidth = 1.6 * px; g.setLineDash([3 * px, 2.5 * px]);
+      g.beginPath(); g.arc(b.x2, b.y2, r, 0, TAU); g.stroke(); g.setLineDash([]);
+      g.font = `600 ${10.5 * px}px ${THEME.mono}`; g.fillStyle = THEME.amber; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillText(sel ? `#${sel + 1}` : 'front', b.x2 + r + 4 * px, b.y2);
+    }
+  },
+  /* The torus the square wraps onto, with the same paths: θ₁ runs around the ring and θ₂ around the tube, so a path
+     that leaves the map at one edge simply carries on here. The map's left and right edges are one circle around the
+     tube (amber, where θ₁ wraps); its top and bottom edges are the ring's inner circle (cyan, where θ₂ wraps). Far
+     sides are drawn faint first, near sides over them, so the shape reads without lighting. o.spin fixes the turn. */
+  drawTorus(g, o = {}) {
+    const T = o.tor || this.tor; if (!T) return;
+    const N = this.N, px = o.px || 1 / camOf(this).z, r = 0.42, tilt = 0.52, ct = Math.cos(tilt), st = Math.sin(tilt);
+    const spin = o.spin ?? (reduceMotion ? 0.7 : 0.7 + (performance.now() / 1000) * 0.15);
+    // Screen position and depth (positive toward the viewer) of the point at angles (a, b).
+    const at = (a, b) => {
+      const A = a + spin, R = 1 + r * Math.cos(b), x = R * Math.cos(A), y = r * Math.sin(b), z = R * Math.sin(A);
+      return [T.x + T.R * x, T.y - T.R * (y * ct - z * st), z * ct + y * st];
+    };
+    const curve = (n, f, front) => { // one polyline, only the segments on the asked side
+      let prev = f(0), open = false;
+      for (let k = 1; k <= n; k++) {
+        const cur = f(k / n), near = prev[2] + cur[2] > 0;
+        if (near === front) { if (!open) g.moveTo(prev[0], prev[1]); g.lineTo(cur[0], cur[1]); open = true; } else open = false;
+        prev = cur;
+      }
+    };
+    g.save();
+    g.fillStyle = 'rgba(8,11,17,0.55)'; g.strokeStyle = 'rgba(214,184,130,0.28)'; g.lineWidth = px;
+    g.beginPath(); rrect(g, T.x - T.R * 1.62, T.y - T.R * 1.3, T.R * 3.24, T.R * 2.6 + 50 * px, 12 * px); g.fill(); g.stroke();
+    const len = this.p.trails ? Math.min(this.tn, Math.round(this.p.trailLen)) : 0, step = Math.max(1, Math.ceil(N * len / 7000)), sel = this.sel < N ? this.sel : -1;
+    for (const front of [false, true]) {
+      // The surface: meridians around the tube, and four circles around the ring.
+      g.strokeStyle = THEME.text; g.globalAlpha = front ? 0.16 : 0.06; g.lineWidth = px; g.beginPath();
+      for (let m = 0; m < 18; m++) { const a = m * TAU / 18; curve(40, t => at(a, t * TAU), front); }
+      for (const b of [0, Math.PI / 2, -Math.PI / 2]) curve(90, t => at(t * TAU, b), front);
+      g.stroke();
+      // The seams: where the map's edges were glued.
+      g.lineWidth = 1.5 * px; g.setLineDash([4 * px, 3 * px]);
+      g.globalAlpha = front ? 0.85 : 0.3; g.strokeStyle = THEME.amber; g.beginPath(); curve(48, t => at(Math.PI, t * TAU), front); g.stroke();
+      g.strokeStyle = THEME.cyan; g.beginPath(); curve(96, t => at(t * TAU, Math.PI), front); g.stroke();
+      g.setLineDash([]);
+      // The paths, oldest faintest; on the torus they never break.
+      if (len > 1) {
+        g.lineWidth = 1.2 * px; g.lineJoin = 'round';
+        for (const i of [...Array(N).keys()].reverse().filter(k => k !== sel).concat(sel >= 0 ? [sel] : [])) {
+          g.strokeStyle = this.colorOf(i);
+          for (const [c0, c1, a] of [[0, 0.5, 0.35], [0.5, 1, 1]]) {
+            const k0 = Math.floor(c0 * (len - 1)), k1 = Math.floor(c1 * (len - 1)), base = i === sel ? 1 : N > 8 ? 0.5 : 0.8;
+            g.globalAlpha = base * a * (front ? 0.9 : 0.25); g.beginPath();
+            const pt = k => { const idx = (this.th - len + k + PEND_TRAIL) % PEND_TRAIL, oo = (i * PEND_TRAIL + idx) * 2; return at(this.phist[oo], this.phist[oo + 1]); };
+            const n = Math.max(1, Math.floor((k1 - k0) / step));
+            curve(n, t => pt(Math.round(k0 + t * (k1 - k0))), front);
+            g.stroke();
+          }
+        }
+      }
+      // Where every copy is now.
+      for (let i = N - 1; i >= 0; i--) {
+        const q = at(wrapAngle(this.s[i * 4]), wrapAngle(this.s[i * 4 + 1])); if ((q[2] > 0) !== front) continue;
+        g.globalAlpha = front ? 1 : 0.35; g.fillStyle = this.colorOf(i);
+        g.beginPath(); g.arc(q[0], q[1], (i ? 2.6 : 4.5) * px, 0, TAU); g.fill();
+        if (i === sel) { g.strokeStyle = THEME.amber; g.lineWidth = 1.4 * px; g.beginPath(); g.arc(q[0], q[1], 7 * px, 0, TAU); g.stroke(); }
+      }
+    }
+    g.globalAlpha = 1;
+    // Caption and the seam key.
+    const yc = T.y + T.R * 1.3 + 6 * px, display = getComputedStyle(document.documentElement).getPropertyValue('--font-display');
+    g.textAlign = 'center'; g.textBaseline = 'top';
+    g.font = `600 ${12 * px}px ${display}`; g.fillStyle = THEME.text; g.fillText('The same paths on the torus', T.x, yc);
+    g.font = `400 ${10 * px}px ${THEME.mono}`; g.fillStyle = THEME.muted; g.fillText('θ₁ around the ring · θ₂ around the tube', T.x, yc + 17 * px);
+    const key = [[THEME.amber, 'θ₁ = ±180°'], [THEME.cyan, 'θ₂ = ±180°']], kw = key.map(([, t]) => g.measureText(t).width + 26 * px), total = kw[0] + kw[1] + 10 * px;
+    let kx = T.x - total / 2;
+    g.textAlign = 'left'; g.lineWidth = 1.5 * px; g.setLineDash([4 * px, 3 * px]);
+    key.forEach(([c, t], j) => { g.strokeStyle = c; g.beginPath(); g.moveTo(kx, yc + 37 * px); g.lineTo(kx + 18 * px, yc + 37 * px); g.stroke(); g.fillStyle = c; g.fillText(t, kx + 23 * px, yc + 31 * px); kx += kw[j] + 10 * px; });
+    g.restore();
   },
   /* The two angles the map plots, drawn where they live: θ₁ at the pivot, θ₂ at the elbow, each from straight down. */
   drawAngles(g, b, px) {
@@ -486,14 +657,24 @@ export const pendulum = {
   draw(g, w, h) {
     this.layout(w, h);
     g.fillStyle = THEME.ink; g.fillRect(0, 0, w, h);
-    const phase = this.p.view === 'phase';
-    this.drawPendulum(g, phase);
-    if (phase) { this.drawPhase(g); this.drawGhost(g); }
+    const v = this.p.view;
+    if (v !== 'phase') this.drawPendulum(g, v === 'both');
+    if (v !== 'pend') this.drawPhase(g);
+    if (v === 'both') this.drawGhost(g);
+    if (v === 'phase') this.drawTorus(g);
   },
   /* Screen overlays in 3D: the handle a bob offers under the pointer, and the previewed pose while the pointer is on the map. */
   overlay3(g) {
-    if (!this.hover || !this.N) return;
+    if (!this.N) return;
+    // The selected copy's ring, where the pendulum is on the stage; the map paints its own ring into the screen.
+    const sel = this.sel;
+    if (sel >= 0 && sel < this.N && this.p.view !== 'phase') {
+      const b = this.bobs(sel), s = this.project3(b.x2, b.y2, 0.2);
+      if (s) { g.strokeStyle = THEME.amber; g.lineWidth = 1.6; g.setLineDash([4, 3]); g.beginPath(); g.arc(s.x, s.y, 14, 0, TAU); g.stroke(); g.setLineDash([]); }
+    }
+    if (!this.hover) return;
     if (this.inSquare(this.hover) && this.drag !== 'sq') {
+      if (this.p.view !== 'both') return;
       const [t1, t2] = this.anglesAt(this.hover), b = this.pose(t1, t2), P = this.pivot;
       const pts = [[P.x, P.y], [b.x1, b.y1], [b.x2, b.y2]].map(([x, y]) => this.project3(x, y, 0.2));
       if (pts.every(Boolean)) {
@@ -569,7 +750,7 @@ export const pendulum = {
     <div class="f" data-tex="\\alpha_1 = \\frac{\\begin{array}{c} -g\\,(2m_1 + m_2)\\sin\\theta_1 - m_2 g\\sin(\\theta_1 - 2\\theta_2) \\\\ -\\,2m_2 \\sin\\Delta\\,(\\omega_2^2 L_2 + \\omega_1^2 L_1\\cos\\Delta) \\end{array}}{L_1\\,(2m_1 + m_2 - m_2\\cos 2\\Delta)}"></div>
     <p>Copy <i>k</i> starts with θ<sub>2</sub> shifted by kδ<sub>0</sub>. The gap between copies grows as δ(t) ≈ δ<sub>0</sub>e<sup>λt</sup> until it reaches the size of the motion itself, so predictability lasts only about:</p>
     <div class="f" data-tex="t \\approx \\frac{1}{\\lambda}\\,\\ln\\frac{0.1}{\\delta_0}"></div>
-    <p>The phase-space view plots (θ<sub>1</sub>, θ<sub>2</sub>) wrapped to (−π, π]. Its opposite edges join, so the square is really a torus. Behind the paths lies the potential energy:</p>
+    <p>The phase map plots (θ<sub>1</sub>, θ<sub>2</sub>) wrapped to (−π, π]. Strictly, that is the configuration space: the full phase space has four coordinates, (θ<sub>1</sub>, θ<sub>2</sub>, ω<sub>1</sub>, ω<sub>2</sub>), and the map is its projection onto the two angles. Two states with the same angles and different spins land on the same point, so paths may cross on the map although they never cross in the full space. The map's opposite edges join, so the square is really a torus, drawn beside the map in the Phase map view with the same paths. Behind the paths lies the potential energy:</p>
     <div class="f" data-tex="V(\\theta_1, \\theta_2) = -(m_1 + m_2)\\,g L_1 \\cos\\theta_1 - m_2\\, g L_2 \\cos\\theta_2"></div>
     <p>Kinetic energy is never negative, so a pendulum with total energy E can only visit angles where V ≤ E. The bright curve V = E fences in every path the front pendulum can take; start it higher on the landscape and the fence opens, until with E above the inverted maximum both arms can flip and the whole torus is open.</p>
     <p>Small swings with equal masses and lengths have two normal modes, θ<sub>2</sub> / θ<sub>1</sub> = ±√2, with frequencies:</p>

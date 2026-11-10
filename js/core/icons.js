@@ -43,7 +43,7 @@ export const ICON = {
   throw: 'arrow_outward', erase: 'delete', pan: 'pan_tool', grab: 'back_hand', heat: 'local_fire_department', cool: 'ac_unit',
   stir: 'cyclone', push: 'open_in_full', pull: 'close_fullscreen', pour: 'water_drop', obstacle: 'radio_button_checked',
   drain: 'format_color_reset', pulse: 'radar', wall: 'view_column', eraser: 'ink_eraser', source: 'adjust', glass: 'lens_blur',
-  pend: 'linear_scale', phase: 'scatter_plot', cut: 'content_cut', pin: 'keep', ball: 'sports_baseball',
+  pend: 'linear_scale', phase: 'scatter_plot', both: 'vertical_split', disp: 'waves', int: 'blur_on', cut: 'content_cut', pin: 'keep', ball: 'sports_baseball',
   plus: 'add_circle', minus: 'do_not_disturb_on', move: 'open_with', launch: 'rocket_launch', probe: 'point_scan',
   clip: 'movie', data: 'monitoring', state: 'bookmark', follow: 'my_location', cube: 'deployed_code',
   crit: 'error', warn: 'warning', info: 'info',

@@ -79,6 +79,7 @@ export function setPanMode(on) {
 }
 export function buildNav(lab) {
   navExtraEl.replaceChildren();
+  $('#nav-context').hidden = !(lab.navExtras && lab.navExtras.length);
   navExtras = (lab.navExtras || []).map(o => {
     const b = el('button', { type: 'button', class: 'nav-btn', id: `nav-${o.id}`, 'aria-pressed': 'false', 'aria-label': o.label, 'data-tip': o.tip || o.label, html: icon(o.icon) });
     b.addEventListener('click', () => { o.run(); updateNav(); });
