@@ -49,7 +49,8 @@ import { cheaperTier, in3D, pickTier } from './mode.js';
 import { syncPanel } from './panel.js';
 import { BUDGET_MS, active, announce, perf, state, stickies } from './state.js';
 import { setSpeed } from './transport.js';
-import { setDiag, showTopAlert } from './instruments.js';
+import { showPane } from './deck.js';
+import { showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
 
 /* ---------- diagnostics ---------- */
@@ -91,7 +92,10 @@ export function evaluateDiagnostics() {
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
   sum.dataset.level = worst || 'ok';
   showTopAlert(alerts[0], applyFix);
-  sum.textContent = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable';
+  // The summary rides on the Insights tab, so it stays short: the state in words, then the count.
+  sum.textContent = worst === 'crit' ? `${alerts.length} critical` : worst === 'warn' ? `${alerts.length} to check` : list.length ? String(list.length) : '';
+  sum.title = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable, no insights';
+  $('#dt-insights').setAttribute('aria-description', sum.title);
   const ids = new Set(alerts.map(a => a.id));
   for (const a of alerts) if (!lastAlertIds.has(a.id)) { announce(`${LEVEL_TAG[a.level]}: ${a.title}`); break; }
   lastAlertIds = ids;
@@ -159,5 +163,5 @@ export function updatePerfNums() {
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
-  $('#hud-alert').addEventListener('click', () => setDiag(true));
+  $('#hud-alert').addEventListener('click', () => showPane('insights', { reveal: true }));
 }

@@ -78,7 +78,7 @@ export const waves = {
     { id: 'pulse', label: 'Pulse', key: 'p', icon: 'pulse', hint: 'Click to drop a pulse · drag to leave a wake' },
     { id: 'wall', label: 'Wall', key: 'w', icon: 'wall', hint: 'Drag to paint a barrier' },
     { id: 'erase', label: 'Erase', key: 'e', icon: 'eraser', hint: 'Drag to erase walls and glass' },
-    { id: 'source', label: 'Source', key: 's', icon: 'source', hint: 'Click to add an oscillating source · click a source to remove it' },
+    { id: 'source', label: 'Source', key: 's', icon: 'source', hint: 'Click to add an oscillating source · click a source to inspect it, and remove it from there' },
     { id: 'glass', label: 'Glass', key: 'g', icon: 'glass', hint: 'Drag to paint glass, where waves travel at c / n' },
   ] },
   p: { tool: 'pulse', view: 'disp', c: 60, f: 2.5, gain: 1, damp: 0.02, absorb: true, glassN: 1.6, srcSpeed: 0, phaseStep: 0, relief: 1 },
@@ -136,8 +136,8 @@ export const waves = {
   build(preset, w, h) {
     this.setup(w, h); this.sources = []; this.time = 0; this.maxU = 0; this.slits = null;
     const Nx = this.Nx, Ny = this.Ny, cy = Ny / 2, Ls = this.Ls;
-    const point = (x, y) => this.sources.push({ type: 'point', x, y, phase: 0, t0: 0, dir: 1 });
-    const lineSource = () => this.sources.push({ type: 'line', x: Ls + 2, y: 0, phase: 0, t0: 0, dir: 1 });
+    const point = (x, y) => this.sources.push({ id: ++this.srcId, type: 'point', x, y, phase: 0, t0: 0, dir: 1 });
+    const lineSource = () => this.sources.push({ id: ++this.srcId, type: 'line', x: Ls + 2, y: 0, phase: 0, t0: 0, dir: 1 });
     const barrier = (bx, open) => { for (let y = 1; y < Ny - 1; y++) if (!open(y)) for (let k = 0; k < 2; k++) this.wall[y * Nx + bx + k] = 1; };
     if (preset === 'ripple') {
       for (let k = 0; k < 3; k++) this.pulse(rand(Nx * 0.25, Nx * 0.75), rand(Ny * 0.25, Ny * 0.75), 2.4);
@@ -208,6 +208,8 @@ export const waves = {
       }
     };
     g.save(); g.lineWidth = 1.3;
+    const sel = this.source();
+    if (sel && sel.type === 'point') { g.strokeStyle = THEME.amber; g.setLineDash([4, 3]); ring(sel.x * cs, sel.y * cs, 5.5 * cs, 0.05); g.stroke(); g.setLineDash([]); }
     if (this.p.phaseStep !== 0 && this.pointCount() > 1) {
       let k = 0, lx = -99, ly = -99;
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.text; g.textAlign = 'right'; g.textBaseline = 'middle';
@@ -222,7 +224,7 @@ export const waves = {
     }
     if (hv && tool === 'source') {
       const c = this.toCell(hv), at = this.sources.find(s => s.type === 'point' && Math.hypot(s.x - c.x, s.y - c.y) < 4);
-      if (at) { g.strokeStyle = THEME.crit; ring(at.x * cs, at.y * cs, 4 * cs, 0.02); g.stroke(); }
+      if (at) { g.strokeStyle = THEME.amber; ring(at.x * cs, at.y * cs, 4 * cs, 0.02); g.stroke(); }
       else {
         const b = this.project3(hv.x, hv.y, 0.02), t = this.project3(hv.x, hv.y, 0.7);
         g.strokeStyle = g.fillStyle = THEME.amber; g.globalAlpha = 0.85;
@@ -342,9 +344,7 @@ export const waves = {
     }
     if (tool === 'source') {
       if (!first) return;
-      const near = this.sources.findIndex(s => s.type === 'point' && Math.hypot(s.x - c.x, s.y - c.y) < 4);
-      if (near >= 0) this.sources.splice(near, 1);
-      else this.sources.push({ type: 'point', x: c.x, y: c.y, phase: 0, t0: this.time, dir: 1 });
+      this.sources.push({ id: ++this.srcId, type: 'point', x: c.x, y: c.y, phase: 0, t0: this.time, dir: 1 });
       refreshEnabled();
       return;
     }
@@ -358,8 +358,41 @@ export const waves = {
     this.last = c; this.geomVer = (this.geomVer || 0) + 1;
     if (tool === 'glass' || tool === 'erase') refreshEnabled();
   },
-  cursorAt() { return this.p.tool === 'source' ? 'copy' : 'crosshair'; },
-  pointerDown(p) { this.drawing = true; this.last = null; this.applyTool(p, true); },
+  cursorAt(p) { return p && this.hitSource(p) ? 'pointer' : this.p.tool === 'source' ? 'copy' : 'crosshair'; },
+  /* Any tool selects a source it lands on, for the Inspect pane, instead of acting on the water there. */
+  pointerDown(p) {
+    const s = this.hitSource(p);
+    if (s) { this.selSrc = s.id; return; }
+    this.drawing = true; this.last = null; this.applyTool(p, true);
+  },
+  srcId: 0, selSrc: null,
+  hitSource(p) {
+    const c = this.toCell(p);
+    return this.sources.find(s => s.type === 'point' ? Math.hypot(s.x - c.x, s.y - c.y) < 4 : Math.abs(Math.round(s.x) - c.x) < 2.5) || null;
+  },
+  source() { return this.selSrc == null ? null : this.sources.find(s => s.id === this.selSrc) || null; },
+  inspectHint: 'Click a source with any tool to inspect it here.',
+  /* Read-only figures of the selected source. Frequency and phase step are shared settings, so they stay in Controls. */
+  inspect() {
+    const s = this.source(); if (!s) return null;
+    const pts = this.sources.filter(q => q.type === 'point'), k = pts.indexOf(s), point = s.type === 'point', p = this.p;
+    const phase = point ? s.phase - k * p.phaseStep * Math.PI / 180 : s.phase, deg = ((phase * 180 / Math.PI) % 360 + 360) % 360;
+    const age = this.time - s.t0, out = Math.min(1, age / 0.6) * Math.sin(TAU * p.f * age + phase);
+    const cx = clamp(Math.round(s.x), 0, this.Nx - 1), cy = clamp(Math.round(point ? s.y : this.Ny / 2), 0, this.Ny - 1), I = this.inten[cy * this.Nx + cx];
+    const rows = [
+      [point ? 'Position' : 'Line at', point ? `${s.x.toFixed(0)}, ${s.y.toFixed(0)} cells` : `x = ${s.x.toFixed(0)} cells`, 'Across and down from the tank\'s top-left corner, in grid cells.'],
+      ['Frequency f', `${p.f.toFixed(1)} Hz`, 'Shared by every source; set it under Controls.'],
+      ['Wavelength λ = c/f', `${(p.c / p.f).toFixed(1)} cells`, 'The distance between crests this source sends out, in open water.'],
+      ['Phase', `${deg.toFixed(0)}°`, point && pts.length > 1 ? 'Its own phase, after the phase step Δφ for its place in the row.' : 'Where in its cycle it started.'],
+      ['Driving now', out.toFixed(2), 'The displacement this source is holding its cells at this instant, between −1 and 1.'],
+      ['Running for', `${age.toFixed(1)} s`, 'Simulated time since it started.'],
+      ['Intensity here ⟨u²⟩', I.toFixed(3), 'The time-averaged intensity at its own cell.'],
+    ];
+    if (point && p.srcSpeed > 0) rows.push(['Speed', `${(p.srcSpeed * p.c).toFixed(1)} cells/s ${s.dir > 0 ? 'right' : 'left'}`, 'Point sources move together at the Source speed setting.']);
+    return { id: `src-${s.id}`, kicker: point ? `Source ${k + 1} of ${pts.length}` : 'Line source', short: point ? `Source ${k + 1}` : 'Line source', title: point ? 'Point oscillator' : 'Plane-wave paddle', color: '#f2a541', rows,
+      actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
+  },
+  deselect() { this.selSrc = null; },
   pointerMove(p, e, down) { if (down && this.drawing) this.applyTool(p, false); },
   pointerUp() { this.drawing = false; this.last = null; this.lastPulse = null; },
   draw(g, w, h) {
@@ -392,8 +425,13 @@ export const waves = {
     let k = 0;
     for (const s of this.sources) {
       g.strokeStyle = THEME.amber; g.fillStyle = THEME.amber; g.lineWidth = 2 * px;
-      if (s.type === 'line') { g.globalAlpha = 0.6; g.fillRect(Math.round(s.x) * cs - px, 0, 3 * px, h); g.globalAlpha = 1; continue; }
+      if (s.type === 'line') {
+        g.globalAlpha = 0.6; g.fillRect(Math.round(s.x) * cs - px, 0, 3 * px, h); g.globalAlpha = 1;
+        if (s.id === this.selSrc) { g.lineWidth = 1.6 * px; g.setLineDash([4 * px, 3 * px]); g.strokeRect(Math.round(s.x) * cs - 6 * px, 2 * px, 12 * px, h - 4 * px); g.setLineDash([]); }
+        continue;
+      }
       g.beginPath(); g.arc(s.x * cs, s.y * cs, 6 * px, 0, TAU); g.stroke(); g.beginPath(); g.arc(s.x * cs, s.y * cs, 2 * px, 0, TAU); g.fill();
+      if (s.id === this.selSrc) { g.lineWidth = 1.6 * px; g.setLineDash([4 * px, 3 * px]); g.beginPath(); g.arc(s.x * cs, s.y * cs, 11 * px, 0, TAU); g.stroke(); g.setLineDash([]); }
       if (this.p.phaseStep !== 0 && this.pointCount() > 1) {
         const ph = ((-k * this.p.phaseStep) % 360 + 360) % 360;
         g.font = `400 ${10 * px}px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'right'; g.textBaseline = 'middle';
@@ -527,7 +565,9 @@ Object.assign(waves, genericState, {
     Object.assign(this.p, s.p);
     this.u.set(s.u); this.u0.set(s.u0); this.wall.set(s.shared.wall); this.glass.set(s.shared.glass);
     this.geomVer++; this._geom = null;
-    this.sources = s.sources.map(x => ({ ...x })); this.time = s.time;
+    // States saved before sources had ids get fresh ones, so their sources can be selected too.
+    this.sources = s.sources.map(x => ({ ...x, id: x.id ?? ++this.srcId })); this.time = s.time;
+    this.srcId = Math.max(this.srcId, ...this.sources.map(x => x.id));
     if (s.inten) this.inten.set(s.inten); else this.inten.fill(0);
     if (this === active) refreshEnabled();
     return true;

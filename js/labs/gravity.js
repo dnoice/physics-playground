@@ -347,12 +347,13 @@ export const gravity = {
         ['Orbit tilt', `${i.toFixed(1)}°`, 'The inclination: the angle between this orbit and the flat plane. Above 90° it runs backwards.'],
         ['Orbit status', bound ? `Bound to ${ref}` : `Escaping ${ref}`, `Whether this body has too little energy to leave ${ref}.`]);
     } else rows.push(['Radius of this body', `${b.r.toFixed(1)} px`, 'The drawn and collision radius.'], ['Speed through space', `${fmtSI(Math.hypot(b.vx, b.vy, b.vz))} px/s`, 'Nothing else is here to measure against.']);
-    return { id: b.id, kicker: `Body ${b.id} · camera following`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
+    return { id: b.id, kicker: `Body ${b.id} · camera following`, short: `Body ${b.id}`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
       { label: 'Release camera', run: () => this.deselect() },
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
     ] };
   },
   deselect() { this.track = null; updateNav(); },
+  inspectHint: 'Click a body to follow it and inspect it here.',
   stateSummary() { return { bodies: this.bodies.length }; },
   navExtras: [{ id: 'follow', label: 'Follow', icon: 'follow', title: 'Follow the centre of mass · click a body on the stage to follow it instead · click again to free the camera',
     pressed: () => gravity.p.follow || gravity.track != null,

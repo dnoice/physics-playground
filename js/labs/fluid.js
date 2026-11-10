@@ -87,7 +87,7 @@ export const fluid = {
     '<b>Obstacle</b> places a fixed post where you click; click a post again to remove it. Tilt gravity to slosh the tank.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
-    { id: 'stir', label: 'Stir', key: 's', icon: 'stir', hint: 'Drag to stir the liquid along with the pointer' },
+    { id: 'stir', label: 'Stir', key: 's', icon: 'stir', hint: 'Drag to stir the liquid along with the pointer · click a post to inspect it' },
     { id: 'push', label: 'Push', key: 'p', icon: 'push', hint: 'Hold to blow the liquid away from the pointer' },
     { id: 'pull', label: 'Pull', key: 'l', icon: 'pull', hint: 'Hold to draw the liquid toward the pointer' },
     { id: 'pour', label: 'Pour', key: 'o', icon: 'pour', hint: 'Hold to pour new liquid at the pointer' },
@@ -336,16 +336,46 @@ export const fluid = {
       if (this.ticks) { this.clampRate += (this.clamped / (Math.max(1, this.n) * this.ticks) - this.clampRate) * 0.4; this.clamped = 0; this.ticks = 0; }
     }
   },
+  /* The post under a point, by index; -1 for none. */
+  hitPost(p) { const ux = p.x / this.U, uy = p.y / this.U; return this.obs.findIndex(o => (o.x - ux) ** 2 + (o.y - uy) ** 2 < (o.r + 0.3) ** 2); },
   pointerDown(p) {
+    // Any tool but Obstacle selects a post it lands on, for the Inspect pane, instead of acting on the liquid there.
+    const post = this.hitPost(p);
+    if (this.p.tool !== 'obstacle' && post >= 0) { const o = this.obs[post]; this.selAt = { x: o.x, y: o.y }; return; }
     this.vel.reset(p); this.ptr = { x: p.x, y: p.y, down: true }; this.pourClock = 2;
     if (this.p.tool === 'obstacle') {
-      const ux = p.x / this.U, uy = p.y / this.U, hit = this.obs.findIndex(o => (o.x - ux) ** 2 + (o.y - uy) ** 2 < (o.r + 0.3) ** 2);
-      if (hit >= 0) this.obs.splice(hit, 1);
+      const hit = post, ux = p.x / this.U, uy = p.y / this.U;
+      if (hit >= 0) { if (this.post() === this.obs[hit]) this.selAt = null; this.obs.splice(hit, 1); }
       else if (this.obs.length < 24) this.obs.push({ x: ux, y: uy, r: 1.5 });
       else announce('Obstacle limit reached (24).');
     }
   },
   pointerMove(p, e, down) { if (this.ptr) { this.ptr.x = p.x; this.ptr.y = p.y; } if (down) this.vel.update(p); },
+  /* The selected post, found by its centre, so a rebuild that carries posts over keeps the selection. */
+  selAt: null,
+  post() { const s = this.selAt; return s ? this.obs.find(o => o.x === s.x && o.y === s.y) || null : null; },
+  inspectHint: 'Click a post with any tool except Obstacle to inspect it here.',
+  cursorAt(p) { return this.p.tool !== 'obstacle' && this.hitPost(p) >= 0 ? 'pointer' : 'crosshair'; },
+  /* Read-only figures of the selected post, measured from the particles around it this frame. */
+  inspect() {
+    const o = this.post(); if (!o) return null;
+    const U = this.U, s = U / this.TICK, X = this.x, Y = this.y, near = (o.r + 0.45) ** 2, flow = (o.r + 1.5) ** 2;
+    let touch = 0, dens = 0, nf = 0, sp = 0;
+    for (let i = 0; i < this.n; i++) {
+      const d2 = (X[i] - o.x) ** 2 + (Y[i] - o.y) ** 2;
+      if (d2 < near) { touch++; dens += this.rho[i] / this.rho0; }
+      if (d2 < flow) { nf++; sp += Math.hypot(this.vx[i], this.vy[i]) * s; }
+    }
+    const k = this.obs.indexOf(o) + 1;
+    return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, title: 'Steel post', color: '#56677c', rows: [
+      ['Centre', `${(o.x * U).toFixed(0)}, ${(o.y * U).toFixed(0)} px`, 'Across and down from the tank\'s top-left corner.'],
+      ['Radius', `${(o.r * U).toFixed(0)} px`, 'The post\'s size, which is also how far it pushes liquid back.'],
+      ['Liquid touching it', `${touch} particles`, 'Particles within half a particle spacing of its surface right now.'],
+      ['Density at its surface ρ / ρ₀', touch ? (dens / touch).toFixed(3) : '—', 'The mean density of the touching particles over the rest density. Above 1 the liquid is pressing on the post.'],
+      ['Flow speed around it', nf ? `${(sp / nf).toFixed(0)} px/s` : '—', 'The mean speed of the particles within about one and a half spacings of its surface.'],
+    ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selAt = null; } }] };
+  },
+  deselect() { this.selAt = null; },
   pointerUp() { this.ptr = null; this.vel.vx = 0; this.vel.vy = 0; },
   draw(g, w, h) {
     const px = 1 / camOf(this).z;
@@ -372,10 +402,12 @@ export const fluid = {
       for (let i = 0; i < n; i++) if (bin[i] === b) { const X = this.x[i] * U, Y = this.y[i] * U; g.moveTo(X + rad, Y); g.arc(X, Y, rad, 0, TAU); any = true; }
       if (any) g.fill();
     }
+    const sel = this.post();
     for (const o of this.obs) {
       const X = o.x * U, Y = o.y * U, R = o.r * U;
       drawSphere(g, X, Y, R, [70, 82, 98]);
       g.strokeStyle = THEME.amber; g.globalAlpha = 0.7; g.lineWidth = 1.5 * px; g.beginPath(); g.arc(X, Y, R, 0, TAU); g.stroke(); g.globalAlpha = 1;
+      if (o === sel) { g.setLineDash([4 * px, 3 * px]); g.lineWidth = 1.6 * px; g.beginPath(); g.arc(X, Y, R + 6 * px, 0, TAU); g.stroke(); g.setLineDash([]); }
     }
     const hv = this.hover, tool = this.p.tool;
     if (hv && tool !== 'obstacle') brushRing(g, hv, tool === 'pour' ? 0.6 * U : tool === 'drain' ? 2 * U : 3.2 * U, tool === 'drain' ? THEME.crit : THEME.text);
@@ -385,6 +417,11 @@ export const fluid = {
      A post is previewed at both its ends; red marks the post a click would remove. */
   overlay3(g, w, h) {
     if (this.p.gravity > 0 && this.p.tilt !== 0) this.gravityMark(g, h);
+    const sel = this.post();
+    if (sel) {
+      const c = this.project3(sel.x * this.U, sel.y * this.U, this.rig3.depth / 2 + 0.05), e = c && this.project3((sel.x + sel.r) * this.U, sel.y * this.U, this.rig3.depth / 2 + 0.05);
+      if (c && e) { g.strokeStyle = THEME.amber; g.lineWidth = 1.6; g.setLineDash([4, 3]); g.beginPath(); g.arc(c.x, c.y, Math.hypot(e.x - c.x, e.y - c.y) + 7, 0, TAU); g.stroke(); g.setLineDash([]); }
+    }
     const hv = this.hover; if (!hv) return;
     const tool = this.p.tool, U = this.U, d = this.rig3.depth / 2;
     const ring = (x, y, r, lift, a0 = 0, a1 = TAU) => {

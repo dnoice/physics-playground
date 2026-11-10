@@ -83,6 +83,8 @@
 .tile-deck { grid-area: deck; }
 .tile-inspector { grid-area: notes; }
 .bento.deck-tall { --bay: minmax(300px, 46vh); }
+.bento.deck-compact { --bay: 136px; }
+.bento.deck-sized { --bay: var(--bay-px); }
 .bento.no-bay { grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage notes"; }
 .bento.no-bay .bay { display: none; }
 .bento.focus { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage"; }

@@ -62,6 +62,7 @@ import { init as initWorkspace } from './shell/workspace.js';
 import { init as initAutomation } from './shell/automation.js';
 import { init as initDetails } from './shell/details.js';
 import { init as initInstruments } from './shell/instruments.js';
+import { init as initDeck } from './shell/deck.js';
 import { init as initMode } from './shell/mode.js';
 import { selectLab } from './shell/workspace.js';
 
@@ -88,7 +89,7 @@ export const hot = window.claude && window.claude.hot;
 
 /* Boot: wire every shell module, then start the selected lab. */
 function boot() {
-  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDetails(); initAutomation();
+  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initAutomation();
   if (hot && typeof hot.snapshot === 'function') {
     hot.snapshot(() => ({
       lab: active && active.id, running: state.running, speed: state.speed,

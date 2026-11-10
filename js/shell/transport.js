@@ -54,7 +54,6 @@ import { ptr, refreshCursor } from './stage.js';
 import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
 import { closeSceneMenu, hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
-import { closeDiag } from './instruments.js';
 import { closeGfx, toggleMode } from './mode.js';
 
 /* ---------- transport and keys ---------- */
@@ -117,7 +116,7 @@ export function init() {
     else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); }
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
     else if (k === 'z' || k === 'Z') toggleMode();
-    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeDiag()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();

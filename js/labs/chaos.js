@@ -316,10 +316,11 @@ export const pendulum = {
     ];
     if (i > 0) rows.push(['Started apart by', `${(i * this.p.delta).toExponential(1)} rad`, 'This copy began with θ₂ larger than the front one\'s by this much, and nothing else different.'],
       ['Distance from the front copy', gap < 1e-3 ? gap.toExponential(2) : gap.toFixed(3), 'The distance between the two states in all four coordinates (spins in units of √(L/g)), as the separation chart measures it.']);
-    return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
+    return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, short: i === 0 ? 'Front copy' : `Copy ${i + 1}`, title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
       actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
   },
   deselect() { this.sel = -1; },
+  inspectHint: 'Click a pendulum on the stage, or a dot on the phase map, to inspect that copy here.',
   colorOf(i) { return this.N === 1 ? THEME.text : RAMP_HEAT.css[Math.round(70 + 185 * i / Math.max(1, this.N - 1))]; },
   rgbOf(i) { return this.N === 1 ? [222, 228, 236] : rampRgb(RAMP_HEAT, Math.round(70 + 185 * i / Math.max(1, this.N - 1))); },
 

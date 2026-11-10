@@ -70,7 +70,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -198,29 +198,57 @@
     </footer>
   </section>
 
-  <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments">
+  <!-- The instruments deck: three panes over one header. Telemetry is the lab's readings and their plot; Inspect is
+       the selected object, read-only (its settings stay in Controls); Insights is diagnostics grounded in the run.
+       The grip on the top edge sets the height; the size button steps through compact, standard and tall. -->
+  <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments" data-pane="telemetry">
+    <div class="deck-grip" id="deck-grip" role="separator" aria-orientation="horizontal" aria-controls="tile-deck" aria-label="Instruments height" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" tabindex="0" title="Drag to resize the instruments · double-click for the standard height"></div>
     <header class="tile-head deck-head">
-      <span class="ms tile-ico" aria-hidden="true">show_chart</span><h3 id="chart-title">Chart</h3>
+      <div class="deck-tabs" role="tablist" aria-label="Instruments" id="deck-tabs">
+        <button type="button" role="tab" class="deck-tab" id="dt-telemetry" aria-controls="dp-telemetry" aria-selected="true"><span class="ms" aria-hidden="true">show_chart</span><span class="deck-tab-name">Telemetry</span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span><span class="deck-tab-dot" id="dt-inspect-dot" hidden></span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum">Stable</span></button>
+      </div>
+      <h3 class="deck-title" id="chart-title">Chart</h3>
       <div class="scope-legend" id="scope-legend"></div>
       <div class="diag-top" id="diag-top" hidden></div>
-      <button type="button" class="diag-pill" id="diag-toggle" aria-expanded="false" aria-controls="diag" title="Show diagnostics"><span class="diag-sum" id="diag-sum">Stable</span></button>
-      <button type="button" class="icon-btn" id="btn-deck-tall" aria-pressed="false" title="Make the instruments taller"><span class="ms" aria-hidden="true">open_in_full</span><span class="sr-only">Taller instruments</span></button>
+      <button type="button" class="icon-btn" id="btn-deck-size" title="Instruments size: standard · click for tall"><span class="ms" aria-hidden="true">unfold_more</span><span class="sr-only" id="btn-deck-size-label">Instruments size: standard. Make them tall.</span></button>
     </header>
     <div class="deck-body">
-      <dl class="readouts" id="readouts"></dl>
-      <div class="deck-chart"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
+      <div class="deck-pane deck-telemetry" role="tabpanel" id="dp-telemetry" aria-labelledby="dt-telemetry">
+        <dl class="readouts" id="readouts"></dl>
+        <div class="deck-chart"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
+      </div>
+      <div class="deck-pane deck-inspect" role="tabpanel" id="dp-inspect" aria-labelledby="dt-inspect" hidden>
+        <article class="details" id="details" aria-label="Selected object" hidden>
+          <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
+          <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3>
+            <div class="details-actions" id="details-actions"></div></div>
+          <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
+          <dl class="details-rows" id="details-rows"></dl>
+        </article>
+        <div class="inspect-empty" id="inspect-empty">
+          <span class="ms" aria-hidden="true">ads_click</span>
+          <p><b>Nothing selected.</b> <span id="inspect-how">Click an object on the stage to inspect it here.</span> Its live figures appear here, read-only; plot any of them over time with its chart button. Settings stay in Controls.</p>
+        </div>
+      </div>
+      <div class="deck-pane deck-insights" role="tabpanel" id="dp-insights" aria-labelledby="dt-insights" hidden>
+        <div class="insights" id="insights" aria-live="polite"></div>
+        <div class="perf" aria-label="Frame timing">
+          <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
+          <dl class="perf-nums">
+            <dt>Solver</dt><dd id="perf-sim">0.0 ms</dd>
+            <dt>Drawing</dt><dd id="perf-draw">0.0 ms</dd>
+            <dt>Steps / frame</dt><dd id="perf-steps">0</dd>
+            <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
+          </dl>
+        </div>
+      </div>
     </div>
   </section>
 
   <aside class="tile tile-inspector" id="tile-notes" aria-label="Inspector">
     <div class="scene-intro" id="scene-body"></div>
-    <article class="details" id="details" aria-label="Selected object" hidden>
-      <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
-      <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3></div>
-      <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
-      <dl class="details-rows" id="details-rows"></dl>
-      <div class="details-actions" id="details-actions"></div>
-    </article>
     <div class="tabs" role="tablist" aria-label="Inspector" id="notes-tabs">
       <button type="button" role="tab" id="nt-controls" aria-controls="np-controls" aria-selected="true"><span class="ms" aria-hidden="true">tune</span>Controls</button>
       <button type="button" role="tab" id="nt-experiments" aria-controls="np-experiments" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">science</span>Experiments<span class="tab-count" id="nt-experiments-count" hidden></span></button>
@@ -269,21 +297,6 @@
     <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>
   </dl>
 </div>
-<section class="sheet diag-sheet" id="diag" tabindex="-1" aria-labelledby="diag-title" hidden>
-  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">monitor_heart</span><h3 id="diag-title">Diagnostics</h3><button type="button" class="icon-btn" id="diag-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
-  <div class="tile-body">
-    <div class="perf">
-      <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
-      <dl class="perf-nums">
-        <dt>Solver</dt><dd id="perf-sim">0.0 ms</dd>
-        <dt>Drawing</dt><dd id="perf-draw">0.0 ms</dd>
-        <dt>Steps / frame</dt><dd id="perf-steps">0</dd>
-        <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
-      </dl>
-    </div>
-    <div class="insights" id="insights"></div>
-  </div>
-</section>
 <div class="sheet gfx-sheet" id="gfx-sheet" role="dialog" aria-modal="false" aria-labelledby="gfx-title" hidden>
   <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">tune</span><h3 id="gfx-title">Graphics</h3><button type="button" class="icon-btn" id="gfx-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
   <div class="gfx-list" id="gfx-list" role="radiogroup" aria-labelledby="gfx-title"></div>

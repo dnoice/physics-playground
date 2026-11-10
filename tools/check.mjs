@@ -104,6 +104,7 @@ else {
     for (const g of (s.match(/\n {2}groups: \[([\s\S]*?)\n {2}\],/) || [, ''])[1].matchAll(/icon: '([a-z0-9_]+)'/g)) used.add(g[1]);
   }
   for (const glyph of ['expand_more', 'tune', 'restart_alt']) used.add(glyph); // the section header, fallback section and reset glyphs in panel.js
+  for (const glyph of ['unfold_less', 'unfold_more']) used.add(glyph); // the deck size button's two glyphs, swapped in deck.js
   const icons = readFileSync(join(ROOT, 'js/core/icons.js'), 'utf8');
   const block = name => (icons.match(new RegExp(`export const ${name} = ([\\s\\S]*?);\\n`)) || [, ''])[1];
   for (const m of block('ICON').matchAll(/:\s*'([a-z0-9_]+)'/g)) used.add(m[1]);

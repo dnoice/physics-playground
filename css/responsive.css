@@ -59,6 +59,8 @@
   .tile-inspector { max-height: 680px; }
   .tile-deck { height: 320px; }
   .bento.deck-tall .tile-deck { height: 460px; }
+  .bento.deck-compact .tile-deck { height: 136px; }
+  .bento.deck-sized .tile-deck { height: var(--bay-px); }
 }
 @media (max-width: 760px) {
   .bento { padding: 0 6px 6px; gap: 6px; }

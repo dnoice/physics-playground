@@ -208,6 +208,7 @@ export const fields = {
     return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', `${Math.hypot(this.vx[i], this.vy[i]).toFixed(0)} px/s`, 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? `${(Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)).toFixed(0)} px` : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
   deselect() { this.picked = false; },
+  inspectHint: 'With the Move tool, click a test particle to chart and inspect it here.',
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
   retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },
   energyOf(i) { const ke = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2), pe = this.qm[i] * this.Vat(this.x[i], this.y[i]); return { ke, pe, et: ke + pe }; },
