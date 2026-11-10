@@ -65,6 +65,11 @@
     alt="Physics Playground: seven live physics labs in one browser workspace">
 </h1>
 
+<div align="center">
+**[Open the live lab][demo]** ✦ [Quick start](#quick-start) ✦
+[The labs](#the-labs) ✦ [Deploying](#deploying-to-github-pages) ✦
+[Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
+</div>
 
 
 ![The Physics Playground workspace in 3D: the Gravity lab's star system on
@@ -80,10 +85,6 @@ controls](docs/media/hero-workspace.webp)
 [![Pages workflow status][badge-pages]][pages-workflow]
 [![Release 2.4.1][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
-
-**[Open the live lab][demo]** ✦ [Quick start](#quick-start) ✦
-[The labs](#the-labs) ✦ [Deploying](#deploying-to-github-pages) ✦
-[Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
 
 **Seven live physics labs in one browser workspace.**<br>
 Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
