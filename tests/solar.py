@@ -175,6 +175,8 @@ with sync_playwright() as p:
     # ---- Display: the date, the softening, the hover readout, moons hidden in their planet, the switches
     pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(300)
     note = pg.evaluate(f"[{G}.timeNote(0), {G}.timeNote(4.5)]")
+    # The chip refreshes every 0.1 s of frame time; after a long in-page computation, wait for the reloaded run's.
+    settle(pg, "document.getElementById('hud-time').textContent.startsWith('t = 0.00 s')", 8000)
     clock = pg.inner_text("#hud-time")
     ok("sol_clock_reads_the_date", note[0].endswith("Jan 2000") and note[1].endswith("Jan 2001") and "Jan 2000" in clock, (note, clock))
     soft = [pg.inner_text("#ctl-gravity-soft-out")]
