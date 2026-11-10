@@ -18,7 +18,8 @@
       glass tokens. Then, on Dennis's further call, the thumbwheel dials that
       replace the sliders (dial.js), random placement (the random capability,
       the rail's dice and planet types) and a note on why the glass is drawn
-      without a blur.
+      without a blur. A convention keeps tiles and repainting cards cheap to
+      draw.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
       interaction model (each region's job and the capabilities it reads), the
       deck and Inspect, and the unit systems; the lab contract gains views,
@@ -474,7 +475,7 @@ The stylesheets load in this order, each building on the last:
 
 | File | Holds |
 | --- | --- |
-| `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass and sheen tokens (opaque tiles, no backdrop blur: blurred or translucent tiles halved the frame rate without a GPU) |
+| `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass tokens (opaque tiles in one plain-colour gradient with the sheen as an inset shadow; see Conventions) |
 | `icons.css` | Material Symbols styling and tab glyph animations |
 | `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their card grid, switches, the player bar's native sliders |
@@ -586,5 +587,11 @@ picture.
 - Dates are written MM/DD/YYYY.
 - `npm run verify` (lint, check, site) and `npm test` pass before a
   release; the Pages workflow runs the same verify gate on every push.
+- Tiles, and anything inside them that repaints as the readings change
+  (gauges, Inspect rows), keep their backgrounds cheap: one gradient layer,
+  no backdrop blur, and plain hex or rgba stops. A `color-mix()` stop makes
+  the browser interpolate the gradient in Oklab, off its fast path, and was
+  measured at about a tenth of the frame rate without a GPU. Static cards
+  may use `color-mix()` freely.
 
 <!-- ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once! -->

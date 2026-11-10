@@ -152,13 +152,20 @@ placement in every lab that places things, and new parameters.
 - The tiles are opaque and unblurred. A backdrop blur, translucency and a
   diagonal sheen were measured at under half the frame rate where the page is
   drawn without a GPU (5 fps against 11 for 2.4.1 in the test browser), for a
-  difference the soft light behind them barely showed.
+  difference the soft light behind them barely showed. Each tile is one
+  gradient with its sheen as an inset shadow, and the tiles, gauges and
+  Inspect rows use plain-colour stops: a `color-mix()` stop sends the
+  gradient through Oklab interpolation, which cost another tenth of the frame
+  rate. The page now draws as fast as 2.4.1.
 
 ### Fixes in this release
 
 - The site check (`npm run site`) read the `url(#n)` filter reference inside
   the grain's inline SVG as a missing file; quoted CSS `url()` values are now
   read whole.
+- Choosing a tool or view, by key, rail or card, marks the Guide's cards at
+  once instead of at the next panel refresh, which could lag by a second
+  where frames are slow.
 
 ### New test suites
 

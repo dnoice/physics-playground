@@ -15,7 +15,8 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
       call for random placement, a lab that declares random gets a dice under
       its tools that turns it on and off; it stays in step with the Controls
-      switch and the Guide's card.
+      switch and the Guide's card. Choosing a tool or a view also marks the
+      Guide's cards at once.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tools and
       views are separate radio groups on the rail, each with the full keyboard
       contract: the checked option is the one tab stop, arrows move and
@@ -54,6 +55,7 @@ import { icon } from '../core/icons.js';
 import { $, coarsePointer, el } from '../core/util.js';
 import { is3D } from './camera.js';
 import { updateNav } from './navigator.js';
+import { syncGuide } from './guide.js';
 import { setParam } from './lifecycle.js';
 import { refreshEnabled } from './panel.js';
 import { ptr } from './stage.js';
@@ -116,7 +118,7 @@ export function selectDock(id) {
   active.p[d.key] = id;
   if (active.onParam) active.onParam(d.key, id);
   if (ptr.panMode) { ptr.panMode = false; updateNav(); }
-  updateDock(); refreshEnabled();
+  updateDock(); refreshEnabled(); syncGuide();
   announce(`${d.options.find(x => x.id === id).label} tool`);
 }
 /* A view changes only what is drawn: the run, its history and its trails carry on. */
@@ -125,7 +127,7 @@ export function selectView(id) {
   if (active.p[v.key] === id) { updateDock(); return; }
   active.p[v.key] = id;
   if (active.onParam) active.onParam(v.key, id);
-  updateDock(); refreshEnabled(); updateNav();
+  updateDock(); refreshEnabled(); updateNav(); syncGuide();
   announce(`${o.label} view`);
 }
 /* V steps through a lab's views; a lab with none leaves the key to its tools. */

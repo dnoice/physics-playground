@@ -16,9 +16,9 @@
       gets its light on Dennis's call for sheen, texture and glass: a fine
       grain and soft cool, warm and violet washes behind everything, and
       tokens for the tiles' glass, their sheen and a card highlight. The tiles
-      are drawn without a backdrop blur or translucency: measured without a
-      GPU, those halved the frame rate for a difference the soft light behind
-      them barely showed.
+      are opaque, in one gradient with plain hex stops and the sheen as an
+      inset shadow: blur, translucency, extra layers and color-mix() stops
+      were each measured to slow the page where it is drawn without a GPU.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
       grid gains a third row for the colophon.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A darker
@@ -33,9 +33,9 @@
     - Colour, type, spacing and radius tokens for the console.
     - The page background: grain over layered gradient light, fixed while the
       page scrolls.
-    - Glass tokens, all cheap to paint: the tiles' fill with a faint cool
-      light at the top, the sheen along their top edge, and a highlight for
-      cards inside them.
+    - Glass tokens, all cheap to paint: the tiles' one-layer fill with a faint
+      cool light at the top, the warm sheen along their top edge as an inset
+      shadow, and a highlight for cards inside them.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -71,12 +71,14 @@
   --radius: 16px;
   --pad: 16px;
   --well: color-mix(in oklab, var(--ink) 72%, var(--bench));
-  --tile-shadow: 0 1px 0 color-mix(in oklab, white 5%, transparent) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-  /* Glass, kept cheap: the tiles stay opaque, with a faint cool light at the top and a sheen along the top edge.
-     Translucent, blurred or diagonally lit tiles were measured at half the frame rate where the page is drawn
-     without a GPU, for a difference the soft light behind them barely shows. */
-  --glass-tile: linear-gradient(180deg, color-mix(in oklab, var(--tile-hi) 94%, var(--cyan)), var(--tile) 220px);
-  --sheen: linear-gradient(90deg, transparent 4%, color-mix(in oklab, white 14%, transparent) 30%, color-mix(in oklab, var(--amber) 16%, transparent) 62%, transparent 96%) top / 100% 1px no-repeat;
+  --tile-shadow: inset 0 1px 0 rgba(255, 228, 186, 0.11), 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  /* Glass, kept cheap: an opaque tile in one gradient layer, with a faint cool light at the top, and a warm sheen
+     along its top edge drawn as an inset shadow (--tile-shadow). Translucent, blurred or diagonally lit tiles were
+     measured at half the frame rate where the page is drawn without a GPU, and every extra layer cost a few per
+     cent more, for a difference the soft light behind them barely shows. The stops are plain hex (#17232d is
+     --tile-hi with 5% of --cyan): a color-mix() stop makes the browser interpolate the gradient in Oklab, off
+     its fast path, which cost about a tenth of the frame rate on tiles that repaint as the readings change. */
+  --glass-tile: linear-gradient(180deg, #17232d, #0e131b 200px);
   --card-sheen: inset 0 1px 0 color-mix(in oklab, white 4.5%, transparent);
   /* A faint film grain, so the large dark areas read as a surface rather than a void. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

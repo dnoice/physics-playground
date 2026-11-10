@@ -17,7 +17,8 @@
       Inspect figures' sparklines and focus chart, and the sheen on gauges and
       the deck tabs. The Guide's Random card reads On or Off and is dashed
       while off; the Math page's parameters are compact dials in an
-      auto-filling grid.
+      auto-filling grid. Gauges and Inspect rows draw their top light in one
+      gradient of plain rgba stops, since they repaint with every reading.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
       the deck's panes, segmented tabs, resize grip and short mode, the
       Inspect card with plottable figures, primary and derived gauges, and
@@ -78,7 +79,7 @@
 /* Each figure is a small read-only gauge; the chart button plots it under Telemetry in the object's own colour. */
 .details-rows { grid-column: 2; grid-row: 1; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
 /* A figure: name, value and the sparkline of its history; the whole tile focuses it, the chart button plots it. */
-.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, white 2.5%, transparent), transparent 30px), color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
+.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.7), rgba(12, 17, 24, 0.7) 30px); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
 .drow:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .drow.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
 .drow.focus { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 60%, transparent), 0 0 18px -8px color-mix(in oklab, var(--cyan) 60%, transparent); }
@@ -159,7 +160,9 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .scoping .caption { display: none; }
 .readouts { margin: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(158px, 1fr); gap: 8px; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 1px; }
 .readouts::-webkit-scrollbar { display: none; }
-.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 30px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: linear-gradient(180deg, color-mix(in oklab, white 2.5%, transparent), transparent 36px), color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: box-shadow 0.15s, background 0.15s; }
+/* Gauges and Inspect rows repaint with every reading, so their top light is one gradient in plain rgba stops
+   (see --glass-tile in tokens.css for why). */
+.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 30px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.7), rgba(12, 17, 24, 0.7) 36px); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: box-shadow 0.15s, background 0.15s; }
 .gauge:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .gauge.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
 .gauge dt { grid-column: 1 / -1; color: var(--muted); font-size: 12px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

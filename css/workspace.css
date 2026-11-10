@@ -14,8 +14,8 @@
 ✒ Changelog:
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tiles take
       the glass look over the page's light: a faint cool light at the top and
-      a sheen along the top edge, drawn as background layers so that no extra
-      layer is painted per tile.
+      a warm sheen along the top edge, drawn as one background layer and an
+      inset shadow so that a tile costs no more to paint than before.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
       custom deck heights join the tall one, set through --bay.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -91,10 +91,11 @@
 .bento.focus { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage"; }
 .bento.focus .tile:not(.tile-stage) { display: none; }
 
-/* The sheen is the top background layer, so no extra layer is painted per tile (see --glass-tile in tokens.css). */
+/* One background layer and the sheen as an inset shadow, so a tile costs no more to paint than before (see
+   --glass-tile in tokens.css). */
 .tile {
   min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); overflow: hidden;
-  background: var(--sheen), var(--glass-tile);
+  background: var(--glass-tile);
   border: 0; border-radius: var(--radius); outline: 1px solid var(--hair); outline-offset: -1px;
   box-shadow: var(--tile-shadow); container: tile / inline-size; animation: tile-in 0.42s var(--ease) both;
 }
@@ -107,7 +108,7 @@
 .tile-meta { margin-left: auto; font: 400 11px/1 var(--font-mono); color: var(--muted); }
 /* A soft shadow at the bottom edge shows there is more to scroll; the local layer rides over it at the end of the content. */
 .tile-body {
-  background: linear-gradient(transparent, color-mix(in oklab, var(--tile) 92%, transparent) 70%) center bottom / 100% 30px no-repeat local, radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.55), transparent) center bottom / 100% 13px no-repeat scroll;
+  background: linear-gradient(transparent, var(--tile) 70%) center bottom / 100% 30px no-repeat local, radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.55), transparent) center bottom / 100% 13px no-repeat scroll;
   min-height: 0; overflow: auto; padding: var(--pad); overscroll-behavior: contain; line-height: 1.6; }
 .tile-body p, .tile-body li { text-wrap: pretty; }
 .tile-body sub, .tile-body sup { line-height: 0; }
