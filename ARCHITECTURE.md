@@ -217,6 +217,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
 | `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
 | `primary` | The primary readouts, which lead with larger figures: a list of labels, or a count of leading rows (default 2). A readout row may also end with its tier, `'primary'` or `'derived'` |
+| `hudClear` | Boxes in stage pixels (`{ l, t, r, b }`) of what the lab drew this frame and the head-up display's callout should keep off, such as Gravity's names beside bodies; the callout counts covering one as it counts covering the tape |
 | `hud`, `hudTarget(three)` | The head-up display: `hud` lists the readouts its tape carries as `[label, short name]` pairs (default: the primary readouts under their own names); `hudTarget` returns the inspected object's `{ x, y, r }` in stage pixels for the current mode, or null, so the target box sits on it as drawn (see Head-up display below) |
 
 ## The 3D mode
@@ -405,7 +406,8 @@ the same figures) and never clickable.
   callout takes the inspected name, kind and three figures (the `focus` one
   first). Its corner is chosen from eight positions around the box, each
   clamped into the free part of the stage and scored by what it would cover:
-  the object most, then the tape, the lights and the overview map.
+  the object most, then the tape, the lights, the overview map, and the
+  lab's `hudClear` boxes, such as Gravity's names.
 - **Settings**: the HUD menu in the top bar and Shift+H. On or off, opacity in
   four steps (40, 60, 80, 100 %) and each part on or off, kept per browser
   under `psp:hud`; `PhysicsPlayground.hud` reads and sets them for tests.
@@ -565,7 +567,8 @@ state of any scene can carry the same metadata.
     depth-tested ribbon, so planets hide what is behind them.
   - `drawNames` places names by rank: the followed body, the Sun, planets,
     dwarfs and comets, then moons by mass. A name that would overlap one
-    already placed is left out.
+    already placed is left out. The names drawn, with their bodies, are the
+    lab's `hudClear`, so the head-up display's callout keeps off them.
 
 ## Guided experiments
 

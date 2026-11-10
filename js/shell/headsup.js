@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Head-Up Display (digiSpace Edition - v2.7)
+    - Title: Head-Up Display (digiSpace Edition - v2.8)
     - File Name: headsup.js
     - Relative Path: js/shell/headsup.js
     - Artifact Type: javascript
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The callout
+      also keeps off what the lab drew and asks to keep visible, its hudClear
+      boxes, such as Gravity's names beside bodies in the Solar System.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for a cockpit-style head-up display, so the run's numbers
       sit on the stage instead of pulling the eye away from it: a readings
@@ -175,9 +178,10 @@ function hideTarget() {
 }
 const overlap = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
 /* The callout's corner. Each quarter around the box, then each side, is clamped into the free part of the stage and
-   scored by what it would still cover: the object itself counts most, then the tape, lights and map; the first
-   quarter, up and to the right, wins a tie. */
-function placeCard(x, y, half) {
+   scored by what it would still cover: the object itself counts most, then the tape, lights and map, and anything
+   the lab has drawn and asks to keep clear (hudClear: names beside bodies); the first quarter, up and to the right,
+   wins a tie. */
+function placeCard(x, y, half, clear) {
   const g = 22, w = cardW, h = cardH, S = safe, aim = { l: x - half - 4, t: y - half - 4, r: x + half + 4, b: y + half + 4 };
   const tries = [[x + half + g, y - half - g - h], [x + half + g, y + half + g], [x - half - g - w, y - half - g - h], [x - half - g - w, y + half + g],
     [x + half + g, y - h / 2], [x - half - g - w, y - h / 2], [x - w / 2, y - half - g - h], [x - w / 2, y + half + g]];
@@ -186,6 +190,7 @@ function placeCard(x, y, half) {
     const cx = clamp(tx, S.l, Math.max(S.l, S.r - w)), cy = clamp(ty, S.t, Math.max(S.t, S.b - h)), box = { l: cx, t: cy, r: cx + w, b: cy + h };
     let k = 6 * overlap(box, aim) + Math.hypot(cx - tx, cy - ty);
     for (const b of blocks) k += overlap(box, b);
+    if (clear) for (const b of clear) k += overlap(box, b);
     if (k < score - 1e-6) { score = k; best = [cx, cy]; }
   }
   return best;
@@ -206,7 +211,7 @@ export function trackHud(lab) {
   }
   if (off !== T.off) { tgt.classList.toggle('off', off); T.off = off; }
   if (!info || card.hidden || !safe) { if (L.k) { lead.hidden = true; L.k = ''; } return; }
-  const [cx, cy] = placeCard(x, y, half);
+  const [cx, cy] = placeCard(x, y, half, lab.hudClear);
   if (!C.shown || Math.abs(cx - C.x) > 0.25 || Math.abs(cy - C.y) > 0.25) {
     card.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`; C.x = cx; C.y = cy;
     if (!C.shown) { card.style.visibility = ''; C.shown = true; }

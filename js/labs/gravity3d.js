@@ -17,7 +17,7 @@
       the Kuiper belt; bodies keep their own pixel floor; a moon inside its
       planet's disc is hidden and cannot be picked (apart3); the near plane
       follows the camera in to a moon; names in the overlay, and the hover
-      readout names the body.
+      readout names the body. The 3D names are the hudClear too.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Throws and
       drops in 3D place the body drawn for the throw, random or set, and the
       preview shows its colour and size.
@@ -169,6 +169,7 @@ export const gravity3d = {
      the world scene, where planets can hide them. */
   overlay3(g, w, h) {
     const tb = this.tracked3(), a = this.aim, sT = tb && this.project3(tb.x, tb.y, tb.z);
+    this.hudClear = null;
     if (this.p.labels) {
       const names = [];
       for (const b of this.bodies) {

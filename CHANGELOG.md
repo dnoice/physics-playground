@@ -122,7 +122,10 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
 - **Orbits and Names** switches under Display:
   - each named body's present (osculating) ellipse about what it circles,
     drawn in 3D as ribbons that a planet can hide;
-  - names placed so that a moon's never covers its planet's.
+  - names placed so that a moon's never covers its planet's;
+  - the head-up display's callout keeps clear of the names, through a new
+    lab hook, `hudClear`, the boxes of what a lab drew and wants left
+    visible.
 - **Readouts**:
   - Inspect names what a body circles ("Distance from Jupiter", "Bound to
     the Sun"), gives its real radius, and measures its tilt from the

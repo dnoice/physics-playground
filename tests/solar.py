@@ -36,8 +36,8 @@
     - Rewind and saved states keep every name, moon link, radius and floor.
     - Display: the date beside the clock, the softening in significant
       figures, the names in the hover readout, moons hidden inside their
-      planet until a zoom draws them apart, and the Orbits and Names
-      switches.
+      planet until a zoom draws them apart, the head-up display's callout
+      clear of the names, and the Orbits and Names switches.
     - Speed: when the run falls behind, the offered fix removes the belts'
       unnamed bodies and keeps every moon.
     - 3D: the first frame reaches Saturn, the near plane follows the camera
@@ -189,6 +189,13 @@ with sync_playwright() as p:
       const z1 = L.viewXf.z, near = L.apart(io, z1), o = L.viewXf, pick2 = L.bodyAt({{ x: io.x * z1 + o.ox, y: io.y * z1 + o.oy }}, 4);
       return {{ far, picked: pick && pick.name, near, picked2: pick2 && pick2.name, z0, z1 }}; }})()""")
     ok("sol_moon_hidden_in_planet_until_apart", hid["far"] is False and hid["picked"] != "Io" and hid["near"] is True and hid["picked2"] == "Io", hid)
+    # Still on Jupiter with its moons named: the head-up display's callout sits clear of every name drawn.
+    clear = pg.evaluate(f"""(async () => {{ const L = {G}; await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const s = document.getElementById('stage').getBoundingClientRect(), c = document.getElementById('hu-card').getBoundingClientRect();
+      const box = {{ l: c.left - s.left, t: c.top - s.top, r: c.right - s.left, b: c.bottom - s.top }}, N = L.hudClear || [];
+      const hit = N.filter(q => Math.min(q.r, box.r) > Math.max(q.l, box.l) && Math.min(q.b, box.b) > Math.max(q.t, box.t)).length;
+      return {{ names: N.length, hit, shown: getComputedStyle(document.getElementById('hu-card')).visibility }}; }})()""")
+    ok("sol_hud_callout_clear_of_names", clear["names"] >= 3 and clear["hit"] == 0 and clear["shown"] == "visible", clear)
     fix = pg.evaluate(f"""(() => {{ {HELP} const f = L.perfFixes(); f[0].run(); L.computeAcc();
       return {{ labels: f.map(q => q.label), n: L.bodies.length, named: {NAMED!r}.every(n => by(n)), tests: L.tests.length, moons: L.moons.length }}; }})()""")
     ok("sol_speed_fix_keeps_every_named_body", fix == {"labels": ["Remove the 214 belt bodies"], "n": 33, "named": True, "tests": 2, "moons": 17}, fix)

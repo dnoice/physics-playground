@@ -19,7 +19,8 @@
       the north; bodies drawn at real size above a pixel floor, a moon hidden
       in its planet until a zoom parts them; the Orbits and Names switches;
       the date on the clock; and a speed fix that removes the belts and keeps
-      the moons.
+      the moons. The names drawn are its hudClear, which the head-up display's
+      callout keeps off.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: bodies, energy, drift and virial ratio on its tape, and the
       followed body as its target, in 2D and 3D.
@@ -812,11 +813,13 @@ export const gravity = {
     const rank = b => (b.id === this.track ? 0 : b.kind === 'star' ? 1 : major(b) ? 2 : b.host ? 4 : 3);
     list.sort((p, q) => rank(p[0]) - rank(q[0]) || q[0].m - p[0].m);
     const taken = [];
+    // The names drawn, with their bodies, are what the head-up display's callout keeps off (hudClear).
+    this.hudClear = [];
     for (const [b, X, Y, R] of list) {
       // A star's name stands clear of its glow.
       const x = X + (b.kind === 'star' ? R * 1.7 : R) + 4, y = Y - Math.min(R, 6) - 2, l = x - 2, r = x + g.measureText(b.name).width + 2, t = y - 7, d = y + 7;
       if (taken.some(q => l < q[2] && r > q[0] && t < q[3] && d > q[1])) continue;
-      taken.push([l, t, r, d]);
+      taken.push([l, t, r, d]); this.hudClear.push({ l: X - R - 2, t, r, b: d });
       g.fillStyle = major(b) ? 'rgba(232,238,246,0.86)' : 'rgba(176,190,206,0.74)';
       g.fillText(b.name, x, y);
     }
@@ -832,7 +835,7 @@ export const gravity = {
       cam.x += (cx / M - cam.x) * 0.25; cam.y += (cy / M - cam.y) * 0.25;
     }
     const z = cam.z, ox = w / 2 - cam.x * z, oy = h / 2 - cam.y * z;
-    this.viewXf = { ox, oy, z };
+    this.viewXf = { ox, oy, z }; this.hudClear = null;
     g.fillStyle = THEME.ink; g.fillRect(0, 0, w, h);
     g.fillStyle = '#cfd8e3';
     for (const s of this.stars) { g.globalAlpha = s.a; g.fillRect(s.x * w, s.y * h, s.s, s.s); }
