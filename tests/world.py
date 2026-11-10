@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.4)
+    - Title: 3D Mode Test (digiSpace Edition - v2.7)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.4.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The pick
+      round trip in Collisions uses the Heat tool, which picks the table: the
+      Grab tool picks the balls' spheres first, so a ball drifting under the
+      test point was hit on its surface, a radius off, which failed the check
+      now and then since 2.4.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Deck checks
       use the Insights pane and the size button; the Details card is checked
       in the Inspect pane; the orbital period is checked in simulated seconds
@@ -123,8 +128,13 @@ with sync_playwright() as p:
     for lab in PLANES:
         pg.evaluate(f"{P}.select('{lab}')"); settle(pg, IS3D, 20000); pg.wait_for_timeout(300)
         pg.evaluate(f"{P}.view.orbit(70, -30)"); pg.wait_for_timeout(200)
+        # Collisions' Grab tool picks the balls' spheres before the table, so a ball drifting under the point would
+        # be hit on its surface, a radius off; this check is about the table, so it uses a tool that picks the table.
+        if lab == "collisions": pg.evaluate(f"{P}.tool('heat')")
         err = pg.evaluate("""(() => { const L = PhysicsPlayground.active, W = L.plane3(), x = W.cx * 0.3, y = W.cy * 1.6, s = L.project3(x, y, L.lift3 ? L.lift3(x, y) : 0), q = s && L.pick3(s); return q ? Math.hypot(q.x - x, q.y - y) : 1e9; })()""")
         ok(f"{lab}_pick_round_trip", err < 2.5 / pg.evaluate("Math.min(1, PhysicsPlayground.active.plane3().k * 96)"), round(err, 3))
+        # Back to Grab, which the checks below rely on: with it, a click on the table adds a ball.
+        if lab == "collisions": pg.evaluate(f"{P}.tool('grab')")
 
     # The camera.
     pg.evaluate(f"{P}.select('waves')"); settle(pg, IS3D); pg.wait_for_timeout(300)
