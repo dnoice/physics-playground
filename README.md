@@ -65,10 +65,7 @@
     alt="Physics Playground: seven live physics labs in one browser workspace">
 </h1>
 
-<div align="center">
 
-**Seven live physics labs in one browser workspace.**<br>
-Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
 
 ![The Physics Playground workspace in 3D: the Gravity lab's star system on
 the stage with the stage rail at its top right, the player bar beneath it,
@@ -84,7 +81,15 @@ controls](docs/media/hero-workspace.webp)
 [The labs](#the-labs) ✦ [Deploying](#deploying-to-github-pages) ✦
 [Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
 
+---
+
+<div align="center">
+
+**Seven live physics labs in one browser workspace.**<br>
+Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
 </div>
+
+---
 
 Physics Playground is an interactive physics laboratory in the browser.
 Seven live simulations share one workspace, one capture system and one set
