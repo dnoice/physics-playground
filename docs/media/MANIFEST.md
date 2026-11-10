@@ -87,7 +87,8 @@ change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
 The Solar System pair was captured from release 2.8.0 on 11/10/2026 in the
-same way, two months into the run. The hero and the Collisions picture were
+same way, about five months into the run (the scene also runs while the page
+boots). The hero and the Collisions picture were
 captured from release 2.7.0 on
 11/10/2026, headless in software WebGL on four CPU cores, in metric units,
 so they show the head-up display: its readings tape in both, and in
@@ -109,7 +110,7 @@ banner, which shows no interface, from release 2.3.0.
 | `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the Both view (the pendulum beside its phase map), 9 s in, with a start previewed on the map | Lab gallery |
 | `lab-cloth.webp` | 1106 × 610 | Cloth, Flag in wind, 4 s in | Lab gallery |
 | `lab-fields.webp` | 1106 × 610 | Fields, Cyclotron motion, 3 s in | Lab gallery |
-| `sol-system.webp` | SOLDIMS | Gravity, Our Solar System in 3D, as a pair: the Sun, the planets out to Saturn, Halley's comet and the asteroid belt with their orbits and names, 0.75 simulated seconds (about two months) in; then Jupiter followed up close, its large moons on their orbits, with the head-up display's target box and callout on the planet | "Our Solar System" |
+| `sol-system.webp` | 1396 × 420 | Gravity, Our Solar System in 3D, as a pair: the Sun, the planets out to Saturn, Halley's comet and the asteroid belt with their orbits and names, 163 days in (June 2000); then Jupiter followed up close in September 2000, Callisto and Ganymede named on their orbits, with the head-up display's target box and callout on the planet, clear of the names | "Our Solar System" |
 | `modes-2d-3d.webp` | 1472 × 420 | Waves, Double slit, 6 s in and paused, in 2D and then in 3D at the same moment | "Two modes: 2D and 3D" |
 
 Gravity is not in the gallery because the hero already shows it; its Solar

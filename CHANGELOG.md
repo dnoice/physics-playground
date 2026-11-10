@@ -152,7 +152,7 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
 
 ### Tests
 
-- New `tests/solar.py` (26 checks):
+- New `tests/solar.py` (27 checks):
   - the scene's bodies, its moons' links and substeps, and its sources and
     test bodies;
   - orbits and tilts from the elements;
@@ -161,8 +161,8 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
     Trojans and nothing lost;
   - names, moons and floors through rewind and a saved state, and a
     tampered state's metadata checked;
-  - the date, the softening readout, the hover names, the hidden moons and
-    the switches;
+  - the date, the softening readout, the hover names, the hidden moons, the
+    head-up display's callout clear of the names, and the switches;
   - the speed fix;
   - in 3D: the first frame, the orbits in the scene, moons appearing when
     apart, the target box and the near plane.

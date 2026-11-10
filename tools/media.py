@@ -334,8 +334,9 @@ def capture_modes(st):
 
 
 def capture_sol(st):
-    """Gravity's Solar System in 3D: the planets out to Saturn two months in, then Jupiter followed close enough that
-    its moons stand clear of it, with the head-up display's target box and callout on the planet."""
+    """Gravity's Solar System in 3D: the planets out to Saturn a few months in (the run also ticks while the page
+    boots), then Jupiter followed close enough that its moons stand clear of it, with the head-up display's target
+    box and callout on the planet."""
     log('Gravity: Our Solar System')
     pg = st.app('gravity')
     st.run(pg, 'sol', 0.75)
