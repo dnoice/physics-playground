@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.6)
+    - Title: Changelog (digiSpace Edition - v2.7)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.7.0 release.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.6.0 release.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -55,6 +57,64 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.7.0 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A head-up display over the stage, on Dennis's call: the stage is the biggest
+thing on the page, but reading any number meant looking away from it, to the
+deck below or the inspector beside it. Now the numbers that matter sit on the
+run itself, like a cockpit HUD, in thin phosphor-cyan lines at an opacity of
+his choosing.
+
+### Head-up display
+
+- **Readings tape** down the left edge (`js/shell/headsup.js`): four key
+  readings per lab under short names (Gravity's energy, drift and virial
+  ratio, Collisions' kinetic energy, RMS speed and PA / NkT, and so on), each
+  with a trend arrow and a short trace from the same samples Telemetry keeps.
+  The text is the very text Telemetry shows at the same tick: one reading of
+  the lab feeds both. States keep their colours: amber for warn, red for crit.
+- **Caution lights** near the top: the warnings and critical notices by
+  title, two on a wide stage and one on a narrow one, with a count of the
+  rest; a critical light's marker blinks unless reduced motion is asked for.
+  They step down when an experiment's banner is showing.
+- **Target box and callout**: selecting an object (a body, a ball, a post, a
+  source, a pendulum or a particle) puts a corner-bracket box on it that
+  follows it each frame, in 2D and 3D, with a leader to a callout of its name,
+  kind and three figures, the one the lab follows first. The callout picks
+  the free side of the box, keeping off the object, the tape, the lights and
+  the overview map; an object off the stage gets a dashed box waiting at the
+  nearest edge. Each lab reports where its object is drawn with `hudTarget()`.
+- **HUD menu** in the top bar, beside Graphics and Units: on or off, opacity
+  at 40, 60, 80 or 100 %, and each part on or off, remembered per browser.
+  **Shift+H** shows or hides the display from anywhere, ahead of the tool
+  letters, so a lab whose tool is H keeps it on the plain key. The keyboard
+  sheet lists it.
+- The display is one layer under every control and never takes a click; it
+  is hidden from screen readers, which get the same figures from Telemetry,
+  Insights and Inspect.
+- On a phone the tape slims, the callout keeps two figures and one caution
+  light shows with its count; a short stage keeps two readings.
+
+### Frame rate
+
+- Every part of the display is its own compositor layer and carries its own
+  opacity. Measured without a GPU: opacity on the whole stage-sized display
+  cost 6 to 9 % of the frame rate; the tape painted together with the status
+  chips, which tick ten times a second, about 5 %; the target box without its
+  own layer, 16 %. As shipped the display costs 1.4 to 3.3 % (Gravity 3D,
+  Collisions, Fluid, over six alternating rounds). No backdrop blur is used;
+  ARCHITECTURE.md records the convention.
+
+### Tests
+
+- New `tests/hud.py` (21 checks): the tape against Telemetry in all seven
+  labs, the target box on the object in six labs in 2D and in Gravity in 3D,
+  the off-stage box, a caution light by title, the menu's opacity steps and
+  parts, Escape, Shift+H and its tool letter, settings across a reload, the
+  keyboard sheet, and the phone layout. `run_all.py` runs it.
 
 ## 2.6.0 (11/10/2026)
 
