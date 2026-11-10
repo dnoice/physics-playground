@@ -51,7 +51,7 @@ import sys
 from harness import NOISE, URL
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace']
+SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook']
 TIMEOUT_S = 600
 
 

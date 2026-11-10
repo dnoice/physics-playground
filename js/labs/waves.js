@@ -393,7 +393,7 @@ export const waves = {
       ['Intensity here ⟨u²⟩', I.toFixed(3), 'The time-averaged intensity at its own cell.'],
     ];
     if (point && p.srcSpeed > 0) rows.push(['Speed', `${fmtQ(this, 'speed', p.srcSpeed * p.c)} ${s.dir > 0 ? 'right' : 'left'}`, 'Point sources move together at the Source speed setting.']);
-    return { id: `src-${s.id}`, kicker: point ? `Source ${k + 1} of ${pts.length}` : 'Line source', short: point ? `Source ${k + 1}` : 'Line source', title: point ? 'Point oscillator' : 'Plane-wave paddle', color: '#f2a541', rows,
+    return { id: `src-${s.id}`, focus: 'Driving now', kicker: point ? `Source ${k + 1} of ${pts.length}` : 'Line source', short: point ? `Source ${k + 1}` : 'Line source', title: point ? 'Point oscillator' : 'Plane-wave paddle', color: '#f2a541', rows,
       actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
   },
   deselect() { this.selSrc = null; },

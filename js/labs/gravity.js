@@ -355,7 +355,7 @@ export const gravity = {
         ['Orbit tilt', `${i.toFixed(1)}°`, 'The inclination: the angle between this orbit and the flat plane. Above 90° it runs backwards.'],
         ['Orbit status', bound ? `Bound to ${ref}` : `Escaping ${ref}`, `Whether this body has too little energy to leave ${ref}.`]);
     } else rows.push(['Radius of this body', fmtQ(this, 'len', b.r), 'The drawn and collision radius.'], ['Speed through space', fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz)), 'Nothing else is here to measure against.']);
-    return { id: b.id, kicker: `Body ${b.id} · camera following`, short: `Body ${b.id}`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
+    return { id: b.id, kicker: `Body ${b.id} · camera following`, short: `Body ${b.id}`, focus: rows[2] ? rows[2][0] : null, title, color: this.bodyColor3(b), spot: true, rows, actions: [
       { label: 'Release camera', run: () => this.deselect() },
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
     ] };

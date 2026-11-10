@@ -279,7 +279,7 @@ export const collisions = {
   inspect() {
     const i = this.picked; if (i < 0 || i >= this.n) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
-    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
+    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
   inspectHint: 'With the Grab tool, click a ball to inspect it here.',

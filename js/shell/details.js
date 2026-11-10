@@ -162,7 +162,8 @@ export function updateDetails(lab) {
     n.path.setAttribute('d', sparkPath(past.get(r[0])));
   });
   // Until the user picks one, the focus goes to the first figure that actually changes (a ball's mass never does).
-  if (!chosen) {
+  if (!chosen && info.focus && past.has(info.focus)) focus = info.focus;
+  else if (!chosen) {
     const moving = [...past].find(([, s]) => { if (s.n < 4) return false; let lo = Infinity, hi = -Infinity; for (let i = 0; i < s.n; i++) { const v = s.v[s.idx(i)]; lo = Math.min(lo, v); hi = Math.max(hi, v); } return hi - lo > Math.abs(hi) * 1e-6; });
     if (moving) focus = moving[0];
   }

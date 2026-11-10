@@ -55,7 +55,7 @@ export function buildGuide(lab) {
   if (lab.dock) {
     const list = el('div', { class: 'g-cards', role: 'group', 'aria-label': 'Pointer tools' }, ...lab.dock.options.map(o => {
       const b = el('button', { type: 'button', class: 'g-card', 'aria-pressed': 'false', html: `${icon(o.icon)}<span class="g-name">${o.label}</span><kbd>${o.key.toUpperCase()}</kbd><span class="g-hint">${o.hint || ''}</span>` });
-      b.addEventListener('click', () => selectDock(o.id));
+      b.addEventListener('click', () => { selectDock(o.id); syncGuide(); });
       cards.push({ b, on: () => lab.p[lab.dock.key] === o.id });
       return b;
     }));
@@ -64,7 +64,7 @@ export function buildGuide(lab) {
   if (lab.views) {
     const list = el('div', { class: 'g-cards', role: 'group', 'aria-label': 'Views' }, ...lab.views.options.map(o => {
       const b = el('button', { type: 'button', class: 'g-card', 'aria-pressed': 'false', html: `${icon(o.icon)}<span class="g-name">${o.label}</span><kbd>V</kbd><span class="g-hint">${o.tip || ''}</span>` });
-      b.addEventListener('click', () => selectView(o.id));
+      b.addEventListener('click', () => { selectView(o.id); syncGuide(); });
       cards.push({ b, on: () => lab.p[lab.views.key] === o.id });
       return b;
     }));

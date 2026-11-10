@@ -370,7 +370,7 @@ export const fluid = {
       if (d2 < flow) { nf++; sp += Math.hypot(this.vx[i], this.vy[i]) * s; }
     }
     const k = this.obs.indexOf(o) + 1;
-    return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, title: 'Steel post', color: '#56677c', rows: [
+    return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, focus: 'Liquid touching it', title: 'Steel post', color: '#56677c', rows: [
       ['Centre', fmtPos(this, o.x * U, o.y * U), 'Across and down from the tank\'s top-left corner.'],
       ['Radius', fmtQ(this, 'len', o.r * U), 'The post\'s size, which is also how far it pushes liquid back.'],
       ['Liquid touching it', `${touch} particles`, 'Particles within half a particle spacing of its surface right now.'],

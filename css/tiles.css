@@ -95,7 +95,7 @@
 .drow-plot[aria-pressed="true"] { opacity: 1; color: var(--series); }
 .details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; margin-left: -68px; }
 /* The focus chart takes the rest of the pane, so a tall deck shows the object's history instead of empty space. */
-.details-focus { grid-column: 2; grid-row: 2; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding-right: 34px; }
+.details-focus { grid-column: 2; grid-row: 2; align-self: stretch; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding-right: 34px; }
 .details-focus-cap { margin: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* The canvas fills a positioned box, so its own pixel size can never feed back into the layout. */
 .details-plot-wrap { position: relative; min-height: 70px; }
@@ -103,6 +103,8 @@
 .tile-deck.deck-short .details-focus { display: none; }
 .details-actions .btn { min-height: 30px; border-radius: 9px; font-size: 12.5px; }
 .details-actions:empty { display: none; }
+.details-how { margin: 10px 0 0 -68px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.tile-deck.deck-short .details-how { display: none; }
 .inspect-empty { display: flex; align-items: flex-start; gap: 12px; max-width: 640px; padding: 4px 2px; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
 .inspect-empty[hidden] { display: none; }
 .inspect-empty .ms { font-size: 22px; color: var(--amber); flex: none; }
@@ -141,7 +143,7 @@ body.resizing { cursor: ns-resize; user-select: none; }
 /* Too short for a plot: the readings stay, the plot and the timing strip go. */
 .tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
 .tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }
-.deck-inspect { display: grid; min-height: 0; }
+.deck-inspect { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
 .deck-insights { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .deck-insights .insights { align-content: start; }
 .deck-insights .insights:empty { display: grid; }
