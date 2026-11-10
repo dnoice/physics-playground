@@ -1,26 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.3)
+    - Title: Cloth Lab (digiSpace Edition - v2.4)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
+      wind and mesh spacing follow the chosen units, one pixel being 1.09 cm.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Setup, Forces, Fabric and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig, tool overlay and a stated visual relief; snapshots use
       Float64, and resizing no longer restarts the scene.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,6 +42,7 @@ import { genericState } from '../core/codec.js';
 import { RAMP_HEAT, THEME } from '../core/color.js';
 import { BLACK, WHITE, css, drawSphere, mixRgb } from '../core/draw.js';
 
+import { PX_M, fmtQ } from '../core/units.js';
 import { TAU, clamp } from '../core/util.js';
 
 import { camOf } from '../shell/camera.js';
@@ -75,6 +74,7 @@ export const cloth = {
     { id: 'pin', label: 'Pin', key: 'n', icon: 'pin', hint: 'Click a point to pin or free it' },
     { id: 'ball', label: 'Ball', key: 'b', icon: 'ball', hint: 'Drag the ball through the cloth to push and drape it' },
   ] },
+  units: { len: 'px', m: PX_M }, scaleNote: 'In Cloth one pixel is 1.09 cm, as in Fluid and Collisions: the default gravity of 900 px/s² is 9.81 m/s².',
   p: { tool: 'grab', gravity: 900, wind: 0, iters: 8, damping: 0.01, tearable: true, tear: 3, spacing: 14, fabric: true },
   presetId: 'curtain',
   presets: [
@@ -90,12 +90,12 @@ export const cloth = {
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
-    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²', group: 'forces' },
-    { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, unit: 'px/s²', note: 'Negative values blow to the left.', group: 'forces' },
+    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, qty: 'acc', group: 'forces' },
+    { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, qty: 'acc', note: 'The push of the wind on the cloth, as an acceleration. Negative values blow to the left.', group: 'forces' },
     { type: 'range', key: 'iters', label: 'Constraint iterations', min: 1, max: 24, step: 1, note: 'More iterations make the cloth stiffer.', group: 'fabric' },
     { type: 'range', key: 'damping', label: 'Damping', min: 0, max: 0.1, step: 0.001, group: 'forces' },
     { type: 'range', key: 'tear', label: 'Tear at stretch', min: 1.3, max: 6, step: 0.05, fmt: v => v.toFixed(2) + '× rest', group: 'fabric' },
-    { type: 'range', key: 'spacing', label: 'Mesh spacing', min: 8, max: 30, step: 1, unit: 'px', rebuild: true, group: 'setup' },
+    { type: 'range', key: 'spacing', label: 'Mesh spacing', min: 8, max: 30, step: 1, qty: 'len', rebuild: true, group: 'setup' },
     { type: 'toggle', key: 'tearable', label: 'Links can tear', group: 'fabric' },
     { type: 'toggle', key: 'fabric', label: 'Shaded fabric surface', group: 'display', short: 'Shaded fabric' },
   ],
@@ -342,6 +342,8 @@ export const cloth = {
     for (let i = 0; i < this.n; i++) g.fillRect(this.x[i] - r, this.y[i] - r, 2 * r, 2 * r);
   },
   pins() { let p = 0; for (let i = 0; i < this.n; i++) p += this.pin[i]; return p; },
+  // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
+  primary: ['Mean stretch', 'Peak stretch'],
   readouts() {
     const alive = this.aliveCount, mx = this.maxStretch * 100;
     return [
@@ -355,8 +357,8 @@ export const cloth = {
   },
   diagnose() {
     const out = [], mx = this.maxStretch, it = this.p.iters, forces = [];
-    if (this.p.gravity) forces.push(`gravity of ${this.p.gravity} px/s²`);
-    if (this.p.wind) forces.push(`wind of ${this.p.wind} px/s²`);
+    if (this.p.gravity) forces.push(`gravity of ${fmtQ(this, 'acc', this.p.gravity)}`);
+    if (this.p.wind) forces.push(`wind of ${fmtQ(this, 'acc', Math.abs(this.p.wind))}`);
     const fdesc = forces.length ? forces.join(' and ') : 'the forces on it';
     if (mx > 2 && !this.p.tearable) {
       out.push({ id: 'k-over', level: 'crit', title: 'The cloth is over-stretched', body: `Links are pulled to <b>${(1 + mx).toFixed(1)}×</b> their rest length. ${it} constraint iteration${it === 1 ? '' : 's'} per step cannot hold back ${fdesc}, and with tearing off the mesh can only stretch like rubber.${this.capped ? ' Some points are also hitting the per-step speed cap.' : ''}`,

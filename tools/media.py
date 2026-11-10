@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: README Media Capture (digiSpace Edition - v2.3)
+    - Title: README Media Capture (digiSpace Edition - v2.4)
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.3.1
+    - Version: 2.4.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Chaos is
+      captured in its Both view, which shows the pendulum beside its map.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Settles
       each picture on 0.6 s of frames instead of 1.2 s: the readouts refresh
       within 0.25 s, and every frame costs seconds in software WebGL. Fixed

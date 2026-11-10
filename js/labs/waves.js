@@ -1,26 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.3)
+    - Title: Waves Lab (digiSpace Edition - v2.4)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      Displacement and Intensity become the rail's Height and Intensity views;
+      any tool selects a source it lands on for the Inspect pane, which
+      removes it; lengths and speeds follow the chosen units at a ripple-tank
+      scale of 4 mm per cell.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Medium, Sources and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       global mode replaces Relief 3D; added the 3D rig and tool overlay;
       stronger absorbers and a resize that keeps the tank.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -45,6 +46,7 @@ import { genericState } from '../core/codec.js';
 import { RAMP_GLOW, RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing } from '../core/draw.js';
 import { FOV3 } from '../core/math3d.js';
+import { fmtPos, fmtQ, unitSystem } from '../core/units.js';
 import { TAU, clamp, rand } from '../core/util.js';
 import { view } from '../core/view.js';
 import { camOf } from '../shell/camera.js';
@@ -81,6 +83,8 @@ export const waves = {
     { id: 'source', label: 'Source', key: 's', icon: 'source', hint: 'Click to add an oscillating source · click a source to inspect it, and remove it from there' },
     { id: 'glass', label: 'Glass', key: 'g', icon: 'glass', hint: 'Drag to paint glass, where waves travel at c / n' },
   ] },
+  // A ripple-tank scale: one grid cell is 4 mm, so the default 60 cells/s is 24 cm/s, about the slowest real ripples.
+  units: { len: 'cells', m: 0.004 }, scaleNote: 'In Waves one grid cell is 4 mm, a ripple-tank scale: the default wave speed of 60 cells/s is 24 cm/s and a 2.5 Hz source sends out 9.6 cm waves.',
   p: { tool: 'pulse', view: 'disp', c: 60, f: 2.5, gain: 1, damp: 0.02, absorb: true, glassN: 1.6, srcSpeed: 0, phaseStep: 0, relief: 1 },
   presetId: 'double',
   presets: [
@@ -98,7 +102,7 @@ export const waves = {
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
-    { type: 'range', key: 'c', label: 'Wave speed c', min: 20, max: 120, step: 1, unit: 'cells/s', group: 'medium' },
+    { type: 'range', key: 'c', label: 'Wave speed c', min: 20, max: 120, step: 1, qty: 'speed', group: 'medium' },
     { type: 'range', key: 'f', label: 'Source frequency f', min: 0.5, max: 8, step: 0.1, unit: 'Hz', group: 'sources' },
     { type: 'range', key: 'phaseStep', label: 'Source phase step Δφ', min: -180, max: 180, step: 1, unit: '°', note: 'Each point source lags the one before it by Δφ.', group: 'sources' },
     { type: 'range', key: 'srcSpeed', label: 'Source speed', min: 0, max: 1.8, step: 0.01, fmt: v => v.toFixed(2) + '× c', group: 'sources' },
@@ -380,15 +384,15 @@ export const waves = {
     const age = this.time - s.t0, out = Math.min(1, age / 0.6) * Math.sin(TAU * p.f * age + phase);
     const cx = clamp(Math.round(s.x), 0, this.Nx - 1), cy = clamp(Math.round(point ? s.y : this.Ny / 2), 0, this.Ny - 1), I = this.inten[cy * this.Nx + cx];
     const rows = [
-      [point ? 'Position' : 'Line at', point ? `${s.x.toFixed(0)}, ${s.y.toFixed(0)} cells` : `x = ${s.x.toFixed(0)} cells`, 'Across and down from the tank\'s top-left corner, in grid cells.'],
+      [point ? 'Position' : 'Line at', point ? fmtPos(this, s.x, s.y) : `x = ${fmtQ(this, 'len', s.x)}`, 'Across and down from the tank\'s top-left corner.'],
       ['Frequency f', `${p.f.toFixed(1)} Hz`, 'Shared by every source; set it under Controls.'],
-      ['Wavelength λ = c/f', `${(p.c / p.f).toFixed(1)} cells`, 'The distance between crests this source sends out, in open water.'],
+      ['Wavelength λ = c/f', fmtQ(this, 'len', p.c / p.f), 'The distance between crests this source sends out, in open water.'],
       ['Phase', `${deg.toFixed(0)}°`, point && pts.length > 1 ? 'Its own phase, after the phase step Δφ for its place in the row.' : 'Where in its cycle it started.'],
       ['Driving now', out.toFixed(2), 'The displacement this source is holding its cells at this instant, between −1 and 1.'],
       ['Running for', `${age.toFixed(1)} s`, 'Simulated time since it started.'],
       ['Intensity here ⟨u²⟩', I.toFixed(3), 'The time-averaged intensity at its own cell.'],
     ];
-    if (point && p.srcSpeed > 0) rows.push(['Speed', `${(p.srcSpeed * p.c).toFixed(1)} cells/s ${s.dir > 0 ? 'right' : 'left'}`, 'Point sources move together at the Source speed setting.']);
+    if (point && p.srcSpeed > 0) rows.push(['Speed', `${fmtQ(this, 'speed', p.srcSpeed * p.c)} ${s.dir > 0 ? 'right' : 'left'}`, 'Point sources move together at the Source speed setting.']);
     return { id: `src-${s.id}`, kicker: point ? `Source ${k + 1} of ${pts.length}` : 'Line source', short: point ? `Source ${k + 1}` : 'Line source', title: point ? 'Point oscillator' : 'Plane-wave paddle', color: '#f2a541', rows,
       actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
   },
@@ -479,12 +483,14 @@ export const waves = {
     for (const [a, v] of arc) if (v >= 0.5 * top) { sum += a * v; mass += v; }
     return top > 1e-4 ? sum / mass : NaN;
   },
+  // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
+  primary: ['Wavelength λ = c/f', 'Sources'],
   readouts() {
     const c = this.p.c, lam = c / this.p.f, hasGlass = this.glass && this.glass.includes(1), st = this.steering();
     return [
-      ['Grid size', `${this.Nx} × ${this.Ny} cells · ${this.cs} px`],
+      ['Grid size', `${this.Nx} × ${this.Ny} cells · ${unitSystem() === 'sim' ? `${this.cs} px each` : `${fmtQ(this, 'len', this.Nx, { prefix: true })} wide`}`],
       ['Courant number cΔt/Δx', (c * this.dt()).toFixed(2), 'ok'],
-      ['Wavelength λ = c/f', this.sources.length ? `${lam.toFixed(1)} cells${hasGlass ? ` · ${(lam / this.p.glassN).toFixed(1)} in glass` : ''}` : '—', this.sources.length ? (lam / (hasGlass ? this.p.glassN : 1) < 8 ? 'warn' : 'ok') : undefined],
+      ['Wavelength λ = c/f', this.sources.length ? `${fmtQ(this, 'len', lam)}${hasGlass ? ` · ${fmtQ(this, 'len', lam / this.p.glassN)} in glass` : ''}` : '—', this.sources.length ? (lam / (hasGlass ? this.p.glassN : 1) < 8 ? 'warn' : 'ok') : undefined, 'derived'],
       ['Sources', String(this.sources.length)],
       ['Beam steering angle', st && this.p.phaseStep !== 0 ? (Math.abs(st.s) <= 1 ? `${(Math.asin(st.s) * 180 / Math.PI).toFixed(1)}°` : 'no main beam') : '—'],
       ['Solver steps per second', this.stepRate.toFixed(0)],
@@ -509,7 +515,7 @@ export const waves = {
     const st = this.steering();
     if (st && pts > 2 && this.p.phaseStep !== 0) {
       out.push(Math.abs(st.s) <= 1
-        ? { id: 'w-steer', level: 'info', title: 'Beam steering', body: `Sources ${st.d.toFixed(1)} cells apart with Δφ = ${this.p.phaseStep}° tilt the main beam by asin(Δφ λ / 2πd) = <b>${(Math.asin(st.s) * 180 / Math.PI).toFixed(1)}°</b>.${st.d > lam / 2 + 0.5 ? ' Spacing above λ/2 also lets grating lobes appear.' : ''}` }
+        ? { id: 'w-steer', level: 'info', title: 'Beam steering', body: `Sources ${fmtQ(this, 'len', st.d)} apart with Δφ = ${this.p.phaseStep}° tilt the main beam by asin(Δφ λ / 2πd) = <b>${(Math.asin(st.s) * 180 / Math.PI).toFixed(1)}°</b>.${st.d > lam / 2 + 0.5 ? ' Spacing above λ/2 also lets grating lobes appear.' : ''}` }
         : { id: 'w-steer', level: 'info', title: 'No main beam', body: `With Δφ = ${this.p.phaseStep}° the required steering sine is ${st.s.toFixed(2)}, beyond 1, so the array cannot form a forward beam; energy leaks into side lobes.` });
     }
     if (!this.p.absorb) out.push({ id: 'w-reflect', level: 'info', title: 'Edges reflect', body: 'With absorbing edges off, every wave bounces back from the walls and the tank fills with standing patterns.' });

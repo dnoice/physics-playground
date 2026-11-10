@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.3)
+    - Title: Panel Builder (digiSpace Edition - v2.4)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A control
+      with a quantity kind shows its value, and takes typed values, in the
+      chosen unit system; the lab keeps its own units underneath.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are laid out in sections on Dennis's call for a more intuitive and
       cohesive panel: each with a glyph, a fold that is remembered, a Reset
@@ -20,10 +23,6 @@
       actions move to the top as quick actions.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
       control write refreshes disabled states, through one path.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single file. v2.0 places controls into bento tiles,
-      typesets maths with KaTeX, lets switches show why they are disabled,
-      and renders the experiments page.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -53,6 +52,7 @@
 */
 import { canvasContext, chartMessage } from '../core/chart.js';
 import { typeset } from '../core/tex.js';
+import { fmtQ, toDisplay, toNative, unitDecimals } from '../core/units.js';
 import { $, clamp, decimalsFor, el, reduceMotion, store } from '../core/util.js';
 import { evaluateDiagnostics } from './diagnostics.js';
 import { drawScope, resetGauges, scopeOn, updateGauges } from './instruments.js';
@@ -103,7 +103,9 @@ export function buildRange(lab, c) {
   const id = `ctl-${lab.id}-${c.key}`, { toS, fromS } = rangeMap(c);
   const input = el('input', { type: 'range', id, min: c.log ? 0 : c.min, max: c.log ? 1000 : c.max, step: c.log ? 1 : (c.step || 'any'), 'aria-describedby': id + '-note' });
   const wrap = el('div', { class: 'range-wrap' }, input);
-  const fmt = c.fmt || (v => v.toFixed(decimalsFor(c.step)) + (c.unit ? ' ' + c.unit : ''));
+  // A control with a quantity kind shows, and takes typed values in, the chosen unit system; the lab keeps its own.
+  const q = c.qty, dec = q ? unitDecimals(lab, q, c.step) : decimalsFor(c.step), shown = v => (q ? toDisplay(lab, q, v) : v);
+  const fmt = c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + (c.unit ? ' ' + c.unit : ''));
   const val = el('button', { type: 'button', class: 'ctl-val', id: id + '-out', 'aria-label': `${c.label}: edit value` });
   const reset = el('button', { type: 'button', class: 'ctl-reset', html: RESET_SVG, hidden: true });
   const tools = el('span', { class: 'ctl-tools' }, reset, val);
@@ -136,11 +138,11 @@ export function buildRange(lab, c) {
   reset.addEventListener('click', () => { commit(lab.sceneP[c.key], true); input.focus(); announce(`${c.label} reset`); });
   val.addEventListener('click', () => {
     if (input.disabled) return;
-    const box = el('input', { type: 'text', class: 'ctl-edit', inputmode: 'decimal', 'aria-label': `${c.label} value, from ${c.min} to ${c.max}`, value: String(Number(lab.p[c.key].toPrecision(6))) });
+    const box = el('input', { type: 'text', class: 'ctl-edit', inputmode: 'decimal', 'aria-label': `${c.label} value, from ${fmt(c.min)} to ${fmt(c.max)}`, value: String(Number(shown(lab.p[c.key]).toPrecision(6))) });
     let done = false;
     const finish = ok => {
       if (done) return; done = true;
-      if (ok) { const v = parseFloat(box.value.replace(/[^0-9eE+\-.]/g, '')); if (Number.isFinite(v)) commit(v, true); }
+      if (ok) { const v = parseFloat(box.value.replace(/[^0-9eE+\-.]/g, '')); if (Number.isFinite(v)) commit(q ? toNative(lab, q, v) : v, true); }
       box.replaceWith(val); val.focus();
     };
     box.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); finish(true); } else if (e.key === 'Escape') { e.preventDefault(); finish(false); } });

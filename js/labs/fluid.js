@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.3)
+    - Title: Fluid Lab (digiSpace Edition - v2.4)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Any tool
+      but Obstacle selects a post for the Inspect pane, with figures measured
+      from the liquid around it and a remove action; speeds, lengths and
+      gravity follow the chosen units, one pixel being 1.09 cm.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Posts
       survive a rebuild that a parameter asks for, after Dennis found them
       vanishing when Particles changed: keep() hands them over and build()
@@ -20,10 +24,6 @@
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig and tool overlay; a seeded generator and Float64 snapshots make
       replay exact; GPU failure now says so.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -51,6 +51,7 @@ import { brushRing, drawSphere } from '../core/draw.js';
 
 import { Series } from '../core/series.js';
 import { TAU, clamp, fmtSI, pct, rand } from '../core/util.js';
+import { PX_M, fmtPos, fmtQ, unitOf } from '../core/units.js';
 import { view } from '../core/view.js';
 
 
@@ -111,7 +112,7 @@ export const fluid = {
   controls: [
     { type: 'seg', key: 'colorBy', label: 'Colour', options: [['water', 'Water'], ['speed', 'Speed'], ['density', 'Density']], group: 'display' },
     { type: 'range', key: 'count', label: 'Particles', min: 300, max: 3000, step: 50, rebuild: true, group: 'setup' },
-    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²', group: 'physics' },
+    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, qty: 'acc', group: 'physics' },
     { type: 'range', key: 'tilt', label: 'Gravity tilt', min: -90, max: 90, step: 1, unit: '°', group: 'physics' },
     { type: 'range', key: 'k', label: 'Stiffness k', min: 0.01, max: 0.2, step: 0.005, note: 'Higher values resist compression more.', group: 'physics' },
     { type: 'range', key: 'kNear', label: 'Near stiffness k-near', min: 0.005, max: 0.3, step: 0.005, note: 'Higher values spread the liquid into a lighter, foamier body.', group: 'physics' },
@@ -123,6 +124,8 @@ export const fluid = {
     { label: 'Splash upward', run() { const f = fluid; for (let i = 0; i < f.n; i++) f.vy[i] -= rand(0.04, 0.09); } },
     { label: 'Remove obstacles', run() { fluid.obs = []; } },
   ],
+  // One pixel is PX_M metres (core/units.js): the default gravity of 900 px/s² is 9.81 m/s².
+  units: { len: 'px', m: PX_M }, scaleNote: 'In Fluid one pixel is 1.09 cm, set so the default gravity of 900 px/s² is 9.81 m/s².',
   U: 20, Wu: 40, Hu: 30, cols: 1, rows: 1, n: 0, rho0: 3, spacing: 0.42, obs: [], seed: 1,
   x: new Float64Array(FL_CAP), y: new Float64Array(FL_CAP), px: new Float64Array(FL_CAP), py: new Float64Array(FL_CAP),
   vx: new Float64Array(FL_CAP), vy: new Float64Array(FL_CAP), rho: new Float32Array(FL_CAP), bin: new Uint8Array(FL_CAP),
@@ -368,11 +371,11 @@ export const fluid = {
     }
     const k = this.obs.indexOf(o) + 1;
     return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, title: 'Steel post', color: '#56677c', rows: [
-      ['Centre', `${(o.x * U).toFixed(0)}, ${(o.y * U).toFixed(0)} px`, 'Across and down from the tank\'s top-left corner.'],
-      ['Radius', `${(o.r * U).toFixed(0)} px`, 'The post\'s size, which is also how far it pushes liquid back.'],
+      ['Centre', fmtPos(this, o.x * U, o.y * U), 'Across and down from the tank\'s top-left corner.'],
+      ['Radius', fmtQ(this, 'len', o.r * U), 'The post\'s size, which is also how far it pushes liquid back.'],
       ['Liquid touching it', `${touch} particles`, 'Particles within half a particle spacing of its surface right now.'],
       ['Density at its surface ρ / ρ₀', touch ? (dens / touch).toFixed(3) : '—', 'The mean density of the touching particles over the rest density. Above 1 the liquid is pressing on the post.'],
-      ['Flow speed around it', nf ? `${(sp / nf).toFixed(0)} px/s` : '—', 'The mean speed of the particles within about one and a half spacings of its surface.'],
+      ['Flow speed around it', nf ? fmtQ(this, 'speed', sp / nf) : '—', 'The mean speed of the particles within about one and a half spacings of its surface.'],
     ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selAt = null; } }] };
   },
   deselect() { this.selAt = null; },
@@ -480,6 +483,8 @@ export const fluid = {
     for (const o of this.obs) { g.beginPath(); g.arc(o.x * U, o.y * U, o.r * U, 0, TAU); g.fill(); }
   },
   drawScreen(g, w, h) { if (this.p.gravity > 0 && this.p.tilt !== 0) this.gravityMark(g, h); },
+  // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
+  primary: ['Mean density ρ / ρ₀', 'Peak compression'],
   readouts() {
     let vmax = 0;
     for (let i = 0; i < this.n; i++) { const s2 = this.vx[i] ** 2 + this.vy[i] ** 2; if (s2 > vmax) vmax = s2; }
@@ -488,7 +493,7 @@ export const fluid = {
       ['Particles', `${this.n} / ${FL_CAP}`],
       ['Mean density ρ / ρ₀', this.mean.toFixed(3)],
       ['Peak compression', pk.toFixed(2) + '×', pk < 1.5 ? 'ok' : pk < 2.2 ? 'warn' : 'crit'],
-      ['Fastest particle speed', `${(Math.sqrt(vmax) * this.U / this.TICK).toFixed(0)} px/s`],
+      ['Fastest particle speed', fmtQ(this, 'speed', Math.sqrt(vmax) * this.U / this.TICK)],
       ['Speed-capped particles', pct(this.clampRate), this.clampRate < 0.002 ? 'ok' : this.clampRate < 0.02 ? 'warn' : 'crit'],
       ['Obstacles', String(this.obs.length)],
     ];
@@ -498,7 +503,7 @@ export const fluid = {
     if (this.n < 20) { out.push({ id: 'f-empty', level: 'info', title: 'Almost empty tank', body: 'Choose Pour and hold the pointer down to add liquid, or reset the scene.' }); return out; }
     if (this.peak > 1.5) {
       const nk = Math.min(0.2, +(this.p.k * 1.8).toFixed(3));
-      out.push({ id: 'f-compress', level: this.peak > 2.2 ? 'crit' : 'warn', title: 'The liquid is compressing', body: `The densest particles sit at <b>${this.peak.toFixed(2)}×</b> rest density. Stiffness k = ${this.p.k} is too soft for gravity of ${this.p.gravity} px/s², so the bottom layers squash.`,
+      out.push({ id: 'f-compress', level: this.peak > 2.2 ? 'crit' : 'warn', title: 'The liquid is compressing', body: `The densest particles sit at <b>${this.peak.toFixed(2)}×</b> rest density. Stiffness k = ${this.p.k} is too soft for gravity of ${fmtQ(this, 'acc', this.p.gravity)}, so the bottom layers squash.`,
         fixes: nk > this.p.k ? [{ label: `Raise k to ${nk}`, run() { setParam(fluid, 'k', nk); } }] : [] });
     }
     if (this.mean < 0.7) {
@@ -534,11 +539,11 @@ export const fluid = {
   sane() { for (let i = 0; i < this.n; i++) if (!Number.isFinite(this.x[i]) || !Number.isFinite(this.y[i])) return false; return true; },
   chart: {
     title: 'Mean kinetic energy per particle',
-    caption: 'Viscosity and contact with walls and posts turn bulk motion into heat; the curve decays after every disturbance. Units: (px/s)².',
+    get caption() { return `Viscosity and contact with walls and posts turn bulk motion into heat; the curve decays after every disturbance. Per particle, in ${unitOf(fluid, 'spec')[1]}.`; },
     draw(c) {
-      const s = fluid.series;
+      const s = fluid.series, k = unitOf(fluid, 'spec')[0];
       if (s.n < 2) { chartMessage(c.g, c.w, c.h, 'Collecting samples…'); return; }
-      const [, hi] = seriesRange([s]), box = chartFrame(c.g, c.w, c.h, 0, hi * 1.08, fmtSI);
+      const [, hi] = seriesRange([s]), box = chartFrame(c.g, c.w, c.h, 0, hi * 1.08, v => fmtSI(v * k));
       drawSeries(c.g, box, s, 0, hi * 1.08, THEME.amber, { fill: true });
     },
   },

@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Chaos Scene (digiSpace Edition - v2.3)
+    - Title: Chaos Scene (digiSpace Edition - v2.4)
     - File Name: chaos.js
     - Relative Path: js/render/world/scenes/chaos.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Follows the
+      lab's three views: the dial alone, the dial beside the screen, or the
+      screen beside the torus, which now stands on its own turned column with
+      a faint lattice and the map's two seams, its glass toned down so it no
+      longer glares.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The phase
       view keeps the pendulum live on its dial, which follows the pivot, and
       puts the map on a brass-framed screen on its own stand whose face lies
@@ -25,10 +30,10 @@
 ✒ Description:
     The chaos lab in the 3D mode: a slate dial in a brass bezel, standing in a
     cradle on a walnut base. The front pendulum is polished steel; the other
-    copies are light, and their trails burn onto the dial. The phase view
-    keeps the pendulum live and sets the lab's map beside it on a framed
-    screen, with a glass torus on top that shows what the wrapped square
-    really is.
+    copies are light, and their trails burn onto the dial. The Both view sets
+    the lab's map beside the dial on a framed screen; the Phase map view sets
+    the screen beside a glass torus, on its own column, that shows what the
+    wrapped square really is.
 
 ✒ Key Features:
     - Engraved dial painted once into a texture from the pendulum's reach.
@@ -36,7 +41,8 @@
     - Copies drawn as instanced light in the lab's own heat colours.
     - Phase screen painted from the lab's own drawing, aligned with the plane
       so picking needs no 3D code.
-    - Trails and torus paths in one ribbon batch each, thinned by tier.
+    - Torus with a lattice, its two seams and the copies' paths in one ribbon
+      batch, thinned by tier.
 
 ✒ Other Important Information:
     - Dependencies: three@0.187.0 from jsDelivr via the import map; WebGL 2

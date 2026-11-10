@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Icon Glyphs (digiSpace Edition - v2.0)
+    - Title: Icon Glyphs (digiSpace Edition - v2.4)
     - File Name: icons.js
     - Relative Path: js/core/icons.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
+      the view modes: pendulum, phase map, both, height and intensity.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0: Dennis asked for Google icons so the playground has one
       cohesive look; replaces the hand-drawn SVG icon set.

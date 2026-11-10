@@ -1,27 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.3)
+    - Title: Transport and Keys (digiSpace Edition - v2.4)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — V steps
+      through the active lab's views and U opens the Units menu; Escape closes
+      the Units menu. The diagnostics sheet it used to close is now the deck's
+      Insights pane.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Reset
       restarts the scene clean through restart(), so edits a parameter rebuild
       keeps never survive it.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Space
       reaches play and pause after a mouse click; held keys act once;
       CapsLock no longer swaps b and Shift+B; added Z.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -55,6 +55,7 @@ import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
 import { closeSceneMenu, hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
 import { closeGfx, toggleMode } from './mode.js';
+import { closeUnits, setUnits } from './unitmenu.js';
 
 /* ---------- transport and keys ---------- */
 export const speedInput = $('#ctl-speed'), speedMap = rangeMap({ min: 0.1, max: 4, log: true });
@@ -116,7 +117,8 @@ export function init() {
     else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); }
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
     else if (k === 'z' || k === 'Z') toggleMode();
-    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'u' || k === 'U') setUnits(document.getElementById('units-sheet').hidden);
+    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeUnits()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();

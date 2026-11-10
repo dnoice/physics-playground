@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.3)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.4)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.3.1
+    - Version: 2.4.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.4.0 on Dennis's brief for one interaction architecture: the stage
+      rail, the deck's Telemetry, Inspect and Insights panes, selecting and
+      inspecting objects in every lab that has them, Chaos's three views, and
+      the Units section with its scales; V and U join the keyboard table.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       badge 2.3.1, now that the pictures it shows are in docs/media.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] —
@@ -62,7 +67,7 @@ Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.3.1][badge-release]](CHANGELOG.md)
+[![Release 2.4.0][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
 <br>
 [![ES modules, no build step][badge-esm]](ARCHITECTURE.md#principles)
@@ -93,8 +98,11 @@ runs.
   several scenes, live readouts and a page of the maths behind it.
 - **Two modes, one simulation.** Press Z to flip between 2D and 3D in the
   middle of a run; tools, rewind and recordings work in both.
-- **Instruments that explain themselves.** Plot any reading, and let the
-  diagnostics say why a setting misbehaves and offer the one-click fix.
+- **Instruments that explain themselves.** Plot any reading, inspect any
+  object you click, and let the insights say why a setting misbehaves and
+  offer the one-click fix.
+- **Real-world units.** Metric, US customary or the simulation's own
+  pixels: every reading, control and scale bar follows your choice.
 - **Guided experiments** with live progress checks that measure the claim
   they make.
 - **Capture everything**: rewind, WebM video, CSV datasets and exact saved
@@ -131,8 +139,9 @@ captured in 3D straight from the playground.
       <img src="docs/media/lab-chaos.webp" width="100%"
         alt="Chaos in 3D: the pendulum on its brass dial beside the phase
           screen, previewing a start">
-      <br><b>5 · Chaos</b> ✦ Double pendulums started a hair apart, beside
-      the map of their angles and the energy that fences them in.
+      <br><b>5 · Chaos</b> ✦ Double pendulums started a hair apart, in three
+      views: the pendulum, the map of their angles with the torus it wraps
+      onto, or both side by side.
     </td>
   </tr>
   <tr>
@@ -157,7 +166,7 @@ captured in 3D straight from the playground.
 | 2 | Collisions | Hard discs with restitution and contact friction | Ideal gas, Gravity pile, Billiard break, Brownian motion |
 | 3 | Fluid | Smoothed-particle hydrodynamics with a GPU liquid surface | Dam break, Obstacle course, Droplet splash, Twin columns, Zero-g collision |
 | 4 | Waves | The 2-D wave equation on a grid | Open tank, Double slit, Single slit, Two sources, Phased array, Glass lens, Moving source |
-| 5 | Chaos | Double pendulums started a hair apart, and the map of their angles on the energy landscape | Sensitive start, Near inverted, Small swing, Normal mode |
+| 5 | Chaos | Double pendulums started a hair apart; Pendulum, Phase map and Both views of their angles on the energy landscape | Sensitive start, Near inverted, Small swing, Normal mode |
 | 6 | Cloth | Verlet cloth that stretches, tears and can be cut | Curtain, Hammock, Flag in wind, Fragile net |
 | 7 | Fields | Point charges, potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
 
@@ -204,7 +213,7 @@ load, the workspace stays in 2D and says why.
 | Collisions | A slate air table in walnut and brass, which tilts when gravity is on |
 | Fluid | A glass aquarium of real-looking liquid, with refraction and caustics |
 | Waves | A walnut ripple tank with projected caustics and a screen graphing the fringes |
-| Chaos | A slate dial in a brass bezel, with a glass torus in the phase view |
+| Chaos | A slate dial in a brass bezel; the phase screen beside it, or beside a glass torus |
 | Cloth | Woven fabric on a gantry, hammock posts, a flagpole or a net rail |
 | Fields | A black glass bench with the potential as a relief of light |
 
@@ -227,7 +236,7 @@ your machine.
 **Auto**, the default, starts from your GPU and adjusts to the frame rate. It
 steps down when frames run long and back up when there is room. If a step
 down buys nothing, it undoes it and stops adapting, because the limit is then
-the solver or the display rather than the GPU. The Diagnostics tile says when
+the solver or the display rather than the GPU. The Insights pane says when
 Auto changes tier, and offers a cheaper tier when a fixed one runs slowly.
 
 ## Using the workspace
@@ -236,27 +245,62 @@ The workspace is one large stage, an Instruments deck beneath it and a
 full-height Inspector beside them.
 
 - **Stage**: the simulation. The lab's name in the top left holds the scene
-  dropdown; loading a scene restarts the run. The gizmo on the right is laid
-  out the same way in every lab: the axis ball first, then zoom, pan and frame,
-  then what belongs to this lab, such as its tools and Follow.
+  dropdown; loading a scene restarts the run.
+- **Stage rail**: hangs from the top-right corner, in the same place in every
+  lab. **Camera** comes first (the axis ball in 3D, zoom, pan and frame), then
+  what belongs to this lab: its **Tools** (what a click does), its **View**
+  (what the stage shows, in Chaos and Waves) and its scene extras, such as
+  Gravity's Follow. Tools and views are radio groups: arrow keys move within
+  one, and a view never restarts or rewinds the run.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
   data and save buttons.
-- **Instruments**: every reading as a live tile beside the lab's chart. Click a
-  tile to plot it, up to four at once, each in its own lane on one time axis.
-  Hover the plot to read any moment, click or drag along it to rewind to that
-  moment, and use the wheel to zoom the time window. The pill shows the
-  simulation's health, with the top alert and its fix beside it; click it for
-  the full list.
+- **Instruments**: three panes over one header.
+  - **Telemetry**: every reading as a live gauge beside the lab's chart; the
+    first ones lead with larger figures. Click a gauge to plot it, up to four
+    at once, each in its own lane on one time axis. Hover the plot to read any
+    moment, click or drag along it to rewind to that moment (as far back as
+    the rewind history reaches), and use the wheel to zoom the time window.
+  - **Inspect**: the object you clicked on the stage, with its live figures,
+    read-only. A figure's chart button plots it under Telemetry beside the
+    readings. Settings stay in Controls; the card offers only actions on the
+    object itself, such as remove or follow.
+  - **Insights**: what the run is doing and why a setting misbehaves, each
+    with its fix, beside the frame-timing strip. Its tab shows the count, and
+    the top alert and its fix stay in the header whichever pane is open.
+
+  The button at the right of the header steps the deck through compact,
+  standard and tall, and the grip on its top edge drags it to any height
+  (arrow keys on the grip step it; Enter restores the standard height).
 - **Inspector**: the lab's formula above five tabs: Controls, Experiments,
   Guide, Math and Library. Controls opens with the lab's quick actions, then
   its settings in sections such as Setup, Physics and Display. Fold a
   section away, or use its **Reset** to return it to the scene's values; a
   section whose changes restart the run says so once. A disabled control
   says why underneath.
-- **Details**: click a body in Gravity, a ball in Collisions or, with Move, a
-  particle in Fields, and a card opens at the top of the Inspector with its
-  live stats. Gravity shows a rendered portrait of the body and its orbit:
+- **Selecting things**: click a body in Gravity, a ball in Collisions (with
+  Grab), a particle in Fields (with Move), a post in Fluid (with any tool but
+  Obstacle), a source in Waves, or a pendulum or a dot on the map in Chaos.
+  Inspect opens on its own and returns to where you were when you clear the
+  selection. Gravity shows a rendered portrait of the body and its orbit:
   distance, period, eccentricity and inclination.
+
+### Units
+
+The **Units** button in the top bar, or **U**, picks what every reading,
+control, inspected figure and scale bar is shown in. The simulations always
+compute in their own units, so switching never changes a run; typed values
+are read in the units shown.
+
+| System | Shows | Scale |
+| --- | --- | --- |
+| Metric (default) | metres, m/s, m/s², J/kg | Fluid, Collisions, Cloth and Fields: one pixel is 1.09 cm, so 900 px/s² of gravity is 9.81 m/s². Waves: one cell is 4 mm, a ripple-tank scale. Chaos computes in metres already. Gravity is astronomical: AU, km/s, days and years, solar, Jupiter and Earth masses. |
+| US customary | feet, ft/s, ft/s², ft²/s² | The same scales, in feet and inches (miles per second in Gravity). |
+| Simulation | px, px/s, cells | The labs' own units, exactly as computed. |
+
+The menu states the current lab's scale. Datasets keep the lab's own units
+and record that scale beside them. Masses, energies and charges in
+Collisions and Fields stay in simulation units, since those labs define them
+for the computation rather than from real materials.
 
 Press **F** to give the stage the whole window and **Shift+B** to hide the
 Instruments. The layout reflows to one column below 1180 px.
@@ -282,6 +326,8 @@ Instruments. The layout reflows to one column below 1180 px.
 | 1–7 | Switch lab |
 | Z | Switch between 2D and 3D |
 | Letters | Pick a tool (shown on each tool button) |
+| V | Next view, in Chaos and Waves |
+| U | Units menu |
 | + − 0 | Zoom in, zoom out, frame the view |
 | Arrow keys | Pan, or orbit in 3D mode |
 | [ and ] | Halve or double the speed |
@@ -326,12 +372,12 @@ names hide, and the workspace says 3D is unavailable and stays in 2D.
 index.html            page, tiles, colophon, CDN links and import map
 css/                  tokens, icons, workspace, controls, stage, tiles, library, responsive
 js/main.js            boot sequence
-js/core/              pure helpers: DOM, colour, charts, drawing, maths, icons, TeX, graphics tiers
+js/core/              pure helpers: DOM, colour, charts, drawing, maths, icons, TeX, graphics tiers, units
 js/render/            the 2D fluid surface shader
 js/render/world/      the 3D mode: engine, studio, materials, shapes, ribbons
 js/render/world/scenes/  one three.js scene per lab
 js/labs/              one module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry
-js/shell/             workspace: state, panel, tools, camera, stage input, loop, modes, capture, library, experiments
+js/shell/             workspace: state, panel, rail, deck, camera, stage input, loop, modes, units, capture, library, experiments
 tools/                dev server, project checker, Pages stager, README media capture
 tests/                Playwright browser suites and their runner
 vendor/katex/         KaTeX stylesheet, fonts and licence
@@ -427,7 +473,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.3.1-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.4.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

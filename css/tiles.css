@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.1)
+    - Title: Tile Content Styles (digiSpace Edition - v2.4)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
+      the deck's panes, segmented tabs, resize grip and short mode, the
+      Inspect card with plottable figures, primary and derived gauges, and
+      units in a smaller face; the floating diagnostics sheet's styles are
+      gone.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Short
       windows set tools in two columns, so six fit without scrolling.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -19,11 +24,17 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Contents of the Scene, Tools, chart, readouts, diagnostics and notebook
-    tiles, including formula cards and experiment cards.
+    Contents of the Scene, chart, readouts, Inspect and Insights panes and the
+    notebook tiles, including formula cards and experiment cards.
 
 ✒ Key Features:
-    - Scene presets as wrapping chips; dock grid for tools.
+    - Scene presets as wrapping chips.
+    - Instruments deck: segmented pane tabs, a grip on the top edge, and a
+      short mode that keeps the readings and drops the plot.
+    - Gauges: primary readings lead with larger figures, derived ones are set
+      in italics, and units sit in a smaller face.
+    - Inspect card: portrait, name and actions beside a grid of read-only
+      figures, each with a plot button.
     - Notebook tabs with counts and a new-item dot.
     - KaTeX formula cards that scroll sideways instead of overflowing.
 
@@ -101,6 +112,7 @@
 .deck-title { margin: 0; flex: none; font: 600 13px/1 var(--font-body); color: var(--text); white-space: nowrap; }
 .tile-deck:not([data-pane="telemetry"]) :is(.deck-title, .scope-legend) { display: none; }
 .tile-deck:not([data-pane="telemetry"]) .diag-top { margin-left: auto; }
+.deck-head:has(.diag-top:not([hidden])) .scope-hint { display: none; }
 .deck-head #btn-deck-size { margin-left: auto; flex: none; }
 .diag-top + #btn-deck-size, .scope-legend ~ #btn-deck-size { margin-left: 0; }
 /* The grip: the deck's top edge drags to any height. */

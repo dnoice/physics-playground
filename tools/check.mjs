@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.3)
+    - Title: Project Checker (digiSpace Edition - v2.4)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Counts the
+      deck size button's two glyphs, which deck.js swaps in.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Counts
       the glyphs that control sections name in each lab's groups list.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Covers

@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.3)
+    - Title: Shell Regression Test (digiSpace Edition - v2.4)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
+      split-view checks select the Both view by name, now that Phase map shows
+      the map alone.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
       checks for Fluid's posts across a Particles rebuild and Reset, the
       control sections (order, quick actions, one restart note, section

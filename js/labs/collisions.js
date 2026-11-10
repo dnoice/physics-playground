@@ -1,26 +1,25 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.3)
+    - Title: Collisions Lab (digiSpace Edition - v2.4)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
+      radii and speeds follow the chosen units, one pixel being 1.09 cm; the
+      empty Inspect pane says how to select a ball.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Setup, Physics, New balls and Display.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig, tilt, sphere picking and tool overlay; snapshots use Float64,
       so rewind replays exactly.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -46,6 +45,7 @@ import { brushRing, drawSphere, rampRgb, sphereSprite } from '../core/draw.js';
 
 import { FOV3 } from '../core/math3d.js';
 import { TAU, clamp, fmtSI, pct, rand, reduceMotion } from '../core/util.js';
+import { PX_M, fmtQ } from '../core/units.js';
 import { view } from '../core/view.js';
 
 import { camOf, camXf } from '../shell/camera.js';
@@ -97,11 +97,11 @@ export const collisions = {
   controls: [
     { type: 'seg', key: 'colorBy', label: 'Colour balls by', options: [['speed', 'Speed'], ['mass', 'Mass'], ['spin', 'Spin']], group: 'display' },
     { type: 'range', key: 'count', label: 'Number of balls', min: 20, max: 1200, step: 10, rebuild: true, group: 'setup' },
-    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, unit: 'px/s²', group: 'physics' },
+    { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, qty: 'acc', group: 'physics' },
     { type: 'range', key: 'e', label: 'Restitution e', min: 0, max: 1, step: 0.01, group: 'physics' },
     { type: 'range', key: 'mu', label: 'Contact friction μ', min: 0, max: 1, step: 0.01, note: 'Friction at contacts and walls turns sliding into spin.', group: 'physics' },
     { type: 'range', key: 'drag', label: 'Air drag', min: 0, max: 2, step: 0.01, unit: '/s', group: 'physics' },
-    { type: 'range', key: 'radius', label: 'Radius of new balls', min: 3, max: 30, step: 1, unit: 'px', group: 'spawn' },
+    { type: 'range', key: 'radius', label: 'Radius of new balls', min: 3, max: 30, step: 1, qty: 'len', group: 'spawn' },
   ],
   actions: [
     { label: 'Shake the box', run() { const c = collisions; for (let i = 0; i < c.n; i++) { const a = rand(0, TAU), s = rand(150, 400); c.vx[i] += s * Math.cos(a); c.vy[i] += s * Math.sin(a); } c.KE0 = c.stats().etot; } },
@@ -110,6 +110,8 @@ export const collisions = {
   x: new Float64Array(COLL_CAP), y: new Float64Array(COLL_CAP), vx: new Float64Array(COLL_CAP), vy: new Float64Array(COLL_CAP),
   r: new Float64Array(COLL_CAP), im: new Float64Array(COLL_CAP), order: new Int32Array(COLL_CAP), bin: new Uint8Array(COLL_CAP),
   ang: new Float64Array(COLL_CAP), om: new Float64Array(COLL_CAP), sprites: null, spinning: false,
+  // One pixel is PX_M metres, as in every mechanical lab: the Gravity pile's 900 px/s² is 9.81 m/s².
+  units: { len: 'px', m: PX_M }, scaleNote: 'In Collisions one pixel is 1.09 cm, as in Fluid and Cloth: 900 px/s² of gravity is 9.81 m/s². Masses and energies stay in simulation units, with a disc of radius r weighing r².',
   n: 0, w: 800, h: 600, tracer: -1, trail: new Float32Array(1800), tn: 0, th: 0, trailClock: 0,
   grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, vel: velocityTracker(),
   wallImp: 0, wallTime: 0, Z: NaN, KE0: 0,
@@ -277,7 +279,7 @@ export const collisions = {
   inspect() {
     const i = this.picked; if (i < 0 || i >= this.n) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
-    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', `${r.toFixed(1)} px`, 'The drawn and collision radius.'], ['Speed across the table', `${v.toFixed(0)} px/s`, 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
+    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
   inspectHint: 'With the Grab tool, click a ball to inspect it here.',
@@ -430,7 +432,7 @@ export const collisions = {
         if (e && b && d) {
           g.strokeStyle = g.fillStyle = THEME.amber; g.lineWidth = 2; g.globalAlpha = 0.95; g.beginPath(); g.moveTo(c.x, c.y); g.lineTo(e.x, e.y); g.stroke();
           g.beginPath(); g.moveTo(e.x, e.y); g.lineTo(b.x, b.y); g.lineTo(d.x, d.y); g.closePath(); g.fill();
-          g.font = `400 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(`${(v * cap).toFixed(0)} px/s`, e.x + 9, e.y);
+          g.font = `400 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(fmtQ(this, 'speed', v * cap), e.x + 9, e.y);
         }
       }
     } else if (tool === 'grab' && B) {
@@ -451,6 +453,8 @@ export const collisions = {
     for (let i = 0; i < this.n; i++) { const r = Math.max(this.r[i], 1.1 / k); g.fillRect(this.x[i] - r, this.y[i] - r, 2 * r, 2 * r); }
     g.globalAlpha = 1;
   },
+  // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
+  primary: ['Total kinetic energy', 'RMS speed'],
   readouts() {
     const s = this.stats();
     return [
@@ -458,9 +462,9 @@ export const collisions = {
       ['Total kinetic energy', fmtSI(s.etot)],
       ...(s.kr > 0 ? [['Share of energy in spin', pct(s.kr / s.etot)]] : []),
       ['Total momentum |p|', fmtSI(s.p)],
-      ['RMS speed', `${s.vrms.toFixed(1)} px/s`],
+      ['RMS speed', fmtQ(this, 'speed', s.vrms)],
       ['Packing fraction φ', pct(s.phi)],
-      ['Pressure check PA / NkT', this.p.gravity === 0 && Number.isFinite(this.Z) ? this.Z.toFixed(2) : '—'],
+      ['Pressure check PA / NkT', this.p.gravity === 0 && Number.isFinite(this.Z) ? this.Z.toFixed(2) : '—', undefined, 'derived'],
       ['Collisions per second', fmtSI(this.hitRate)],
     ];
   },
@@ -471,7 +475,7 @@ export const collisions = {
     if (stepMove > s.rmin) {
       const cap = s.rmin / dt * 0.8;
       out.push({ id: 'c-tunnel', level: 'warn', title: 'Fast balls can tunnel', body: `The fastest ball moves <b>${stepMove.toFixed(1)} px per step</b>, more than the smallest radius (${s.rmin.toFixed(0)} px), so it can skip through another ball between checks.`,
-        fixes: [{ label: `Cap speeds at ${cap.toFixed(0)} px/s`, run() { const c = collisions; for (let i = 0; i < c.n; i++) { const v = Math.hypot(c.vx[i], c.vy[i]); if (v > cap) { c.vx[i] *= cap / v; c.vy[i] *= cap / v; } } c.KE0 = c.stats().etot; } }] });
+        fixes: [{ label: `Cap speeds at ${fmtQ(this, 'speed', cap)}`, run() { const c = collisions; for (let i = 0; i < c.n; i++) { const v = Math.hypot(c.vx[i], c.vy[i]); if (v > cap) { c.vx[i] *= cap / v; c.vy[i] *= cap / v; } } c.KE0 = c.stats().etot; } }] });
     }
     if (s.phi > 0.78) {
       out.push({ id: 'c-jam', level: 'warn', title: 'The box is jammed', body: `Discs cover <b>${pct(s.phi)}</b> of the box. Past about 78% they lock into a crystal and can only rattle in place.`,
@@ -483,7 +487,7 @@ export const collisions = {
         const i = O[a], right = X[i] + R[i];
         for (let b = a + 1; b < this.n; b++) { const j = O[b]; if (X[j] - R[j] > right) break; const d = Math.hypot(X[j] - X[i], Y[j] - Y[i]); worst = Math.max(worst, (R[i] + R[j] - d) / Math.min(R[i], R[j])); }
       }
-      if (worst > 0.5) out.push({ id: 'c-squash', level: 'warn', title: 'The pile is over-compressed', body: `Neighbours overlap by up to <b>${pct(worst)}</b> of a radius. Gravity of ${this.p.gravity} px/s² squeezes the pile faster than two solver passes per step can push it apart.`,
+      if (worst > 0.5) out.push({ id: 'c-squash', level: 'warn', title: 'The pile is over-compressed', body: `Neighbours overlap by up to <b>${pct(worst)}</b> of a radius. Gravity of ${fmtQ(this, 'acc', this.p.gravity)} squeezes the pile faster than two solver passes per step can push it apart.`,
         fixes: [{ label: 'Halve gravity', run() { setParam(collisions, 'gravity', Math.round(collisions.p.gravity / 20) * 10); } }] });
     }
     if (this.p.e < 1 && this.p.gravity === 0 && this.KE0 > 0) {
@@ -533,7 +537,7 @@ export const collisions = {
       }
       g.fillStyle = THEME.muted; g.font = `400 10px ${THEME.mono}`; g.textBaseline = 'alphabetic';
       g.textAlign = 'left'; g.fillText('0', box.x0, c.h - 5);
-      g.textAlign = 'right'; g.fillText(`${vmax.toFixed(0)} px/s`, box.x1, c.h - 5);
+      g.textAlign = 'right'; g.fillText(fmtQ(L, 'speed', vmax), box.x1, c.h - 5);
       g.textAlign = 'center'; g.fillText('speed →', (box.x0 + box.x1) / 2, c.h - 5);
     },
   },

@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck (digiSpace Edition - v2.3)
+    - Title: Instruments Deck (digiSpace Edition - v2.4)
     - File Name: instruments.js
     - Relative Path: js/shell/instruments.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Readings
+      rank as primary or derived and set their units in a smaller face, so a
+      narrow gauge keeps both. A selected object's figures can be plotted
+      beside the readings (not remembered across visits), every series
+      restarts when the units change, and the diagnostics sheet's code moves
+      to the deck's Insights pane.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lane
       backgrounds use rrect(), so the scope draws in browsers without
       CanvasRenderingContext2D.roundRect.
@@ -21,21 +27,25 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    One tile in place of the chart, readouts and diagnostics panels. Every
-    reading is a gauge with a sparkline; clicking one plots it on a shared
-    time axis. The plot is live: hovering reads any moment, and clicking or
-    dragging rewinds the simulation to that moment.
+    The Telemetry pane of the instruments deck: every reading is a gauge with
+    a sparkline; clicking one plots it on a shared time axis. The plot is
+    live: hovering reads any moment, and clicking or dragging rewinds the
+    simulation to that moment. Plotted figures of a selected object join the
+    same scope.
 
 ✒ Key Features:
-    - Gauges build from each lab's readouts, so no lab needed changing.
-    - Up to four readings plot together, each in its own lane on one time
-      axis, with their values in a legend that follows the cursor.
+    - Gauges build from each lab's readouts; the primary readings (lab.primary,
+      a list of labels or the first two) lead with larger figures, and a row
+      marked derived says so.
+    - Up to four series plot together, each in its own lane on one time axis,
+      with their values in a legend that follows the cursor.
     - Click or drag on the scope to rewind; the wheel zooms the time window.
-    - Plotted readings are remembered per lab, and a rewind that branches
-      drops the abandoned future from the plot too.
-    - With nothing plotted, the lab's own chart shows.
-    - Diagnostics shrink to a status pill; the full list opens on demand, and
-      the top alert and its fix stay in the header.
+    - Plotted readings are remembered per lab; a selected object's figures
+      plot under its own name and are not.
+    - A change of unit system restarts every series, since old samples are in
+      the old units.
+    - With nothing plotted, the lab's own chart shows; the top alert and its
+      first fix stay in the deck header.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -48,6 +58,7 @@ import { THEME } from '../core/color.js';
 import { rrect } from '../core/draw.js';
 import { Series } from '../core/series.js';
 import { $, clamp, el, store } from '../core/util.js';
+import { labs } from '../labs/index.js';
 import { hist, histSeek } from './capture.js';
 import { drawChart } from './panel.js';
 import { active, announce } from './state.js';
@@ -70,6 +81,12 @@ function inst(lab) {
   return I;
 }
 export const scopeOn = lab => inst(lab).pins.size > 0;
+/* A change of units restarts every plotted series: old samples are numbers in the old units. Pins stay. */
+export function resetSeries() {
+  for (const lab of labs) if (lab.inst) { lab.inst.series.clear(); lab.inst.hoverX = null; }
+  gauges.forEach(n => { n.text = null; n.label = null; });
+  legendKey = null;
+}
 const colorOf = (I, label) => SERIES[I.slot.get(label) ?? 0];
 
 /* A reading plots only if it starts as a number: "0.5916 J/kg", "−8.8e-6 %" and "1.2k" do; "not yet" does not. */
@@ -160,7 +177,7 @@ export function updateGauges(lab, rows) {
   rows.forEach((r, i) => {
     const n = gauges[i], s = I.series.get(r[0]);
     if (n.label !== r[0]) {
-      const tier = r[3] || (i < (lab.primary ?? 2) ? 'primary' : 'secondary');
+      const pr = lab.primary ?? 2, tier = r[3] || ((Array.isArray(pr) ? pr.includes(r[0]) : i < pr) ? 'primary' : 'secondary');
       n.label = r[0]; n.dt.textContent = r[0]; n.hit.setAttribute('aria-label', `Plot ${r[0]}`);
       n.root.classList.toggle('primary', tier === 'primary'); n.root.classList.toggle('derived', tier === 'derived');
       n.root.title = tier === 'derived' ? `${r[0]} (derived: computed from other figures, not measured directly)` : r[0];

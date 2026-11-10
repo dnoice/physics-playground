@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Lab Rail (digiSpace Edition - v2.1)
+    - Title: Lab Rail (digiSpace Edition - v2.4)
     - File Name: workspace.js
     - Relative Path: js/shell/workspace.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
+      labs refreshes the Units menu's scale note.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A lab
       switch cancels a gesture instead of committing it; the last lab is
       remembered; no lab is named here any more.
@@ -51,6 +53,7 @@ import { ensureReady } from './lifecycle.js';
 import { prepareLab, renderMode } from './mode.js';
 import { buildNav } from './navigator.js';
 import { buildPanel } from './panel.js';
+import { renderUnits } from './unitmenu.js';
 import { cancelLabPointer, ptr } from './stage.js';
 import { active, announce, canvas, perf, setActive, setPointerDown, state } from './state.js';
 
@@ -86,7 +89,7 @@ export function selectLab(id, opts = {}) {
   insightCards.forEach(c => c.el.remove()); insightCards.clear();
   perf.slow = 0; perf.rate = state.speed;
   evaluateDiagnostics();
-  updateRewind(); updateTracksNote(); renderLibrary(); updateDetails(lab);
+  updateRewind(); updateTracksNote(); renderLibrary(); updateDetails(lab); renderUnits();
   if (!opts.silent) announce(`${lab.title} lab`);
   if (location.hash.slice(1) !== lab.id) { try { location.replace('#' + lab.id); } catch (_) { /* hash routing unavailable */ } }
 }

@@ -1,26 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.3)
+    - Title: Fields Lab (digiSpace Edition - v2.4)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lengths,
+      speeds and E₀ follow the chosen units, with q/m in C/kg so E reads in
+      N/C and B in tesla; the empty Inspect pane says how to select a
+      particle.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Forces, New particles and Display, with short names for
       the display switches.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig and tool overlay; the energy baseline follows charge edits, and
       the beam clock is captured.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0 on Dennis's direction: the Fields & charges lab, one of the
-      recommendations he asked to implement.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -52,6 +53,7 @@ import { genericState } from '../core/codec.js';
 import { RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing, drawSphere, zoomOf } from '../core/draw.js';
 import { Series } from '../core/series.js';
+import { PX_M, fmtQ, unitSystem } from '../core/units.js';
 import { TAU, clamp, fmtSI, pct, reduceMotion } from '../core/util.js';
 import { announce, canvas } from '../shell/state.js';
 
@@ -100,6 +102,9 @@ export const fields = {
     { id: 'probe', label: 'Probe', key: 'i', icon: 'probe', hint: 'Click or drag to place the field meter' },
     { id: 'erase', label: 'Erase', key: 'x', icon: 'erase', hint: 'Brush over charges and particles to remove them' },
   ] },
+  // Lengths share the mechanical labs' pixel. With q/m read as C/kg, a field that accelerates one C/kg by 1 m/s² is
+  // 1 N/C, and B, which turns a velocity into an acceleration per C/kg, is already in tesla.
+  units: { len: 'px', m: PX_M }, scaleNote: 'In Fields one pixel is 1.09 cm, as in the mechanical labs. Charge-to-mass ratios read as C/kg, so E is in N/C and B in tesla; source charges and potentials stay in simulation units.',
   p: { tool: 'plus', k: 1, B: 0, gradB: 0, E0: 0, qm: 1, sign: 1, v0: 120, beam: false, map: true, equip: true, lines: true, vectors: false, trails: true },
   presetId: 'dipole',
   presets: [
@@ -117,12 +122,12 @@ export const fields = {
   ],
   controls: [
     { type: 'range', key: 'k', label: 'Charge strength k', min: 0.1, max: 3, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'forces' },
-    { type: 'range', key: 'B', label: 'Magnetic field B', min: -3, max: 3, step: 0.05, fmt: v => (v === 0 ? '0' : (v > 0 ? '⊗ ' : '⊙ ') + Math.abs(v).toFixed(2)), note: '⊗ points into the screen, ⊙ out of it.', group: 'forces' },
+    { type: 'range', key: 'B', label: 'Magnetic field B', min: -3, max: 3, step: 0.05, fmt: v => (v === 0 ? '0' : (v > 0 ? '⊗ ' : '⊙ ') + Math.abs(v).toFixed(2) + (unitSystem() === 'sim' ? '' : ' T')), note: '⊗ points into the screen, ⊙ out of it.', group: 'forces' },
     { type: 'range', key: 'gradB', label: 'B gradient (down the screen)', min: 0, max: 0.9, step: 0.05, fmt: v => '±' + Math.round(v * 100) + '%', group: 'forces' },
-    { type: 'range', key: 'E0', label: 'Uniform field E₀ (down)', min: -150, max: 150, step: 5, unit: 'px/s²', group: 'forces' },
-    { type: 'range', key: 'qm', label: 'Charge-to-mass |q|/m of new particles', min: 0.2, max: 4, step: 0.1, fmt: v => v.toFixed(1), group: 'spawn' },
+    { type: 'range', key: 'E0', label: 'Uniform field E₀ (down)', min: -150, max: 150, step: 5, qty: 'efield', group: 'forces' },
+    { type: 'range', key: 'qm', label: 'Charge-to-mass |q|/m of new particles', min: 0.2, max: 4, step: 0.1, fmt: v => v.toFixed(1) + (unitSystem() === 'sim' ? '' : ' C/kg'), group: 'spawn' },
     { type: 'seg', key: 'sign', label: 'Sign of new particles', options: [[1, '+ positive'], [-1, '− negative']], group: 'spawn' },
-    { type: 'range', key: 'v0', label: 'Beam speed', min: 20, max: 400, step: 5, unit: 'px/s', group: 'spawn' },
+    { type: 'range', key: 'v0', label: 'Beam speed', min: 20, max: 400, step: 5, qty: 'speed', group: 'spawn' },
     { type: 'toggle', key: 'beam', label: 'Fire a beam from the left edge', group: 'spawn', short: 'Beam from the left' },
     { type: 'toggle', key: 'map', label: 'Show potential map', group: 'display', short: 'Potential map' },
     { type: 'toggle', key: 'equip', label: 'Show equipotentials', group: 'display', short: 'Equipotentials' },
@@ -205,7 +210,7 @@ export const fields = {
   inspect() {
     const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
     const en = this.energyOf(i), q = this.qm[i], B = this.p.B;
-    return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', `${Math.hypot(this.vx[i], this.vy[i]).toFixed(0)} px/s`, 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? `${(Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)).toFixed(0)} px` : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
+    return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', fmtQ(this, 'speed', Math.hypot(this.vx[i], this.vy[i])), 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? fmtQ(this, 'len', Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)) : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
   deselect() { this.picked = false; },
   inspectHint: 'With the Move tool, click a test particle to chart and inspect it here.',
@@ -575,7 +580,7 @@ export const fields = {
         g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x - L * Math.cos(t - 0.45), b.y - L * Math.sin(t - 0.45)); g.moveTo(b.x, b.y); g.lineTo(b.x - L * Math.cos(t + 0.45), b.y - L * Math.sin(t + 0.45)); this.keyed3(g, col, 2);
       }
       g.font = `400 11px ${THEME.mono}`; g.textAlign = 'left'; g.textBaseline = 'middle';
-      this.label3(g, `${Math.round(Math.min(600, len * 2))} px/s`, b.x + 12, b.y, col);
+      this.label3(g, fmtQ(this, 'speed', Math.round(Math.min(600, len * 2))), b.x + 12, b.y, col);
     }
     const s0 = this.project3(A.x0, A.y0, this.lift3(A.x0, A.y0) + 0.05);
     if (s0) this.disc3(g, s0.x, s0.y, 4, col, 2);
@@ -785,6 +790,8 @@ export const fields = {
     }
     return { qnet, B, T: B !== 0 ? TAU / (qm * Math.abs(B)) : Infinity, vd: B !== 0 && this.p.E0 !== 0 ? Math.abs(this.p.E0 / B) : NaN, drift, ti: i };
   },
+  // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
+  primary: ['Probe |E|', 'Probe potential V'],
   readouts() {
     const s = this.stats(), pv = this.probeVal;
     return [
@@ -793,9 +800,9 @@ export const fields = {
       ['Particles absorbed · escaped', `${this.absorbed} · ${this.escaped}`],
       ['Probe |E|', pv ? fmtField(pv.E, this.K() / 1e6) : '—'],
       ['Probe potential V', pv ? fmtField(pv.V, this.Vscale()) : '—'],
-      ['Magnetic field at centre', s.B === 0 ? '0' : `${s.B > 0 ? '⊗' : '⊙'} ${Math.abs(s.B).toFixed(2)}`],
+      ['Magnetic field at centre', s.B === 0 ? '0' : `${s.B > 0 ? '⊗' : '⊙'} ${Math.abs(s.B).toFixed(2)}${unitSystem() === 'sim' ? '' : ' T'}`],
       ['Cyclotron period 2πm/|q|B', Number.isFinite(s.T) ? `${s.T.toFixed(2)} s` : '—'],
-      ['E × B drift speed E/B', Number.isFinite(s.vd) ? `${s.vd.toFixed(1)} px/s` : '—'],
+      ['E × B drift speed E/B', Number.isFinite(s.vd) ? fmtQ(this, 'speed', s.vd) : '—'],
       ['Energy drift (charted particle)', Number.isFinite(s.drift) ? pct(s.drift) : '—', Number.isFinite(s.drift) ? (Math.abs(s.drift) < 0.01 ? 'ok' : Math.abs(s.drift) < 0.05 ? 'warn' : 'crit') : null],
     ];
   },
@@ -812,7 +819,7 @@ export const fields = {
     const wdt = Math.abs(this.p.qm * this.p.B) * (1 + this.p.gradB) * this.dt();
     if (wdt > 0.25) out.push({ id: 'f-gyro', level: 'warn', title: 'Gyration is under-resolved', body: `Each time step turns a particle by <b>${(wdt * 180 / Math.PI).toFixed(0)}°</b>. The Boris pusher stays stable but the orbit shape gets coarse.` });
     if (this.n >= FIELD_P_CAP) out.push({ id: 'f-cap', level: 'info', title: 'Particle limit reached', body: `At most ${FIELD_P_CAP} test particles fly at once. Clear some, or turn the beam off.`, fixes: [{ label: 'Clear particles', run() { fields.clearParticles(); } }] });
-    if (this.p.B !== 0 && this.p.E0 !== 0) out.push({ id: 'f-exb', level: 'info', title: 'Crossed fields', body: `Every particle, positive or negative, slow or fast, drifts sideways at <b>E/B = ${s.vd.toFixed(1)} px/s</b>. The drift does not depend on charge or mass.` });
+    if (this.p.B !== 0 && this.p.E0 !== 0) out.push({ id: 'f-exb', level: 'info', title: 'Crossed fields', body: `Every particle, positive or negative, slow or fast, drifts sideways at <b>E/B = ${fmtQ(this, 'speed', s.vd)}</b>. The drift does not depend on charge or mass.` });
     return out;
   },
   sane() {

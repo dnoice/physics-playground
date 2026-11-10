@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Stage Styles (digiSpace Edition - v2.1)
+    - Title: Stage Styles (digiSpace Edition - v2.4)
     - File Name: stage.css
     - Relative Path: css/stage.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail
+      hangs from the top-right corner instead of centring on the stage edge,
+      so its camera group no longer moves between labs; it gains a named View
+      group, focus rings, larger axis targets, and captions and the axis ball
+      that give way on short stages.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added a
       recessed edge on the stage in 3D mode.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -19,14 +24,20 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The stage tile: header transport, live stage with HUD, experiment
-    banner, gizmo, overview map and the rewind timeline.
+    The stage tile: header transport, live stage with HUD, experiment banner,
+    the stage rail, overview map and the rewind timeline.
 
 ✒ Key Features:
     - The header never wraps on content; long scene names truncate so the
       stage keeps its size.
     - Transport labels hide below 960 px of tile width.
     - Experiment banner below the HUD row.
+    - The rail sits at a fixed offset from the top-right corner; Camera first,
+      then Tools, View and This scene.
+    - View options carry their names; at 720 px and below the rail becomes a
+      bottom bar of icons.
+    - Short stages drop the group captions, then shrink and hide the axis
+      ball.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

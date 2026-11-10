@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.1)
+    - Title: Gravity 3D View (digiSpace Edition - v2.4)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hover
+      and throw labels in 3D give mass and speed in the chosen units.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Now only
       the camera, picking and overlay for the world scene; the renderer
       moved to js/render/world.
@@ -46,6 +48,7 @@ import { THEME } from '../core/color.js';
 import { brushRing } from '../core/draw.js';
 import { FOV3, m4look, m4mul, m4persp } from '../core/math3d.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
+import { fmtQ } from '../core/units.js';
 import { view } from '../core/view.js';
 import { in3D } from '../shell/mode.js';
 import { announce } from '../shell/state.js';
@@ -154,7 +157,7 @@ export const gravity3d = {
     if (this.hover && !a) {
       const b = this.bodyAt3(this.hover, 12), s = b && this.project3(b.x, b.y, b.z);
       if (s) {
-        const R = this.radius3(b, s) + 5, label = `m ${b.m < 10 ? b.m.toFixed(2) : b.m.toFixed(0)} · ${Math.hypot(b.vx, b.vy, b.vz).toFixed(0)} px/s`;
+        const R = this.radius3(b, s) + 5, label = `${this.massText(b.m, true)} · ${fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz))}`;
         g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
         g.beginPath(); g.arc(s.x, s.y, R, 0, TAU); g.stroke();
         g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
@@ -179,7 +182,7 @@ export const gravity3d = {
       const s0 = this.project3(A.x, A.y, A.z);
       if (s0) { g.fillStyle = this.massColor(this.p.launchMass); g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, this.bodyRadius(this.p.launchMass) * this.scale3(s0)), 0, TAU); g.fill(); }
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
-      g.fillText(`${Math.hypot(vx, vy).toFixed(0)} px/s`, a.x + 10, a.y - 6);
+      g.fillText(fmtQ(this, 'speed', Math.hypot(vx, vy)), a.x + 10, a.y - 6);
     }
     g.strokeStyle = A && B ? THEME.text : THEME.crit; g.lineWidth = 1.5;
     g.beginPath(); g.moveTo(a.sx, a.sy); g.lineTo(a.x, a.y); g.stroke();

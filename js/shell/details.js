@@ -89,8 +89,10 @@ export function updateDetails(lab) {
   if (shownLab !== lab) { shownLab = lab; empty(lab); }
   noteSelection(had, !!info);
   if (!info) { shown = null; return; }
-  if (shown !== info.id) {
-    shown = info.id; actionsKey = '';
+  // A new object, or the same one with more or fewer figures (a source that starts moving), rebuilds the rows.
+  if (shown !== info.id || rows.length !== info.rows.length) {
+    if (shown !== info.id) actionsKey = '';
+    shown = info.id;
     rows = info.rows.map(() => row(lab));
     $('#details-rows').replaceChildren(...rows.map(r => r.root));
   }

@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Stage Gizmo (digiSpace Edition - v2.1)
+    - Title: Stage Gizmo (digiSpace Edition - v2.4)
     - File Name: navigator.js
     - Relative Path: js/shell/navigator.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
+      lab-scene group shows only when the lab has extras, and the scale bar is
+      labelled in the chosen unit system with a prefix to suit (cm, ft, AU).
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The axis
       ball compares against what it wrote, so it no longer reparses every
       frame.
@@ -28,7 +31,8 @@
 ✒ Key Features:
     - Axis ball for 3D views: drag to orbit, click an axis to look along it.
     - Overview map with a draggable view box when zoomed in.
-    - Scale bar in the lab's own units.
+    - Scale bar in the chosen unit system: metric, US customary or the lab's
+      own.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -41,6 +45,7 @@ import { canvasContext } from '../core/chart.js';
 import { THEME } from '../core/color.js';
 import { icon } from '../core/icons.js';
 import { v3dot } from '../core/math3d.js';
+import { prefixFor, unitOf } from '../core/units.js';
 import { $, el } from '../core/util.js';
 import { view } from '../core/view.js';
 import { camOf, is3D, navActual, navCenter, navFrame, navPan, navZoomBy, toWorld, worldOf, zoomPct } from './camera.js';
@@ -139,13 +144,14 @@ export function updateNav() {
 export function updateScale(lab, three) {
   scaleEl.hidden = three;
   if (three) return;
-  const u = lab.unit ? lab.unit() : { name: 'px', k: 1 }, z = camOf(lab).z, want = 90 / z * u.k;
-  if (!(want > 0) || !Number.isFinite(want)) return;
-  const p10 = Math.pow(10, Math.floor(Math.log10(want)));
+  // lab.unit() is the lab's own length per stage pixel; the bar is labelled in the chosen system, with a prefix to suit.
+  const u = lab.unit ? lab.unit() : { name: 'px', k: 1 }, [f, name0] = unitOf(lab, 'len'), z = camOf(lab).z, raw = 90 / z * u.k * f;
+  if (!(raw > 0) || !Number.isFinite(raw)) return;
+  const [d, name] = prefixFor(raw, name0), want = raw / d, p10 = Math.pow(10, Math.floor(Math.log10(want)));
   let nice = p10;
   for (const m of [2, 5]) if (m * p10 <= want) nice = m * p10;
-  $('#scalebar-bar').style.width = `${(nice / u.k * z).toFixed(1)}px`;
-  $('#scalebar-lbl').textContent = `${Number(nice.toPrecision(3))} ${u.name}`;
+  $('#scalebar-bar').style.width = `${(nice * d / f / u.k * z).toFixed(1)}px`;
+  $('#scalebar-lbl').textContent = `${Number(nice.toPrecision(3))} ${name}`;
 }
 export function drawMinimap(lab, three) {
   if (three) { miniEl.hidden = true; return; }

@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.3)
+    - Title: Chaos Lab (digiSpace Edition - v2.4)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Three views
+      on Dennis's brief: Pendulum, Phase map and Both, switched without
+      touching the run. The map is labelled as a projection of the 4-D state;
+      the Phase map view sets the torus it wraps onto beside it, with the same
+      paths and its two seams; a click on a dot or a pendulum selects that
+      copy everywhere and inspects it. Units follow the chosen system.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Rebuilt the
       phase-space view on Dennis's report that it was hard to see or use: the
       pendulum stands beside its map, angle arcs match the axis colours, and
@@ -22,10 +28,6 @@
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       3D rig and hover overlay; energy drift is measured against the rest
       energy, and snapshots carry parameters.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -34,12 +36,16 @@
 
 ✒ Key Features:
     - RK4 integration of the full double-pendulum equations.
-    - Pendulum view, and a phase view with the pendulum beside its map of (θ₁,
-      θ₂).
+    - Views: Pendulum, Phase map (the map with the torus beside it) and Both
+      (the pendulum beside its map).
+    - The map is the (θ₁, θ₂) projection of the 4-D state, and says so; paths
+      may cross on it.
     - The map's background is the potential energy; the curve V = E bounds
       where the front pendulum can go, computed by marching squares.
     - Pointing at the map previews a start: a ghost pose, its own energy curve
       and the angles; a click or drag starts every copy there.
+    - A click on a dot or a pendulum selects that copy in every view; Inspect
+      shows its angles, spins, energy and distance from the front copy.
     - Separation chart on a log scale, with the moment the copies diverge.
 
 ✒ Other Important Information:
@@ -55,6 +61,7 @@ import { RAMP_HEAT, THEME } from '../core/color.js';
 import { drawSphere, mixRgb, rampRgb, rrect } from '../core/draw.js';
 
 import { Series } from '../core/series.js';
+import { fmtPos, fmtQ } from '../core/units.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
 
 import { camOf, is3D, navFrame } from '../shell/camera.js';
@@ -111,7 +118,7 @@ export const pendulum = {
     { type: 'range', key: 'delta', label: 'Perturbation δ₀ between copies', min: 1e-9, max: 1e-1, log: true, rebuild: true, fmt: v => v.toExponential(0) + ' rad', group: 'start' },
     { type: 'range', key: 'mass', label: 'Mass ratio m₂ / m₁', min: 0.1, max: 5, log: true, fmt: v => v.toFixed(2), group: 'physics' },
     { type: 'range', key: 'len', label: 'Length ratio L₂ / L₁', min: 0.3, max: 2, step: 0.05, fmt: v => v.toFixed(2), group: 'physics' },
-    { type: 'range', key: 'g', label: 'Gravity g', min: 1, max: 30, step: 0.01, unit: 'm/s²', group: 'physics' },
+    { type: 'range', key: 'g', label: 'Gravity g', min: 1, max: 30, step: 0.01, qty: 'acc', group: 'physics' },
     { type: 'range', key: 'damp', label: 'Damping', min: 0, max: 0.5, step: 0.01, unit: '/s', group: 'physics' },
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: PEND_TRAIL, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'toggle', key: 'trails', label: 'Show trails', group: 'display', short: 'Trails' },
@@ -120,6 +127,8 @@ export const pendulum = {
   N: 0, s: new Float64Array(240), trails: null, phist: null, tn: 0, th: 0, trailClock: 0, E0: 0, holding: false, drag: null, wmax: 0,
   sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN,
   k1: new Float64Array(4), k2: new Float64Array(4), k3: new Float64Array(4), k4: new Float64Array(4), tmp: new Float64Array(4),
+  // The pendulum is computed in metres and seconds already (L₁ = 1 m), so Simulation units are metric here too.
+  units: { len: 'm', m: 1 }, scaleNote: 'Chaos computes in metres and seconds already: the upper arm is 1 m long and the upper bob 1 kg, so Simulation units read the same as Metric.',
   pivot: { x: 0, y: 0 }, scale: 100, sq: { x0: 0, y0: 0, S: 1 }, tor: null, sel: -1, pressAt: null,
   dt() { return 1 / 600; }, maxSteps: 64,
 
@@ -189,7 +198,11 @@ export const pendulum = {
   onParam(key) {
     if (key === 'mass' || key === 'len' || key === 'g') this.E0 = this.energy(0);
     // Each view has its own composition, so a view change brings the camera home to frame it.
-    if (key === 'view') { if (is3D(this)) this.frame3(); else if (!camOf(this).fit) navFrame(); }
+    if (key === 'view') {
+      // Lay out at once, so hit tests and the 3D scene see the new view before the next frame is drawn.
+      if (this.size && this.size.w) this.layout(this.size.w, this.size.h);
+      if (is3D(this)) this.frame3(); else if (!camOf(this).fit) navFrame();
+    }
   },
   /* Drift in percent of the energy above the hanging rest state: E's zero sits at the pivot, an arbitrary height, so |E0| can be almost nothing. */
   driftPct(E) { const M = this.p.mass, g = this.p.g, ref = this.E0 + (1 + M) * g + M * g * this.p.len; return ref > 0 ? (E - this.E0) / ref * 100 : 0; },
@@ -311,8 +324,8 @@ export const pendulum = {
       ['Lower angle θ₂', deg(s[o + 1]), 'The lower arm, measured from straight down, wrapped to ±180°. The map\'s vertical axis.'],
       ['Upper spin ω₁', `${s[o + 2].toFixed(2)} rad/s`, 'How fast the upper arm turns. Not on the map: it is one of the two hidden coordinates of the 4-D state.'],
       ['Lower spin ω₂', `${s[o + 3].toFixed(2)} rad/s`, 'How fast the lower arm turns. Not on the map: the other hidden coordinate.'],
-      ['Energy E', `${this.energy(i).toFixed(4)} J/kg`, 'Kinetic plus potential, per kilogram of the upper bob, with the zero at the pivot.'],
-      ['Lower bob position', `${x.toFixed(2)}, ${y.toFixed(2)} m`, 'Across and up from the pivot, with the upper arm 1 m long.'],
+      ['Energy E', fmtQ(this, 'spec', this.energy(i), { digits: 4 }), 'Kinetic plus potential, per kilogram of the upper bob, with the zero at the pivot.'],
+      ['Lower bob position', fmtPos(this, x, y), 'Across and up from the pivot, with the upper arm 1 m long.'],
     ];
     if (i > 0) rows.push(['Started apart by', `${(i * this.p.delta).toExponential(1)} rad`, 'This copy began with θ₂ larger than the front one\'s by this much, and nothing else different.'],
       ['Distance from the front copy', gap < 1e-3 ? gap.toExponential(2) : gap.toFixed(3), 'The distance between the two states in all four coordinates (spins in units of √(L/g)), as the separation chart measures it.']);
@@ -703,10 +716,10 @@ export const pendulum = {
     for (let i = 1; i < this.N; i++) spread = Math.max(spread, Math.abs(wrapAngle(this.s[i * 4 + 1] - this.s[1])));
     const damped = this.p.damp > 0;
     return [
-      ['Energy E (front pendulum)', `${E.toFixed(4)} J/kg`],
+      ['Energy E (front pendulum)', fmtQ(this, 'spec', E, { digits: 4 })],
       ['Energy drift', damped ? 'damped' : `${drift >= 0 ? '+' : ''}${drift.toExponential(1)} %`, damped ? 'idle' : ad < 1e-3 ? 'ok' : ad < 1e-1 ? 'warn' : 'crit'],
       ['Spread of θ₂ across copies', this.N > 1 ? `${(spread * 180 / Math.PI).toFixed(spread < 0.01 ? 4 : 1)}°` : '—'],
-      ['Lyapunov estimate λ', this.N < 2 ? 'needs 2+ copies' : Number.isFinite(this.lyap) ? `${this.lyap.toFixed(2)} s⁻¹` : 'measuring…'],
+      ['Lyapunov estimate λ', this.N < 2 ? 'needs 2+ copies' : Number.isFinite(this.lyap) ? `${this.lyap.toFixed(2)} s⁻¹` : 'measuring…', undefined, 'derived'],
       ['Copies diverged (δ ≥ 0.1)', this.N < 2 ? '—' : Number.isFinite(this.divergeAt) ? `at t = ${this.divergeAt.toFixed(2)} s` : 'not yet'],
       ['Fastest spin so far', `${this.wmax.toFixed(1)} rad/s`],
     ];
@@ -716,7 +729,7 @@ export const pendulum = {
     if (!damped && this.N) {
       const drift = Math.abs(this.driftPct(this.energy(0)));
       if (drift > 0.01) out.push({ id: 'p-drift', level: drift > 0.5 ? 'crit' : 'warn', title: 'Integrator error is growing', body: `Energy has drifted <b>${drift.toFixed(3)}%</b>. Spins up to ${this.wmax.toFixed(0)} rad/s cover a large angle per 1/600 s step, which RK4 follows less exactly.`,
-        fixes: this.p.g > 12 ? [{ label: 'Gravity 9.81', run() { setParam(pendulum, 'g', 9.81); rebuild(pendulum); } }] : [] });
+        fixes: this.p.g > 12 ? [{ label: `Gravity ${fmtQ(pendulum, 'acc', 9.81, { digits: 2 })}`, run() { setParam(pendulum, 'g', 9.81); rebuild(pendulum); } }] : [] });
     }
     if (this.N >= 2 && Number.isFinite(this.lyap) && this.lyap > 0.2) {
       out.push({ id: 'p-horizon', level: 'info', title: 'Predictability horizon', body: `λ ≈ <b>${this.lyap.toFixed(2)} s⁻¹</b>, so each tenfold cut in the starting error buys only ln 10 / λ ≈ <b>${(Math.LN10 / this.lyap).toFixed(1)} s</b> more agreement between copies.` });

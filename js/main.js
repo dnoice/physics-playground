@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Boot Sequence (digiSpace Edition - v2.1)
+    - Title: Boot Sequence (digiSpace Edition - v2.4)
     - File Name: main.js
     - Relative Path: js/main.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts the
+      deck workspace and the Units menu.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts
       the mode module and reopens the last lab.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -63,6 +65,7 @@ import { init as initAutomation } from './shell/automation.js';
 import { init as initDetails } from './shell/details.js';
 import { init as initInstruments } from './shell/instruments.js';
 import { init as initDeck } from './shell/deck.js';
+import { init as initUnits } from './shell/unitmenu.js';
 import { init as initMode } from './shell/mode.js';
 import { selectLab } from './shell/workspace.js';
 
@@ -89,7 +92,7 @@ export const hot = window.claude && window.claude.hot;
 
 /* Boot: wire every shell module, then start the selected lab. */
 function boot() {
-  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initAutomation();
+  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initUnits(); initAutomation();
   if (hot && typeof hot.snapshot === 'function') {
     hot.snapshot(() => ({
       lab: active && active.id, running: state.running, speed: state.speed,

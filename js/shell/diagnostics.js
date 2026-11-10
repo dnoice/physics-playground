@@ -1,25 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.3)
+    - Title: Diagnostics (digiSpace Edition - v2.4)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Insights
+      render in the deck's Insights pane; the HUD alert opens that pane, and
+      the summary on its tab is short: a count, or how many need checking.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Recovery
       from a blown-up run restarts the scene clean through restart().
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — No lab is
       named here any more; added the graphics tier insight.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

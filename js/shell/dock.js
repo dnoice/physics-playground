@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Tool Dock (digiSpace Edition - v2.1)
+    - Title: Tool Dock (digiSpace Edition - v2.4)
     - File Name: dock.js
     - Relative Path: js/shell/dock.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tools and
+      views are separate radio groups on the rail, each with the full keyboard
+      contract: the checked option is the one tab stop, arrows move and
+      select, Home and End jump. A view changes only what is drawn, and V
+      steps through a lab's views.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tool
       changes refresh disabled controls; the 3D hint knows when middle-drag
       orbits.
@@ -22,13 +27,18 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Builds the Tools tile from the active lab's dock and keeps the pointer
-    hint on the stage current.
+    Builds the lab's region of the stage rail: its pointer tools and its view
+    modes, and keeps the pointer hint on the stage current.
 
 ✒ Key Features:
-    - One button per tool with its icon and keyboard key.
-    - Selecting a tool updates the lab parameter, the hint and the cursor.
-    - The tile title follows the dock (Pointer tool or View).
+    - Tools (what the pointer does) and views (what the stage shows) as two
+      radio groups with separate state keys.
+    - Arrow keys, Home and End select within a group; only the checked option
+      takes a tab stop.
+    - selectView() never restarts or rewinds the run; nextView() backs the V
+      key.
+    - The hint follows the tool, else the view, else the lab, with the pan and
+      3D notes added.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

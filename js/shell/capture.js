@@ -1,26 +1,25 @@
 /*
 ✒ Metadata
-    - Title: Capture (digiSpace Edition - v2.3)
+    - Title: Capture (digiSpace Edition - v2.4)
     - File Name: capture.js
     - Relative Path: js/shell/capture.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Saved
+      datasets record the lab's native unit and its scale in metres, since
+      their columns stay in the lab's own units.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Loading a
       saved state rebuilds fresh before the state is restored.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Datasets
       stay one timeline across a rewind and name their own scene; saved
       states carry their world size; clips stop at 512 MB.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -220,7 +219,9 @@ export async function stopData(note) {
   const actual = dur > 0 ? Number(((rows.length - 1) / dur).toPrecision(3)) : rate;
   dataRec.rows = []; dataRec.tracks = [];
   const { where } = await vault.add({ kind: 'run', lab: lab.id, preset, title: `${lab.name} · ${presetLabel(lab, preset)} data`, duration: dur, rows: rows.length, columns: cols, rate: actual, rateAsked: rate,
-    params: dataRec.meta.params, summary, trackRows: tracks, trackColumns: tracks ? lab.trackColumns : null, trackLabel: tracks ? lab.trackLabel : null }, files);
+    params: dataRec.meta.params, summary, trackRows: tracks, trackColumns: tracks ? lab.trackColumns : null, trackLabel: tracks ? lab.trackLabel : null,
+    // Datasets keep the lab's own units, exactly as computed; the scale to real units travels with them.
+    units: { native: (lab.units && lab.units.len) || 'px', metresPerUnit: lab.units ? lab.units.m : null, note: lab.scaleNote || null } }, files);
   announce(note || `Dataset saved${where === 'session' ? ' for this session' : ''}: ${rows.length} rows over ${fmtDur(dur)}`);
 }
 export function toggleData() { dataRec.on ? stopData() : startData(); }
