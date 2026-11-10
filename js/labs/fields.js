@@ -13,7 +13,7 @@
 
 ✒ Changelog:
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      Coulomb at the probe, the Lorentz force's fields as sliders, the
+      Coulomb at the probe, the Lorentz force's fields as dials, the
       cyclotron period and radius, the E × B drift measured over a full period
       against E/B, and the grad-B drift; Inspect follows kinetic energy. Size
       of new charges sets how many units a click places, and Random gives each

@@ -13,7 +13,7 @@
 
 ✒ Changelog:
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      the equations with their ratios as sliders, the predictability horizon
+      the equations with their ratios as dials, the predictability horizon
       checked against when the copies part, the energy fence and the normal
       modes; Inspect follows the lower angle.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Three views
