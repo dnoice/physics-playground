@@ -4,14 +4,16 @@
     - File Name: package.metadata.md
     - Relative Path: package.metadata.md
     - Artifact Type: docs
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.3.1
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Version
+      2.3.1.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Version
       2.3.0.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Version
@@ -51,7 +53,7 @@ documentation lives here.
 | Field | Value | Meaning |
 | --- | --- | --- |
 | `name` | `physics-playground` | Package name; `private` keeps it off the npm registry |
-| `version` | `2.3.0` | Project release, matching [CHANGELOG.md](CHANGELOG.md) |
+| `version` | `2.3.1` | Project release, matching [CHANGELOG.md](CHANGELOG.md) |
 | `type` | `module` | Every `.js` file is an ES module, in Node as in the browser |
 | `engines.node` | `>=20.19` | ESLint 10 needs Node.js 20.19 or later; the dev server, checker and stager use only the standard library |
 | `devDependencies` | `eslint`, `globals` | Linting only; the playground itself installs nothing |

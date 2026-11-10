@@ -4,14 +4,16 @@
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.3.1
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      badge 2.3.1, now that the pictures it shows are in docs/media.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Described the sectioned Controls page and the new Chaos phase view,
       with its gallery picture; release badge 2.3.0.
@@ -60,7 +62,7 @@ Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.3.0][badge-release]](CHANGELOG.md)
+[![Release 2.3.1][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
 <br>
 [![ES modules, no build step][badge-esm]](ARCHITECTURE.md#principles)
@@ -425,7 +427,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.3.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.3.1-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

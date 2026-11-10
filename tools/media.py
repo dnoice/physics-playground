@@ -4,14 +4,20 @@
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.3.1
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Settles
+      each picture on 0.6 s of frames instead of 1.2 s: the readouts refresh
+      within 0.25 s, and every frame costs seconds in software WebGL. Fixed
+      the Chaos setup script, whose second line was not an f-string and
+      reached the browser with doubled braces. --only accepts single gallery
+      labs by id, so a run can resume or refresh one picture.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
       --headed, which renders on the GPU, after the headless software run
       proved too slow to finish in Dennis's session. Frames each picture only
@@ -46,7 +52,8 @@
     - Writes to docs/media/ by default, with the names the README and
       docs/media/MANIFEST.md use: banner, hero-workspace (Gravity),
       lab-<id> for the six other labs, and modes-2d-3d.
-    - --only captures a subset while iterating on one picture.
+    - --only captures a subset, down to a single gallery lab, while
+      iterating on one picture.
 
 ✒ Usage Instructions:
     Start the dev server (npm run dev), then run this from the project root
@@ -58,6 +65,7 @@
     $ python tools/media.py http://localhost:8080/
     $ python tools/media.py --only banner,hero
     $ python tools/media.py --only labs
+    $ python tools/media.py --only chaos,banner
     $ python tools/media.py --headed
     $ PP_MEDIA=/tmp/pp-media python tools/media.py
     $ PP_CHROME=/usr/bin/chromium python tools/media.py
@@ -68,7 +76,8 @@
                                http://localhost:5173/).
     Processing:
         --only NAMES           Comma-separated subset of banner, hero, labs,
-                               modes.
+                               modes, or single gallery labs by id (chaos,
+                               cloth, collisions, fields, fluid, waves).
         --headed               Open a visible browser that renders on the
                                GPU; much faster than the default headless
                                software rendering.
@@ -100,12 +109,14 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.environ.get('PP_MEDIA', os.path.join(ROOT, 'docs', 'media'))
 VIEW = {'width': 1440, 'height': 900}
+# Fake-clock frames rendered after a scene runs, before the picture; each costs seconds in software WebGL.
+SETTLE_MS = 600
 PP = 'PhysicsPlayground'
 
 # lab id, rail name, scene id, scene label, glyph, simulated seconds before the picture, and a setup script run after
 # the scene loads. Chaos shows its phase view with the pointer resting on the map, so the start preview is in frame.
 CHAOS_SETUP = (f"{PP}.tool('phase'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
-               "const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
+               f"const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
 LABS = [
     ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0, None),
     ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, None),
@@ -206,7 +217,8 @@ class Studio:
         # advance() takes at most maxSteps steps a call and drops the rest, as the frame loop does, so feed it in chunks.
         pg.evaluate(f"""s => {{ const L = {PP}.active, end = L.t + s, chunk = L.dt() * (L.maxSteps || 32);
           while (L.t < end - 1e-9) if (!{PP}.advance(Math.min(chunk, end - L.t))) break; }}""", seconds)
-        pg.clock.run_for(1200)
+        # 0.6 s of frames: the HUD refreshes every 0.1 s and the readouts every 0.25 s, so this settles them all.
+        pg.clock.run_for(SETTLE_MS)
 
     # ---------- framing ----------
     def frame(self, shots, scale):
@@ -268,7 +280,8 @@ def capture_labs(st, want):
     page is closed before its pictures are framed, so the framing never competes with a live 3D page."""
     art = None
     for lab, name, scene, label, glyph, seconds, setup in LABS:
-        if not ({'labs', 'hero', 'banner'} & want) or (lab != 'gravity' and 'labs' not in want):
+        gallery = lab != 'gravity' and ('labs' in want or lab in want)
+        if not (gallery or (lab == 'gravity' and {'hero', 'banner'} & want)):
             continue
         log(f'{name}: {label}')
         pg = st.app(lab)
@@ -278,7 +291,7 @@ def capture_labs(st, want):
             pg.add_style_tag(content='#stage > :not(canvas) { visibility: hidden !important; }')
             pg.clock.run_for(100)
             art = grab(pg, '#stage-canvas')
-        tile = (grab(pg, '#stage'), element_width(pg, '#stage')) if 'labs' in want and lab != 'gravity' else None
+        tile = (grab(pg, '#stage'), element_width(pg, '#stage')) if gallery else None
         pg.context.close()
         if hero:
             st.webp(st.frame([(hero, VIEW['width'], 'Physics <em>Playground</em>', f'{name} · {label}', 'orbit', '3D · ULTRA')], 1.5), 'hero-workspace')
@@ -297,7 +310,7 @@ def capture_modes(st):
     flat, width = grab(pg, '#stage'), element_width(pg, '#stage')
     pg.evaluate(f"{PP}.mode.set('3d')")
     st.until(pg, f'{PP}.mode.is3D()', 'the 3D world')
-    pg.clock.run_for(1200)
+    pg.clock.run_for(SETTLE_MS)
     deep = grab(pg, '#stage')
     pg.context.close()
     st.webp(st.frame([(flat, width * 0.62, 'Waves', 'Double slit', 'airwave', '2D'),
@@ -353,7 +366,7 @@ def main():
     ap.add_argument('--headed', action='store_true', help='open a visible browser that renders on the GPU (much faster)')
     a = ap.parse_args()
     want = set(a.only.split(','))
-    unknown = want - {'banner', 'hero', 'labs', 'modes'}
+    unknown = want - {'banner', 'hero', 'labs', 'modes'} - {lab[0] for lab in LABS if lab[0] != 'gravity'}
     if unknown:
         sys.exit(f'unknown picture set: {", ".join(sorted(unknown))}')
     os.makedirs(OUT, exist_ok=True)
