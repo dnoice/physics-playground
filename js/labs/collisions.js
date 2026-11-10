@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.5)
+    - Title: Collisions Lab (digiSpace Edition - v2.6)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit:
+      balls carry a stable identity, so Inspect stays on its ball when another
+      is erased, lets go when its ball is erased and clears on a rebuild,
+      where before it could show another ball's figures; a press on empty
+      table adds a ball without clearing the selection, so adding and throwing
+      in turn no longer flip the instruments between Inspect and the pane in
+      use; the tunnelling Insight gives lengths in the chosen units.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       the impulse with e and the energy it keeps, the speed distribution
       checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
@@ -21,8 +28,6 @@
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       radii and speeds follow the chosen units, one pixel being 1.09 cm; the
       empty Inspect pane says how to select a ball.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are grouped into Setup, Physics, New balls and Display.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -118,6 +123,8 @@ export const collisions = {
   x: new Float64Array(COLL_CAP), y: new Float64Array(COLL_CAP), vx: new Float64Array(COLL_CAP), vy: new Float64Array(COLL_CAP),
   r: new Float64Array(COLL_CAP), im: new Float64Array(COLL_CAP), order: new Int32Array(COLL_CAP), bin: new Uint8Array(COLL_CAP),
   ang: new Float64Array(COLL_CAP), om: new Float64Array(COLL_CAP), sprites: null, spinning: false,
+  // A ball's identity travels with it when slots move (removal swaps the last ball in), so Inspect keeps the same ball.
+  uid: new Int32Array(COLL_CAP), nextUid: 0,
   // One pixel is PX_M metres, as in every mechanical lab: the Gravity pile's 900 px/s² is 9.81 m/s².
   units: { len: 'px', m: PX_M }, scaleNote: 'In Collisions one pixel is 1.09 cm, as in Fluid and Cloth: 900 px/s² of gravity is 9.81 m/s². Masses and energies stay in simulation units, with a disc of radius r weighing r².',
   n: 0, w: 800, h: 600, tracer: -1, trail: new Float32Array(1800), tn: 0, th: 0, trailClock: 0,
@@ -130,15 +137,17 @@ export const collisions = {
     if (this.n >= COLL_CAP) return -1;
     const i = this.n++;
     this.x[i] = x; this.y[i] = y; this.vx[i] = vx; this.vy[i] = vy; this.r[i] = r; this.im[i] = 1 / (r * r); this.order[i] = i;
-    this.ang[i] = Math.random() * TAU; this.om[i] = 0;
+    this.ang[i] = Math.random() * TAU; this.om[i] = 0; this.uid[i] = ++this.nextUid;
     return i;
   },
   remove(i) {
     const last = this.n - 1;
     if (this.grab && this.grab.i === i) this.grab = null;
+    // The selection follows its ball: gone if this is it, moved if it is the last ball that fills the slot.
+    if (this.picked === i) this.picked = -1; else if (this.picked === last) this.picked = i;
     if (i !== last) {
       this.x[i] = this.x[last]; this.y[i] = this.y[last]; this.vx[i] = this.vx[last]; this.vy[i] = this.vy[last]; this.r[i] = this.r[last]; this.im[i] = this.im[last];
-      this.ang[i] = this.ang[last]; this.om[i] = this.om[last];
+      this.ang[i] = this.ang[last]; this.om[i] = this.om[last]; this.uid[i] = this.uid[last];
       if (this.tracer === last) this.tracer = i; else if (this.tracer === i) this.tracer = -1;
       if (this.grab && this.grab.i === last) this.grab.i = i;
     } else if (this.tracer === i) this.tracer = -1;
@@ -162,7 +171,7 @@ export const collisions = {
     }
   },
   build(preset, w, h) {
-    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN });
+    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1 });
     const N = Math.round(this.p.count);
     if (preset === 'gas') this.jitterGrid(N, 5, 170);
     else if (preset === 'pile') {
@@ -291,7 +300,7 @@ export const collisions = {
   inspect() {
     const i = this.picked; if (i < 0 || i >= this.n) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
-    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
+    return { id: `ball-${this.uid[i]}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${this.uid[i]}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
   inspectHint: 'With the Grab tool, click a ball to inspect it here.',
@@ -301,7 +310,9 @@ export const collisions = {
     if (tool === 'erase') { this.brush = { ...p }; this.eraseAt(p); return; }
     if (tool === 'heat' || tool === 'cool') { this.brush = { ...p }; return; }
     let i = this.hit(p);
-    this.picked = i;
+    // A ball pressed is selected; a press on empty table adds a ball and leaves the selection as it was, so adding
+    // and throwing in turn does not flip the instruments between Inspect and the pane in use.
+    if (i >= 0) this.picked = i;
     if (i < 0) {
       // Random sizes spread evenly in log from 4 to 24 px, so small and large balls come up about as often.
       const r = this.p.rand ? Math.round(4 * Math.pow(6, Math.random())) : this.p.radius;
@@ -388,7 +399,7 @@ export const collisions = {
   },
   /* The table's angle: tilted up like a bagatelle board, so the lab's +y gravity runs downhill. */
   tilt3() { return this.tiltNow; },
-  /* Cosmetic easing toward the angle the gravity slider asks for, called from the scene's sync; never saved. */
+  /* Cosmetic easing toward the angle the gravity setting asks for, called from the scene's sync; never saved. */
   ease3(dt) {
     const reach = this.h * 5 / Math.max(this.w, this.h) + 0.72, room = Math.asin(Math.min(1, (this.rig3.height - 0.32) / reach));
     const goal = Math.min(room, 0.6 * (1 - Math.exp(-this.p.gravity / 420)));
@@ -487,7 +498,7 @@ export const collisions = {
     const stepMove = s.vmax * dt;
     if (stepMove > s.rmin) {
       const cap = s.rmin / dt * 0.8;
-      out.push({ id: 'c-tunnel', level: 'warn', title: 'Fast balls can tunnel', body: `The fastest ball moves <b>${stepMove.toFixed(1)} px per step</b>, more than the smallest radius (${s.rmin.toFixed(0)} px), so it can skip through another ball between checks.`,
+      out.push({ id: 'c-tunnel', level: 'warn', title: 'Fast balls can tunnel', body: `The fastest ball moves <b>${fmtQ(this, 'len', stepMove)} per step</b>, more than the smallest radius (${fmtQ(this, 'len', s.rmin)}), so it can skip through another ball between checks.`,
         fixes: [{ label: `Cap speeds at ${fmtQ(this, 'speed', cap)}`, run() { const c = collisions; for (let i = 0; i < c.n; i++) { const v = Math.hypot(c.vx[i], c.vy[i]); if (v > cap) { c.vx[i] *= cap / v; c.vy[i] *= cap / v; } } c.KE0 = c.stats().etot; } }] });
     }
     if (s.phi > 0.78) {
@@ -618,7 +629,7 @@ Object.assign(collisions, genericState, {
   snapshot() {
     const n = this.n, a = new Float64Array(n * 7), { gravity, e, drag, mu } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 7; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.vx[i]; a[o + 3] = this.vy[i]; a[o + 4] = this.r[i]; a[o + 5] = this.ang[i]; a[o + 6] = this.om[i]; }
-    return { n, a, stride: 7, tracer: this.tracer, KE0: this.KE0, p: { gravity, e, drag, mu } };
+    return { n, a, stride: 7, uid: this.uid.slice(0, n), tracer: this.tracer, KE0: this.KE0, p: { gravity, e, drag, mu } };
   },
   restore(s) {
     Object.assign(this.p, s.p);
@@ -628,6 +639,8 @@ Object.assign(collisions, genericState, {
       const o = i * st, k = this.add(s.a[o], s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4]);
       if (st >= 7 && k >= 0) { this.ang[k] = s.a[o + 5]; this.om[k] = s.a[o + 6]; }
     }
+    if (s.uid) { this.uid.set(s.uid.subarray(0, this.n)); for (let k = 0; k < this.n; k++) if (this.uid[k] > this.nextUid) this.nextUid = this.uid[k]; }
+    if (this.picked >= this.n) this.picked = -1;
     Object.assign(this, { tracer: s.tracer, KE0: s.KE0, grab: null, brush: null, tn: 0, th: 0, wallImp: 0, wallTime: 0 });
     return true;
   },
