@@ -177,6 +177,11 @@ placement in every lab that places things, and new parameters.
   random draws in every lab within their ranges; Gravity's chosen type, drop
   speed and types kept through rewind and saved states; the new parameters.
 - `tests/shell.py` taps the thumbwheels where it used to click the sliders.
+- `tests/nav.py` and `tests/capture.py` wait for the end state of the frame
+  animation, the camera follow and the rewind history instead of a fixed
+  time; on a renderer without a GPU the fixed waits could run out a frame
+  early, on 2.4.1 as well (key 0 failed there in the test browser). The
+  assertions are unchanged.
 
 ## 2.4.1 (11/10/2026)
 

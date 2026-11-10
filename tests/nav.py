@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Navigation Test (digiSpace Edition - v2.1)
+    - Title: Navigation Test (digiSpace Edition - v2.5)
     - File Name: nav.py
     - Relative Path: tests/nav.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The frame,
+      key 0 and follow checks wait for the end state (the view fitted, the
+      camera on the body) instead of a fixed 800 to 1500 ms, which a renderer
+      without a GPU could need more than; the assertions are unchanged.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
       starts in flat 2D mode and the relief checks became flat tank checks,
       since 3D is now a global mode with its own suite. The marks and console
@@ -75,7 +79,9 @@ with sync_playwright() as p:
     zb = pg.locator("#nav-zoom").bounding_box(); zz = V()["z"]
     pg.mouse.move(zb["x"] + 20, zb["y"] + 10); pg.mouse.down(); pg.mouse.move(zb["x"] + 20, zb["y"] - 50, steps=6); pg.mouse.up()
     ok("readout_scrub_zooms", V()["z"] > zz * 1.5, (round(zz, 2), round(V()["z"], 2)))
-    pg.click("#nav-fit"); pg.wait_for_timeout(900); v = V(); ok("frame_fits", v["fit"] and abs(v["z"] - 1) < 1e-6, v)
+    # Animations step per drawn frame, so wait for the end state rather than a fixed time a slow renderer may need.
+    pg.click("#nav-fit"); settle(pg, "PhysicsPlayground.view.get().fit", 8000); v = V(); ok("frame_fits", v["fit"] and abs(v["z"] - 1) < 1e-6, v)
+    settle(pg, "document.getElementById('minimap').hidden", 3000)
     ok("minimap_hidden_when_fit", pg.evaluate("document.getElementById('minimap').hidden"))
     # pan mode toggle: left drag pans, dock tool turns it off
     pg.mouse.wheel(0, -300); pg.wait_for_timeout(500)
@@ -94,11 +100,11 @@ with sync_playwright() as p:
     # keys: 0 frames, + zooms, arrows pan
     pg.click("body", position={"x": 5, "y": 5}) if False else None
     pg.evaluate("document.activeElement && document.activeElement.blur()")
-    pg.keyboard.press("0"); pg.wait_for_timeout(800); ok("key_0_frames", V()["fit"])
+    pg.keyboard.press("0"); settle(pg, "PhysicsPlayground.view.get().fit", 8000); ok("key_0_frames", V()["fit"])
     pg.keyboard.press("+"); pg.wait_for_timeout(600); ok("key_plus", V()["z"] > 1.4)
     a0 = V(); pg.keyboard.press("ArrowRight"); a1 = V(); ok("arrow_pans", a1["x"] > a0["x"], (a0["x"], a1["x"]))
     # tools work in world coordinates while zoomed: grab-click adds a ball at the world point
-    pg.click("#dock-collisions-grab"); pg.keyboard.press("0"); pg.wait_for_timeout(800)
+    pg.click("#dock-collisions-grab"); pg.keyboard.press("0"); settle(pg, "PhysicsPlayground.view.get().fit", 8000)
     pg.evaluate("PhysicsPlayground.view.zoomBy(3, 400, 300)"); n1 = pg.evaluate("PhysicsPlayground.labs.collisions.n")
     TX, TY = int(box["width"] * 0.64), int(box["height"] * 0.78)
     wp = pg.evaluate(f"PhysicsPlayground.view.toWorld({TX}, {TY})")
@@ -125,7 +131,8 @@ with sync_playwright() as p:
     nb = pg.evaluate("PhysicsPlayground.labs.gravity.bodies.length")
     pg.mouse.click(box["x"] + pos[0], box["y"] + pos[1]); pg.wait_for_timeout(200)
     ok("click_body_tracks", pg.evaluate("PhysicsPlayground.labs.gravity.track") == pos[2] and pg.evaluate("PhysicsPlayground.labs.gravity.bodies.length") == nb)
-    pg.evaluate("PhysicsPlayground.play()"); pg.wait_for_timeout(1500)
+    # The camera eases onto the body over its first frames; wait until it has arrived, however slowly frames come.
+    pg.evaluate("PhysicsPlayground.play()"); pg.wait_for_timeout(300); settle(pg, "PhysicsPlayground.labs.gravity.trackEase >= 1", 10000)
     tr = pg.evaluate("(() => { const g = PhysicsPlayground.labs.gravity, b = g.bodies.find(b => b.id === g.track); return [b.x - g.cam.x, b.y - g.cam.y] })()")
     ok("tracked_body_centred", math.hypot(*tr) < 1.0, [round(t, 3) for t in tr])
     pg.evaluate("PhysicsPlayground.view.zoomBy(12, null, null)"); pg.wait_for_timeout(1200)
