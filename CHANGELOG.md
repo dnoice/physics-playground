@@ -77,6 +77,10 @@ glass blur stays out.
 - **Live Math dial ids.** A parameter in two formulas (Gravity's G, Waves'
   f, Chaos' g, Fields' B and E₀) made two dials with one id; later ones
   are numbered, so each symbol's label focuses its own dial.
+- **Tool bar on phones.** On a narrow stage the rail becomes a sideways
+  scroller, and at 390 px six labs' bars overflow (by up to 196 px in
+  Waves) with nothing to show it. The side with more tools beyond it now
+  fades out, as the bar scrolls, resizes or changes lab.
 - **Keyboard sheet.** Adds `?` and `Esc`, and how to work the dials.
 - **Dead code.** Removed CSS no markup used (the old slider rows,
   `.tile-meta`, the icon size modifiers) and the unused `deckPane()`
