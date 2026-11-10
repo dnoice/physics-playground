@@ -46,12 +46,14 @@
 ---------
 """
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, scene
+from harness import URL, finish, launch, ok, open_page, scene, settle
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
 state = lambda expr: pg.evaluate(P + "." + expr)
 pane = lambda: pg.evaluate("document.getElementById('tile-deck').dataset.pane")
+# The Inspect card refreshes at panel rate, which a loaded machine stretches; wait for it to name the selection.
+card = lambda text: settle(pg, "document.getElementById('details-kicker').textContent.includes(%r)" % text, 10000)
 ADVANCE = "(s => {{ const P = PhysicsPlayground, L = P.active, end = L.t + s; while (L.t < end - 1e-9) if (!P.advance(Math.min(1 / 60, end - L.t))) break; }})({})"
 
 with sync_playwright() as p:
@@ -114,7 +116,7 @@ with sync_playwright() as p:
       for (let i = 1; i < L.N; i++) { let m = Infinity; for (let j = 0; j < L.N; j++) if (j !== i) m = Math.min(m, Math.hypot(D[i].x - D[j].x, D[i].y - D[j].y)); if (m > far) { far = m; best = i; } }
       return best; })()""")
     d = state("active.dotAt(%d)" % k)
-    pg.mouse.click(*to_screen(d["x"], d["y"])); pg.wait_for_timeout(700)
+    pg.mouse.click(*to_screen(d["x"], d["y"])); card("Copy %d" % (k + 1))
     ok("dot_click_selects_copy", state("active.sel") == k and state("active.t") == t0, (state("active.sel"), k))
     ok("selection_opens_inspect", pane() == "inspect" and pg.is_visible("#details") and ("Copy %d" % (k + 1)) in pg.inner_text("#details-kicker"), pane())
     ok("inspect_is_read_only", pg.locator("#dp-inspect input, #dp-inspect [role=slider]").count() == 0)
@@ -147,7 +149,7 @@ with sync_playwright() as p:
     scene(pg, "#preset-fluid-posts"); pg.wait_for_timeout(500)
     n0 = state("active.obs.length")
     o = pg.evaluate("(() => { const L = PhysicsPlayground.active, o = L.obs[0]; return { x: o.x * L.U, y: o.y * L.U }; })()")
-    pg.mouse.click(*to_screen(o["x"], o["y"])); pg.wait_for_timeout(700)
+    pg.mouse.click(*to_screen(o["x"], o["y"])); card("Post 1")
     ok("post_click_selects", pane() == "inspect" and "Post 1" in pg.inner_text("#details-kicker") and state("active.obs.length") == n0)
     pg.click("#details-actions button"); pg.wait_for_timeout(400)
     ok("post_removed_from_card", state("active.obs.length") == n0 - 1 and pg.is_hidden("#details"))
@@ -158,7 +160,7 @@ with sync_playwright() as p:
     scene(pg, "#preset-waves-twosrc"); pg.wait_for_timeout(500)
     s = pg.evaluate("(() => { const L = PhysicsPlayground.active, s = L.sources[0]; return { x: s.x * L.cs, y: s.y * L.cs }; })()")
     pg.click("#dock-waves-source")
-    pg.mouse.click(*to_screen(s["x"], s["y"])); pg.wait_for_timeout(700)
+    pg.mouse.click(*to_screen(s["x"], s["y"])); card("Source 1")
     ok("source_click_selects", state("active.sources.length") == 2 and "Source 1" in pg.inner_text("#details-kicker"))
     ok("source_rows_in_units", " m" in pg.inner_text("#details-rows") and "Hz" in pg.inner_text("#details-rows"))
     pg.context.close()

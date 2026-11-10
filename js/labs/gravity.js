@@ -121,7 +121,8 @@ export const gravity = {
   controls: [
     { type: 'range', key: 'G', label: 'Gravity strength G', min: 0.1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'physics' },
     { type: 'range', key: 'soft', label: 'Softening length ε', min: 0.5, max: 30, step: 0.5, qty: 'len', group: 'physics' },
-    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes has mass 1000.', fmt: v => v.toPrecision(3).replace(/\.?0+$/, ''), group: 'spawn' },
+    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes weighs 1000 here, one solar mass; a mass of 1 is about Jupiter\'s.',
+      fmt: v => (unitSystem() === 'sim' ? v.toPrecision(3).replace(/\.?0+$/, '') : gravity.massText(v, true)), group: 'spawn' },
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: TRAIL_CAP, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'range', key: 'zoom', label: 'Zoom', min: 0.1, max: 40, log: true, fmt: v => v.toFixed(v >= 10 ? 1 : 2) + '×', group: 'view' },
     { type: 'toggle', key: 'merge', label: 'Merge bodies on contact', group: 'physics', short: 'Merge on contact' },
