@@ -13,7 +13,8 @@
 
 ✒ Changelog:
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
-      head-up display suite, tests/hud.py.
+      head-up display suite, tests/hud.py, and the Solar System suite,
+      tests/solar.py.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
       new notebook suite. Runs the new placement suite.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
@@ -55,7 +56,7 @@ import sys
 from harness import NOISE, URL
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement', 'hud']
+SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement', 'hud', 'solar']
 TIMEOUT_S = 600
 
 

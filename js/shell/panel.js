@@ -114,6 +114,9 @@ export function rangeMap({ min, max, log }) {
 /* How a range control shows its value: its own fmt, its quantity in the chosen units, or a number and its unit. */
 export function controlFormat(lab, c) {
   const q = c.qty, dec = q ? unitDecimals(lab, q, c.step) : decimalsFor(c.step);
+  // A quantity on a log scale with no step spans decades (Gravity's softening runs from 1e-4 to 30 px), so it keeps
+  // three significant figures where fixed decimals would round its low end to nothing.
+  if (!c.fmt && q && c.log && !c.step) return v => fmtQ(lab, q, v);
   return c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + (c.unit ? ' ' + c.unit : ''));
 }
 export function buildRange(lab, c) {

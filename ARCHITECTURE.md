@@ -16,7 +16,10 @@
       display: its section, the lab hooks hud and hudTarget, the camera reader
       toScreen, its place in the boot order, frame loop and styles, and the
       convention that anything over the stage that changes keeps its own
-      compositor layer and opacity, with the measurements behind it.
+      compositor layer and opacity, with the measurements behind it. Then
+      Gravity's Solar System: its section (body metadata, test bodies, moon
+      substeps, the sky frame, drawing to scale), its data module in the
+      layers, and log-scale quantities in significant figures.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math
       checks: the scale for a theory that can be zero, and the three rules
       every check keeps (its theory never comes from the measurement beside
@@ -119,7 +122,7 @@ flowchart TB
 | Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems |
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
-| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry |
+| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the experiments curriculum, the registry |
 | Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
@@ -418,10 +421,13 @@ default), US customary, and Simulation (the lab's own pixels or cells).
 - Gravity replaces the table with astronomy: the Star system's third planet
   orbits at 1 AU around a one-solar-mass star, so Kepler's third law fixes a
   year (4.4 simulated seconds at G = 1×), speeds in km/s and masses in solar,
-  Jupiter and Earth masses.
+  Jupiter and Earth masses. In the Solar System, `timeNote` adds the date
+  the run has reached, counted from J2000.0.
 - A control with `qty` (`len`, `speed`, `acc`, `spec` or `efield`) shows its
   value and reads typed values in the chosen system, with decimals that tell
-  neighbouring steps apart. Readings call `fmtQ(lab, kind, value)` and keep
+  neighbouring steps apart; one on a log scale without a step spans decades,
+  so it shows three significant figures instead (`controlFormat` in
+  `panel.js`). Readings call `fmtQ(lab, kind, value)` and keep
   the base unit, so a plotted series never switches prefix halfway; the
   scale bar picks a readable prefix (cm, in, AU).
 - A change of system rebuilds the Controls page, restarts every plotted
@@ -493,6 +499,71 @@ The Library page opens with capture cards (`buildLibraryCapture` in
 `library.js`): a clip, a dataset or a saved state with one press. Each says
 what it will keep for the lab (the dataset's columns) and, while recording,
 how far it has got.
+
+## Gravity's Solar System
+
+`js/labs/solarsystem.js` holds the data and builds the scene:
+- JPL's J2000 elements for the planets, each placed as the barycentre of
+  itself and its moons;
+- the moons, in their planets' equatorial planes from the IAU poles, and
+  the Moon from its osculating elements;
+- the dwarf planets and comets;
+- seeded belts.
+
+It turns elements into states with a Kepler solve and hands each body to
+`gravity.body()` with a `meta` object. Everything else is in
+`js/labs/gravity.js`, and none of it is specific to this scene: a saved
+state of any scene can carry the same metadata.
+
+- **Body metadata.** `meta` holds a body's name, description, colour, real
+  radius and smallest drawn size in pixels (`px`). It also holds whether
+  the body is labelled, ringed or trail-less, and the id of the body it
+  orbits (`hostId`).
+  - `applyMeta` copies it onto the body, and `linkHosts` turns `hostId`
+    into `b.host` once every body exists.
+  - Rewind snapshots and saved states carry it whole. A loaded state passes
+    through `cleanMeta`, which checks each field, so a state file is only
+    ever data.
+- **Sources and test bodies.** `prepare()` splits the bodies into `srcs`
+  (with mass) and `tests` (massless), and runs whenever the body list
+  changes (`accDirty`).
+  - A test body feels every source and pulls on nothing, so the belts cost
+    `tests × srcs`, not a share of N².
+  - Energy and momentum are summed over sources.
+- **Moons on their own clock (r-RESPA).** A moon and its host make a pair
+  whose pull is fast. `computeAcc()` leaves those pairs out, so a step
+  works like this:
+  1. a half kick by every other pull;
+  2. `sub` substeps of leapfrog for the moons and hosts under their pair
+     pulls alone (`substep`, `fastAcc`), while every other body drifts the
+     full step once;
+  3. the closing half kick.
+
+  `sub` gives the fastest moon at least 150 substeps a turn: 80 with Phobos,
+  capped at 256. Without moons, `sub` is 0 and the step is the original
+  fused loop.
+- **The sky frame.** `sky` is set when any body is real.
+  - The simulation frame is the ecliptic with y turned over, so the stage
+    shows the sky from the north, the planets going anticlockwise.
+  - `pole()` returns −1 there, so tilts and the Kepler check read prograde
+    orbits as below 90°.
+  - `cullR()` lets bodies reach 2×10⁵ px (1,500 AU) before they count as
+    escaped.
+- **Drawing to scale.** `drawR(b, z)` in 2D and `radius3(b, s)` in 3D draw
+  a body at its real radius, but never under its `px` floor.
+  - `apart` and `apart3` hide a moon while it sits inside its host's drawn
+    disc. Picking, erasing, names and orbits follow the same rule.
+  - The 3D near plane follows the camera in. Floored at 1e-7 in sky scenes,
+    it lets the camera reach a moon a few thousandths of a pixel across.
+- **Orbits and names.**
+  - `orbitPath(b, P)` returns the osculating ellipse from the eccentricity
+    vector, about `pullHost(b)`: the body's host, else what pulls on it
+    hardest.
+  - The 2D view strokes it on the canvas. The 3D scene draws it as a
+    depth-tested ribbon, so planets hide what is behind them.
+  - `drawNames` places names by rank: the followed body, the Sun, planets,
+    dwarfs and comets, then moons by mass. A name that would overlap one
+    already placed is left out.
 
 ## Guided experiments
 

@@ -73,10 +73,11 @@ export const gravity3d = {
     return M ? { x: x / M, y: y / M, z: z / M } : { x: 0, y: 0, z: 0 };
   },
   tracked3() { return this.track != null ? this.bodies.find(b => b.id === this.track) || null : null; },
-  /* Distance at which the whole system fits the stage. */
+  /* Distance at which the whole system fits the stage; the Solar System frames the planets out to Saturn, as the
+     flat view does, and zooms out to the Kuiper belt from there. */
   dist0() {
-    const c = this.com3(); let R = 120;
-    for (const b of this.bodies) { const d = Math.hypot(b.x - c.x, b.y - c.y, b.z - c.z) + b.r; if (d < 4000 && d > R) R = d; }
+    const c = this.com3(), cap = this.sky ? 1500 : 4000; let R = 120;
+    for (const b of this.bodies) { const d = Math.hypot(b.x - c.x, b.y - c.y, b.z - c.z) + b.r; if (d < cap && d > R) R = d; }
     const a = Math.min(1, view.w / Math.max(1, view.h));
     return R * 1.15 / Math.tan(FOV3 / 2) / a;
   },
@@ -85,7 +86,8 @@ export const gravity3d = {
     return this.cam3;
   },
   camMatrices(w, h) {
-    const c = this.c3(), cp = Math.cos(c.pitch), near = Math.max(0.05, c.dist * 0.004), far = c.dist * 40 + 2e4;
+    // A real moon is a few thousandths of a pixel across, so the Solar System's near plane follows the camera in.
+    const c = this.c3(), cp = Math.cos(c.pitch), near = Math.max(this.sky ? 1e-7 : 0.05, c.dist * 0.004), far = c.dist * 40 + 2e4;
     const e = [c.tx + c.dist * cp * Math.sin(c.yaw), c.ty + c.dist * Math.sin(c.pitch), c.tz + c.dist * cp * Math.cos(c.yaw)];
     const V = m4look(e, [c.tx, c.ty, c.tz], [0, 1, 0]), P = m4persp(FOV3, w / Math.max(1, h), near, far);
     return { mvp: m4mul(P, V.m), eye: e, r: V.r, u: V.u, f: V.f, w, h, fovDeg: FOV3 * 180 / Math.PI, near, far };
@@ -99,8 +101,16 @@ export const gravity3d = {
   },
   /* World length to stage pixels at a projected point. */
   scale3(s) { return this.basis3().h / (2 * Math.tan(FOV3 / 2) * s.w); },
-  /* A body's radius on the stage, with the same floor the scene draws it at. */
-  radius3(b, s) { return Math.max(b.m >= this.STAR_MASS ? 4 : 2.6, b.r * this.scale3(s)); },
+  /* A body's radius on the stage, with the same floor the scene draws it at: a real world's own, else the stars' and
+     planets'. */
+  radius3(b, s) { return Math.max(b.px || (b.m >= this.STAR_MASS ? 4 : 2.6), b.r * this.scale3(s)); },
+  /* Whether a moon is drawn apart from its planet on the stage (the flat view's apart() in 3D); a body without a
+     host, or behind the camera, always is. */
+  apart3(b, s = this.project3(b.x, b.y, b.z)) {
+    if (!b.host || !s) return true;
+    const h = this.project3(b.host.x, b.host.y, b.host.z);
+    return !h || Math.hypot(s.x - h.x, s.y - h.y) >= this.radius3(b.host, h) + this.radius3(b, s);
+  },
   /* Stage pixel to the point on the orbital plane. */
   pick3(s) {
     const V = this.basis3(), c = this.c3(), t = Math.tan(FOV3 / 2), a = V.w / Math.max(1, V.h), z0 = this.com3().z;
@@ -119,7 +129,7 @@ export const gravity3d = {
   },
   zoom3(f, s, instant) {
     // A tracked body may fill the stage; the free camera stops at a fraction of the system.
-    const c = this.c3(), D0 = this.dist0(), tb = this.tracked3(), nd = clamp(c.distT / f, tb ? Math.min(tb.r * 2.5, D0 * 0.04) : D0 * 0.04, D0 * 6);
+    const c = this.c3(), D0 = this.dist0(), tb = this.tracked3(), nd = clamp(c.distT / f, tb ? Math.min(tb.r * 2.5, D0 * 0.04) : D0 * 0.04, D0 * (this.sky ? 12 : 6));
     if (s && !this.camLocked()) { const p = this.pick3(s); if (p) { const k = 1 - nd / c.distT; c.txT += (p.x - c.txT) * k; c.tzT += (p.y - c.tzT) * k; } }
     c.distT = nd;
     if (instant || reduceMotion) { c.dist = c.distT; c.tx = c.txT; c.tz = c.tzT; }
@@ -147,9 +157,19 @@ export const gravity3d = {
     c.dist *= Math.pow(c.distT / c.dist, k); c.tx += (c.txT - c.tx) * kt; c.ty += (c.tyT - c.ty) * kt; c.tz += (c.tzT - c.tz) * kt;
     this.cam.x = c.tx; this.cam.y = c.tz;
   },
-  /* Screen overlay: follow ring, hover readout, delete brush and the throw preview. */
+  /* Screen overlay: names, follow ring, hover readout, delete brush and the throw preview. The orbits are drawn in
+     the world scene, where planets can hide them. */
   overlay3(g, w, h) {
     const tb = this.tracked3(), a = this.aim, sT = tb && this.project3(tb.x, tb.y, tb.z);
+    if (this.p.labels) {
+      const names = [];
+      for (const b of this.bodies) {
+        if (!b.label) continue;
+        const s = this.project3(b.x, b.y, b.z); if (!s || s.x < -40 || s.y < -20 || s.x > w + 40 || s.y > h + 20) continue;
+        if (this.apart3(b, s)) names.push([b, s.x, s.y, this.radius3(b, s)]);
+      }
+      this.drawNames(g, names);
+    }
     if (sT) {
       g.save(); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3; g.setLineDash([4, 4]); g.lineDashOffset = -performance.now() / 60;
       g.beginPath(); g.arc(sT.x, sT.y, this.radius3(tb, sT) + 8, 0, TAU); g.stroke(); g.restore();
@@ -157,7 +177,7 @@ export const gravity3d = {
     if (this.hover && !a) {
       const b = this.bodyAt3(this.hover, 12), s = b && this.project3(b.x, b.y, b.z);
       if (s) {
-        const R = this.radius3(b, s) + 5, label = `${this.massText(b.m, true)} · ${fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz))}`;
+        const R = this.radius3(b, s) + 5, label = this.hoverText(b);
         g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
         g.beginPath(); g.arc(s.x, s.y, R, 0, TAU); g.stroke();
         g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
@@ -194,15 +214,15 @@ export const gravity3d = {
   bodyAt3(p, slack = 8) {
     let best = null, bd = Infinity;
     for (const b of this.bodies) {
-      const s = this.project3(b.x, b.y, b.z); if (!s) continue;
-      const d = Math.hypot(s.x - p.x, s.y - p.y) - Math.max(2, b.r * this.scale3(s));
+      const s = this.project3(b.x, b.y, b.z); if (!s || !this.apart3(b, s)) continue;
+      const d = Math.hypot(s.x - p.x, s.y - p.y) - this.radius3(b, s);
       if (d < bd) { bd = d; best = b; }
     }
     return bd < slack ? best : null;
   },
   eraseAt3(p) {
     const before = this.bodies.length;
-    this.bodies = this.bodies.filter(b => { const s = this.project3(b.x, b.y, b.z); return !s || Math.hypot(s.x - p.x, s.y - p.y) > Math.max(14, this.radius3(b, s) + 6); });
+    this.bodies = this.bodies.filter(b => { const s = this.project3(b.x, b.y, b.z); return !s || !this.apart3(b, s) || Math.hypot(s.x - p.x, s.y - p.y) > Math.max(14, this.radius3(b, s) + 6); });
     if (this.bodies.length !== before) { this.accDirty = true; this.E0 = this.energy(); }
   },
   pointerUp3(a, nb = this.drawNew()) {

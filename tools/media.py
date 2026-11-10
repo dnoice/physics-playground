@@ -14,7 +14,9 @@
 ✒ Changelog:
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       Collisions picture selects the cue ball, so the gallery shows the
-      head-up display's target box and callout.
+      head-up display's target box and callout. New picture set sol:
+      Gravity's Solar System in 3D, the planets out to Saturn beside
+      Jupiter followed up close with its moons.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Chaos is
       captured in its Both view, which shows the pendulum beside its map.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Settles
@@ -52,11 +54,13 @@
     - A banner built from a live 3D render of the Gravity lab.
     - A 2D and 3D pair of the same moment, showing the mode switch leaves
       the simulation alone.
+    - Gravity's Solar System in 3D as a pair: the planets out to Saturn,
+      and Jupiter followed close enough to part its moons.
     - WebP output with alpha, encoded by the browser itself: no image
       library to install, and pages stay light to load.
     - Writes to docs/media/ by default, with the names the README and
       docs/media/MANIFEST.md use: banner, hero-workspace (Gravity),
-      lab-<id> for the six other labs, and modes-2d-3d.
+      lab-<id> for the six other labs, modes-2d-3d and sol-system.
     - --only captures a subset, down to a single gallery lab, while
       iterating on one picture.
 
@@ -71,6 +75,7 @@
     $ python tools/media.py --only banner,hero
     $ python tools/media.py --only labs
     $ python tools/media.py --only chaos,banner
+    $ python tools/media.py --only sol
     $ python tools/media.py --headed
     $ PP_MEDIA=/tmp/pp-media python tools/media.py
     $ PP_CHROME=/usr/bin/chromium python tools/media.py
@@ -81,8 +86,9 @@
                                http://localhost:5173/).
     Processing:
         --only NAMES           Comma-separated subset of banner, hero, labs,
-                               modes, or single gallery labs by id (chaos,
-                               cloth, collisions, fields, fluid, waves).
+                               modes, sol, or single gallery labs by id
+                               (chaos, cloth, collisions, fields, fluid,
+                               waves).
         --headed               Open a visible browser that renders on the
                                GPU; much faster than the default headless
                                software rendering.
@@ -228,12 +234,13 @@ class Studio:
         pg.clock.run_for(SETTLE_MS)
 
     # ---------- framing ----------
-    def frame(self, shots, scale):
-        """One or more framed windows side by side, as PNG bytes with alpha. shots: (png, css width, name, scene, glyph, tag)."""
+    def frame(self, shots, scale, key='Z'):
+        """One or more framed windows side by side, as PNG bytes with alpha. shots: (png, css width, name, scene, glyph,
+        tag). key is the keycap shown between windows (the mode switch's Z), or None for none."""
         wins = []
         for i, (png, width, name, scene, glyph, tag) in enumerate(shots):
-            if i:
-                wins.append('<span class="key">Z</span>')
+            if i and key:
+                wins.append(f'<span class="key">{key}</span>')
             wins.append(f"""<div class="frame"><div class="win"><div class="bar">
               <span class="dots"><i style="background:var(--crit)"></i><i style="background:var(--warn)"></i><i style="background:var(--ok)"></i></span>
               <span class="ms" aria-hidden="true">{glyph}</span><span class="name">{name}</span>
@@ -324,6 +331,23 @@ def capture_modes(st):
                       (deep, width * 0.62, 'Waves', 'Double slit', 'airwave', '3D')], 1), 'modes-2d-3d')
 
 
+def capture_sol(st):
+    """Gravity's Solar System in 3D: the planets out to Saturn two months in, then Jupiter followed close enough that
+    its moons stand clear of it, with the head-up display's target box and callout on the planet."""
+    log('Gravity: Our Solar System')
+    pg = st.app('gravity')
+    st.run(pg, 'sol', 0.75)
+    wide, width = grab(pg, '#stage'), element_width(pg, '#stage')
+    pg.evaluate(f"""(() => {{ const L = {PP}.active, J = L.bodies.find(b => b.name === 'Jupiter');
+      L.track = J.id; L.trackEase = 0; {PP}.view.zoomBy(420); }})()""")
+    # The camera eases in on real frame time: 0.9 s of frames brings it to within a fraction of a percent.
+    pg.clock.run_for(900)
+    close = grab(pg, '#stage')
+    pg.context.close()
+    st.webp(st.frame([(wide, width * 0.62, 'Gravity', 'Our Solar System', 'orbit', '3D'),
+                      (close, width * 0.62, 'Gravity', 'Jupiter and its moons', 'orbit', '3D')], 1, key=None), 'sol-system')
+
+
 def capture_banner(st, art):
     """Title, tagline and the seven labs over a live 3D render of Gravity."""
     log('Banner')
@@ -369,11 +393,11 @@ def capture_banner(st, art):
 def main():
     ap = argparse.ArgumentParser(description='Capture the README banner and screenshots.')
     ap.add_argument('url', nargs='?', default=os.environ.get('PP_URL', 'http://localhost:5173/'))
-    ap.add_argument('--only', default='banner,hero,labs,modes')
+    ap.add_argument('--only', default='banner,hero,labs,modes,sol')
     ap.add_argument('--headed', action='store_true', help='open a visible browser that renders on the GPU (much faster)')
     a = ap.parse_args()
     want = set(a.only.split(','))
-    unknown = want - {'banner', 'hero', 'labs', 'modes'} - {lab[0] for lab in LABS if lab[0] != 'gravity'}
+    unknown = want - {'banner', 'hero', 'labs', 'modes', 'sol'} - {lab[0] for lab in LABS if lab[0] != 'gravity'}
     if unknown:
         sys.exit(f'unknown picture set: {", ".join(sorted(unknown))}')
     os.makedirs(OUT, exist_ok=True)
@@ -385,6 +409,8 @@ def main():
                 capture_banner(st, art)
             if 'modes' in want:
                 capture_modes(st)
+            if 'sol' in want:
+                capture_sol(st)
         finally:
             st.close()
 
