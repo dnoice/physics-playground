@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Stage Gizmo (digiSpace Edition - v2.4)
+    - Title: Stage Gizmo (digiSpace Edition - v2.6)
     - File Name: navigator.js
     - Relative Path: js/shell/navigator.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,16 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Marks which
+      ends of the scrolling rail have more tools beyond them, as it scrolls,
+      resizes or changes lab, for the fade in stage.css.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
       lab-scene group shows only when the lab has extras, and the scale bar is
       labelled in the chosen unit system with a prefix to suit (cm, ft, AU).
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The axis
       ball compares against what it wrote, so it no longer reparses every
       frame.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -196,4 +195,12 @@ export function init() {
   miniCanvas.addEventListener('pointerdown', e => { miniDrag = e.pointerId; try { miniCanvas.setPointerCapture(e.pointerId); } catch (_) { /* best-effort */ } miniJump(e); });
   miniCanvas.addEventListener('pointermove', e => { if (miniDrag === e.pointerId) miniJump(e); });
   miniCanvas.addEventListener('pointerup', miniEnd); miniCanvas.addEventListener('pointercancel', miniEnd);
+  // On a narrow stage the rail is a sideways scroller: mark which ends have more tools beyond them, for the fade.
+  const nav = $('#nav'), edges = () => {
+    const more = nav.scrollWidth > nav.clientWidth + 1;
+    nav.classList.toggle('more-l', more && nav.scrollLeft > 2);
+    nav.classList.toggle('more-r', more && nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 2);
+  };
+  nav.addEventListener('scroll', edges, { passive: true });
+  const ro = new ResizeObserver(edges); ro.observe(nav); for (const sec of nav.children) ro.observe(sec);
 }

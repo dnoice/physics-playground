@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.5)
+    - Title: Panel Builder (digiSpace Edition - v2.6)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Comments
+      speak of dials rather than sliders.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Guide
       page moves to guide.js and the Math page gains live panels from
       livemath.js; a control's value format is shared through controlFormat().
@@ -23,12 +25,6 @@
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A control
       with a quantity kind shows its value, and takes typed values, in the
       chosen unit system; the lab keeps its own units underneath.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are laid out in sections on Dennis's call for a more intuitive and
-      cohesive panel: each with a glyph, a fold that is remembered, a Reset
-      that appears once a value leaves the scene's, and one restart note
-      instead of one per slider. Switches share a grid with short names, and
-      actions move to the top as quick actions.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -227,7 +223,7 @@ function buildGroup(lab, g) {
     el('span', { class: 'ms pgroup-ico', 'aria-hidden': 'true', text: g.icon || 'tune' }), el('span', { class: 'pgroup-title', text: g.label }),
     el('span', { class: 'ms pgroup-chev', 'aria-hidden': 'true', text: 'expand_more' }));
   const reset = el('button', { type: 'button', class: 'pgroup-reset', hidden: true, html: `${RESET_SVG}<span>Reset</span>`, 'aria-label': `Reset ${g.label} to the scene's values`, title: "Back to the scene's values" });
-  // A section whose changes start the run again says so once, instead of a note under every slider.
+  // A section whose changes start the run again says so once, instead of a note under every dial.
   const note = g.controls.some(c => c.rebuild) ? el('p', { class: 'pgroup-note', text: 'Changes here restart the run.' }) : null;
   const sec = el('section', { class: 'pgroup', 'aria-labelledby': id, 'data-group': g.id }, el('div', { class: 'pgroup-head' }, toggle, reset), ...(note ? [note] : []), body);
   const fold = f => { toggle.setAttribute('aria-expanded', String(!f)); body.hidden = f; if (note) note.hidden = f; sec.classList.toggle('is-folded', f); };
@@ -265,7 +261,7 @@ export function buildPanel(lab) {
   $('#scene-body').replaceChildren(el('h2', { text: lab.title }), eq);
   groupResets.length = 0;
   const grid = el('div', { class: 'params' });
-  // Actions act on the run now, so they sit first, where they are seen without scrolling past every slider.
+  // Actions act on the run now, so they sit first, where they are seen without scrolling past every dial.
   if (lab.actions && lab.actions.length) grid.append(el('div', { class: 'quick', role: 'group', 'aria-label': 'Quick actions' }, ...lab.actions.map(a => el('button', { type: 'button', class: 'btn btn-quick', text: a.label, onclick: () => { a.run(); announce(a.label); evaluateDiagnostics(); } }))));
   for (const g of panelGroups(lab)) grid.append(buildGroup(lab, g));
   $('#params-body').replaceChildren(grid);

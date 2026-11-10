@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Icon Styles (digiSpace Edition - v2.0)
+    - Title: Icon Styles (digiSpace Edition - v2.6)
     - File Name: icons.css
     - Relative Path: css/icons.css
     - Artifact Type: stylesheet
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.6.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
+      small and large glyph sizes, which nothing uses.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0 on Dennis's direction: Google icons throughout the
       playground.
@@ -42,8 +44,6 @@
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
 }
 .ms.fill, [aria-pressed="true"] > .ms, [aria-selected="true"] > .ms, [aria-checked="true"] > .ms { font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20; }
-.ms.sm { font-size: 16px; }
-.ms.lg { font-size: 24px; font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
 /* If the icon font cannot load (offline), hide the glyph names rather than print them. */
 html.no-icons .ms { display: none; }
 /* Lab glyphs come alive on the selected tab and on hover. */

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.5)
+    - Title: Fluid Lab (digiSpace Edition - v2.6)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,8 +12,16 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: a
+      settled tank rests about a tenth under ρ₀ throughout, near-pressure
+      holding neighbours apart, with gravity or without, so the density check
+      now sets the densest tenth of the particles against the median, the
+      evenness that incompressible means here, where before it set the mean
+      against ρ₀ and passed only on a wide tolerance; the pressure check says
+      when nothing is squeezed or the liquid foams instead of giving a
+      negative excess, and both checks wait for liquid in an empty tank.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      densities plotted around rest, k and k-near as sliders with the pressure
+      densities plotted around rest, k and k-near as dials with the pressure
       they give, viscosity, and the share of particles at the speed cap;
       Inspect follows a post's contact. A New posts section: the radius of new
       posts, and Random posts for a random size each time, previewed by the
@@ -22,11 +30,6 @@
       but Obstacle selects a post for the Inspect pane, with figures measured
       from the liquid around it and a remove action; speeds, lengths and
       gravity follow the chosen units, one pixel being 1.09 cm.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Posts
-      survive a rebuild that a parameter asks for, after Dennis found them
-      vanishing when Particles changed: keep() hands them over and build()
-      places them before the liquid. Controls are grouped into Setup, Physics
-      and Display.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -572,8 +575,16 @@ export const fluid = {
   /* The Math page's live panels (livemath.js). */
   mathLive: {
     density: {
-      vars: L => [['ρ₀', L.rho0.toFixed(2), 'Rest density, in neighbour-weight units.'], ['ρ̄ / ρ₀', L.mean.toFixed(3), 'Mean density of the liquid over the rest density.'], ['peak', `${L.peak.toFixed(2)}×`, 'The densest particle.']],
-      check: L => ({ what: 'Mean density at rest', theory: 1, sim: L.mean, fmt: v => `${v.toFixed(3)} ρ₀`, tol: 0.12, wait: 'Waiting for liquid…' }),
+      vars: L => [['ρ₀', L.rho0.toFixed(2), 'Rest density, in neighbour-weight units.'], ['ρ̄ / ρ₀', L.mean.toFixed(3), 'Mean density of the liquid over the rest density: a settled tank rests about a tenth under it.'], ['peak', `${L.peak.toFixed(2)}×`, 'The densest particle.']],
+      /* Near-pressure holds neighbours a little apart, so a settled tank rests about a tenth under ρ₀ throughout, with
+         gravity or without; what incompressible means here is that the density stays even from top to bottom. The
+         check sets the densest tenth of the particles against the median: 1 is perfectly even, and a squeezed bottom
+         pulls it up. */
+      check: L => {
+        if (L.n < 20) return { text: 'Pour some liquid to measure its density.' };
+        const r = Float32Array.from(L.rho.subarray(0, L.n)).sort(), med = r[(L.n - 1) >> 1];
+        return { what: 'Densest tenth against the median', theory: 1, sim: med > 0 ? r[Math.floor(0.9 * (L.n - 1))] / med : NaN, fmt: v => `${v.toFixed(3)}×`, tol: 0.1, wait: 'Waiting for liquid…' };
+      },
       /* How the particles' densities spread around ρ₀: a narrow peak at 1 is a calm, incompressible liquid. */
       plot: (c, L) => {
         const { g, w, h } = c, B = 40, top = 2.5, hist = new Float64Array(B);
@@ -593,7 +604,10 @@ export const fluid = {
     pressure: {
       params: ['k', ['kNear', 'k-near']],
       vars: L => [['k', L.p.k.toFixed(3), 'Stiffness: pressure per unit of excess density.'], ['k-near', L.p.kNear.toFixed(3), 'Near stiffness: keeps neighbours from clumping.'], ['P̄', (L.p.k * (L.mean - 1) * L.rho0).toFixed(4), 'The pressure at the mean density, k (ρ̄ − ρ₀), in solver units.']],
-      check: L => ({ text: L.peak > 1.5 ? `The bottom is squeezed to ${L.peak.toFixed(2)} ρ₀: raise k to stiffen the liquid against gravity.` : `Densities stay within ${((L.peak - 1) * 100).toFixed(0)} % of rest: k holds the liquid nearly incompressible.`, state: L.peak > 2.2 ? 'crit' : L.peak > 1.5 ? 'warn' : 'ok' }),
+      // A settled tank often sits just under rest density everywhere, near-pressure holding neighbours a little apart;
+      // then nothing is squeezed, and the check says so rather than giving a negative excess.
+      check: L => (L.n < 20 ? { text: 'Pour some liquid to see the pressure hold it up.' } : L.mean < 0.7 ? { text: `The liquid is foaming at ${L.mean.toFixed(2)} ρ₀ on average: near-pressure pushes neighbours apart harder than k = ${L.p.k} pulls them back.`, state: 'warn' } : L.peak < 1 ? { text: `No particle is squeezed past rest density, the densest sitting at ${L.peak.toFixed(2)} ρ₀: near-pressure keeps neighbours a little apart, and k holds the liquid incompressible.`, state: 'ok' }
+        : { text: L.peak > 1.5 ? `The bottom is squeezed to ${L.peak.toFixed(2)} ρ₀: raise k to stiffen the liquid against gravity.` : `Densities stay within ${((L.peak - 1) * 100).toFixed(0)} % of rest: k holds the liquid nearly incompressible.`, state: L.peak > 2.2 ? 'crit' : L.peak > 1.5 ? 'warn' : 'ok' }),
     },
     visc: {
       params: ['visc'],
@@ -608,6 +622,7 @@ export const fluid = {
   math: `
     <p>Density and near-density sum over neighbours closer than the interaction radius <i>h</i>, with q = r<sub>ij</sub> / h:</p>
     <div class="f" data-live="density" data-tex="\\rho_i = \\sum_j (1 - q)^2, \\qquad \\rho_i^{\\text{near}} = \\sum_j (1 - q)^3"></div>
+    <p>The near-pressure below holds neighbours a little apart, so a settled tank rests about a tenth under ρ<sub>0</sub>, with gravity or without. The liquid is incompressible in the sense that its density stays even from top to bottom: the panel sets the densest tenth of the particles against the median.</p>
     <p>They set a pressure and a near-pressure:</p>
     <div class="f" data-live="pressure" data-tex="P_i = k\\,(\\rho_i - \\rho_0), \\qquad P_i^{\\text{near}} = k^{\\text{near}}\\,\\rho_i^{\\text{near}}"></div>
     <p>Each neighbour pair is pushed apart along r̂<sub>ij</sub>, half to each particle:</p>

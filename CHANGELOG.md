@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.5)
+    - Title: Changelog (digiSpace Edition - v2.6)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.6.0 release.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.5.0 release.
     - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -53,6 +55,132 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.6.0 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A refinement release on Dennis's brief for an application-wide sweep and an
+audit of every simulation, one at a time, putting scientific correctness
+first. Each lab was read against its equations, run in the browser and
+fixed where a check, readout or text claimed more than the run showed.
+Nothing visual was added: the frame-rate work of 2.5.0 stands, and the
+glass blur stays out.
+
+### Application-wide sweep
+
+- **Lab tabs on phones.** The tab strip was centred with
+  `justify-content` inside a scroller, so once the tabs overflowed, the
+  first ones (Gravity, Collisions) could not be scrolled to, and at 390 px
+  the strip had 77 px. It is centred by auto margins now, takes its own
+  row at 560 px and below, and keeps the selected tab in view.
+- **Live Math dial ids.** A parameter in two formulas (Gravity's G, Waves'
+  f, Chaos' g, Fields' B and E₀) made two dials with one id; later ones
+  are numbered, so each symbol's label focuses its own dial.
+- **Tool bar on phones.** On a narrow stage the rail becomes a sideways
+  scroller, and at 390 px six labs' bars overflow (by up to 196 px in
+  Waves) with nothing to show it. The side with more tools beyond it now
+  fades out, as the bar scrolls, resizes or changes lab.
+- **Keyboard sheet.** Adds `?` and `Esc`, and how to work the dials.
+- **Dead code.** Removed CSS no markup used (the old slider rows,
+  `.tile-meta`, the icon size modifiers) and the unused `deckPane()`
+  export; comments say dials where they said sliders.
+- Checked and found sound: no unnamed control in any lab or tab, no
+  horizontal scroll or off-screen content at 1440, 1024 or 390 px, and no
+  DOM nodes, listeners or GPU objects leaked across lab and mode switches.
+
+### Gravity
+
+- **Kepler's third law is measured.** The panel restated the period with a
+  permanent "ok". It now times a full turn of the followed planet, in its
+  own orbital plane so tilted orbits count, against 2π√(a³/G(M + m)), and
+  the formula shows M + m as the panel computes it. Measured: 0.006 % from
+  the law in the Kepler scene, under 1 % in the Star system and Tilted
+  orbits, where the other planets perturb the orbit.
+- **The virial check averages over time.** It compared 2K/|U| at one
+  instant, which an eccentric orbit swings far from 1; it now averages K
+  and U over the energy chart's window, as the theorem holds only on
+  average (0.995 to 0.999 over 44 s in three scenes). The experiment
+  averages the same way.
+- **Centre-of-mass frame.** The virial ratio (readout, check, Insight,
+  dataset column, experiment) and whether the system is bound use the
+  kinetic energy in the centre-of-mass frame, so a throw that sets the
+  whole system drifting no longer reads as unbalanced motion.
+- **Circular speed.** The check compares with the softened speed the run
+  uses, and names an eccentric orbit as an ellipse (e = 0.45, 0.75 in the
+  Kepler scene) rather than a miss.
+- Insights give lengths in the chosen units.
+
+### Collisions
+
+- **Inspect stays on its ball.** Erasing a ball moves the last one into
+  its slot, and the selection was an index, so Inspect could show another
+  ball's figures under the old number. Balls carry a stable identity
+  through removals and rewinds; the selection follows its ball, lets go
+  when it is erased and clears on a rebuild.
+- **No more flipping between panes.** A press on empty table added a ball
+  and cleared the selection, so adding and throwing in turn flipped the
+  instruments between Telemetry and Inspect. Adding a ball now leaves the
+  selection alone.
+- **Hard-disc pressure.** A sweep of the running box from φ = 0.015 to
+  0.53 found PA / NkT within 1 % of Henderson's equation of state,
+  (1 + φ²/8) / (1 − φ)², up to φ = 0.18 and 4 % up to 0.53, mixed ball
+  sizes included, where the old 1 + 2φ was 4 % short at φ = 0.12 and 21 %
+  short at 0.26. The check, Insight and Math page use it, and the reading
+  averages about five seconds of wall impacts instead of two.
+
+### Fluid
+
+- **Density checks what the method promises.** A settled tank rests at
+  about 0.90 ρ₀ throughout, with gravity or without, because near-pressure
+  holds neighbours apart; the old check set the mean against ρ₀ and passed
+  only on a 12 % tolerance. It now sets the densest tenth against the
+  median, the evenness that incompressible means here (1.05 settled).
+- The pressure check says when nothing is squeezed or the liquid foams,
+  instead of giving a negative excess, and both checks wait for liquid.
+- An idle re-measure found the solver step allocates nothing; the earlier
+  reading was warm-up under load.
+
+### Waves
+
+- The phased-array formula, its readout, Insight and check apply only to a
+  row of like sources, evenly spaced and started together, and say so when
+  sources placed by hand or with Random sources break the row.
+- The fringe check asks for the scene's lone plane wave.
+- A beam angle near zero is judged in degrees: Live Math checks can name a
+  scale for a theory that may be zero, where a share of zero means nothing.
+
+### Chaos
+
+- **The horizon is forecast, not fitted.** The check took λ from the same
+  separation at the moment the copies parted, so its prediction equalled
+  the measurement by construction. λ is now the least-squares growth rate
+  of ln δ; halfway to parting on a log scale the horizon is forecast and
+  kept, and the check sets that forecast beside the moment the copies part
+  (7 to 26 % apart in the chaotic scenes at small δ₀, tolerance 35 %).
+  Regular motion gets no forecast. Rewind and saved states keep it.
+- Energy values say they are per kilogram of the upper bob.
+
+### Cloth
+
+- The Wind control says the push averages 0.62 of the setting, with gusts
+  about it; the speed-cap Insight gives its limit in the chosen units.
+- The stretch check gives the mean beside the peak and says the peak
+  gathers where the cloth hangs from a pin.
+
+### Fields
+
+- The E × B check measures the drift by guiding centres, x + v_y / ω, so
+  particles of other charge-to-mass ratios count too (39.98 against
+  40.00 px/s with a mixed set).
+- The cyclotron and drift experiments give distances in the chosen units.
+
+### Tests
+
+- `tests/shell.py`: `fps_recovers` waited a fixed 3 s and asked for 1.5
+  times the loaded rate, which an idle renderer without a GPU could not
+  reach in time. It counts a hundred frames after the load stops and holds
+  the meter to the rate those frames ran at.
 
 ## 2.5.0 (11/10/2026)
 

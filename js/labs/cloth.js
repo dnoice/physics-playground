@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.5)
+    - Title: Cloth Lab (digiSpace Edition - v2.6)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,20 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
+      speed-cap Insight gives the per-step limit in the chosen units. The Wind
+      control and the Math page's wind value say that the push averages 0.62
+      of the setting and gusts swing it about that. The stretch check gives
+      the mean beside the peak and says where the peak gathers, so a hammock
+      hanging from two pins reads as a loaded corner rather than a cloth
+      holding within 44 %.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      gravity, wind and damping as sliders for the Verlet step, and the
+      gravity, wind and damping as dials for the Verlet step, and the
       constraint passes with the stretch they leave. Gustiness scales how much
       the wind rises and falls about its mean, and Ball size scales the Ball
       tool's collider.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       wind and mesh spacing follow the chosen units, one pixel being 1.09 cm.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are grouped into Setup, Forces, Fabric and Display.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -96,7 +101,7 @@ export const cloth = {
   ],
   controls: [
     { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, qty: 'acc', group: 'forces' },
-    { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, qty: 'acc', note: 'The push of the wind on the cloth, as an acceleration. Negative values blow to the left.', group: 'forces' },
+    { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, qty: 'acc', note: 'The wind\'s strength, as an acceleration: it pushes at 0.62 of this on average, and gusts swing it about that. Negative values blow to the left.', group: 'forces' },
     { type: 'range', key: 'gust', label: 'Gustiness', min: 0, max: 2, step: 0.05, fmt: v => v.toFixed(2) + '×', note: 'How much the wind rises and falls about its mean: 0 is a steady push, 2 a squall.', group: 'forces' },
     { type: 'range', key: 'ballK', label: 'Ball size', min: 0.5, max: 2, step: 0.05, fmt: v => v.toFixed(2) + '×', note: 'The ball of the Ball tool, relative to its size for this mesh.', group: 'ball' },
     { type: 'range', key: 'iters', label: 'Constraint iterations', min: 1, max: 24, step: 1, note: 'More iterations make the cloth stiffer.', group: 'fabric' },
@@ -376,7 +381,7 @@ export const cloth = {
         fixes: [{ label: 'Raise iterations to 10', run() { setParam(cloth, 'iters', 10); } }] });
     }
     if (this.capped > 0) {
-      out.push({ id: 'k-cap', level: 'warn', title: 'Points are hitting the speed cap', body: `Some points tried to move more than ${CL_MAXSTEP} px in a single 1/120 s step and were held back. That keeps the cloth on screen but means ${fdesc} is beyond what the mesh can follow.`,
+      out.push({ id: 'k-cap', level: 'warn', title: 'Points are hitting the speed cap', body: `Some points tried to move more than ${fmtQ(this, 'len', CL_MAXSTEP)} in a single 1/120 s step and were held back. That keeps the cloth on screen but means ${fdesc} is beyond what the mesh can follow.`,
         fixes: [...(Math.abs(this.p.wind) > 800 ? [{ label: 'Calm the wind to 400', run() { setParam(cloth, 'wind', Math.sign(cloth.p.wind) * 400); } }] : []), { label: 'Add damping', run() { setParam(cloth, 'damping', Math.min(0.1, +(cloth.p.damping + 0.03).toFixed(3))); } }] });
       this.capped = 0;
     }
@@ -391,12 +396,15 @@ export const cloth = {
   mathLive: {
     verlet: {
       params: ['gravity', 'wind', 'damping'],
-      vars: L => [['Δt', `${(L.dt() * 1000).toFixed(2)} ms`, 'One step.'], ['g', fmtQ(L, 'acc', L.p.gravity), 'Gravity.'], ['wind', fmtQ(L, 'acc', L.p.wind), 'The wind\'s push, as an acceleration.'], ['damping', L.p.damping.toFixed(3), 'The share of each step\'s motion lost.']],
+      vars: L => [['Δt', `${(L.dt() * 1000).toFixed(2)} ms`, 'One step.'], ['g', fmtQ(L, 'acc', L.p.gravity), 'Gravity.'], ['wind', fmtQ(L, 'acc', L.p.wind), 'The wind setting, an acceleration: gusts swing the push about a mean of 0.62 of it, by as much as Gustiness allows.'], ['damping', L.p.damping.toFixed(3), 'The share of each step\'s motion lost.']],
     },
     constraint: {
       params: ['iters', 'tear'],
       vars: L => [['passes', String(L.p.iters), 'Constraint passes per step: each pulls every link halfway back to its rest length.'], ['mean', `${(L.meanStretch * 100).toFixed(2)} %`, 'Mean stretch of the intact links.'], ['peak', `${(L.maxStretch * 100).toFixed(1)} %`, 'The most stretched link.']],
-      check: L => ({ text: L.maxStretch > 0.8 ? 'Links are stretched far past their rest length: more passes per step pull them back.' : `Links hold within ${(L.maxStretch * 100).toFixed(1)} % of their rest length.`, state: L.maxStretch < 0.25 ? 'ok' : L.maxStretch < 0.8 ? 'warn' : 'crit' }),
+      // The peak sits where the load gathers, often a link hanging from a pin, so the text gives the mean beside it.
+      check: L => ({ text: L.maxStretch > 0.8 ? `The most stretched link is ${(L.maxStretch * 100).toFixed(0)} % past its rest length: more passes per step pull the links back.`
+        : L.maxStretch >= 0.25 ? `Links average ${(L.meanStretch * 100).toFixed(1)} % past rest, but the most loaded one, often where the cloth hangs from a pin, stretches ${(L.maxStretch * 100).toFixed(0)} %: more passes per step stiffen it.`
+        : `Links hold within ${(L.maxStretch * 100).toFixed(1)} % of their rest length, ${(L.meanStretch * 100).toFixed(1)} % on average.`, state: L.maxStretch < 0.25 ? 'ok' : L.maxStretch < 0.8 ? 'warn' : 'crit' }),
     },
   },
   math: `

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Unit Systems (digiSpace Edition - v2.4)
+    - Title: Unit Systems (digiSpace Edition - v2.6)
     - File Name: units.js
     - Relative Path: js/core/units.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A comment
+      speaks of controls rather than sliders.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for real-world units with simulation pixels kept as an
       option: metric, US customary and simulation systems, one scale per lab.
@@ -133,7 +135,7 @@ export function fmtPos(lab, x, y) {
   const [k, u] = unitOf(lab, 'len'), X = x * k, Y = y * k, [d, name] = prefixFor(Math.max(Math.abs(X), Math.abs(Y)), u);
   return `${sig(X / d)}, ${sig(Y / d)} ${name}`;
 }
-/* Decimals to show for a control's step once converted, so a slider moving in 10 px/s² steps shows 0.11 m/s². */
+/* Decimals to show for a control's step once converted, so a control moving in 10 px/s² steps shows 0.11 m/s². */
 export function unitDecimals(lab, kind, step) {
   if (!step) return 2;
   const k = unitOf(lab, kind)[0], s = Math.abs(step * k);

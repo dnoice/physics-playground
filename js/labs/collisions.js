@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.5)
+    - Title: Collisions Lab (digiSpace Edition - v2.6)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,19 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit:
+      balls carry a stable identity, so Inspect stays on its ball when another
+      is erased, lets go when its ball is erased and clears on a rebuild,
+      where before it could show another ball's figures; a press on empty
+      table adds a ball without clearing the selection, so adding and throwing
+      in turn no longer flip the instruments between Inspect and the pane in
+      use; the tunnelling Insight gives lengths in the chosen units. The
+      ideal-gas check sets the pressure measured at the walls beside
+      Henderson's hard-disc equation of state, (1 + φ²/8) / (1 − φ)², which a
+      sweep of the running box matched to 1 % up to a fifth full and 4 % up to
+      half full, mixed sizes included, where 1 + 2φ, its first terms, fell 4
+      to 20 % short; the reading averages about five seconds of wall impacts,
+      where before it was about two.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       the impulse with e and the energy it keeps, the speed distribution
       checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
@@ -21,8 +34,6 @@
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       radii and speeds follow the chosen units, one pixel being 1.09 cm; the
       empty Inspect pane says how to select a ball.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are grouped into Setup, Physics, New balls and Display.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -65,6 +76,10 @@ import { stage3d } from './stage3d.js';
 /*  Lab 2 · Collisions                                                 */
 /* ================================================================== */
 export const COLL_CAP = 1500;
+/* Henderson's equation of state for hard discs, PA / NkT at packing fraction φ: 1 + 2φ + 3.125φ² + … at low density,
+   and within about 1 % of this box's measured pressure up to φ = 0.2 and 4 % up to 0.5, mixed sizes included, where
+   1 + 2φ, its first terms, is already 4 % short at φ = 0.12 and 20 % short at φ = 0.26. */
+export const henderson = phi => (1 + phi * phi / 8) / ((1 - phi) * (1 - phi));
 export const COLL_RGB = Array.from({ length: 24 }, (_, b) => rampRgb(RAMP_HEAT, Math.round(40 + 215 * b / 23)));
 export const collisions = {
   id: 'collisions', name: 'Collisions', title: 'Elastic and inelastic collisions',
@@ -118,6 +133,8 @@ export const collisions = {
   x: new Float64Array(COLL_CAP), y: new Float64Array(COLL_CAP), vx: new Float64Array(COLL_CAP), vy: new Float64Array(COLL_CAP),
   r: new Float64Array(COLL_CAP), im: new Float64Array(COLL_CAP), order: new Int32Array(COLL_CAP), bin: new Uint8Array(COLL_CAP),
   ang: new Float64Array(COLL_CAP), om: new Float64Array(COLL_CAP), sprites: null, spinning: false,
+  // A ball's identity travels with it when slots move (removal swaps the last ball in), so Inspect keeps the same ball.
+  uid: new Int32Array(COLL_CAP), nextUid: 0,
   // One pixel is PX_M metres, as in every mechanical lab: the Gravity pile's 900 px/s² is 9.81 m/s².
   units: { len: 'px', m: PX_M }, scaleNote: 'In Collisions one pixel is 1.09 cm, as in Fluid and Cloth: 900 px/s² of gravity is 9.81 m/s². Masses and energies stay in simulation units, with a disc of radius r weighing r².',
   n: 0, w: 800, h: 600, tracer: -1, trail: new Float32Array(1800), tn: 0, th: 0, trailClock: 0,
@@ -130,15 +147,17 @@ export const collisions = {
     if (this.n >= COLL_CAP) return -1;
     const i = this.n++;
     this.x[i] = x; this.y[i] = y; this.vx[i] = vx; this.vy[i] = vy; this.r[i] = r; this.im[i] = 1 / (r * r); this.order[i] = i;
-    this.ang[i] = Math.random() * TAU; this.om[i] = 0;
+    this.ang[i] = Math.random() * TAU; this.om[i] = 0; this.uid[i] = ++this.nextUid;
     return i;
   },
   remove(i) {
     const last = this.n - 1;
     if (this.grab && this.grab.i === i) this.grab = null;
+    // The selection follows its ball: gone if this is it, moved if it is the last ball that fills the slot.
+    if (this.picked === i) this.picked = -1; else if (this.picked === last) this.picked = i;
     if (i !== last) {
       this.x[i] = this.x[last]; this.y[i] = this.y[last]; this.vx[i] = this.vx[last]; this.vy[i] = this.vy[last]; this.r[i] = this.r[last]; this.im[i] = this.im[last];
-      this.ang[i] = this.ang[last]; this.om[i] = this.om[last];
+      this.ang[i] = this.ang[last]; this.om[i] = this.om[last]; this.uid[i] = this.uid[last];
       if (this.tracer === last) this.tracer = i; else if (this.tracer === i) this.tracer = -1;
       if (this.grab && this.grab.i === last) this.grab.i = i;
     } else if (this.tracer === i) this.tracer = -1;
@@ -162,7 +181,7 @@ export const collisions = {
     }
   },
   build(preset, w, h) {
-    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN });
+    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1 });
     const N = Math.round(this.p.count);
     if (preset === 'gas') this.jitterGrid(N, 5, 170);
     else if (preset === 'pile') {
@@ -276,7 +295,8 @@ export const collisions = {
     if (this.wallTime >= 1) {
       const P = this.wallImp / (2 * (this.w + this.h) * this.wallTime), ke = this.stats().ke;
       const Z = ke > 0 ? P * this.w * this.h / ke : NaN;
-      this.Z = Number.isFinite(this.Z) && Number.isFinite(Z) ? this.Z + (Z - this.Z) * 0.35 : Z;
+      // Each second's reading is blended in at a fifth, about five seconds of wall impacts, so a few hundred balls read steady to a few per cent.
+      this.Z = Number.isFinite(this.Z) && Number.isFinite(Z) ? this.Z + (Z - this.Z) * 0.2 : Z;
       this.wallImp = 0; this.wallTime = 0;
     }
   },
@@ -291,7 +311,7 @@ export const collisions = {
   inspect() {
     const i = this.picked; if (i < 0 || i >= this.n) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
-    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
+    return { id: `ball-${this.uid[i]}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${this.uid[i]}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
   inspectHint: 'With the Grab tool, click a ball to inspect it here.',
@@ -301,7 +321,9 @@ export const collisions = {
     if (tool === 'erase') { this.brush = { ...p }; this.eraseAt(p); return; }
     if (tool === 'heat' || tool === 'cool') { this.brush = { ...p }; return; }
     let i = this.hit(p);
-    this.picked = i;
+    // A ball pressed is selected; a press on empty table adds a ball and leaves the selection as it was, so adding
+    // and throwing in turn does not flip the instruments between Inspect and the pane in use.
+    if (i >= 0) this.picked = i;
     if (i < 0) {
       // Random sizes spread evenly in log from 4 to 24 px, so small and large balls come up about as often.
       const r = this.p.rand ? Math.round(4 * Math.pow(6, Math.random())) : this.p.radius;
@@ -388,7 +410,7 @@ export const collisions = {
   },
   /* The table's angle: tilted up like a bagatelle board, so the lab's +y gravity runs downhill. */
   tilt3() { return this.tiltNow; },
-  /* Cosmetic easing toward the angle the gravity slider asks for, called from the scene's sync; never saved. */
+  /* Cosmetic easing toward the angle the gravity setting asks for, called from the scene's sync; never saved. */
   ease3(dt) {
     const reach = this.h * 5 / Math.max(this.w, this.h) + 0.72, room = Math.asin(Math.min(1, (this.rig3.height - 0.32) / reach));
     const goal = Math.min(room, 0.6 * (1 - Math.exp(-this.p.gravity / 420)));
@@ -487,7 +509,7 @@ export const collisions = {
     const stepMove = s.vmax * dt;
     if (stepMove > s.rmin) {
       const cap = s.rmin / dt * 0.8;
-      out.push({ id: 'c-tunnel', level: 'warn', title: 'Fast balls can tunnel', body: `The fastest ball moves <b>${stepMove.toFixed(1)} px per step</b>, more than the smallest radius (${s.rmin.toFixed(0)} px), so it can skip through another ball between checks.`,
+      out.push({ id: 'c-tunnel', level: 'warn', title: 'Fast balls can tunnel', body: `The fastest ball moves <b>${fmtQ(this, 'len', stepMove)} per step</b>, more than the smallest radius (${fmtQ(this, 'len', s.rmin)}), so it can skip through another ball between checks.`,
         fixes: [{ label: `Cap speeds at ${fmtQ(this, 'speed', cap)}`, run() { const c = collisions; for (let i = 0; i < c.n; i++) { const v = Math.hypot(c.vx[i], c.vy[i]); if (v > cap) { c.vx[i] *= cap / v; c.vy[i] *= cap / v; } } c.KE0 = c.stats().etot; } }] });
     }
     if (s.phi > 0.78) {
@@ -508,7 +530,7 @@ export const collisions = {
       out.push({ id: 'c-cool', level: 'info', title: 'The gas is cooling', body: `With e = ${this.p.e.toFixed(2)}, a head-on impact keeps only e² = ${(this.p.e ** 2).toFixed(2)} of its energy along the normal. Kinetic energy is now <b>${pct(ratio)}</b> of where it started.${this.p.e < 0.6 ? ' Slow balls clump together: inelastic collapse.' : ''}` });
     }
     if (this.p.gravity === 0 && Number.isFinite(this.Z) && this.n > 30) {
-      out.push({ id: 'c-z', level: 'info', title: 'Ideal-gas check', body: `PA / NkT = <b>${this.Z.toFixed(2)}</b>. An ideal gas gives 1; hard discs covering ${pct(s.phi)} of the box add excluded-area pressure (low-density theory: 1 + 2φ = ${(1 + 2 * s.phi).toFixed(2)}).` });
+      out.push({ id: 'c-z', level: 'info', title: 'Ideal-gas check', body: `PA / NkT = <b>${this.Z.toFixed(2)}</b>. An ideal gas gives 1; hard discs covering ${pct(s.phi)} of the box add excluded-area pressure: Henderson's hard-disc equation gives (1 + φ²/8) / (1 − φ)² = ${henderson(s.phi).toFixed(2)}.` });
     }
     if (this.p.mu > 0 && s.kr > 0 && s.etot > 0) out.push({ id: 'c-spin', level: 'info', title: 'Friction is spinning the balls', body: `<b>${pct(s.kr / s.etot)}</b> of the kinetic energy is now rotation. Friction trades sliding for spin at every contact, and it also dissipates energy while surfaces slide, so even with e = 1 the total slowly falls.` });
     if (this.n > 1000) out.push({ id: 'c-many', level: 'info', title: 'Large population', body: `${this.n} balls: sort-and-sweep keeps contact search near linear, but every extra ball still costs work four times per frame.` });
@@ -588,7 +610,7 @@ export const collisions = {
     gas: {
       vars: L => { const s = L.stats(); return [['N', String(L.n), 'Balls in the box.'], ['φ', `${(s.phi * 100).toFixed(1)} %`, 'Packing fraction: the share of the box the balls cover.'], ['PA / NkT', Number.isFinite(L.Z) ? L.Z.toFixed(3) : '—', 'Measured from the momentum the balls deliver to the walls.']]; },
       check: L => (L.p.gravity !== 0 ? { text: 'Set gravity to 0: the law describes a gas at rest in an empty box.' }
-        : { what: 'PA / NkT ≈ 1 + 2φ', theory: 1 + 2 * L.stats().phi, sim: L.Z, fmt: v => v.toFixed(3), tol: 0.06, wait: 'PA / NkT: collecting wall impacts…' }),
+        : { what: 'PA / NkT against hard discs', theory: henderson(L.stats().phi), sim: L.Z, fmt: v => v.toFixed(3), tol: 0.06, wait: 'PA / NkT: collecting wall impacts…' }),
     },
     friction: {
       params: ['mu'],
@@ -604,8 +626,10 @@ export const collisions = {
     <p>With equal masses, speeds settle into the two-dimensional Maxwell–Boltzmann (Rayleigh) distribution:</p>
     <div class="f" data-live="mb" data-tex="f(v) = \\frac{v}{\\sigma^2}\\, e^{-v^2/2\\sigma^2}, \\qquad \\sigma^2 = \\tfrac12 \\langle v^2 \\rangle"></div>
     <p>Pressure is the momentum delivered to the walls per unit length per second. In two dimensions the ideal-gas law reads:</p>
-    <div class="f" data-live="gas" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
-    <p>Hard discs raise it by roughly a factor 1 + 2φ, where φ is the packing fraction. In the Brownian scene the heavy disc’s mean-squared displacement grows linearly with time, ⟨Δr<sup>2</sup>⟩ ∝ t.</p>
+    <div class="f" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
+    <p>Hard discs cover part of the box, φ, the packing fraction, and push harder than points would. Henderson’s equation of state for hard discs starts as 1 + 2φ at low density and matches the pressure measured in this box to about 1 % up to a fifth full and 4 % up to half full, mixed sizes included; the panel sets it beside the pressure measured at the walls:</p>
+    <div class="f" data-live="gas" data-tex="\\frac{P A}{N k T} = \\frac{1 + \\varphi^2 / 8}{(1 - \\varphi)^2} = 1 + 2\\varphi + 3.125\\,\\varphi^2 + \\dots"></div>
+    <p>In the Brownian scene the heavy disc’s mean-squared displacement grows linearly with time, ⟨Δr<sup>2</sup>⟩ ∝ t.</p>
     <p>With contact friction μ, a tangential impulse stops the two surfaces sliding past each other, but never more than μ times the normal impulse (Coulomb’s law). Each ball is a uniform disc, I = ½ m r², so the impulse also spins it:</p>
     <div class="f" data-live="friction" data-tex="\\begin{aligned} J_t &amp;= -\\frac{v_t}{3\\,(1/m_1 + 1/m_2)}, \\quad |J_t| \\le \\mu J \\\\ \\Delta\\omega_k &amp;= -\\frac{J_t\\, r_k}{I_k} \\end{aligned}"></div>
     <p>Here v<sub>t</sub> is the sliding speed of the touching surfaces, including ω r from each spin. Walls work the same way with an infinitely heavy partner.</p>`,
@@ -618,7 +642,7 @@ Object.assign(collisions, genericState, {
   snapshot() {
     const n = this.n, a = new Float64Array(n * 7), { gravity, e, drag, mu } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 7; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.vx[i]; a[o + 3] = this.vy[i]; a[o + 4] = this.r[i]; a[o + 5] = this.ang[i]; a[o + 6] = this.om[i]; }
-    return { n, a, stride: 7, tracer: this.tracer, KE0: this.KE0, p: { gravity, e, drag, mu } };
+    return { n, a, stride: 7, uid: this.uid.slice(0, n), tracer: this.tracer, KE0: this.KE0, p: { gravity, e, drag, mu } };
   },
   restore(s) {
     Object.assign(this.p, s.p);
@@ -628,6 +652,8 @@ Object.assign(collisions, genericState, {
       const o = i * st, k = this.add(s.a[o], s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4]);
       if (st >= 7 && k >= 0) { this.ang[k] = s.a[o + 5]; this.om[k] = s.a[o + 6]; }
     }
+    if (s.uid) { this.uid.set(s.uid.subarray(0, this.n)); for (let k = 0; k < this.n; k++) if (this.uid[k] > this.nextUid) this.nextUid = this.uid[k]; }
+    if (this.picked >= this.n) this.picked = -1;
     Object.assign(this, { tracer: s.tracer, KE0: s.KE0, grab: null, brush: null, tn: 0, th: 0, wallImp: 0, wallTime: 0 });
     return true;
   },

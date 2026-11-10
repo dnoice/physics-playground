@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Stage Styles (digiSpace Edition - v2.5)
+    - Title: Stage Styles (digiSpace Edition - v2.6)
     - File Name: stage.css
     - Relative Path: css/stage.css
     - Artifact Type: stylesheet
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On a narrow
+      stage, where the rail becomes a sideways scroller, the side with more
+      tools beyond it fades out, so a cut-off tool reads as more to come; at
+      390 px six labs' bars overflow, by up to 196 px in Waves.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
       Random dice: a toggle the size of a tool, dashed while off and lit amber
       while on, that rolls when it turns on. With an odd number of tools it
@@ -24,8 +28,6 @@
       so its camera group no longer moves between labs; it gains a named View
       group, focus rings, larger axis targets, and captions and the axis ball
       that give way on short stages.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added a
-      recessed edge on the stage in 3D mode.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -241,6 +243,11 @@
   .view-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .nav-btn { flex: none; width: 36px; height: 36px; }
   .nav-row { flex-wrap: nowrap; }
+  /* The bar scrolls sideways when its tools outrun the stage; the side with more beyond it fades out, so a cut-off
+     tool reads as more to come (navigator.js sets the classes as the bar scrolls or changes). */
+  .nav.more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); }
+  .nav.more-l { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent); }
+  .nav.more-l.more-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
   .nav-foot { bottom: 64px; }
   .stage-top { max-width: calc(100% - 20px); left: 10px; top: 10px; }
   .minimap canvas { width: 120px; height: 76px; }

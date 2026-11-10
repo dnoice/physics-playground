@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Guided Experiments (digiSpace Edition - v2.1)
+    - Title: Guided Experiments (digiSpace Edition - v2.6)
     - File Name: experiments.js
     - Relative Path: js/labs/experiments.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.6.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The virial
+      experiment averages K and U separately, as its goal states, rather than
+      their ratio at each instant. K is taken in the centre-of-mass frame; the
+      Fields experiments give their distances in the chosen units.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Checks
       now measure what they claim: return error, drift against E/B, a real
       pull, detector and beam readings.
@@ -43,6 +47,7 @@
       16.4+)
 ---------
 */
+import { fmtQ } from '../core/units.js';
 import { TAU } from '../core/util.js';
 
 /* ================================================================== */
@@ -65,11 +70,13 @@ export const EXPERIMENTS = {
       id: 'virial', title: 'Check the virial theorem', scene: 'solar',
       goal: 'For a bound system of orbits, the time average of twice the kinetic energy equals minus the potential energy: ⟨2K⟩ = −⟨U⟩.',
       steps: ['Let the star system run for 20 simulated seconds.', 'Watch the virial ratio 2K / |U| in the readouts swing around 1.'],
-      init: () => ({ sum: 0, time: 0 }),
+      // K and U are averaged separately, as the theorem states, rather than averaging their ratio at each instant; K is
+      // the centre-of-mass frame's, so a throw that sets the whole system drifting does not count as motion it balances.
+      init: () => ({ k: 0, u: 0, time: 0 }),
       check(lab, c, dt) {
-        if (lab.PE) { c.sum += dt * 2 * lab.KE / Math.abs(lab.PE); c.time += dt; }
-        const avg = c.time ? c.sum / c.time : NaN, ok = Math.abs(avg - 1) < 0.15;
-        return { p: clamp01(c.time / 20) * (c.time >= 20 && !ok ? 0.95 : 1), note: c.time ? `⟨2K/|U|⟩ = ${avg.toFixed(3)} over ${secs(c.time)}` : 'Press play to start averaging' };
+        if (lab.PE) { c.k += dt * 2 * lab.Kint; c.u += dt * Math.abs(lab.PE); c.time += dt; }
+        const avg = c.u ? c.k / c.u : NaN, ok = Math.abs(avg - 1) < 0.15;
+        return { p: clamp01(c.time / 20) * (c.time >= 20 && !ok ? 0.95 : 1), note: c.time ? `2⟨K⟩ / |⟨U⟩| = ${avg.toFixed(3)} over ${secs(c.time)}` : 'Press play to start averaging' };
       },
     },
     {
@@ -99,7 +106,7 @@ export const EXPERIMENTS = {
       init: lab => ({ k0: lab.stats().etot, KE0: lab.KE0, n: lab.n }),
       check(lab, c) {
         const k = lab.stats().etot, e = lab.p.e;
-        // Freeze, Shake, a throw, the brushes and every physics slider reset KE0, and Erase changes the count: none of that is inelastic cooling.
+        // Freeze, Shake, a throw, the brushes and every physics setting reset KE0, and Erase changes the count: none of that is inelastic cooling.
         if (e > 0.6 || lab.p.drag > 0 || lab.KE0 !== c.KE0 || lab.n !== c.n || lab.grab || lab.brush) {
           Object.assign(c, { k0: k, KE0: lab.KE0, n: lab.n });
           return { p: 0, note: e > 0.6 ? `Lower restitution e to 0.6 or below; it is ${e.toFixed(2)}` : lab.p.drag > 0 ? 'Set air drag back to 0: only collisions may take the energy' : 'Energy changed by hand; restarting the count' };
@@ -249,7 +256,7 @@ export const EXPERIMENTS = {
           worst = Math.max(worst, Math.abs(Math.hypot(lab.vx[i], lab.vy[i]) / s.v - 1)); off = Math.max(off, d); miss = Math.max(miss, d / Math.hypot(s.rx, s.ry)); k++;
         }
         if (k < 2) return { p: 0, note: 'Needs at least two of the particles; Reset the scene' };
-        return { p: clamp01(c.time / (2 * c.T)) * (worst < 0.01 && miss < 0.02 ? 1 : 0.9), note: `${(c.time / c.T).toFixed(2)} periods of ${c.T.toFixed(2)} s · return error ${off.toFixed(1)} px · speeds steady to ${(worst * 100).toFixed(3)}%` };
+        return { p: clamp01(c.time / (2 * c.T)) * (worst < 0.01 && miss < 0.02 ? 1 : 0.9), note: `${(c.time / c.T).toFixed(2)} periods of ${c.T.toFixed(2)} s · return error ${fmtQ(lab, 'len', off)} · speeds steady to ${(worst * 100).toFixed(3)}%` };
       },
     },
     {
@@ -271,7 +278,7 @@ export const EXPERIMENTS = {
         const pos = sum[1][1] ? sum[1][0] / sum[1][1] : NaN, neg = sum['-1'][1] ? sum['-1'][0] / sum['-1'][1] : NaN, want = c.vd * c.time;
         if (!Number.isFinite(pos) || !Number.isFinite(neg)) return { p: 0, note: 'Needs particles of both signs; Reset the scene' };
         const miss = Math.max(Math.abs(pos - want), Math.abs(neg - want));
-        return { p: clamp01(c.time / (2 * c.T)) * (miss < Math.max(2, 0.03 * Math.abs(want)) ? 1 : 0.9), note: `Moved: + ${pos.toFixed(0)} px · − ${neg.toFixed(0)} px · E/B × t = ${want.toFixed(0)} px` };
+        return { p: clamp01(c.time / (2 * c.T)) * (miss < Math.max(2, 0.03 * Math.abs(want)) ? 1 : 0.9), note: `Moved: + ${fmtQ(lab, 'len', pos)} · − ${fmtQ(lab, 'len', neg)} · E/B × t = ${fmtQ(lab, 'len', want)}` };
       },
     },
   ],

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.5)
+    - Title: Chaos Lab (digiSpace Edition - v2.6)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,8 +12,17 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
+      predictability check was circular, its λ taken from the same separation
+      at the moment the copies parted, so it always agreed; λ is now the
+      fitted growth rate of ln δ, the horizon is forecast halfway to parting
+      on a log scale and kept, and the check sets that forecast beside the
+      moment the copies part, within 35 %, saying so when the motion is too
+      regular to forecast or the copies outlast it; rewind and saved states
+      keep the forecast; the energy values say they are per kilogram of the
+      upper bob.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      the equations with their ratios as sliders, the predictability horizon
+      the equations with their ratios as dials, the predictability horizon
       checked against when the copies part, the energy fence and the normal
       modes; Inspect follows the lower angle.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Three views
@@ -22,13 +31,6 @@
       the Phase map view sets the torus it wraps onto beside it, with the same
       paths and its two seams; a click on a dot or a pendulum selects that
       copy everywhere and inspects it. Units follow the chosen system.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Rebuilt the
-      phase-space view on Dennis's report that it was hard to see or use: the
-      pendulum stands beside its map, angle arcs match the axis colours, and
-      the map shows the energy landscape, the curve the front pendulum's
-      energy cannot cross, fading trails broken at the wrap, torus edge marks,
-      and a hover preview of any start with its pose and reach. Bobs can be
-      dragged in both views; controls are grouped.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -126,7 +128,7 @@ export const pendulum = {
   ],
   actions: [{ label: 'Restart from these angles', run() { rebuild(pendulum); } }],
   N: 0, s: new Float64Array(240), trails: null, phist: null, tn: 0, th: 0, trailClock: 0, E0: 0, holding: false, drag: null, wmax: 0,
-  sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN,
+  sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN, fit: { n: 0, t: 0, y: 0, tt: 0, ty: 0 }, predAt: NaN, predFrom: NaN,
   k1: new Float64Array(4), k2: new Float64Array(4), k3: new Float64Array(4), k4: new Float64Array(4), tmp: new Float64Array(4),
   // The pendulum is computed in metres and seconds already (L₁ = 1 m), so Simulation units are metric here too.
   units: { len: 'm', m: 1 }, scaleNote: 'Chaos computes in metres and seconds already: the upper arm is 1 m long and the upper bob 1 kg, so Simulation units read the same as Metric.',
@@ -139,6 +141,7 @@ export const pendulum = {
     for (let i = 0; i < N; i++) { this.s[i * 4] = this.p.theta1 * d2r; this.s[i * 4 + 1] = this.p.theta2 * d2r + i * this.p.delta; }
     this.trails = new Float32Array(N * PEND_TRAIL * 2); this.phist = new Float32Array(N * PEND_TRAIL * 2); this.tn = 0; this.th = 0;
     this.sep.clear(); this.sepClock = 0; this.lyap = NaN; this.divergeAt = NaN; this.wmax = 0;
+    this.fit = { n: 0, t: 0, y: 0, tt: 0, ty: 0 }; this.predAt = NaN; this.predFrom = NaN;
     this.E0 = this.energy(0);
   },
   deriv(t1, t2, w1, w2, out) {
@@ -191,7 +194,15 @@ export const pendulum = {
       const d = this.separation();
       this.sep.push(this.t, Math.log10(Math.max(d, 1e-14)));
       if (!Number.isFinite(this.divergeAt)) {
-        if (this.t > 0.3) this.lyap = Math.log(d / this.p.delta) / this.t;
+        if (this.t > 0.3 && d > 0) {
+          // λ is the least-squares slope of ln δ against t, steadier than ln(δ/δ₀)/t through the first wobbles.
+          const F = this.fit, y = Math.log(d); F.n++; F.t += this.t; F.y += y; F.tt += this.t * this.t; F.ty += this.t * y;
+          const den = F.n * F.tt - F.t * F.t;
+          this.lyap = F.n >= 10 && den > 0 ? (F.n * F.ty - F.t * F.y) / den : Math.log(d / this.p.delta) / this.t;
+          // Halfway to parting on a log scale, the horizon is forecast from the growth so far and kept, so the Math
+          // page sets a real forecast beside the moment the copies part, not one fitted to that moment.
+          if (!Number.isFinite(this.predAt) && d >= Math.sqrt(this.p.delta * 0.1) && this.lyap > 0.2) { this.predAt = Math.log(0.1 / this.p.delta) / this.lyap; this.predFrom = this.t; }
+        }
         if (d >= 0.1) this.divergeAt = this.t;
       }
     }
@@ -773,15 +784,24 @@ export const pendulum = {
       note: 'the front pendulum, now',
     },
     horizon: {
-      vars: L => [['δ₀', L.p.delta.toExponential(0), 'Starting gap between neighbouring copies.'], ['λ', Number.isFinite(L.lyap) ? `${L.lyap.toFixed(2)} s⁻¹` : '—', 'Lyapunov estimate from the separation so far.'], ['t', Number.isFinite(L.lyap) && L.lyap > 0 ? `${(Math.log(0.1 / L.p.delta) / L.lyap).toFixed(1)} s` : '—', 'Predicted time for the gap to reach 0.1.']],
-      check: L => (L.N < 2 ? { text: 'Needs two or more copies.' } : !(L.lyap > 0.05) ? { text: 'λ is still too small to predict a horizon: regular motion, or the run has only just started.' }
-        : { what: 'Copies diverge at', theory: Math.log(0.1 / L.p.delta) / L.lyap, sim: L.divergeAt, fmt: v => `${v.toFixed(1)} s`, tol: 0.25, wait: `Predicted divergence at t ≈ ${(Math.log(0.1 / L.p.delta) / L.lyap).toFixed(1)} s; waiting for the copies to part…` }),
+      vars: L => [['δ₀', L.p.delta.toExponential(0), 'Starting gap between neighbouring copies.'], ['λ', Number.isFinite(L.lyap) ? `${L.lyap.toFixed(2)} s⁻¹` : '—', 'Lyapunov estimate: the growth rate of ln δ fitted so far.'], ['t', Number.isFinite(L.predAt) ? `${L.predAt.toFixed(1)} s` : Number.isFinite(L.lyap) && L.lyap > 0 ? `${(Math.log(0.1 / L.p.delta) / L.lyap).toFixed(1)} s` : '—', Number.isFinite(L.predAt) ? `Forecast at t = ${L.predFrom.toFixed(1)} s for the gap to reach 0.1.` : 'Time for the gap to reach 0.1 at the rate so far.']],
+      // The forecast is made halfway and kept; the copies then part when they will, so the two can disagree.
+      check: L => {
+        if (L.N < 2) return { text: 'Needs two or more copies.' };
+        if (!Number.isFinite(L.predAt)) {
+          if (Number.isFinite(L.divergeAt)) return { text: `The copies parted at t = ${L.divergeAt.toFixed(1)} s, before the growth could be measured: lower δ₀ to watch it.` };
+          return { text: L.t > 3 && !(L.lyap > 0.2) ? `λ ≈ ${Number.isFinite(L.lyap) ? L.lyap.toFixed(2) : '0'} s⁻¹ is too small to forecast a horizon: the copies drift apart slowly, as in regular motion.` : `Measuring how fast the copies separate; the forecast is made halfway, at δ = ${Math.sqrt(L.p.delta * 0.1).toExponential(0)}…` };
+        }
+        if (!Number.isFinite(L.divergeAt) && L.t > L.predAt * 2) return { text: `Forecast at t = ${L.predFrom.toFixed(1)} s for t ≈ ${L.predAt.toFixed(1)} s, and the copies are still together at t = ${L.t.toFixed(1)} s: their gap stopped growing exponentially.`, state: 'warn' };
+        // The growth rate itself wanders in a chaotic system, so a forecast holds to a few tens of per cent.
+        return { what: `Copies part, forecast at t = ${L.predFrom.toFixed(1)} s`, theory: L.predAt, sim: L.divergeAt, fmt: v => `${v.toFixed(1)} s`, tol: 0.35, wait: `Forecast made at t = ${L.predFrom.toFixed(1)} s: the copies part at t ≈ ${L.predAt.toFixed(1)} s; waiting for them…` };
+      },
       plot: (c, L) => L.chart.draw(c),
       plotLabel: 'Separation of the first two copies on a log scale',
     },
     potential: {
       params: ['g'],
-      vars: L => { if (!L.N) return []; const V = L.potential(L.s[0], L.s[1]), E = L.energy(0), M = L.p.mass, top = (1 + M) * L.p.g + M * L.p.g * L.p.len; return [['V', fmtQ(L, 'spec', V, { digits: 3 }), 'Potential energy of the front pendulum now.'], ['E', fmtQ(L, 'spec', E, { digits: 3 }), 'Its total energy.'], ['V max', fmtQ(L, 'spec', top, { digits: 3 }), 'Both arms straight up: the top of the landscape.']]; },
+      vars: L => { if (!L.N) return []; const V = L.potential(L.s[0], L.s[1]), E = L.energy(0), M = L.p.mass, top = (1 + M) * L.p.g + M * L.p.g * L.p.len; return [['V', fmtQ(L, 'spec', V, { digits: 3 }), 'Potential energy of the front pendulum now, per kilogram of the upper bob (m₁ = 1 kg).'], ['E', fmtQ(L, 'spec', E, { digits: 3 }), 'Its total energy, per kilogram of the upper bob.'], ['V max', fmtQ(L, 'spec', top, { digits: 3 }), 'Both arms straight up: the top of the landscape.']]; },
       check: L => { if (!L.N) return null; const E = L.energy(0), M = L.p.mass, top = (1 + M) * L.p.g + M * L.p.g * L.p.len; return { text: E >= top ? 'E is above the top of the landscape: both arms can flip, and the whole map is open.' : `E is ${((1 - E / top) * 100).toFixed(0)} % short of the top: the curve V = E fences the motion in.`, state: 'ok' }; },
     },
     modes: {
@@ -792,7 +812,7 @@ export const pendulum = {
   math: `
     <p>The equations of motion come from the Lagrangian of two point masses on light rods (m<sub>1</sub> = 1 kg, L<sub>1</sub> = 1 m), integrated with fourth-order Runge–Kutta at Δt = 1/600 s. For the first arm, with ω = dθ/dt and Δ = θ<sub>1</sub> − θ<sub>2</sub>:</p>
     <div class="f" data-live="eom" data-tex="\\alpha_1 = \\frac{\\begin{array}{c} -g\\,(2m_1 + m_2)\\sin\\theta_1 - m_2 g\\sin(\\theta_1 - 2\\theta_2) \\\\ -\\,2m_2 \\sin\\Delta\\,(\\omega_2^2 L_2 + \\omega_1^2 L_1\\cos\\Delta) \\end{array}}{L_1\\,(2m_1 + m_2 - m_2\\cos 2\\Delta)}"></div>
-    <p>Copy <i>k</i> starts with θ<sub>2</sub> shifted by kδ<sub>0</sub>. The gap between copies grows as δ(t) ≈ δ<sub>0</sub>e<sup>λt</sup> until it reaches the size of the motion itself, so predictability lasts only about:</p>
+    <p>Copy <i>k</i> starts with θ<sub>2</sub> shifted by kδ<sub>0</sub>. The gap between copies grows as δ(t) ≈ δ<sub>0</sub>e<sup>λt</sup> until it reaches the size of the motion itself, so predictability lasts only about the time below. The panel fits λ to the growth of ln δ and, halfway there on a log scale, forecasts the horizon from it, then sets that forecast beside the moment the copies actually part. The rate of separation itself wanders in a chaotic system, so the forecast holds to a few tens of per cent:</p>
     <div class="f" data-live="horizon" data-tex="t \\approx \\frac{1}{\\lambda}\\,\\ln\\frac{0.1}{\\delta_0}"></div>
     <p>The phase map plots (θ<sub>1</sub>, θ<sub>2</sub>) wrapped to (−π, π]. Strictly, that is the configuration space: the full phase space has four coordinates, (θ<sub>1</sub>, θ<sub>2</sub>, ω<sub>1</sub>, ω<sub>2</sub>), and the map is its projection onto the two angles. Two states with the same angles and different spins land on the same point, so paths may cross on the map although they never cross in the full space. The map's opposite edges join, so the square is really a torus, drawn beside the map in the Phase map view with the same paths. Behind the paths lies the potential energy:</p>
     <div class="f" data-live="potential" data-tex="V(\\theta_1, \\theta_2) = -(m_1 + m_2)\\,g L_1 \\cos\\theta_1 - m_2\\, g L_2 \\cos\\theta_2"></div>
@@ -807,11 +827,12 @@ export const pendulum = {
 /* ---------- capture hooks: rewind snapshots, datasets, saved states ---------- */
 Object.assign(pendulum, genericState, {
   histBudget: 8e6, histInterval: 0.1,
-  snapshot() { const { mass, len, g, damp } = this.p; return { N: this.N, s: this.s.slice(), lyap: this.lyap, divergeAt: this.divergeAt, wmax: this.wmax, E0: this.E0, p: { mass, len, g, damp } }; },
+  snapshot() { const { mass, len, g, damp } = this.p; return { N: this.N, s: this.s.slice(), lyap: this.lyap, divergeAt: this.divergeAt, fit: { ...this.fit }, predAt: this.predAt, predFrom: this.predFrom, wmax: this.wmax, E0: this.E0, p: { mass, len, g, damp } }; },
   restore(o) {
     if (o.N !== this.N) return false;
     Object.assign(this.p, o.p);
     this.s.set(o.s); this.lyap = o.lyap ?? NaN; this.divergeAt = o.divergeAt ?? NaN; this.wmax = o.wmax || 0; this.E0 = o.E0 ?? this.E0;
+    this.fit = o.fit ? { ...o.fit } : { n: 0, t: 0, y: 0, tt: 0, ty: 0 }; this.predAt = o.predAt ?? NaN; this.predFrom = o.predFrom ?? NaN;
     this.sep.truncateAfter(this.t); this.sepClock = this.t; this.tn = 0; this.th = 0;
     return true;
   },

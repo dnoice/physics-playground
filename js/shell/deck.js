@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck Workspace (digiSpace Edition - v2.4)
+    - Title: Instruments Deck Workspace (digiSpace Edition - v2.6)
     - File Name: deck.js
     - Relative Path: js/shell/deck.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
+      unused deckPane() export.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's brief for an exploration workspace: the deck's three panes
       (Telemetry, Inspect, Insights), its size presets and its resize grip.
@@ -50,7 +52,6 @@ export const PANES = ['telemetry', 'inspect', 'insights'];
 const NAMES = { telemetry: 'Telemetry', inspect: 'Inspect', insights: 'Insights' };
 const tile = () => $('#tile-deck');
 let pane = 'telemetry', before = null;
-export const deckPane = () => pane;
 export function showPane(id, { focus = false, auto = false, reveal = false } = {}) {
   if (!PANES.includes(id)) return;
   // An automatic switch remembers where it came from, so clearing the selection can go back there.
