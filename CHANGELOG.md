@@ -163,6 +163,8 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
     apart, the target box and the near plane.
 
   `run_all.py` runs it.
+- `tests/world.py`: the scene menu check now expects Gravity's eight
+  scenes.
 
 ## 2.7.0 (11/10/2026)
 

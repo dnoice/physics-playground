@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.7)
+    - Title: 3D Mode Test (digiSpace Edition - v2.8)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The scene
+      menu check expects Gravity's eight scenes, now that Our Solar System is
+      one of them.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The pick
       round trip in Collisions uses the Heat tool, which picks the table: the
       Grab tool picks the balls' spheres first, so a ball drifting under the
@@ -243,7 +246,8 @@ with sync_playwright() as p:
     pg = page(ctx, lab="gravity")
     settle(pg, IS3D, 30000); pg.wait_for_timeout(1500)
     pg.click("#scene-btn")
-    ok("scene_menu_opens", pg.locator("#scene-menu [role=radio]").count() == 7 and not pg.evaluate("document.getElementById('scene-menu').hidden"))
+    # Gravity's eight scenes, Our Solar System among them.
+    ok("scene_menu_opens", pg.locator("#scene-menu [role=radio]").count() == 8 and not pg.evaluate("document.getElementById('scene-menu').hidden"))
     pg.keyboard.press("Escape")
     ok("escape_closes_scene_menu", pg.evaluate("document.getElementById('scene-menu').hidden") and pg.evaluate("document.activeElement.id") == "scene-btn")
     pg.click("#scene-btn"); pg.click("#preset-gravity-kepler"); pg.wait_for_timeout(300)
