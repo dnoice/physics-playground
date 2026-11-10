@@ -15,7 +15,8 @@
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: balls, kinetic energy, RMS speed and PA / NkT on its tape, and
       the selected ball as its target, its centre lifted as the 3D table draws
-      it.
+      it. A scene's balls are numbered from 1 again on every build, where the
+      count ran on across scenes (a 16-ball table could show Ball 276).
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit:
       balls carry a stable identity, so Inspect stays on its ball when another
       is erased, lets go when its ball is erased and clears on a rebuild,
@@ -182,7 +183,7 @@ export const collisions = {
     }
   },
   build(preset, w, h) {
-    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1 });
+    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1, nextUid: 0 });
     const N = Math.round(this.p.count);
     if (preset === 'gas') this.jitterGrid(N, 5, 170);
     else if (preset === 'pile') {

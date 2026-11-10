@@ -108,6 +108,17 @@ his choosing.
   Collisions, Fluid, over six alternating rounds). No backdrop blur is used;
   ARCHITECTURE.md records the convention.
 
+### Fixes
+
+- **Collisions**: a scene's balls are numbered from 1 again on every build.
+  The stable ball numbers added in 2.6.0 ran on across scenes, so a 16-ball
+  table could show Ball 276 in Inspect and on the display's callout.
+
+### README pictures
+
+- The hero and the Collisions picture are recaptured, showing the readings
+  tape, and in Collisions the target box and callout on the cue ball.
+
 ### Tests
 
 - New `tests/hud.py` (21 checks): the tape against Telemetry in all seven
@@ -115,6 +126,13 @@ his choosing.
   the off-stage box, a caution light by title, the menu's opacity steps and
   parts, Escape, Shift+H and its tool letter, settings across a reload, the
   keyboard sheet, and the phone layout. `run_all.py` runs it.
+- `tests/world.py`: the 3D pick round trip in Collisions failed now and then
+  since 2.4 (errors of 6 to 11, against a limit of 2.5). Its root cause: the
+  Grab tool picks the balls' spheres before the table, so whenever a ball of
+  the moving gas lay under the test point, the pick landed on that ball's
+  surface, a radius away. The check is about the table, so it now measures
+  with the Heat tool, which picks the table, then restores Grab for the
+  checks after it; the limit is unchanged, and the error is now 0.0.
 
 ## 2.6.0 (11/10/2026)
 

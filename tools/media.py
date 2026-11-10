@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: README Media Capture (digiSpace Edition - v2.4)
+    - Title: README Media Capture (digiSpace Edition - v2.7)
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.4.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      Collisions picture selects the cue ball, so the gallery shows the
+      head-up display's target box and callout.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Chaos is
       captured in its Both view, which shows the pendulum beside its map.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Settles
@@ -119,9 +122,11 @@ PP = 'PhysicsPlayground'
 # the scene loads. Chaos shows its phase view with the pointer resting on the map, so the start preview is in frame.
 CHAOS_SETUP = (f"{PP}.viewMode('both'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
                f"const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
+# The cue ball (the last one racked) selected, so the picture shows the head-up display's target box and callout on it.
+POOL_SETUP = f"{PP}.active.picked = 15"
 LABS = [
     ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0, None),
-    ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, None),
+    ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, POOL_SETUP),
     ('fluid', 'Fluid', 'dam', 'Dam break', 'water_drop', 1.4, None),
     ('waves', 'Waves', 'double', 'Double slit', 'airwave', 6.0, None),
     ('chaos', 'Chaos', 'chaos', 'Sensitive start · Pendulum and phase map', 'cyclone', 9.0, CHAOS_SETUP),

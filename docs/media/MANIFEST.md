@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.5)
+    - Title: README Media Manifest (digiSpace Edition - v2.7)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.5.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero
+      and the Collisions picture are recaptured from release 2.7.0, showing
+      the head-up display: its readings tape, and in Collisions the target box
+      and callout on the selected cue ball.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero,
       the Collisions, Fluid, Waves and Fields pictures and the 2D and 3D pair
       are recaptured from release 2.5.0, showing the Controls page's dials and
@@ -79,20 +83,22 @@ python tools/media.py --headed
 change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
-The hero, the Collisions, Fluid, Waves and Fields pictures and the 2D and
-3D pair were captured from release 2.5.0 on 11/10/2026, headless in
-software WebGL on four CPU cores, in metric units, so they show the
-Controls page's dials and the Random dice on the stage rail. Chaos and
-Cloth, whose rails have no dice, stand from release 2.4.0, and the banner,
-which shows no interface, from release 2.3.0.
+The hero and the Collisions picture were captured from release 2.7.0 on
+11/10/2026, headless in software WebGL on four CPU cores, in metric units,
+so they show the head-up display: its readings tape in both, and in
+Collisions the target box and callout on the selected cue ball. The Fluid,
+Waves and Fields pictures and the 2D and 3D pair stand from release 2.5.0,
+with the Controls page's dials and the Random dice on the stage rail;
+Chaos and Cloth, whose rails have no dice, from release 2.4.0; and the
+banner, which shows no interface, from release 2.3.0.
 
 ## The pictures
 
 | File | Size (px) | Shows | Used in |
 | --- | --- | --- | --- |
 | `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's star system | README title |
-| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 8 simulated seconds (about 1.8 years), its ocean worlds and gas giants in their type colours, with the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and the colophon | README, under the badges |
-| `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in | Lab gallery |
+| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 8 simulated seconds (about 1.8 years), its ocean worlds and gas giants in their type colours, with the head-up display's readings tape and the HUD button, the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and the colophon | README, under the badges |
+| `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in, with the cue ball selected: the head-up display's target box and callout on it, and its readings tape | Lab gallery |
 | `lab-fluid.webp` | 1106 × 610 | Fluid, Dam break, 1.4 s in | Lab gallery |
 | `lab-waves.webp` | 1106 × 610 | Waves, Double slit, 6 s in | Lab gallery |
 | `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the Both view (the pendulum beside its phase map), 9 s in, with a start previewed on the map | Lab gallery |
