@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.1)
+    - Title: 3D Mode Test (digiSpace Edition - v2.4)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Deck checks
+      use the Insights pane and the size button; the Details card is checked
+      in the Inspect pane; the orbital period is checked in simulated seconds
+      and in years.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       with the 3D mode: rendering, the mode switch, picking, the camera,
       capture, graphics tiers, every failure path and a resource soak.
@@ -212,14 +216,16 @@ with sync_playwright() as p:
     ok("plotted_readings_remembered", pg.locator(".scope-chip").count() == 1)
     pg.locator(".scope-x").first.click(); pg.wait_for_timeout(300)
     ok("removing_the_last_returns_to_lab_chart", pg.inner_text("#chart-title").upper() != "SCOPE")
-    pg.click("#diag-toggle")
-    ok("diagnostics_open_on_demand", not pg.evaluate("document.getElementById('diag').hidden"))
-    pg.keyboard.press("Escape")
-    ok("escape_closes_diagnostics", pg.evaluate("document.getElementById('diag').hidden") and pg.evaluate("document.activeElement.id") == "diag-toggle")
-    pg.click("#btn-deck-tall"); pg.wait_for_timeout(500)
+    pg.click("#dt-insights")
+    ok("diagnostics_open_on_demand", not pg.evaluate("document.getElementById('dp-insights').hidden") and pg.evaluate("document.getElementById('dp-telemetry').hidden"))
+    pg.click("#dt-telemetry")
+    ok("telemetry_returns", not pg.evaluate("document.getElementById('dp-telemetry').hidden") and pg.evaluate("document.activeElement.id") == "dt-telemetry")
+    std = pg.locator("#tile-deck").bounding_box()["height"]
+    pg.click("#btn-deck-size"); pg.wait_for_timeout(500)
     tall = pg.locator("#tile-deck").bounding_box()["height"]
-    pg.click("#btn-deck-tall"); pg.wait_for_timeout(500)
-    ok("deck_grows_and_shrinks", tall > pg.locator("#tile-deck").bounding_box()["height"] + 40, round(tall))
+    pg.click("#btn-deck-size"); pg.wait_for_timeout(500)
+    ok("deck_grows_and_shrinks", tall > std + 40 and pg.locator("#tile-deck").bounding_box()["height"] < std - 40, round(tall))
+    pg.click("#btn-deck-size"); pg.wait_for_timeout(300)
     ctx.close()
 
     # The console: scene dropdown, tools in the gizmo, and a click that opens up what was clicked.
@@ -239,11 +245,19 @@ with sync_playwright() as p:
     ok("nothing_selected_at_first", pg.evaluate("document.getElementById('details').hidden"))
     spot = pg.evaluate(f"""(() => {{ const L = {P}.active, B = L.bodies.filter(b => b.m < L.STAR_MASS).sort((a, c) => c.m - a.m)[0], q = L.project3(B.x, B.y, B.z), r = document.getElementById('stage-canvas').getBoundingClientRect(); return {{ x: r.left + q.x, y: r.top + q.y, id: B.id }}; }})()""")
     pg.mouse.click(spot["x"], spot["y"]); pg.wait_for_timeout(900)
-    ok("click_shows_the_body", not pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") == spot["id"], pg.inner_text("#details-title"))
+    ok("click_shows_the_body", not pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") == spot["id"] and pg.evaluate("document.getElementById('tile-deck').dataset.pane") == "inspect", pg.inner_text("#details-title"))
     ok("details_name_their_reference", "Distance from the star" in pg.inner_text("#details-rows") and "Speed relative to the star" in pg.inner_text("#details-rows"))
     orbit = pg.evaluate(f"""(() => {{ const L = {P}.active, b = L.bodies.find(q => q.id === L.track), P = L.bodies.reduce((a, q) => (q !== b && q.m > a.m ? q : a), {{ m: 0 }}), r = Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z), mu = 5000 * L.p.G * (P.m + b.m); return 2 * Math.PI * Math.sqrt(r ** 3 / mu); }})()""")
+    # In simulation units the card's period is in simulated seconds; in metric it is in years, a year being the
+    # Star system's third planet's orbit (1 AU around a star of mass 1000 at G = 1).
+    pg.evaluate(f"{P}.units.set('sim')"); pg.wait_for_timeout(600)
     card = float(pg.inner_text("#details-rows").split("Time for one orbit")[1].split()[0])
     ok("period_matches_kepler", abs(card - orbit) / orbit < 0.2, (card, round(orbit, 2)))
+    pg.evaluate(f"{P}.units.set('si')"); pg.wait_for_timeout(600)
+    years = orbit / (2 * 3.141592653589793 * (135 ** 3 / 5e6) ** 0.5)
+    text = pg.inner_text("#details-rows").split("Time for one orbit")[1].split()
+    card = float(text[0]) / (365.25 if text[1].startswith("day") else 1)
+    ok("period_in_years", abs(card - years) / years < 0.2, (text[:2], round(years, 3)))
     pg.wait_for_timeout(600)
     ok("portrait_is_drawn", pg.evaluate("""(() => { const d = document.getElementById('details-portrait').getContext('2d').getImageData(44, 44, 88, 88).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 90) lit++; return lit > 200; })()"""))
     pg.click("#details-close"); pg.wait_for_timeout(200)

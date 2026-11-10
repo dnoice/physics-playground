@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.1)
+    - Title: Frame Loop (digiSpace Edition - v2.4)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
+      clock adds the lab's own time note, so Gravity shows its simulated days
+      or years.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Meters
       read the true frame gap, so a slow run reports itself; the frame loop
       drives the automatic graphics tier.
@@ -93,7 +96,7 @@ export function frame(now) {
     } else if (!stepping) perf.slow = 0;
     if ((hudClock += real) >= 0.1) {
       hudClock = 0;
-      $('#hud-time').textContent = `t = ${active.t.toFixed(2)} s`;
+      $('#hud-time').textContent = `t = ${active.t.toFixed(2)} s${active.timeNote ? active.timeNote(active.t) : ''}`;
       $('#hud-fps').textContent = `${Math.round(perf.fps)} fps`;
       updateNav();
     }

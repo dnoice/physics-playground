@@ -1,27 +1,28 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.3)
+    - Title: Gravity Lab (digiSpace Edition - v2.4)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Real-world
+      units are astronomical: the Star system's third planet orbits at 1 AU
+      around a one-solar-mass star, which sets the year, speeds in km/s or
+      mi/s, masses in solar, Jupiter or Earth masses, and the HUD's days or
+      years.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Physics, New bodies, Display and View, with short names
       for the switches.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       global mode replaces the 3D switch; energy accounting survives culls,
       retrograde inclination reads true, snapshots carry parameters.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single file. Then, on Dennis's call for 3D gravity with
-      orbital tilt: z and vz in every sum, a Tilted orbits scene, a tilt
-      control, 3D datasets and an inclination readout.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -53,6 +54,7 @@ import { RAMP_HEAT, THEME } from '../core/color.js';
 import { brushRing, drawLit, drawStar, rampRgb } from '../core/draw.js';
 
 import { Series } from '../core/series.js';
+import { fmtQ, sig, unitSystem } from '../core/units.js';
 import { TAU, clamp, fmtSI, rand } from '../core/util.js';
 import { view } from '../core/view.js';
 import { navAnim } from '../shell/camera.js';
@@ -71,6 +73,11 @@ export const LAUNCH_K = 1.6;
 export const TRAIL_CAP = 1200;
 export const BODY_CAP = 300;
 export const STAR_MASS = 150;
+/* Astronomy for real-world units: the Star system's third planet orbits at 1 AU and its star (mass 1000) is the Sun,
+   at G = 1×. Kepler's third law then makes a year AU_YR simulated seconds, and fixes every speed. */
+const AU_PX = 135, AU_M = 1.495978707e11, YR_S = 31557600;
+export const AU_YR = TAU * Math.sqrt(AU_PX ** 3 / (G0 * 1000));
+const KMS = AU_M / AU_PX / (YR_S / AU_YR) / 1000;
 export const bodyRadius = m => 1.5 + 1.65 * Math.cbrt(m);
 export const massIdx = m => clamp(Math.round(70 + 185 * Math.log10(m + 1) / Math.log10(2001)), 0, 255);
 export const massColor = m => RAMP_HEAT.css[massIdx(m)];
@@ -113,8 +120,9 @@ export const gravity = {
   ],
   controls: [
     { type: 'range', key: 'G', label: 'Gravity strength G', min: 0.1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'physics' },
-    { type: 'range', key: 'soft', label: 'Softening length ε', min: 0.5, max: 30, step: 0.5, unit: 'px', group: 'physics' },
-    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes has mass 1000.', fmt: v => v.toPrecision(3).replace(/\.?0+$/, ''), group: 'spawn' },
+    { type: 'range', key: 'soft', label: 'Softening length ε', min: 0.5, max: 30, step: 0.5, qty: 'len', group: 'physics' },
+    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes weighs 1000 here, one solar mass; a mass of 1 is about Jupiter\'s.',
+      fmt: v => (unitSystem() === 'sim' ? v.toPrecision(3).replace(/\.?0+$/, '') : gravity.massText(v, true)), group: 'spawn' },
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: TRAIL_CAP, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'range', key: 'zoom', label: 'Zoom', min: 0.1, max: 40, log: true, fmt: v => v.toFixed(v >= 10 ? 1 : 2) + '×', group: 'view' },
     { type: 'toggle', key: 'merge', label: 'Merge bodies on contact', group: 'physics', short: 'Merge on contact' },
@@ -332,27 +340,45 @@ export const gravity = {
     let P = null;
     for (const q of this.bodies) if (q !== b && (!P || q.m > P.m)) P = q;
     const star = b.m >= STAR_MASS, title = star ? 'Star' : b.m >= 1.1 ? 'Gas giant' : b.m < 0.25 ? 'Moon' : b.id % 2 ? 'Ocean world' : 'Rocky world';
-    const rows = [['Mass of this body', fmtSI(b.m), 'In simulation units. The star in most scenes has mass 1000.']];
+    const rows = [['Mass of this body', this.massText(b.m), unitSystem() === 'sim' ? 'In simulation units. The star in most scenes has mass 1000.' : 'The star in most scenes is one solar mass; a planet of mass 1 is about Jupiter\'s.']];
     if (P) {
       const ref = P.m >= STAR_MASS ? 'the star' : `Body ${P.id}`, rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz), u = Math.hypot(ux, uy, uz);
       const mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
       const a = -mu / (2 * E), e = Math.sqrt(Math.max(0, 1 + 2 * E * h2 / (mu * mu))), bound = E < 0, i = Math.acos(clamp(hz / Math.sqrt(h2 || 1), -1, 1)) * 180 / Math.PI;
       const shape = !bound ? 'open path' : e < 0.05 ? 'near circle' : e < 0.5 ? 'oval' : 'long ellipse';
       rows.push(
-        [`Speed relative to ${ref}`, `${fmtSI(u)} px/s`, `How fast this body moves as seen from ${ref}.`],
-        [`Distance from ${ref}`, `${fmtSI(r)} px`, `Centre to centre, between this body and ${ref}.`],
-        ['Time for one orbit', bound ? `${fmtSI(TAU * Math.sqrt(a * a * a / mu))} s` : 'never returns', 'The orbital period, in simulated seconds, from the two-body orbit around the heaviest other body.'],
-        ['Orbit size', bound ? `${fmtSI(a)} px` : 'unbounded', 'The semi-major axis: half the long width of the orbit, which is its average radius.'],
+        [`Speed relative to ${ref}`, fmtQ(this, 'speed', u), `How fast this body moves as seen from ${ref}.`],
+        [`Distance from ${ref}`, fmtQ(this, 'len', r), `Centre to centre, between this body and ${ref}.`],
+        ['Time for one orbit', bound ? this.timeText(TAU * Math.sqrt(a * a * a / mu)) : 'never returns', 'The orbital period from the two-body orbit around the heaviest other body.'],
+        ['Orbit size', bound ? fmtQ(this, 'len', a) : 'unbounded', 'The semi-major axis: half the long width of the orbit, which is its average radius.'],
         ['Orbit shape', `${e.toFixed(3)}, ${shape}`, 'The eccentricity: 0 is a perfect circle, and 1 or more never comes back.'],
         ['Orbit tilt', `${i.toFixed(1)}°`, 'The inclination: the angle between this orbit and the flat plane. Above 90° it runs backwards.'],
         ['Orbit status', bound ? `Bound to ${ref}` : `Escaping ${ref}`, `Whether this body has too little energy to leave ${ref}.`]);
-    } else rows.push(['Radius of this body', `${b.r.toFixed(1)} px`, 'The drawn and collision radius.'], ['Speed through space', `${fmtSI(Math.hypot(b.vx, b.vy, b.vz))} px/s`, 'Nothing else is here to measure against.']);
-    return { id: b.id, kicker: `Body ${b.id} · camera following`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
+    } else rows.push(['Radius of this body', fmtQ(this, 'len', b.r), 'The drawn and collision radius.'], ['Speed through space', fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz)), 'Nothing else is here to measure against.']);
+    return { id: b.id, kicker: `Body ${b.id} · camera following`, short: `Body ${b.id}`, title, color: this.bodyColor3(b), spot: true, rows, actions: [
       { label: 'Release camera', run: () => this.deselect() },
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
     ] };
   },
   deselect() { this.track = null; updateNav(); },
+  /* Real-world units are astronomical here; Simulation keeps pixels and simulated seconds. */
+  unitTable(sys) {
+    if (sys === 'sim') return null;
+    return { len: [1 / AU_PX, 'AU'], speed: sys === 'us' ? [KMS * 1000 / 1609.344, 'mi/s'] : [KMS, 'km/s'] };
+  },
+  scaleNote: `In Gravity the units are astronomical: the Star system's third planet orbits at 1 AU and its star is the Sun, so at G = 1× a year passes every ${AU_YR.toFixed(1)} simulated seconds. Masses read in solar, Jupiter and Earth masses.`,
+  timeText(s) {
+    if (unitSystem() === 'sim') return `${fmtSI(s)} s`;
+    const yr = s / AU_YR; return yr >= 1 ? `${sig(yr)} yr` : `${sig(yr * 365.25)} days`;
+  },
+  timeNote(t) { return unitSystem() === 'sim' ? '' : ` ≈ ${this.timeText(t)}`; },
+  massText(m, short) {
+    if (unitSystem() === 'sim') return short ? `m ${m < 10 ? m.toFixed(2) : m.toFixed(0)}` : fmtSI(m);
+    const sun = m / 1000, jup = sun / 9.546e-4, earth = sun / 3.003e-6;
+    // Abbreviations in plain letters: the astronomical symbols for the Sun, Jupiter and Earth are missing from many fonts.
+    return sun >= 0.05 ? `${sig(sun)} ${short ? 'Msun' : 'solar masses'}` : jup >= 0.03 ? `${sig(jup)} ${short ? 'MJup' : 'Jupiter masses'}` : `${sig(earth)} ${short ? 'MEarth' : 'Earth masses'}`;
+  },
+  inspectHint: 'Click a body to follow it and inspect it here.',
   stateSummary() { return { bodies: this.bodies.length }; },
   navExtras: [{ id: 'follow', label: 'Follow', icon: 'follow', title: 'Follow the centre of mass · click a body on the stage to follow it instead · click again to free the camera',
     pressed: () => gravity.p.follow || gravity.track != null,
@@ -556,7 +582,7 @@ export const gravity = {
         const X = b.x * z + ox, Y = b.y * z + oy, R = Math.max(1.4, b.r * z) + 5;
         g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
         g.beginPath(); g.arc(X, Y, R, 0, TAU); g.stroke();
-        const label = `m ${b.m < 10 ? b.m.toFixed(2) : b.m.toFixed(0)} · ${Math.hypot(b.vx, b.vy, b.vz).toFixed(0)} px/s`;
+        const label = `${this.massText(b.m, true)} · ${fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz))}`;
         g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
         const lx = clamp(X + R + 6, 4, w - tw - 14), ly = clamp(Y - R - 6, 16, h - 6);
         g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(lx - 5, ly - 13, tw + 10, 18);
@@ -578,9 +604,11 @@ export const gravity = {
       g.moveTo(a.x, a.y); g.lineTo(a.x - 9 * Math.cos(ang - 0.4), a.y - 9 * Math.sin(ang - 0.4)); g.lineTo(a.x - 9 * Math.cos(ang + 0.4), a.y - 9 * Math.sin(ang + 0.4)); g.fill();
       g.fillStyle = massColor(this.p.launchMass); g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, bodyRadius(this.p.launchMass) * z), 0, TAU); g.fill();
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
-      g.fillText(`${Math.hypot(vx, vy).toFixed(0)} px/s`, a.x + 10, a.y - 6);
+      g.fillText(fmtQ(this, 'speed', Math.hypot(vx, vy)), a.x + 10, a.y - 6);
     }
   },
+  // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
+  primary: ['Total energy E', 'Energy drift since last change'],
   readouts() {
     let px = 0, py = 0, pz = 0;
     for (const b of this.bodies) { px += b.m * b.vx; py += b.m * b.vy; pz += b.m * b.vz; }
@@ -589,7 +617,7 @@ export const gravity = {
       ['Bodies', String(n)],
       ['Total energy E', fmtSI(this.E)],
       ['Energy drift since last change', n > 1 ? `${drift >= 0 ? '+' : ''}${drift.toFixed(3)} %` : '—', n > 1 ? (ad < 0.1 ? 'ok' : ad < 1 ? 'warn' : 'crit') : 'idle'],
-      ['Virial ratio 2K / |U|', n > 1 && this.PE ? (2 * this.KE / Math.abs(this.PE)).toFixed(3) : '—'],
+      ['Virial ratio 2K / |U|', n > 1 && this.PE ? (2 * this.KE / Math.abs(this.PE)).toFixed(3) : '—', undefined, 'derived'],
       ['Total momentum |p|', fmtSI(Math.hypot(px, py, pz))],
       ['Merged · escaped', `${this.merged} · ${this.escaped}`],
       ['Orbit tilts vs heaviest body', this.tilts()],

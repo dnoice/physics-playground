@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck (digiSpace Edition - v2.3)
+    - Title: Instruments Deck (digiSpace Edition - v2.4)
     - File Name: instruments.js
     - Relative Path: js/shell/instruments.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Readings
+      rank as primary or derived and set their units in a smaller face, so a
+      narrow gauge keeps both. A selected object's figures can be plotted
+      beside the readings (not remembered across visits), every series
+      restarts when the units change, and the diagnostics sheet's code moves
+      to the deck's Insights pane.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lane
       backgrounds use rrect(), so the scope draws in browsers without
       CanvasRenderingContext2D.roundRect.
@@ -21,21 +27,25 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    One tile in place of the chart, readouts and diagnostics panels. Every
-    reading is a gauge with a sparkline; clicking one plots it on a shared
-    time axis. The plot is live: hovering reads any moment, and clicking or
-    dragging rewinds the simulation to that moment.
+    The Telemetry pane of the instruments deck: every reading is a gauge with
+    a sparkline; clicking one plots it on a shared time axis. The plot is
+    live: hovering reads any moment, and clicking or dragging rewinds the
+    simulation to that moment. Plotted figures of a selected object join the
+    same scope.
 
 ✒ Key Features:
-    - Gauges build from each lab's readouts, so no lab needed changing.
-    - Up to four readings plot together, each in its own lane on one time
-      axis, with their values in a legend that follows the cursor.
+    - Gauges build from each lab's readouts; the primary readings (lab.primary,
+      a list of labels or the first two) lead with larger figures, and a row
+      marked derived says so.
+    - Up to four series plot together, each in its own lane on one time axis,
+      with their values in a legend that follows the cursor.
     - Click or drag on the scope to rewind; the wheel zooms the time window.
-    - Plotted readings are remembered per lab, and a rewind that branches
-      drops the abandoned future from the plot too.
-    - With nothing plotted, the lab's own chart shows.
-    - Diagnostics shrink to a status pill; the full list opens on demand, and
-      the top alert and its fix stay in the header.
+    - Plotted readings are remembered per lab; a selected object's figures
+      plot under its own name and are not.
+    - A change of unit system restarts every series, since old samples are in
+      the old units.
+    - With nothing plotted, the lab's own chart shows; the top alert and its
+      first fix stay in the deck header.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -48,6 +58,7 @@ import { THEME } from '../core/color.js';
 import { rrect } from '../core/draw.js';
 import { Series } from '../core/series.js';
 import { $, clamp, el, store } from '../core/util.js';
+import { labs } from '../labs/index.js';
 import { hist, histSeek } from './capture.js';
 import { drawChart } from './panel.js';
 import { active, announce } from './state.js';
@@ -64,11 +75,18 @@ function pin(I, label) {
 }
 function inst(lab) {
   if (lab.inst) return lab.inst;
-  const I = lab.inst = { series: new Map(), pins: new Set(), slot: new Map(), span: 0, hoverX: null };
+  // obj holds the plotted figures of selected objects: they plot like readings but are not remembered across visits.
+  const I = lab.inst = { series: new Map(), pins: new Set(), slot: new Map(), obj: new Set(), span: 0, hoverX: null };
   for (const label of saved[lab.id] || []) pin(I, label);
   return I;
 }
 export const scopeOn = lab => inst(lab).pins.size > 0;
+/* A change of units restarts every plotted series: old samples are numbers in the old units. Pins stay. */
+export function resetSeries() {
+  for (const lab of labs) if (lab.inst) { lab.inst.series.clear(); lab.inst.hoverX = null; }
+  gauges.forEach(n => { n.text = null; n.label = null; });
+  legendKey = null;
+}
 const colorOf = (I, label) => SERIES[I.slot.get(label) ?? 0];
 
 /* A reading plots only if it starts as a number: "0.5916 J/kg", "−8.8e-6 %" and "1.2k" do; "not yet" does not. */
@@ -95,18 +113,53 @@ let gauges = [];
 export function resetGauges() { gauges = []; $('#readouts').replaceChildren(); legendKey = null; }
 function togglePin(lab, label) {
   const I = inst(lab);
-  if (I.pins.has(label)) { I.pins.delete(label); I.slot.delete(label); }
+  if (I.pins.has(label)) { I.pins.delete(label); I.slot.delete(label); I.obj.delete(label); }
   else if (I.pins.size < MAX_PINS) pin(I, label);
-  else { announce(`Up to ${MAX_PINS} readings plot at once. Remove one first.`); return; }
-  saved[lab.id] = [...I.pins]; store.set('pins', saved);
+  else { announce(`Up to ${MAX_PINS} readings plot at once. Remove one first.`); return false; }
+  saved[lab.id] = [...I.pins].filter(l => !I.obj.has(l)); store.set('pins', saved);
   refresh(lab);
+  return true;
+}
+
+/* ---------- object figures: a selected object's numbers, plotted beside the lab's readings ---------- */
+/* The key names the object as well as the figure, so two bodies' speeds are two series. */
+export const objectKey = (info, row) => `${info.short || info.kicker}: ${row[0]}`;
+export const objectPinned = (lab, key) => inst(lab).pins.has(key);
+export const objectColor = (lab, key) => colorOf(inst(lab), key);
+export function toggleObjectPin(lab, key) {
+  const I = inst(lab), on = I.pins.has(key);
+  if (!on) I.obj.add(key);
+  if (!togglePin(lab, key)) { I.obj.delete(key); return false; }
+  announce(on ? `Stopped plotting ${key}` : `Plotting ${key} under Telemetry`);
+  return true;
+}
+/* Panel rate, as the readings: the figures of the selected object that are plotted take a sample each. */
+export function sampleObject(lab, info) {
+  const I = inst(lab);
+  if (!info || !I.obj.size || hist(lab).pos >= 0) return;
+  for (const row of info.rows) {
+    const key = objectKey(info, row); if (!I.pins.has(key)) continue;
+    let s = I.series.get(key);
+    if (!s) I.series.set(key, s = new Series(CAP));
+    if (lastT(s) > lab.t + 1e-9) s.truncateAfter(lab.t);
+    if (lab.t > lastT(s) + 1e-9) s.push(lab.t, readingValue(row[1]));
+  }
 }
 function gauge(lab, label) {
+  // Primary readings lead the row with larger figures; derived ones (computed from others) are marked as such.
   const dt = el('dt'), dd = el('dd'), spark = el('span', { class: 'gauge-spark', 'aria-hidden': 'true', html: '<svg viewBox="0 0 100 20" preserveAspectRatio="none"><path/></svg>' });
   const hit = el('button', { type: 'button', class: 'gauge-hit', 'aria-pressed': 'false' });
   const n = { root: el('div', { class: 'gauge' }, dt, dd, spark, hit), dt, dd, hit, path: spark.querySelector('path'), label: null, on: null };
   hit.addEventListener('click', () => togglePin(lab, n.label));
   return n;
+}
+/* A figure and its unit: the unit in a smaller face, so "0.5916 J/kg" fits a narrow gauge without losing either. */
+const NUM = /^\s*([-+−]?\d[\d,]*\.?\d*(?:e[-+]?\d+)?[kMGT]?(?![a-zA-Z]))\s*(.*)$/;
+function setValue(dd, text) {
+  const m = NUM.exec(text);
+  if (!m || !m[2]) { dd.textContent = text; return; }
+  // One inline run, so the figure and its unit read and copy as one line ("1400 / 4000"), not two flex items.
+  dd.replaceChildren(el('span', { class: 'val' }, el('span', { class: 'num', text: m[1] }), ' ', el('span', { class: 'unit', text: m[2] })));
 }
 function sparkPath(s) {
   if (!s || s.n < 2) return '';
@@ -124,8 +177,13 @@ export function updateGauges(lab, rows) {
   if (gauges.length !== rows.length) { gauges = rows.map(r => gauge(lab, r[0])); dl.replaceChildren(...gauges.map(n => n.root)); }
   rows.forEach((r, i) => {
     const n = gauges[i], s = I.series.get(r[0]);
-    if (n.label !== r[0]) { n.label = r[0]; n.dt.textContent = r[0]; n.root.title = r[0]; n.hit.setAttribute('aria-label', `Plot ${r[0]}`); }
-    if (n.dd.textContent !== r[1]) n.dd.textContent = r[1];
+    if (n.label !== r[0]) {
+      const pr = lab.primary ?? 2, tier = r[3] || ((Array.isArray(pr) ? pr.includes(r[0]) : i < pr) ? 'primary' : 'secondary');
+      n.label = r[0]; n.dt.textContent = r[0]; n.hit.setAttribute('aria-label', `Plot ${r[0]}`);
+      n.root.classList.toggle('primary', tier === 'primary'); n.root.classList.toggle('derived', tier === 'derived');
+      n.root.title = tier === 'derived' ? `${r[0]} (derived: computed from other figures, not measured directly)` : r[0];
+    }
+    if (n.text !== r[1]) { n.text = r[1]; setValue(n.dd, r[1]); }
     if (r[2]) n.dd.setAttribute('data-state', r[2]); else n.dd.removeAttribute('data-state');
     const on = I.pins.has(r[0]), numeric = Number.isFinite(readingValue(r[1])) || (!!s && Number.isFinite(s.last()));
     n.hit.disabled = !numeric && !on;
@@ -220,14 +278,7 @@ function seekTo(lab, x, w) {
   if (a !== H.pos) histSeek(lab, a);
 }
 
-/* ---------- diagnostics pill ---------- */
-const diagOpen = () => !$('#diag').hidden;
-export function setDiag(open) {
-  $('#diag').hidden = !open;
-  $('#diag-toggle').setAttribute('aria-expanded', String(open));
-  if (open) { $('#diag').focus({ preventScroll: true }); drawChart(); }
-}
-export function closeDiag() { if (!diagOpen()) return false; setDiag(false); $('#diag-toggle').focus(); return true; }
+/* ---------- top alert ---------- */
 /* The top alert and its first fix stay in the header, so a problem never needs the sheet opened to act on it. */
 export function showTopAlert(alert, apply) {
   const top = $('#diag-top');
@@ -266,13 +317,4 @@ export function init() {
     W.I.span = span >= W.end - W.first ? 0 : Math.max(2, span);
     drawChart();
   }, { passive: false });
-  $('#diag-toggle').addEventListener('click', () => setDiag(!diagOpen()));
-  $('#diag-close').addEventListener('click', closeDiag);
-  document.addEventListener('pointerdown', e => {
-    if (diagOpen() && !$('#diag').contains(e.target) && !$('#diag-toggle').contains(e.target) && !$('#hud-alert').contains(e.target)) setDiag(false);
-  });
-  const tall = store.get('deckTall', false), bento = $('#bento'), btn = $('#btn-deck-tall');
-  const setTall = on => { bento.classList.toggle('deck-tall', on); btn.setAttribute('aria-pressed', String(on)); store.set('deckTall', on); };
-  setTall(tall);
-  btn.addEventListener('click', () => setTall(!bento.classList.contains('deck-tall')));
 }

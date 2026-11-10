@@ -1,17 +1,19 @@
 """
 ✒ Metadata
-    - Title: Test Runner (digiSpace Edition - v2.1)
+    - Title: Test Runner (digiSpace Edition - v2.4)
     - File Name: run_all.py
     - Relative Path: tests/run_all.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
+      new workspace suite.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A suite
       with no PASS marks now fails, so one can never silently stop asserting.
       Registered the shell suite, reads marks by their JSON shape and names
@@ -49,7 +51,7 @@ import sys
 from harness import NOISE, URL
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world']
+SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace']
 TIMEOUT_S = 600
 
 

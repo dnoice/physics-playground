@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.3)
+    - Title: Changelog (digiSpace Edition - v2.4)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.3.1
+    - Version: 2.4.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.4.0 release.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.3.1 release.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -47,6 +49,103 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.4.0 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+One interaction architecture for the whole workspace, on Dennis's brief for
+viewport navigation, the Chaos views and an exploration workspace, plus the
+real-world units he asked for with simulation pixels kept as an option.
+
+### Stage rail
+
+- The gizmo moved around between labs because the rail was centred on the
+  stage edge and its length depends on the lab's tools. It now hangs from the
+  top-right corner at a fixed offset: **Camera** (axis ball, zoom, pan,
+  frame) sits in the same place in every lab and view, followed by the lab's
+  **Tools**, **View** and **This scene** groups.
+- Tools (what a click does) and views (what the stage shows) are separate
+  radio groups with separate state keys, each with the full keyboard
+  contract: one tab stop, arrows move and select, Home and End jump. **V**
+  steps through a lab's views. View options carry their names; at 720 px and
+  below the rail becomes a bottom bar of icons, and short stages drop the
+  captions and then the axis ball.
+- Axis dots keep their size and gain larger hit targets; there is no −Z dot
+  because the camera never goes below the floor every scene stands on.
+- Waves' Displacement and Intensity are now the rail's **Height** and
+  **Intensity** views.
+
+### Chaos views
+
+- **Pendulum**, **Phase map** and **Both**, switched from the rail or with V,
+  never restart the run or clear its trails; each view lays itself out at
+  once and frames the camera for its own composition.
+- The map is labelled for what it is: the (θ₁, θ₂) projection of the 4-D
+  state (θ₁, θ₂, ω₁, ω₂), on which paths may cross. The Math page says the
+  same.
+- The floating torus was the configuration space the square wraps onto, with
+  the same paths; it was meaningful but sat on the screen's frame as an
+  unexplained ornament. It is now the Phase map view's companion, in 2D and
+  3D: a labelled torus beside the map with a faint lattice, the two seams
+  where the map's edges were glued (θ₁ = ±180° in amber, θ₂ = ±180° in
+  cyan), and every copy's path, unbroken. In 3D it stands on its own turned
+  column, its glass toned down so it no longer glares. Both drops it, since
+  the pendulum fills that place.
+- Clicking a dot on the map or a pendulum on the stage selects that copy in
+  every view (dashed ring and number on the map, the pendulum and the
+  torus) and inspects it: angles, spins, energy, position, its starting
+  offset and its distance from the front copy. A front bob still drags; a
+  click without moving selects it. In the Phase map view the start preview
+  shows the pose itself.
+
+### Instruments deck
+
+- Three panes over one header: **Telemetry** (gauges and the scope),
+  **Inspect** (the selected object) and **Insights** (diagnostics with fixes
+  and the frame-timing strip, in place of the floating sheet). The top alert
+  and its fix stay in the header in every pane.
+- Compact, standard and tall presets on one button, and a grip on the top
+  edge that drags, or steps with the arrow keys, to any height; Enter
+  restores the standard height. A deck too short for a plot keeps its
+  readings.
+- The first readings of each lab lead with larger figures, a row may be
+  marked derived, and units sit in a smaller face, so a narrow gauge keeps
+  both the figure and its unit.
+
+### Inspection
+
+- Inspect is read-only: figures update live and settings stay in Controls.
+  The card offers only actions on the object itself. A new selection opens
+  the pane; clearing it returns to the pane that was open.
+- Any numeric figure plots under Telemetry as that object's own series, in
+  its own lane beside the readings; history is never presented as replay
+  beyond what the rewind keeps.
+- New: Fluid's posts (any tool but Obstacle selects one; figures measured
+  from the liquid around it; remove) and Waves' sources (a click selects
+  instead of deleting; frequency, wavelength, phase, drive, intensity;
+  remove). Every lab's empty pane says how to select in it.
+
+### Units
+
+- A **Units** menu (button or **U**): Metric (SI, the default), US customary
+  or Simulation. Readings, controls, typed values, inspected figures, chart
+  labels and the scale bar follow it; the simulations never change.
+- Scales: Fluid, Collisions, Cloth and Fields share 1 px = 1.09 cm, so the
+  default gravity of 900 px/s² is 9.81 m/s². Waves uses 4 mm per cell, a
+  ripple-tank scale (60 cells/s is 24 cm/s). Chaos computes in metres
+  already. Gravity is astronomical: 1 AU is the Star system's third orbit
+  around a one-solar-mass star, so a year is 4.4 simulated seconds at G = 1×,
+  speeds read in km/s and masses in solar, Jupiter or Earth masses, and the
+  HUD clock adds days or years.
+- Datasets keep the lab's own units and record the scale beside them.
+
+### Tests and tools
+
+- New `tests/workspace.py`: the rail, views, Chaos's three views and shared
+  selection, the deck's panes, sizes and grip, post and source inspection,
+  and the unit systems. The other suites follow the new deck and units.
+- `tools/media.py` captures Chaos in its Both view.
 
 ## 2.3.1 (11/10/2026)
 

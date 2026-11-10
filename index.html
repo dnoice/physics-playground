@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.3)
+    - Title: Physics Playground (digiSpace Edition - v2.4)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The stage
+      rail is regrouped on Dennis's brief for one interaction architecture: a
+      fixed Camera group, then the lab's Tools, View and scene groups. The
+      instruments deck gains Telemetry, Inspect and Insights panes, a size
+      button and a resize grip; the Details card moves into Inspect and the
+      diagnostics sheet into Insights. A Units button and menu join the top
+      bar, with U and V on the keyboard sheet.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       balance, flag and visibility glyphs the control sections use.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       digiSpace Studio colophon Dennis asked for, with a coffee glyph.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      2D and 3D switch, Graphics menu and Z key; Shift+B is now named
-      correctly.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -32,15 +36,21 @@
 ✒ Key Features:
     - Console layout: the stage with its player bar, an instruments deck
       beneath it, and a full-height inspector beside them.
+    - Stage rail anchored top right: Camera (axis ball, zoom, pan, frame),
+      then the lab's Tools, View and This scene groups.
+    - Instruments deck with Telemetry, Inspect and Insights panes, compact,
+      standard and tall sizes, and a grip to drag it to any height.
+    - Units menu (U): metric, US customary or simulation units for every
+      reading and control.
     - Focus mode (F) and hideable instruments (Shift+B); the layout reflows
       below 1180 px and 760 px.
     - Material Symbols Rounded from Google Fonts, subset with icon_names to
       the glyphs the code uses.
-    - Import map pinning three.js 0.187.0 and KaTeX 0.19.1 on jsDelivr;
-      KaTeX styles and fonts are vendored because the artifact host only
-      allows fonts from Google or the page itself.
-    - Keyboard sheet (?) as the single floating panel; a polite live region
-      announces state changes.
+    - Import map pinning three.js 0.187.0 and KaTeX 0.19.1 on jsDelivr; KaTeX
+      styles and fonts are vendored because the artifact host only allows
+      fonts from Google or the page itself.
+    - Keyboard sheet (?), Graphics and Units menus as the floating panels; a
+      polite live region announces state changes.
     - A colophon beneath the console credits digiSpace Studio and Dennis
       Smaltz; it steps aside in focus mode.
 
@@ -70,7 +80,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,airwave,arrow_outward,back_hand,balance,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,task_alt,texture,tune,video_library,view_column,visibility,warning,water_drop&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -105,6 +115,7 @@
       <button type="button" role="radio" id="mode-3d" aria-checked="true" title="3D world (Z)">3D</button>
     </div>
     <button type="button" class="btn gfx-btn" id="btn-gfx" aria-expanded="false" aria-controls="gfx-sheet" title="Graphics tier"><span class="ms" aria-hidden="true">tune</span><span id="btn-gfx-label">Auto</span></button>
+    <button type="button" class="btn gfx-btn" id="btn-units" aria-expanded="false" aria-controls="units-sheet" title="Units (U)"><span class="ms" aria-hidden="true">straighten</span><span id="btn-units-label">Metric</span></button>
     <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the instruments (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Instruments</span></button>
     <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
     <button type="button" class="icon-btn" id="btn-keys" aria-expanded="false" aria-controls="keys-sheet" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
@@ -136,8 +147,11 @@
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>
       <p class="stage-hint" id="stage-hint"></p>
+      <!-- The rail is anchored to the stage's top right and fills downward in a fixed order: the camera, then what
+           belongs to this lab (pointer tools, view modes, scene actions). A lab without one of those simply has no
+           such group, so the camera never moves and the lab's own controls always start right beneath it. -->
       <div class="nav" id="nav" role="group" aria-label="View and tools">
-        <div class="nav-sec">
+        <div class="nav-sec nav-camera" id="nav-camera" role="group" aria-label="Camera">
           <div class="orbit" id="nav-orbit" title="Drag to orbit · click an axis to look along it" hidden>
             <svg class="orbit-lines" id="orbit-lines" viewBox="-36 -36 72 72" aria-hidden="true"></svg>
           </div>
@@ -151,9 +165,15 @@
             <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" data-tip="Frame the scene · 0"><span class="ms" aria-hidden="true">fit_screen</span></button>
           </div>
         </div>
-        <div class="nav-sec" id="nav-tools">
+        <div class="nav-sec nav-tools" id="nav-tools" role="group" aria-labelledby="tools-key" hidden>
           <span class="nav-cap" id="tools-key">Tools</span>
-          <div class="dock" id="dock" role="radiogroup" aria-label="Pointer tool"></div>
+          <div class="dock" id="dock" role="radiogroup" aria-labelledby="tools-key"></div>
+        </div>
+        <div class="nav-sec nav-views" id="nav-views" role="group" aria-labelledby="views-key" hidden>
+          <span class="nav-cap" id="views-key">View</span>
+          <div class="views" id="views" role="radiogroup" aria-labelledby="views-key"></div>
+        </div>
+        <div class="nav-sec nav-context" id="nav-context" role="group" aria-label="This scene" hidden>
           <div class="nav-extra" id="nav-extra"></div>
         </div>
       </div>
@@ -189,29 +209,57 @@
     </footer>
   </section>
 
-  <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments">
+  <!-- The instruments deck: three panes over one header. Telemetry is the lab's readings and their plot; Inspect is
+       the selected object, read-only (its settings stay in Controls); Insights is diagnostics grounded in the run.
+       The grip on the top edge sets the height; the size button steps through compact, standard and tall. -->
+  <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments" data-pane="telemetry">
+    <div class="deck-grip" id="deck-grip" role="separator" aria-orientation="horizontal" aria-controls="tile-deck" aria-label="Instruments height" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" tabindex="0" title="Drag to resize the instruments · double-click for the standard height"></div>
     <header class="tile-head deck-head">
-      <span class="ms tile-ico" aria-hidden="true">show_chart</span><h3 id="chart-title">Chart</h3>
+      <div class="deck-tabs" role="tablist" aria-label="Instruments" id="deck-tabs">
+        <button type="button" role="tab" class="deck-tab" id="dt-telemetry" aria-controls="dp-telemetry" aria-selected="true"><span class="ms" aria-hidden="true">show_chart</span><span class="deck-tab-name">Telemetry</span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span><span class="deck-tab-dot" id="dt-inspect-dot" hidden></span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum">Stable</span></button>
+      </div>
+      <h3 class="deck-title" id="chart-title">Chart</h3>
       <div class="scope-legend" id="scope-legend"></div>
       <div class="diag-top" id="diag-top" hidden></div>
-      <button type="button" class="diag-pill" id="diag-toggle" aria-expanded="false" aria-controls="diag" title="Show diagnostics"><span class="diag-sum" id="diag-sum">Stable</span></button>
-      <button type="button" class="icon-btn" id="btn-deck-tall" aria-pressed="false" title="Make the instruments taller"><span class="ms" aria-hidden="true">open_in_full</span><span class="sr-only">Taller instruments</span></button>
+      <button type="button" class="icon-btn" id="btn-deck-size" title="Instruments size: standard · click for tall"><span class="ms" aria-hidden="true">unfold_more</span><span class="sr-only" id="btn-deck-size-label">Instruments size: standard. Make them tall.</span></button>
     </header>
     <div class="deck-body">
-      <dl class="readouts" id="readouts"></dl>
-      <div class="deck-chart"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
+      <div class="deck-pane deck-telemetry" role="tabpanel" id="dp-telemetry" aria-labelledby="dt-telemetry">
+        <dl class="readouts" id="readouts"></dl>
+        <div class="deck-chart"><canvas id="chart" role="img" aria-label="Chart"></canvas><p class="caption" id="chart-caption"></p></div>
+      </div>
+      <div class="deck-pane deck-inspect" role="tabpanel" id="dp-inspect" aria-labelledby="dt-inspect" hidden>
+        <article class="details" id="details" aria-label="Selected object" hidden>
+          <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
+          <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3>
+            <div class="details-actions" id="details-actions"></div></div>
+          <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
+          <dl class="details-rows" id="details-rows"></dl>
+        </article>
+        <div class="inspect-empty" id="inspect-empty">
+          <span class="ms" aria-hidden="true">ads_click</span>
+          <p><b>Nothing selected.</b> <span id="inspect-how">Click an object on the stage to inspect it here.</span> Its live figures appear here, read-only; plot any of them over time with its chart button. Settings stay in Controls.</p>
+        </div>
+      </div>
+      <div class="deck-pane deck-insights" role="tabpanel" id="dp-insights" aria-labelledby="dt-insights" hidden>
+        <div class="insights" id="insights" aria-live="polite"></div>
+        <div class="perf" aria-label="Frame timing">
+          <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
+          <dl class="perf-nums">
+            <dt>Solver</dt><dd id="perf-sim">0.0 ms</dd>
+            <dt>Drawing</dt><dd id="perf-draw">0.0 ms</dd>
+            <dt>Steps / frame</dt><dd id="perf-steps">0</dd>
+            <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
+          </dl>
+        </div>
+      </div>
     </div>
   </section>
 
   <aside class="tile tile-inspector" id="tile-notes" aria-label="Inspector">
     <div class="scene-intro" id="scene-body"></div>
-    <article class="details" id="details" aria-label="Selected object" hidden>
-      <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
-      <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3></div>
-      <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
-      <dl class="details-rows" id="details-rows"></dl>
-      <div class="details-actions" id="details-actions"></div>
-    </article>
     <div class="tabs" role="tablist" aria-label="Inspector" id="notes-tabs">
       <button type="button" role="tab" id="nt-controls" aria-controls="np-controls" aria-selected="true"><span class="ms" aria-hidden="true">tune</span>Controls</button>
       <button type="button" role="tab" id="nt-experiments" aria-controls="np-experiments" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">science</span>Experiments<span class="tab-count" id="nt-experiments-count" hidden></span></button>
@@ -255,25 +303,18 @@
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
     <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
+    <dt><kbd>V</kbd></dt><dd>Next view, in a lab with more than one (Chaos, Waves)</dd>
+      <dt><kbd>U</kbd></dt><dd>Units: metric, US customary or simulation pixels</dd>
     <dt>Scroll</dt><dd>Zoom at the cursor; middle or right drag pans</dd>
     <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>
   </dl>
 </div>
-<section class="sheet diag-sheet" id="diag" tabindex="-1" aria-labelledby="diag-title" hidden>
-  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">monitor_heart</span><h3 id="diag-title">Diagnostics</h3><button type="button" class="icon-btn" id="diag-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
-  <div class="tile-body">
-    <div class="perf">
-      <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
-      <dl class="perf-nums">
-        <dt>Solver</dt><dd id="perf-sim">0.0 ms</dd>
-        <dt>Drawing</dt><dd id="perf-draw">0.0 ms</dd>
-        <dt>Steps / frame</dt><dd id="perf-steps">0</dd>
-        <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
-      </dl>
-    </div>
-    <div class="insights" id="insights"></div>
-  </div>
-</section>
+<!-- Units: what the readings, controls and scale bar are shown in. The simulations always compute in their own units. -->
+<div class="sheet gfx-sheet units-sheet" id="units-sheet" role="dialog" aria-modal="false" aria-labelledby="units-title" hidden>
+  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">straighten</span><h3 id="units-title">Units</h3><button type="button" class="icon-btn" id="units-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+  <div class="gfx-list" id="units-list" role="radiogroup" aria-labelledby="units-title"></div>
+  <p class="gfx-note" id="units-scale"></p>
+</div>
 <div class="sheet gfx-sheet" id="gfx-sheet" role="dialog" aria-modal="false" aria-labelledby="gfx-title" hidden>
   <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">tune</span><h3 id="gfx-title">Graphics</h3><button type="button" class="icon-btn" id="gfx-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
   <div class="gfx-list" id="gfx-list" role="radiogroup" aria-labelledby="gfx-title"></div>

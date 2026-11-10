@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Automation Surface (digiSpace Edition - v2.1)
+    - Title: Automation Surface (digiSpace Edition - v2.4)
     - File Name: automation.js
     - Relative Path: js/shell/automation.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds
+      viewMode() for a lab's view and units.get() and units.set() for the unit
+      system.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       mode surface; renderer status comes from the lab rather than a
       renderer import.
@@ -46,7 +49,8 @@ import { globalInsights } from './diagnostics.js';
 import { labsById } from '../labs/index.js';
 import { camOf, is3D, navActual, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
 import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
-import { selectDock } from './dock.js';
+import { selectDock, selectView } from './dock.js';
+import { setUnitSystem, unitSystem } from '../core/units.js';
 import { applyPreset, setParam } from './lifecycle.js';
 import { advance } from './loop.js';
 import { ptr } from './stage.js';
@@ -68,6 +72,8 @@ export function init() {
     preset: id => applyPreset(active, id),
     setParam: (key, value) => setParam(active, key, value),
     tool: id => selectDock(id),
+    viewMode: id => selectView(id),
+    units: { get: () => unitSystem(), set: id => setUnitSystem(id) },
     diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
     play, pause, step: stepOnce, reset: resetActive, setSpeed,
     advance: seconds => advance(active, seconds, Infinity),

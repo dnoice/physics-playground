@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.1)
+    - Title: Tile Content Styles (digiSpace Edition - v2.4)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
+      the deck's panes, segmented tabs, resize grip and short mode, the
+      Inspect card with plottable figures, primary and derived gauges, and
+      units in a smaller face; the floating diagnostics sheet's styles are
+      gone.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Short
       windows set tools in two columns, so six fit without scrolling.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -19,11 +24,17 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Contents of the Scene, Tools, chart, readouts, diagnostics and notebook
-    tiles, including formula cards and experiment cards.
+    Contents of the Scene, chart, readouts, Inspect and Insights panes and the
+    notebook tiles, including formula cards and experiment cards.
 
 ✒ Key Features:
-    - Scene presets as wrapping chips; dock grid for tools.
+    - Scene presets as wrapping chips.
+    - Instruments deck: segmented pane tabs, a grip on the top edge, and a
+      short mode that keeps the readings and drops the plot.
+    - Gauges: primary readings lead with larger figures, derived ones are set
+      in italics, and units sit in a smaller face.
+    - Inspect card: portrait, name and actions beside a grid of read-only
+      figures, each with a plot button.
     - Notebook tabs with counts and a new-item dot.
     - KaTeX formula cards that scroll sideways instead of overflowing.
 
@@ -51,25 +62,73 @@
 .preset-list button[aria-checked="true"]::before { background: var(--amber); box-shadow: 0 0 8px color-mix(in oklab, var(--amber) 70%, transparent); }
 
 .details {
-  display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; grid-template-rows: auto auto auto; column-gap: 12px; row-gap: 12px; align-items: center;
-  margin: 0 12px 12px; padding: 12px; border-radius: 14px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); animation: tile-in 0.26s var(--ease) both;
+  position: relative; display: grid; grid-template-columns: minmax(190px, 250px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 14px; row-gap: 10px; align-items: start;
+  min-height: 0; height: 100%; animation: tile-in 0.26s var(--ease) both;
 }
 .details[hidden] { display: none; }
-.details-portrait { width: 88px; height: 88px; border-radius: 50%; background: #03050a; box-shadow: inset 0 0 0 1px var(--hair), 0 0 24px -8px color-mix(in oklab, var(--cyan) 40%, transparent); }
-.details-name { display: grid; gap: 3px; min-width: 0; }
-.details-name span { font-size: 12px; color: var(--muted); }
-.details-name h3 { margin: 0; font: 700 18px/1.15 var(--font-display); letter-spacing: -0.005em; }
-.details .icon-btn { align-self: start; width: 30px; height: 30px; }
-.details-rows { grid-column: 1 / -1; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-.details-rows dt { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
-.details-rows dd { margin: 1px 0 0; font: 500 14px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
-.details-actions { grid-column: 1 / -1; display: flex; gap: 6px; }
-.details-actions .btn { flex: 1; min-height: 32px; border-radius: 9px; }
+.details-portrait { grid-column: 1; grid-row: 1; width: 56px; height: 56px; border-radius: 50%; background: #03050a; box-shadow: inset 0 0 0 1px var(--hair), 0 0 24px -8px color-mix(in oklab, var(--cyan) 40%, transparent); }
+.details-name { grid-column: 1; grid-row: 1 / span 2; display: grid; gap: 3px; min-width: 0; padding-left: 68px; min-height: 56px; align-content: start; }
+.details-name span { font-size: 12px; color: var(--muted); padding-top: 6px; }
+.details-name h3 { margin: 0; font: 700 17px/1.15 var(--font-display); letter-spacing: -0.005em; }
+.details .icon-btn { position: absolute; top: 0; right: 0; width: 28px; height: 28px; }
+/* Each figure is a small read-only gauge; the chart button plots it under Telemetry in the object's own colour. */
+.details-rows { grid-column: 2; grid-row: 1 / span 2; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
+.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.drow.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
+.drow dt { grid-column: 1; font-size: 11.5px; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow dd { grid-column: 1; margin: 2px 0 0; font: 500 13.5px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow-plot { grid-column: 2; grid-row: 1 / span 2; align-self: center; appearance: none; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; opacity: 0.6; transition: opacity 0.15s, background 0.15s, color 0.15s; }
+.drow-plot[hidden] { display: none; }
+.drow-plot .ms { font-size: 17px; }
+.drow:hover .drow-plot, .drow-plot:focus-visible { opacity: 1; }
+.drow-plot:hover { color: var(--text); background: color-mix(in oklab, var(--text) 9%, transparent); }
+.drow-plot[aria-pressed="true"] { opacity: 1; color: var(--series); }
+.details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; margin-left: -68px; }
+.details-actions .btn { min-height: 30px; border-radius: 9px; font-size: 12.5px; }
 .details-actions:empty { display: none; }
+.inspect-empty { display: flex; align-items: flex-start; gap: 12px; max-width: 640px; padding: 4px 2px; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
+.inspect-empty[hidden] { display: none; }
+.inspect-empty .ms { font-size: 22px; color: var(--amber); flex: none; }
+.inspect-empty p { margin: 0; }
+.inspect-empty b { color: var(--text); font-weight: 600; }
 
-/* ---------- instruments: one row of stat tiles above a live scope ---------- */
+/* ---------- instruments: three panes over one header ---------- */
+.tile-deck { position: relative; }
 .deck-head { gap: 10px; min-width: 0; min-height: 48px; }
-.deck-body { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; padding: 0 12px 12px; }
+.deck-body { min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); padding: 0 12px 12px; }
+.deck-pane { min-height: 0; min-width: 0; }
+.deck-pane[hidden] { display: none; }
+.deck-telemetry { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
+/* The panes' names, as a segmented control: what the deck shows is always in view. */
+.deck-tabs { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); }
+.deck-tab { appearance: none; position: relative; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: 500 12.5px/1 var(--font-body); white-space: nowrap; cursor: pointer; transition: background 0.15s; }
+.deck-tab .ms { font-size: 17px; }
+.deck-tab:hover { color: var(--text); }
+.deck-tab[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--text) 9%, var(--bench)); box-shadow: inset 0 0 0 1px var(--hair); }
+.deck-tab[aria-selected="true"] .ms { color: var(--amber); }
+.deck-tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.deck-tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.deck-tab-dot[hidden] { display: none; }
+.deck-title { margin: 0; flex: none; font: 600 13px/1 var(--font-body); color: var(--text); white-space: nowrap; }
+.tile-deck:not([data-pane="telemetry"]) :is(.deck-title, .scope-legend) { display: none; }
+.tile-deck:not([data-pane="telemetry"]) .diag-top { margin-left: auto; }
+.deck-head:has(.diag-top:not([hidden])) .scope-hint { display: none; }
+.deck-head #btn-deck-size { margin-left: auto; flex: none; }
+.diag-top + #btn-deck-size, .scope-legend ~ #btn-deck-size { margin-left: 0; }
+/* The grip: the deck's top edge drags to any height. */
+.deck-grip { position: absolute; top: 0; left: 18px; right: 18px; height: 9px; z-index: 3; cursor: ns-resize; touch-action: none; }
+.deck-grip::before { content: ""; position: absolute; left: 50%; top: 3px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--rule); opacity: 0.7; transition: background 0.15s, opacity 0.15s; }
+.deck-grip:hover::before, .deck-grip:focus-visible::before, body.resizing .deck-grip::before { background: var(--amber); opacity: 1; }
+.deck-grip:focus-visible { outline: none; }
+body.resizing { cursor: ns-resize; user-select: none; }
+/* Too short for a plot: the readings stay, the plot and the timing strip go. */
+.tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
+.tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }
+.deck-inspect { display: grid; min-height: 0; }
+.deck-insights { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.deck-insights .insights { align-content: start; }
+.deck-insights .insights:empty { display: grid; }
+@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } }
 .deck-chart { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; }
 .deck-chart canvas { width: 100%; height: 100%; min-height: 0; display: block; }
 .scoping .deck-chart canvas { cursor: crosshair; touch-action: none; }
@@ -77,7 +136,7 @@
 .scoping .caption { display: none; }
 .readouts { margin: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(158px, 1fr); gap: 8px; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 1px; }
 .readouts::-webkit-scrollbar { display: none; }
-.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: box-shadow 0.15s, background 0.15s; }
+.gauge { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 30px; grid-template-rows: auto 1fr; gap: 6px 10px; padding: 10px 12px 11px; border-radius: 12px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: box-shadow 0.15s, background 0.15s; }
 .gauge:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .gauge.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
 .gauge dt { grid-column: 1 / -1; color: var(--muted); font-size: 12px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -92,6 +151,12 @@
 .gauge.on .gauge-spark path { stroke: var(--series); opacity: 1; }
 .gauge-hit { position: absolute; inset: 0; appearance: none; background: none; border: 0; border-radius: inherit; cursor: pointer; }
 .gauge-hit:disabled { cursor: default; }
+/* Primary readings lead with larger figures; derived ones say so in italics (and in their tooltip). */
+.gauge dd .val { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gauge dd .unit { font-size: 0.74em; letter-spacing: 0; color: var(--muted); }
+.gauge.primary dd { font-size: 15.5px; letter-spacing: -0.035em; }
+.gauge.primary { background: color-mix(in oklab, var(--bench) 85%, var(--amber) 4%); }
+.gauge.derived dt { font-style: italic; }
 .scope-legend { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; }
 .scope-hint { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
 .scope-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 9px; border-radius: 999px; background: color-mix(in oklab, var(--bench) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); font-size: 12px; white-space: nowrap; }
@@ -104,17 +169,10 @@
 .diag-top { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--warn); white-space: nowrap; }
 .diag-top[hidden] { display: none; }
 .diag-top > span { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
-.diag-pill { appearance: none; flex: none; padding: 5px 9px; border: 1px solid var(--rule); border-radius: 999px; background: var(--well); cursor: pointer; }
-.diag-pill:hover { border-color: var(--muted); }
-.diag-pill[aria-expanded="true"] { border-color: var(--cyan); }
-.diag-sheet { top: auto; right: auto; left: 12px; bottom: 12px; width: min(460px, calc(100vw - 24px)); max-height: min(70vh, 560px); display: grid; grid-template-rows: auto minmax(0, 1fr); }
-.diag-sheet[hidden] { display: none; }
-.diag-sheet:focus { outline: none; }
-.diag-sheet .tile-body { display: grid; gap: 12px; align-content: start; }
 @container tile (max-width: 620px) { .diag-top { display: none; } }
 
 /* ---------- diagnostics ---------- */
-.diag-sum { font: 400 11.5px/1 var(--font-mono); color: var(--ok); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.diag-sum { font: 500 11px/1 var(--font-mono); color: var(--ok); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .diag-sum::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .diag-sum[data-level="warn"] { color: var(--warn); }
 .diag-sum[data-level="crit"] { color: var(--crit); }

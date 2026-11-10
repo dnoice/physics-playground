@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: README Media Capture (digiSpace Edition - v2.3)
+    - Title: README Media Capture (digiSpace Edition - v2.4)
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.3.1
+    - Version: 2.4.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Chaos is
+      captured in its Both view, which shows the pendulum beside its map.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Settles
       each picture on 0.6 s of frames instead of 1.2 s: the readouts refresh
       within 0.25 s, and every frame costs seconds in software WebGL. Fixed
@@ -115,14 +117,14 @@ PP = 'PhysicsPlayground'
 
 # lab id, rail name, scene id, scene label, glyph, simulated seconds before the picture, and a setup script run after
 # the scene loads. Chaos shows its phase view with the pointer resting on the map, so the start preview is in frame.
-CHAOS_SETUP = (f"{PP}.tool('phase'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
+CHAOS_SETUP = (f"{PP}.viewMode('both'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
                f"const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
 LABS = [
     ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0, None),
     ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, None),
     ('fluid', 'Fluid', 'dam', 'Dam break', 'water_drop', 1.4, None),
     ('waves', 'Waves', 'double', 'Double slit', 'airwave', 6.0, None),
-    ('chaos', 'Chaos', 'chaos', 'Sensitive start · Phase space', 'cyclone', 9.0, CHAOS_SETUP),
+    ('chaos', 'Chaos', 'chaos', 'Sensitive start · Pendulum and phase map', 'cyclone', 9.0, CHAOS_SETUP),
     ('cloth', 'Cloth', 'flag', 'Flag in wind', 'texture', 4.0, None),
     ('fields', 'Fields', 'cyclotron', 'Cyclotron motion', 'electric_bolt', 3.0, None),
 ]

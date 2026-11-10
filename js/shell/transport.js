@@ -1,27 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.3)
+    - Title: Transport and Keys (digiSpace Edition - v2.4)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — V steps
+      through the active lab's views and U opens the Units menu; Escape closes
+      the Units menu. The diagnostics sheet it used to close is now the deck's
+      Insights pane.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Reset
       restarts the scene clean through restart(), so edits a parameter rebuild
       keeps never survive it.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Space
       reaches play and pause after a mouse click; held keys act once;
       CapsLock no longer swaps b and Shift+B; added Z.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -46,7 +46,7 @@ import { labs } from '../labs/index.js';
 import { is3D, navFrame, navPan, navZoomBy } from './camera.js';
 import { histBranch, histCapture, rewindStep, toggleData, toggleVideo, updateRewind } from './capture.js';
 import { evaluateDiagnostics } from './diagnostics.js';
-import { selectDock } from './dock.js';
+import { nextView, selectDock } from './dock.js';
 import { restart } from './lifecycle.js';
 import { advance } from './loop.js';
 import { drawChart, rangeMap, updateReadouts } from './panel.js';
@@ -54,8 +54,8 @@ import { ptr, refreshCursor } from './stage.js';
 import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
 import { closeSceneMenu, hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
-import { closeDiag } from './instruments.js';
 import { closeGfx, toggleMode } from './mode.js';
+import { closeUnits, setUnits } from './unitmenu.js';
 
 /* ---------- transport and keys ---------- */
 export const speedInput = $('#ctl-speed'), speedMap = rangeMap({ min: 0.1, max: 4, log: true });
@@ -117,13 +117,15 @@ export function init() {
     else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); }
     else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
     else if (k === 'z' || k === 'Z') toggleMode();
-    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeDiag()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'u' || k === 'U') setUnits(document.getElementById('units-sheet').hidden);
+    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeUnits()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();
     else if (k === '[') setSpeed(state.speed / 2);
     else if (k === ']') setSpeed(state.speed * 2);
     else if (/^[1-9]$/.test(k) && labs[+k - 1]) selectLab(labs[+k - 1].id);
+    else if ((k === 'v' || k === 'V') && active && active.views) { e.preventDefault(); nextView(); }
     else if (active && active.dock && k.length === 1) {
       const o = active.dock.options.find(x => x.key === k.toLowerCase());
       if (o) { e.preventDefault(); selectDock(o.id); }

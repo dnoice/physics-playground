@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Icon Glyphs (digiSpace Edition - v2.0)
+    - Title: Icon Glyphs (digiSpace Edition - v2.4)
     - File Name: icons.js
     - Relative Path: js/core/icons.js
     - Artifact Type: javascript
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
+      the view modes: pendulum, phase map, both, height and intensity.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for v2.0: Dennis asked for Google icons so the playground has one
       cohesive look; replaces the hand-drawn SVG icon set.
@@ -43,7 +45,7 @@ export const ICON = {
   throw: 'arrow_outward', erase: 'delete', pan: 'pan_tool', grab: 'back_hand', heat: 'local_fire_department', cool: 'ac_unit',
   stir: 'cyclone', push: 'open_in_full', pull: 'close_fullscreen', pour: 'water_drop', obstacle: 'radio_button_checked',
   drain: 'format_color_reset', pulse: 'radar', wall: 'view_column', eraser: 'ink_eraser', source: 'adjust', glass: 'lens_blur',
-  pend: 'linear_scale', phase: 'scatter_plot', cut: 'content_cut', pin: 'keep', ball: 'sports_baseball',
+  pend: 'linear_scale', phase: 'scatter_plot', both: 'vertical_split', disp: 'waves', int: 'blur_on', cut: 'content_cut', pin: 'keep', ball: 'sports_baseball',
   plus: 'add_circle', minus: 'do_not_disturb_on', move: 'open_with', launch: 'rocket_launch', probe: 'point_scan',
   clip: 'movie', data: 'monitoring', state: 'bookmark', follow: 'my_location', cube: 'deployed_code',
   crit: 'error', warn: 'warning', info: 'info',

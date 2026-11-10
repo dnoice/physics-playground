@@ -1,17 +1,21 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.3)
+    - Title: Architecture Guide (digiSpace Edition - v2.4)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
+      interaction model (each region's job and the capabilities it reads), the
+      deck and Inspect, and the unit systems; the lab contract gains views,
+      units, unitTable, scaleNote, timeNote, inspectHint, short and primary.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Documented control sections (groups, group and short), the keep()
       hook and restart(), the Controls page, and the Chaos phase view.
@@ -94,11 +98,11 @@ flowchart TB
 
 | Layer | Folder | Depends on | Holds |
 | --- | --- | --- | --- |
-| Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader |
+| Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems |
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
 | Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, tools, camera, input, loop, modes, instruments, details, capture, storage, layout, experiments |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, rail (tools and views), camera, input, loop, modes, deck (instruments, inspect, insights), units menu, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
@@ -115,8 +119,9 @@ before anything else reads it. Then `boot()` runs:
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
    `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
-   (scope and diagnostics pill), `details.init` (selection card),
-   `automation.init` (`window.PhysicsPlayground`).
+   (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
+   card), `unitmenu.init` (Units menu), `automation.init`
+   (`window.PhysicsPlayground`).
 3. `start()` reads the theme, sizes the stage, applies saved parameters
    and presets, builds the orbit ball and library controls, selects the
    lab from the address hash or the last visit, starts the frame loop and
@@ -164,6 +169,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | Hook | Purpose |
 | --- | --- |
 | `dock`, `pointerDown`, `pointerMove`, `pointerUp`, `pointerCancel`, `cursorAt` | Tools on the stage; points arrive in world units unless `screenInput` is set, in 3D through a ray onto the simulation plane. `pointerCancel` drops the gesture without committing it |
+| `views` | View modes as `{ key, label, options: [{ id, label, icon, tip, hint }] }`, shown as the rail's View group; a view changes only what is drawn (Chaos, Waves) |
 | `rig3`, `tilt3()`, `overlay3(g, w, h)` | Where the plane stands in 3D, its angle if it moves, and screen overlays drawn after the frame |
 | `zoomRange` | `[lo, hi]` zoom limits for the 2D camera |
 | `groups[]` | The Controls page's sections in order, as `{ id, label, icon }`; a lab without them gets one section |
@@ -171,14 +177,16 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `keep()` | The user's edits to the world that a parameter-driven rebuild should carry over; `build()` reads them back from `lab.kept` (Fluid's posts) |
 | `enabled(key)` | `true`, or a sentence saying why a control is disabled right now |
 | `onParam(key, value)`, `onResize(w, h, ow, oh)`, `after(simDt)` | React to changes |
-| `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, scale bar units |
+| `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, and the lab's own length per stage pixel for the scale bar |
+| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units menu; `timeNote` adds to the HUD clock |
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
 | `snapshot()`, `restore(s)`, `histBudget`, `histInterval` | Rewind history |
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
-| `inspect()`, `deselect()` | The selected object for the Details card, or null: `{ id, kicker, title, color, rows, actions, spot }`, where `spot` asks the scene for a portrait |
+| `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot }`, where `short` names the object in plotted series and `spot` asks the scene for a portrait; `inspectHint` tells an empty pane how to select in this lab |
+| `primary` | The primary readouts, which lead with larger figures: a list of labels, or a count of leading rows (default 2). A readout row may also end with its tier, `'primary'` or `'derived'` |
 
 ## The 3D mode
 
@@ -228,7 +236,7 @@ Gravity is really three-dimensional, so it keeps its own camera in
 | `sync(lab, view)` | Every frame: copy lab state into objects, reading only |
 | `prepare(renderer, camera)` | Extra GPU passes before the main render |
 | `onTier(tier, w, h)` | Resize targets and thin meshes for a new tier |
-| `portrait(lab)` | The camera for the Details card, and optionally its own small scene |
+| `portrait(lab)` | The camera for the Inspect card's portrait, and optionally its own small scene |
 | `exposure`, `bloom` | Per-scene grade |
 | `dispose()` | Free what it made |
 
@@ -277,9 +285,55 @@ to `build()` as `lab.kept`, so Fluid's posts outlast a change of Particles.
 Loading a scene, Reset, recovering from a blown-up run and loading a saved
 state call `restart(lab)` instead, which rebuilds from the scene as written.
 
+## Interaction model
+
+Each region of the workspace has one job, and a lab declares capabilities
+rather than building interface.
+
+| Region | Responsibility | Lab capabilities it reads |
+| --- | --- | --- |
+| Stage | The simulation and direct manipulation | `draw`, pointer hooks, `cursorAt`, `overlay3` |
+| Rail: Camera | Viewport only: orbit, zoom, pan, frame; identical in every lab | `orbit3`, `snap3`, `frame3`, `zoomRange` |
+| Rail: Tools | What a click on the stage does | `dock` |
+| Rail: View | What the stage shows, never what the simulation does | `views` |
+| Rail: This scene | Contextual actions that belong to the stage | `navExtras` |
+| Player bar | Time: play, step, reset, speed, rewind, capture | `snapshot`, `restore`, datasets |
+| Deck: Telemetry | Readings over time | `readouts`, `chart`, `primary` |
+| Deck: Inspect | The selected object, read-only, plus actions on that object | `inspect`, `deselect`, `inspectHint` |
+| Deck: Insights | Diagnosis grounded in the run, with fixes | `diagnose`, `perfFixes`, `drawFixes` |
+| Inspector: Controls | Every setting; the only place parameters change | `controls`, `groups`, `actions` |
+
+The shared state stays small: the active lab, its `p` (parameters, including
+the tool and view keys), the lab's own selection (read through `inspect()`),
+the deck's pane and size, the unit system and the camera. Each is owned by
+one module and read by the others; no region keeps a copy.
+
+The rail hangs from the top-right corner at a fixed offset, so the Camera
+group sits in the same place in every lab and view; the lab's groups below
+it are the only part whose length changes. At a stage 720 px wide or less
+it becomes a bottom bar of icons, and a short stage drops the captions, then
+the axis ball. Tools and views are radio groups with the full keyboard
+contract: the checked option is the one tab stop, arrows move and select,
+Home and End jump, and V steps through a lab's views.
+
 ## Instruments
 
-`js/shell/instruments.js` is one tile holding a lab's readings. It reads the
+The deck (`js/shell/deck.js`) frames three panes over one header: Telemetry,
+Inspect and Insights. A new selection on the stage opens Inspect, and
+clearing it returns to the pane that was open before unless the user moved
+on. The size button steps through compact, standard and tall presets, kept
+in the stylesheet as values of `--bay`; the grip on the top edge sets a
+custom height, by drag or by the arrow keys, and a deck under 196 px keeps
+its readings and drops the plot.
+
+Inspect (`js/shell/details.js`) renders `lab.inspect()` as a card of
+read-only figures. A numeric figure has a plot button that adds it to the
+Telemetry scope as that object's own series, keyed by its `short` name; those
+series are sampled at panel rate like the readings but are not remembered
+across visits. Insights (`js/shell/diagnostics.js`) lists the lab's and the
+workspace's insights with their fixes beside the frame-timing strip.
+
+`js/shell/instruments.js` is the Telemetry pane: a lab's readings. It reads the
 formatted rows from `lab.readouts()`, so a lab gets stat tiles, sparklines and
 plotting with no code of its own: a row plots if its text starts with a number.
 Samples are kept per lab at panel rate. Each plotted reading gets its own lane on
@@ -288,6 +342,29 @@ it is plotted. The axis is shared with the rewind history, so a click seeks to
 the nearest snapshot. While the run is replaying the past, sampling stops, so the
 recorded future stays until a new branch discards it. With nothing plotted, the
 lab's own `chart` shows instead.
+
+## Units
+
+`js/core/units.js` converts what a lab computes into the chosen system and
+formats it; the simulations never change. Three systems: Metric (SI, the
+default), US customary, and Simulation (the lab's own pixels or cells).
+
+- A lab states its length unit and its size in metres in `units`. Fluid,
+  Collisions, Cloth and Fields share one pixel, 9.81/900 m, so their default
+  gravity of 900 px/s² is standard gravity. Waves uses 4 mm per cell, a
+  ripple-tank scale. Chaos computes in metres and seconds already.
+- Gravity replaces the table with astronomy: the Star system's third planet
+  orbits at 1 AU around a one-solar-mass star, so Kepler's third law fixes a
+  year (4.4 simulated seconds at G = 1×), speeds in km/s and masses in solar,
+  Jupiter and Earth masses.
+- A control with `qty` (`len`, `speed`, `acc`, `spec` or `efield`) shows its
+  value and reads typed values in the chosen system, with decimals that tell
+  neighbouring steps apart. Readings call `fmtQ(lab, kind, value)` and keep
+  the base unit, so a plotted series never switches prefix halfway; the
+  scale bar picks a readable prefix (cm, in, AU).
+- A change of system rebuilds the Controls page, restarts every plotted
+  series, and redraws readings, the Inspect card and the scale bar.
+  Datasets stay in the lab's own units and record the scale beside them.
 
 ## Guided experiments
 
@@ -326,10 +403,10 @@ The stylesheets load in this order, each building on the last:
 | --- | --- |
 | `tokens.css` | Colours, type, spacing, radius, the page grid |
 | `icons.css` | Material Symbols styling and tab glyph animations |
-| `workspace.css` | Top bar, lab rail, console grid, tile chrome, keys sheet, mode switch, colophon |
+| `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, sliders, switches |
-| `stage.css` | Stage title and scene dropdown, HUD, player bar, experiment banner, gizmo |
-| `tiles.css` | Inspector, Details card, instruments deck, diagnostics sheet, tabs |
+| `stage.css` | Stage title and scene dropdown, HUD, player bar, experiment banner, stage rail |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), tabs |
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 

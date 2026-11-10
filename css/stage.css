@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Stage Styles (digiSpace Edition - v2.1)
+    - Title: Stage Styles (digiSpace Edition - v2.4)
     - File Name: stage.css
     - Relative Path: css/stage.css
     - Artifact Type: stylesheet
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail
+      hangs from the top-right corner instead of centring on the stage edge,
+      so its camera group no longer moves between labs; it gains a named View
+      group, focus rings, larger axis targets, and captions and the axis ball
+      that give way on short stages.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added a
       recessed edge on the stage in 3D mode.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -19,14 +24,20 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The stage tile: header transport, live stage with HUD, experiment
-    banner, gizmo, overview map and the rewind timeline.
+    The stage tile: header transport, live stage with HUD, experiment banner,
+    the stage rail, overview map and the rewind timeline.
 
 ✒ Key Features:
     - The header never wraps on content; long scene names truncate so the
       stage keeps its size.
     - Transport labels hide below 960 px of tile width.
     - Experiment banner below the HUD row.
+    - The rail sits at a fixed offset from the top-right corner; Camera first,
+      then Tools, View and This scene.
+    - View options carry their names; at 720 px and below the rail becomes a
+      bottom bar of icons.
+    - Short stages drop the group captions, then shrink and hide the axis
+      ball.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -119,8 +130,10 @@
 }
 /* ---------- view gizmo, scale bar and overview ---------- */
 /* ---------- gizmo: one layout in every lab, the axis ball first, the view next, scene controls last ---------- */
+/* The rail hangs from the top-right corner at a fixed offset, so the camera group sits in the same place in every
+   lab and every view; only the lab's own groups below it (Tools, View, This scene) change length between labs. */
 .nav {
-  position: absolute; right: 14px; top: 50%; transform: translateY(-50%); z-index: 2; width: 116px;
+  position: absolute; right: 14px; top: 14px; z-index: 2; width: 124px;
   display: flex; flex-direction: column; gap: 12px; padding: 11px 10px 12px; border-radius: 18px; background: var(--glass);
   box-shadow: inset 0 0 0 1px var(--hair), 0 16px 40px -18px rgba(0, 0, 0, 0.8); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
 }
@@ -141,11 +154,19 @@
 .nav-extra { display: flex; flex-wrap: wrap; gap: 4px; }
 .nav-extra:empty { display: none; }
 .dock { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.dock-btn { appearance: none; position: relative; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 11px; background: color-mix(in oklab, var(--text) 5%, transparent); color: color-mix(in oklab, var(--text) 78%, var(--muted)); cursor: pointer; transition: color 0.15s, background 0.15s, transform 0.12s var(--ease); }
+.dock-btn { appearance: none; position: relative; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 11px; background: color-mix(in oklab, var(--text) 5%, transparent); color: color-mix(in oklab, var(--text) 78%, var(--muted)); cursor: pointer; transition: background 0.15s, transform 0.12s var(--ease); }
 .dock-btn .ms { font-size: 21px; }
 .dock-btn:hover { color: var(--text); background: color-mix(in oklab, var(--text) 11%, transparent); }
 .dock-btn:active { transform: scale(0.95); }
-.dock-btn[aria-checked="true"] { color: #1a1206; background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 88%, white), var(--amber)); box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--amber) 80%, transparent); }
+.dock-btn[aria-checked="true"], .view-btn[aria-checked="true"] { color: #1a1206; background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 88%, white), var(--amber)); box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--amber) 80%, transparent); }
+.dock-btn:focus-visible, .view-btn:focus-visible, .nav-btn:focus-visible, .nav-zoom:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+/* Views are named, not just drawn: a mode is a way of looking, and its name says which one is on. */
+.views { display: flex; flex-direction: column; gap: 4px; }
+.view-btn { appearance: none; position: relative; height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 10px; background: color-mix(in oklab, var(--text) 5%, transparent); color: color-mix(in oklab, var(--text) 78%, var(--muted)); font: 500 12px/1 var(--font-body); text-align: left; cursor: pointer; transition: background 0.15s, transform 0.12s var(--ease); }
+.view-btn .ms { font-size: 18px; flex: none; }
+.view-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.view-btn:hover { color: var(--text); background: color-mix(in oklab, var(--text) 11%, transparent); }
+.view-btn:active { transform: scale(0.97); }
 [data-tip]::after {
   content: attr(data-tip); position: absolute; right: calc(100% + 12px); top: 50%; transform: translate(4px, -50%); opacity: 0; pointer-events: none; z-index: 6;
   padding: 6px 9px; border-radius: 8px; white-space: nowrap; font: 500 12px/1 var(--font-body); color: var(--text); background: #05070b; box-shadow: inset 0 0 0 1px var(--hair), 0 8px 20px rgba(0, 0, 0, 0.5);
@@ -166,6 +187,10 @@
   background: var(--c); color: #0a0e14; font: 700 9.5px/18px var(--font-mono); text-align: center; cursor: pointer; transition: filter 0.15s;
 }
 .axis:hover, .axis:focus-visible { filter: brightness(1.3); }
+/* The dots stay small so the ball reads as a ball; the target around each is 28 px. There is no -Z: the camera
+   never goes below the floor every scene stands on, so a view from underneath has nothing to show. */
+.axis::before { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+.axis.neg::before { inset: -8px; }
 .axis.neg { width: 12px; height: 12px; margin: -6px 0 0 -6px; background: color-mix(in oklab, var(--c) 20%, var(--ink)); box-shadow: inset 0 0 0 1.5px var(--c); }
 .nav-foot { position: absolute; right: 12px; bottom: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; }
 .scalebar { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font: 400 10.5px/1 var(--font-mono); color: var(--muted); text-shadow: 0 1px 2px #000; }
@@ -186,8 +211,10 @@
   .nav-sec { flex-direction: row; align-items: center; flex: none; }
   .nav-sec + .nav-sec { padding-top: 0; box-shadow: none; }
   .nav-cap, .orbit, .stage-hint, [data-tip]::after { display: none; }
-  .dock { display: flex; }
-  .dock-btn { width: 38px; height: 36px; }
+  .dock, .views { display: flex; flex-direction: row; }
+  .dock-btn, .view-btn { width: 38px; height: 36px; }
+  .view-btn { justify-content: center; padding: 0; }
+  .view-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .nav-btn { flex: none; width: 36px; height: 36px; }
   .nav-row { flex-wrap: nowrap; }
   .nav-foot { bottom: 64px; }
@@ -197,7 +224,10 @@
   .stage-hint { max-width: calc(100% - 110px); }
   .stage:has(.minimap:not([hidden])) .stage-hint { max-width: calc(100% - 160px); }
 }
-@container stage (max-height: 400px) { .nav { gap: 7px; padding: 8px; } .orbit { display: none; } .dock-btn, .nav-btn { height: 32px; } .nav-sec + .nav-sec { padding-top: 7px; } }
+/* A short stage keeps the rail clear of the scale bar and overview: the captions go first, then the axis ball. */
+@container stage (min-width: 721px) and (max-height: 520px) { .orbit { width: 64px; height: 64px; } }
+@container stage (min-width: 721px) and (max-height: 460px) { .nav { gap: 9px; padding: 9px 9px 10px; } .nav-sec { gap: 6px; } .nav-sec + .nav-sec { padding-top: 8px; } .nav-cap { display: none; } }
+@container stage (min-width: 721px) and (max-height: 400px) { .orbit { display: none; } .dock-btn, .nav-btn { height: 32px; } .view-btn { height: 30px; } }
 
 .nav-btn .ms { font-size: 19px; }
 .hud [hidden] { display: none !important; }

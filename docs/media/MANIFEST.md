@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.3)
+    - Title: README Media Manifest (digiSpace Edition - v2.4)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.3.1
+    - Version: 2.4.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero,
+      gallery and 2D and 3D pair are recaptured from release 2.4.0, showing
+      the anchored stage rail, the deck's panes and metric units; Chaos is
+      shown in its Both view.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The set is
       captured, on Dennis's call to do it in the cloud session: added each
       picture's size and a record of the run in place of the note that said
@@ -70,20 +74,21 @@ python tools/media.py --headed
 change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
-The set here was captured from release 2.3.0 on 11/10/2026, headless in
-software WebGL on four CPU cores. Each 3D page took four to eight minutes,
-the whole set about forty-five.
+The hero, the gallery and the 2D and 3D pair were captured from release
+2.4.0 on 11/10/2026, headless in software WebGL on four CPU cores, in
+metric units; each 3D page took four to eight minutes. The banner shows no
+interface, so it stands from release 2.3.0.
 
 ## The pictures
 
 | File | Size (px) | Shows | Used in |
 | --- | --- | --- | --- |
 | `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's star system | README title |
-| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 7 simulated seconds, with the instruments, the sectioned Controls page and the colophon | README, under the badges |
+| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 7 simulated seconds (about a year and a half), with the stage rail, the instruments deck on Telemetry, the sectioned Controls page and the colophon | README, under the badges |
 | `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in | Lab gallery |
 | `lab-fluid.webp` | 1106 × 610 | Fluid, Dam break, 1.4 s in | Lab gallery |
 | `lab-waves.webp` | 1106 × 610 | Waves, Double slit, 6 s in | Lab gallery |
-| `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the phase view, 9 s in, with a start previewed on the map | Lab gallery |
+| `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the Both view (the pendulum beside its phase map), 9 s in, with a start previewed on the map | Lab gallery |
 | `lab-cloth.webp` | 1106 × 610 | Cloth, Flag in wind, 4 s in | Lab gallery |
 | `lab-fields.webp` | 1106 × 610 | Fields, Cyclotron motion, 3 s in | Lab gallery |
 | `modes-2d-3d.webp` | 1472 × 420 | Waves, Double slit, 6 s in and paused, in 2D and then in 3D at the same moment | "Two modes: 2D and 3D" |

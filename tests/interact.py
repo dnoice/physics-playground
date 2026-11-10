@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Interaction Test (digiSpace Edition - v2.1)
+    - Title: Interaction Test (digiSpace Edition - v2.4)
     - File Name: interact.py
     - Relative Path: tests/interact.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Waves'
+      Intensity view is picked from the stage rail, where it moved from the
+      Controls page.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every tool
       result is now checked against what it should be, both pages start in
       flat 2D mode and the marks come from the shared harness.
@@ -89,7 +92,7 @@ with sync_playwright() as p:
     r = pg.evaluate("PhysicsPlayground.labs.waves.sources.length")
     ok("source_added", r == 1, r)
     ok("f_enabled_with_source", not pg.evaluate("document.getElementById('ctl-waves-f').disabled"))
-    pg.click("#ctl-waves-view-int"); scene(pg, "#preset-waves-lens"); pg.wait_for_timeout(7000)
+    pg.click("#view-waves-int"); scene(pg, "#preset-waves-lens"); pg.wait_for_timeout(7000)
     pg.screenshot(path=shot("waves_lens_int.png"))
     # chaos: drag bob 2, paused so it is still where it was read when the mouse goes down
     pg.keyboard.press("5"); pg.wait_for_timeout(300)

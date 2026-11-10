@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Chaos Scene (digiSpace Edition - v2.3)
+    - Title: Chaos Scene (digiSpace Edition - v2.4)
     - File Name: chaos.js
     - Relative Path: js/render/world/scenes/chaos.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.4.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Follows the
+      lab's three views: the dial alone, the dial beside the screen, or the
+      screen beside the torus, which now stands on its own turned column with
+      a faint lattice and the map's two seams, its glass toned down so it no
+      longer glares.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The phase
       view keeps the pendulum live on its dial, which follows the pivot, and
       puts the map on a brass-framed screen on its own stand whose face lies
@@ -25,10 +30,10 @@
 ✒ Description:
     The chaos lab in the 3D mode: a slate dial in a brass bezel, standing in a
     cradle on a walnut base. The front pendulum is polished steel; the other
-    copies are light, and their trails burn onto the dial. The phase view
-    keeps the pendulum live and sets the lab's map beside it on a framed
-    screen, with a glass torus on top that shows what the wrapped square
-    really is.
+    copies are light, and their trails burn onto the dial. The Both view sets
+    the lab's map beside the dial on a framed screen; the Phase map view sets
+    the screen beside a glass torus, on its own column, that shows what the
+    wrapped square really is.
 
 ✒ Key Features:
     - Engraved dial painted once into a texture from the pendulum's reach.
@@ -36,7 +41,8 @@
     - Copies drawn as instanced light in the lab's own heat colours.
     - Phase screen painted from the lab's own drawing, aligned with the plane
       so picking needs no 3D code.
-    - Trails and torus paths in one ribbon batch each, thinned by tier.
+    - Torus with a lattice, its two seams and the copies' paths in one ribbon
+      batch, thinned by tier.
 
 ✒ Other Important Information:
     - Dependencies: three@0.187.0 from jsDelivr via the import map; WebGL 2
@@ -51,7 +57,7 @@ import { createRibbons } from '../ribbons.js';
 import { bolt, rodGeometry, rodMatrix, roundedBox, turned } from '../shapes.js';
 import { createStudio } from '../studio.js';
 
-const TAU = Math.PI * 2, MAX_COPIES = 60, TRAIL_POINTS = 26000, TORUS_POINTS = 9000;
+const TAU = Math.PI * 2, MAX_COPIES = 60, TRAIL_POINTS = 26000, TORUS_POINTS = 9000, LATTICE_POINTS = 1000;
 // The screen face spans the map plus room for its axes: FACE times its side, starting FACE_L left of and FACE_T above it.
 const PLATE_PX = 1280, FACE = 1.24, FACE_L = 0.18, FACE_T = 0.08;
 
@@ -153,7 +159,7 @@ export function createScene(E, lab) {
   for (let i = 0; i < MAX_COPIES * 2; i++) { ghostArms.setColorAt(i, new THREE.Color(1, 1, 1)); ghostBobs.setColorAt(i, new THREE.Color(1, 1, 1)); }
   rig.add(ghostArms, ghostBobs);
 
-  const trails = createRibbons(TRAIL_POINTS, { width: 1.5 }), tube = createRibbons(TORUS_POINTS, { width: 1.3 });
+  const trails = createRibbons(TRAIL_POINTS, { width: 1.5 }), tube = createRibbons(TORUS_POINTS + LATTICE_POINTS, { width: 1.3 });
   rig.add(trails.mesh, tube.mesh);
 
   /* The phase screen: the lab's own map painted onto a face that lies exactly over the map's world rectangle (axes
@@ -165,12 +171,16 @@ export function createScene(E, lab) {
   const phaseFace = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: plateTex, toneMapped: false }));
   rig.add(phaseFrame, phaseBack, phaseFace);
   const { group: screenBase, posts: screenPosts } = stand();
-  /* The torus the map wraps onto, resting on top of the screen's frame: glass with the same paths threaded around it,
-     turning slowly so its shape reads. */
+  /* The torus the map wraps onto, in the Phase map view only: glass with the same paths threaded around it and the
+     two seams where the map's edges were glued, turning slowly so its shape reads. It stands beside the screen, where
+     the 2D view draws its own, on a turned brass column over a walnut puck. */
   const torus = new THREE.Group(); rig.add(torus);
-  const glassMat = M.glass().clone(); glassMat.opacity = 0.16;
-  const glass = new THREE.Mesh(new THREE.TorusGeometry(1, 0.42, 40, 96), glassMat); glass.rotation.x = Math.PI / 2; torus.add(glass);
+  const glassMat = M.glass().clone(); glassMat.opacity = 0.07;
+  const glassGeo = new THREE.TorusGeometry(1, 0.42, 40, 96), glass = new THREE.Mesh(glassGeo, glassMat); glass.rotation.x = Math.PI / 2; torus.add(glass);
   const rimGeo = new THREE.TorusGeometry(1.42, 0.012, 8, 160), rim = new THREE.Mesh(rimGeo, M.brass()); rim.rotation.x = Math.PI / 2; torus.add(rim);
+  const pedestal = new THREE.Group(); rig.add(pedestal);
+  const puckGeo = turned([[0, 0.3], [0.86, 0.3], [0.96, 0.24], [1, 0.12], [0.98, 0], [0, 0]], 48), puck = shadow(new THREE.Mesh(puckGeo, M.walnut()));
+  const column = shadow(new THREE.Mesh(postGeo, M.brass())); pedestal.add(puck, column);
   let plateClock = 1, spin = 0;
 
   const colors = [], tmp = new THREE.Color(), m4 = new THREE.Matrix4();
@@ -178,13 +188,13 @@ export function createScene(E, lab) {
   const colorFor = i => colors[i] || new THREE.Color(1, 1, 1);
 
   function layout(W) {
-    const phase = lab.p.view === 'phase', key = `${W.w}x${W.h}:${lab.scale}:${phase}`;
+    const v = lab.p.view, T = lab.tor, key = `${W.w}x${W.h}:${lab.scale}:${v}:${T ? T.R : 0}`;
     if (key === layoutKey) return;
-    layoutKey = key;
+    layoutKey = key; plateClock = 1;
     P = lab.plane3();
     reach = lab.scale * (1 + lab.p.len) * P.k;
     // Alone, the dial fills the stage; beside the map it hugs the pendulum's reach. Either way it centres on the pivot.
-    const R = (phase ? reach : Math.max(0.9 * Math.min(W.w, W.h) / 2 * P.k, reach)) * 1.09, dx = px(lab.pivot.x, P), dy = py(lab.pivot.y, P);
+    const R = (v === 'both' ? reach : Math.max(0.9 * Math.min(W.w, W.h) / 2 * P.k, reach)) * 1.09, dx = px(lab.pivot.x, P), dy = py(lab.pivot.y, P);
     dialGroup.position.set(dx, dy, 0); dialGroup.scale.setScalar(R);
     const bottom = dy - R * 1.14;
     base.position.set(dx, Math.max(0.098 * R * 0.62, 0.06), 0); base.scale.setScalar(R * 0.62);
@@ -196,8 +206,12 @@ export function createScene(E, lab) {
     const Rs = F * 0.5, low = cy - F * 0.53;
     screenBase.position.set(cx, Math.max(0.098 * Rs, 0.06), 0); screenBase.scale.setScalar(Rs);
     for (const p of screenPosts) p.scale.y = Math.max(0.2, (low - screenBase.position.y + F * 0.06) / Rs);
-    const tr = Math.min(F * 0.075, 0.55);
-    torus.scale.setScalar(tr); torus.position.set(cx + F * 0.27, cy + F * 0.53 + tr * 0.44, 0);
+    if (T) {
+      const tr = T.R * P.k, tx = px(T.x, P), ty = py(T.y, P), foot = Math.max(0.06, tr * 0.3);
+      torus.scale.setScalar(tr); torus.position.set(tx, ty, 0);
+      pedestal.position.set(tx, 0, 0); puck.scale.set(tr * 0.6, foot / 0.3, tr * 0.6);
+      column.position.y = foot; column.scale.set(tr * 2.2, Math.max(0.05, ty - tr * 0.42 - foot), tr * 2.2);
+    }
   }
   const px = (x, Pl) => (x - Pl.cx) * Pl.k, py = (y, Pl) => Pl.o[1] - (y - Pl.cy) * Pl.k;
 
@@ -243,7 +257,7 @@ export function createScene(E, lab) {
     }
     trails.end();
   }
-  function syncPhase(view) {
+  function syncPlate(view) {
     if ((plateClock += view.dt) > 0.07) {
       plateClock = 0;
       const g = plateCanvas.getContext('2d'), q = lab.sq, K = PLATE_PX / (q.S * FACE);
@@ -252,16 +266,30 @@ export function createScene(E, lab) {
       lab.drawPhase(g, { px: 1 });
       plateTex.needsUpdate = true;
     }
+  }
+  const AMBER = new THREE.Color(0xf2a541), CYAN = new THREE.Color(0x5fd0df), PALE = new THREE.Color(0xc8d2de);
+  function syncTorus(view) {
     tube.setResolution(view.w * view.pr, view.h * view.pr); tube.begin();
     const N = lab.N, s = torus.scale.x, tx = torus.position.x, ty = torus.position.y, tz = torus.position.z;
     spin = (spin + view.dt * 0.25) % TAU;
-    if (lab.tn > 1) {
+    const at = (a, b, f, col, alpha, w) => { const r = 1 + 0.425 * Math.cos(b); tube.point(tx + s * r * Math.cos(a + spin), ty + s * 0.425 * Math.sin(b), tz + s * r * Math.sin(a + spin), col.r * 1.1, col.g * 1.1, col.b * 1.1, alpha, w); };
+    // A faint lattice, as in 2D, so the surface reads under any light: circles around the tube and around the ring.
+    for (let m = 0; m < 16; m++) { for (let k = 0; k <= 32; k++) at(m * TAU / 16, k / 32 * TAU, 0, PALE, 0.13, 0.7); tube.strip(); }
+    for (const b of [0, Math.PI / 2, -Math.PI / 2]) { for (let k = 0; k <= 96; k++) at(k / 96 * TAU, b, 0, PALE, 0.13, 0.7); tube.strip(); }
+    // The seams: θ₁ = ±180° is a circle around the tube, θ₂ = ±180° the ring's inner circle.
+    for (let k = 0; k <= 48; k++) at(Math.PI, k / 48 * TAU, 0, AMBER, 0.55, 0.9);
+    tube.strip();
+    for (let k = 0; k <= 96; k++) at(k / 96 * TAU, Math.PI, 0, CYAN, 0.55, 0.9);
+    tube.strip();
+    if (lab.p.trails && lab.tn > 1) {
       const len = Math.min(lab.tn, Math.round(lab.p.trailLen)), per = Math.floor(TORUS_POINTS * E.tier.detail / Math.max(1, N)), step = Math.max(1, Math.ceil(len / Math.max(2, per)));
+      // Additive light: many copies on one path would stack to white, so each one is dimmer the more there are.
+      const base = N > 8 ? 0.3 : 0.7;
       for (let i = N - 1; i >= 0; i--) {
-        const col = colorFor(i);
+        const col = colorFor(i), w = i === lab.sel ? 1.6 : 1;
         for (let c = 0; c < len; c += step) {
-          const idx = (lab.th - len + c + 900) % 900, o = (i * 900 + idx) * 2, a = lab.phist[o], b = lab.phist[o + 1], f = c / Math.max(1, len - 1), r = 1 + 0.425 * Math.cos(b);
-          tube.point(tx + s * r * Math.cos(a + spin), ty + s * 0.425 * Math.sin(b), tz + s * r * Math.sin(a + spin), col.r * 1.1, col.g * 1.1, col.b * 1.1, 0.75 * f + 0.06, 0.8 + f);
+          const idx = (lab.th - len + c + 900) % 900, o = (i * 900 + idx) * 2, f = c / Math.max(1, len - 1);
+          at(lab.phist[o], lab.phist[o + 1], f, col, (i === lab.sel ? 1 : base) * f + 0.04, (0.8 + f) * w);
         }
         tube.strip();
       }
@@ -276,16 +304,19 @@ export function createScene(E, lab) {
       lab.layout(W.w, W.h);
       layout(W);
       if (colorKey !== lab.N) { colorKey = lab.N; colors.length = 0; for (let i = 0; i < lab.N; i++) colors.push(new THREE.Color(lab.colorOf(i)).convertSRGBToLinear()); }
-      // The pendulum stays live in the phase view; the screen, its stand and the torus join it.
-      const phase = lab.p.view === 'phase';
-      for (const o of [phaseFrame, phaseBack, phaseFace, screenBase, torus, tube.mesh]) o.visible = phase;
-      syncPendulum(view);
-      if (phase) syncPhase(view);
+      // Pendulum: the dial alone. Both: the dial beside the screen. Phase map: the screen beside the torus.
+      const v = lab.p.view, showPend = v !== 'phase', showMap = v !== 'pend', showTorus = v === 'phase' && !!lab.tor;
+      for (const o of [dialGroup, base, arm1, arm2, bob1, bob2, pin, ghostArms, ghostBobs, trails.mesh]) o.visible = showPend;
+      for (const o of [phaseFrame, phaseBack, phaseFace, screenBase]) o.visible = showMap;
+      for (const o of [torus, pedestal, tube.mesh]) o.visible = showTorus;
+      if (showPend) syncPendulum(view);
+      if (showMap) syncPlate(view);
+      if (showTorus) syncTorus(view);
       if (lab.N < 2) { ghostArms.count = ghostBobs.count = 0; }
     },
     dispose() {
       studio.dispose(); trails.dispose(); tube.dispose(); armGeo.dispose(); bobGeo.dispose(); plateTex.dispose(); lightMat.dispose();
-      postGeo.dispose(); footGeo.dispose(); plinthGeo.dispose(); plateGeo.dispose(); rimGeo.dispose();
+      postGeo.dispose(); footGeo.dispose(); plinthGeo.dispose(); plateGeo.dispose(); rimGeo.dispose(); glassGeo.dispose(); puckGeo.dispose();
       face.map.dispose(); face.lines.dispose(); dialMat.dispose(); plateTex2.dispose(); ribGeo.dispose(); screwGeo.dispose(); glassMat.dispose();
     },
   };
