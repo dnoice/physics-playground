@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Library Styles (digiSpace Edition - v2.0)
+    - Title: Library Styles (digiSpace Edition - v2.5)
     - File Name: library.css
     - Relative Path: css/library.css
     - Artifact Type: stylesheet
-    - Version: 2.0.0
-    - Date: 11/05/2026
-    - Update: Thursday, November 05, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
+      cards for clips, datasets and states at the head of the Library.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
       of the v1.3 single-file playground when Dennis asked for a proper
       separation of concerns so the stack can keep growing; behaviour

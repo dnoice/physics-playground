@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Details Card (digiSpace Edition - v2.4)
+    - Title: Details Card (digiSpace Edition - v2.5)
     - File Name: details.js
     - Relative Path: js/shell/details.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Inspect
+      pane fills its space: every figure keeps its history since the selection
+      as a sparkline, and a focus chart follows the figure the lab names (or
+      the one clicked) across the rest of the pane.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Moved
       into the deck's Inspect pane on Dennis's brief that inspection is
       read-only and editing stays in Controls: each figure can be plotted
@@ -29,16 +33,16 @@
     portrait, falling back to a shaded sphere in 2D.
 
 ✒ Key Features:
-    - One hook, inspect(), so any lab can describe its selection.
-    - Stat rows update in place while the simulation runs, and a hover
-      explains each one. A numeric row has a plot button that adds it to the
-      Telemetry scope as that object's own series.
-    - Read-only: the card's actions act on the object (follow, delete,
-      reuse its state) but never stand in for a lab setting.
-    - With nothing selected, the pane says how to select in this lab, from
-      the lab's inspectHint, or that the lab has nothing to select.
-    - A live portrait from the 3D scene when it offers one.
-    - Actions from the lab, such as follow and delete, and a close button.
+    - One hook, inspect(), so any lab can describe its selection; its focus
+      names the figure to follow first.
+    - Figures update in place, each with a sparkline of its history since the
+      selection began.
+    - A focus chart fills the rest of the pane with one figure over time;
+      clicking a figure focuses it.
+    - A figure's chart button plots it under Telemetry as that object's own
+      series.
+    - A live portrait from the 3D scene when it offers one; actions from the
+      lab, and a close button.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

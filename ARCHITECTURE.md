@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.4)
+    - Title: Architecture Guide (digiSpace Edition - v2.5)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds Live
+      Math (mathLive and data-live), the Guide and the Library's capture
+      cards, Inspect's history and focus, and the page's grain, light and
+      glass tokens.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
       interaction model (each region's job and the capabilities it reads), the
       deck and Inspect, and the unit systems; the lab contract gains views,
@@ -102,7 +106,7 @@ flowchart TB
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
 | Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, rail (tools and views), camera, input, loop, modes, deck (instruments, inspect, insights), units menu, capture, storage, layout, experiments |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel, rail (tools and views), camera, input, loop, modes, deck (instruments, inspect, insights), live math, guide, units menu, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
@@ -185,7 +189,8 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
-| `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot }`, where `short` names the object in plotted series and `spot` asks the scene for a portrait; `inspectHint` tells an empty pane how to select in this lab |
+| `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
+| `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
 | `primary` | The primary readouts, which lead with larger figures: a list of labels, or a count of leading rows (default 2). A readout row may also end with its tier, `'primary'` or `'derived'` |
 
 ## The 3D mode
@@ -327,7 +332,10 @@ custom height, by drag or by the arrow keys, and a deck under 196 px keeps
 its readings and drops the plot.
 
 Inspect (`js/shell/details.js`) renders `lab.inspect()` as a card of
-read-only figures. A numeric figure has a plot button that adds it to the
+read-only figures. Each numeric figure keeps its history since the selection
+began, drawn as a sparkline, and a focus chart fills the rest of the pane with
+one figure over time: the one the lab's `focus` names, else the first that
+changes, until the user clicks another. A figure's plot button adds it to the
 Telemetry scope as that object's own series, keyed by its `short` name; those
 series are sampled at panel rate like the readings but are not remembered
 across visits. Insights (`js/shell/diagnostics.js`) lists the lab's and the
@@ -366,6 +374,38 @@ default), US customary, and Simulation (the lab's own pixels or cells).
   series, and redraws readings, the Inspect card and the scale bar.
   Datasets stay in the lab's own units and record the scale beside them.
 
+## Live Math
+
+`js/shell/livemath.js` turns formula cards into instruments. A formula in a
+lab's `math` HTML marked `data-live="name"` gets a panel built from the lab's
+`mathLive[name]`:
+
+- `vars(lab)` returns rows of `[symbol, value text, tooltip]`: the values the
+  formula's symbols have in the run now, already formatted in the chosen
+  units.
+- `params` lists control keys (or `[key, symbol]` pairs). Each gets a compact
+  slider that changes the parameter through `setParam`, so the Controls page
+  follows; parameters that restart the run are left out.
+- `check(lab)` returns `{ what, theory, sim, fmt, tol, wait }` to set the
+  formula's prediction beside a measurement (agreement within `tol` is green,
+  within three times it is amber), or `{ text, state }` for a plain note.
+- `plot(c, lab)` draws into a canvas context; several labs pass their own
+  chart's `draw`.
+
+Panels refresh at panel rate, and only while the Math page is showing.
+
+## Guide and Library
+
+`js/shell/guide.js` builds the Guide page from the lab's `dock`, `views` and
+`presets`: cards that select a tool or view, scene cards that load a scene,
+then the lab's `interact` notes and the navigation help. `syncGuide()` marks
+the current choices at panel rate, however they were made.
+
+The Library page opens with capture cards (`buildLibraryCapture` in
+`library.js`): a clip, a dataset or a saved state with one press. Each says
+what it will keep for the lab (the dataset's columns) and, while recording,
+how far it has got.
+
 ## Guided experiments
 
 `js/labs/experiments.js` holds the curriculum, keyed by lab id:
@@ -401,12 +441,12 @@ The stylesheets load in this order, each building on the last:
 
 | File | Holds |
 | --- | --- |
-| `tokens.css` | Colours, type, spacing, radius, the page grid |
+| `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass and sheen tokens |
 | `icons.css` | Material Symbols styling and tab glyph animations |
 | `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, sliders, switches |
 | `stage.css` | Stage title and scene dropdown, HUD, player bar, experiment banner, stage rail |
-| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), tabs |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), Live Math panels, Guide cards, tabs |
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 

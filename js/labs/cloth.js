@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.4)
+    - Title: Cloth Lab (digiSpace Edition - v2.5)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,13 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      gravity, wind and damping as sliders for the Verlet step, and the
+      constraint passes with the stretch they leave.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       wind and mesh spacing follow the chosen units, one pixel being 1.09 cm.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Setup, Forces, Fabric and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig, tool overlay and a stated visual relief; snapshots use
-      Float64, and resizing no longer restarts the scene.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

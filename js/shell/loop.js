@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.4)
+    - Title: Frame Loop (digiSpace Edition - v2.5)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — At panel
+      rate, the live formulas, the Guide's marks and the Library's capture
+      cards refresh with the readings.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
       clock adds the lab's own time note, so Gravity shows its simulated days
       or years.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Meters
       read the true frame gap, so a slow run reports itself; the frame loop
       drives the automatic graphics tier.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single file; v2.0 runs the guided experiment check with
-      the panel update.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

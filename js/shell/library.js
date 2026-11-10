@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Library (digiSpace Edition - v2.1)
+    - Title: Library (digiSpace Edition - v2.5)
     - File Name: library.js
     - Relative Path: js/shell/library.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
+      cards on Dennis's call to fill the Library: record a clip, record a
+      dataset or save the state with one press, each saying what it will keep
+      for this lab and what it is doing now.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Keyboard
       focus survives rebuilds; read-only artifacts hide write actions; sync
       failures are shown; datasets state their real rate.
@@ -26,10 +30,15 @@
     of saved items with preview, download, rename and delete.
 
 ✒ Key Features:
-    - Items update in place, so open previews and focus survive refreshes.
-    - Rename field takes focus as soon as it exists, so no keystroke reaches
-      the stage.
-    - The Library tab shows a count and a dot for new items.
+    - Capture cards: clip, dataset and state, with their keys, what they keep
+      for this lab, and their progress while recording.
+    - Storage status and, when synced to an artifact, a usage meter.
+    - One list for clips, datasets and saved states, filtered to this lab or
+      all.
+    - Rename, download, load and delete for each item, with a confirmation
+      before delete.
+    - Capture settings: video quality and labels, the data sample rate, and
+      tracks.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

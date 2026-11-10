@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.4)
+    - Title: Waves Lab (digiSpace Edition - v2.5)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      c and damping with the Courant number, Snell's index, the double slit's
+      fringe spacing measured against λL/d with the detector plotted, the
+      phased array's beam angle, and the Mach cone; Inspect follows a source's
+      drive.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Displacement and Intensity become the rail's Height and Intensity views;
       any tool selects a source it lands on for the Inspect pane, which
@@ -19,9 +24,6 @@
       scale of 4 mm per cell.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Medium, Sources and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      global mode replaces Relief 3D; added the 3D rig and tool overlay;
-      stronger absorbers and a resize that keeps the tank.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

@@ -1,24 +1,25 @@
 /*
 ✒ Metadata
-    - Title: Design Tokens (digiSpace Edition - v2.2)
+    - Title: Design Tokens (digiSpace Edition - v2.5)
     - File Name: tokens.css
     - Relative Path: css/tokens.css
     - Artifact Type: stylesheet
-    - Version: 2.2.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
+      gets its light on Dennis's call for sheen, texture and glass: a fine
+      grain and soft cool, warm and violet washes behind everything, and
+      tokens for frosted tiles, their sheen and a card highlight.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
       grid gains a third row for the colophon.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A darker
       bench, hairline edges and more generous spacing.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0 on Dennis's direction: the formal stack; tokens moved out of
-      the v1.3 single file and extended for tiles.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -26,10 +27,11 @@
     keyboard keys.
 
 ✒ Key Features:
-    - Dark bench palette with amber and cyan accents.
-    - Tile, gap, radius and shadow tokens for the console.
-    - Body grid pins content to the viewport width so nothing widens the
-      page: top bar, console, then the colophon.
+    - Colour, type, spacing and radius tokens for the console.
+    - The page background: grain over layered gradient light, fixed while the
+      page scrolls.
+    - Glass tokens: the tiles' frosted fill and blur, the sheen along their
+      top edge and corner, and a highlight for cards inside them.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

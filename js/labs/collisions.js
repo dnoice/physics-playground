@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.4)
+    - Title: Collisions Lab (digiSpace Edition - v2.5)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,14 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      the impulse with e and the energy it keeps, the speed distribution
+      checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
+      and friction's spin share; Inspect follows a ball's speed.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       radii and speeds follow the chosen units, one pixel being 1.09 cm; the
       empty Inspect pane says how to select a ball.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Setup, Physics, New balls and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig, tilt, sphere picking and tool overlay; snapshots use Float64,
-      so rewind replays exactly.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

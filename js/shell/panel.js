@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.4)
+    - Title: Panel Builder (digiSpace Edition - v2.5)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Guide
+      page moves to guide.js and the Math page gains live panels from
+      livemath.js; a control's value format is shared through controlFormat().
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A control
       with a quantity kind shows its value, and takes typed values, in the
       chosen unit system; the lab keeps its own units underneath.
@@ -21,8 +24,6 @@
       that appears once a value leaves the scene's, and one restart note
       instead of one per slider. Switches share a grid with short names, and
       actions move to the top as quick actions.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
-      control write refreshes disabled states, through one path.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

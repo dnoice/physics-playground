@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.4)
+    - Title: Chaos Lab (digiSpace Edition - v2.5)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      the equations with their ratios as sliders, the predictability horizon
+      checked against when the copies part, the energy fence and the normal
+      modes; Inspect follows the lower angle.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Three views
       on Dennis's brief: Pendulum, Phase map and Both, switched without
       touching the run. The map is labelled as a projection of the 4-D state;
@@ -25,9 +29,6 @@
       energy cannot cross, fading trails broken at the wrap, torus edge marks,
       and a hover preview of any start with its pose and reach. Bobs can be
       dragged in both views; controls are grouped.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig and hover overlay; energy drift is measured against the rest
-      energy, and snapshots carry parameters.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

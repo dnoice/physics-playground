@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.4)
+    - Title: Changelog (digiSpace Edition - v2.5)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.4.1
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.5.0 release.
     - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.4.1 release.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -51,6 +53,64 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.5.0 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A notebook wired to the simulations, and a page with light in it, on
+Dennis's call for more interactive Math and Guide pages, less empty space,
+new features where they help, and a subtle sheen, texture and glass.
+
+### Live Math
+
+- Formula cards carry live panels (`js/shell/livemath.js`): the values
+  their symbols have in the run now, sliders for the parameters they contain
+  (the same settings as Controls, which follow along), a check that sets the
+  formula's prediction beside what the simulation measures, and plots.
+- Every lab is wired. Among the checks: Collisions' mean speed against the
+  Rayleigh curve's σ√(π/2) and PA / NkT against 1 + 2φ; Gravity's circular
+  speed and the virial ratio; the double slit's fringe spacing against
+  λL/d, measured on the detector; the phased array's beam angle; the
+  pendulums' predictability horizon against when the copies actually part;
+  the E × B drift, measured as displacement over a full cyclotron period.
+- Plots: the speed histogram against Maxwell–Boltzmann, the fluid's
+  densities around rest, the detector's intensity, the pendulums'
+  separation.
+
+### Guide
+
+- The lab's tools and views as cards (icon, key, what a click does) that
+  pick them, and its scenes as cards that load them, marked as they change
+  however they were chosen (`js/shell/guide.js`); the lab's notes and the
+  navigation help follow.
+
+### Library
+
+- Capture cards at the top: record a clip, record a dataset or save the
+  state with one press. Each says what it will keep for the lab (the
+  dataset's columns, the video quality) and shows its progress while
+  recording.
+
+### Inspect
+
+- Every figure keeps its history since the selection began, as a
+  sparkline, and a focus chart fills the rest of the pane with one figure
+  over time: the one the lab names (a ball's speed, a body's distance, a
+  pendulum's lower angle), or whichever is clicked.
+
+### Design
+
+- The page has a fine grain and soft cool, warm and violet light behind
+  everything; tiles are frosted glass with a sheen along their top edge and
+  upper-left corner, and cards inside them catch a faint highlight.
+
+### Notebook tests
+
+- New `tests/notebook.py`: live panels in every lab, live sliders kept in
+  step with Controls, Collisions' and Gravity's checks agreeing with the
+  run, the Guide's cards, the Library's dataset card, and the Inspect focus
+  chart.
 
 ## 2.4.1 (11/10/2026)
 

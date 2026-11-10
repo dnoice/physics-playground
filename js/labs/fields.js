@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.4)
+    - Title: Fields Lab (digiSpace Edition - v2.5)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      Coulomb at the probe, the Lorentz force's fields as sliders, the
+      cyclotron period and radius, the E × B drift measured over a full period
+      against E/B, and the grad-B drift; Inspect follows kinetic energy.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lengths,
       speeds and E₀ follow the chosen units, with q/m in C/kg so E reads in
       N/C and B in tesla; the empty Inspect pane says how to select a
@@ -19,9 +23,6 @@
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Forces, New particles and Display, with short names for
       the display switches.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig and tool overlay; the energy baseline follows charge edits, and
-      the beam clock is captured.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

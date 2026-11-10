@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.4)
+    - Title: Gravity Lab (digiSpace Edition - v2.5)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      G and ε as sliders, the leapfrog's energy, circular speed and Kepler's
+      period for the followed or heaviest planet, and the virial ratio;
+      Inspect follows a body's distance.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Real-world
       units are astronomical: the Star system's third planet orbits at 1 AU
       around a one-solar-mass star, which sets the year, speeds in km/s or
@@ -20,9 +24,6 @@
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Physics, New bodies, Display and View, with short names
       for the switches.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      global mode replaces the 3D switch; energy accounting survives culls,
-      retrograde inclination reads true, snapshots carry parameters.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

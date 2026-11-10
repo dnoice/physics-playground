@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.4)
+    - Title: Fluid Lab (digiSpace Edition - v2.5)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      densities plotted around rest, k and k-near as sliders with the pressure
+      they give, viscosity, and the share of particles at the speed cap;
+      Inspect follows a post's contact.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Any tool
       but Obstacle selects a post for the Inspect pane, with figures measured
       from the liquid around it and a remove action; speeds, lengths and
@@ -21,9 +25,6 @@
       vanishing when Particles changed: keep() hands them over and build()
       places them before the liquid. Controls are grouped into Setup, Physics
       and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig and tool overlay; a seeded generator and Float64 snapshots make
-      replay exact; GPU failure now says so.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

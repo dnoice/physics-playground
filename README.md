@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.4)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.5)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.4.1
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.5.0: live maths in the highlights, and the notebook's tabs described
+      one by one (Controls, Experiments, Guide, Math, Library), with Inspect's
+      history and focus chart and the Library's capture cards.
     - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Badges
       regrouped on Dennis's report that they broke up the flow: one row of
       four project badges under the tagline, the stack badges at the head of
@@ -71,7 +75,6 @@
 [Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
 </div>
 
-
 ![The Physics Playground workspace in 3D: the Gravity lab's star system on
 the stage with the stage rail at its top right, the player bar beneath it,
 the instruments deck with live readings, and the inspector with the lab's
@@ -81,7 +84,7 @@ controls](docs/media/hero-workspace.webp)
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.4.1][badge-release]](CHANGELOG.md)
+[![Release 2.5.0][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
 
 ---
@@ -100,12 +103,14 @@ modules with no build step: open it through any static web server and it
 runs.
 
 - **Seven labs**, from N-body gravity to the Lorentz force, each with
-  several scenes, live readouts and a page of the maths behind it.
+  several scenes, live readouts and a page of live maths behind it.
 - **Two modes, one simulation.** Press Z to flip between 2D and 3D in the
   middle of a run; tools, rewind and recordings work in both.
 - **Instruments that explain themselves.** Plot any reading, inspect any
   object you click, and let the insights say why a setting misbehaves and
   offer the one-click fix.
+- **Live maths.** Every formula is wired to the run: its symbols' values,
+  sliders for its parameters, and a check of theory against the simulation.
 - **Real-world units.** Metric, US customary or the simulation's own
   pixels: every reading, control and scale bar follows your choice.
 - **Guided experiments** with live progress checks that measure the claim
@@ -266,9 +271,12 @@ full-height Inspector beside them.
     moment, click or drag along it to rewind to that moment (as far back as
     the rewind history reaches), and use the wheel to zoom the time window.
   - **Inspect**: the object you clicked on the stage, with its live figures,
-    read-only. A figure's chart button plots it under Telemetry beside the
-    readings. Settings stay in Controls; the card offers only actions on the
-    object itself, such as remove or follow.
+    read-only, each with a sparkline of its history since you selected it.
+    A focus chart fills the rest of the pane with one figure over time (the
+    one that matters most for that object, or whichever you click), and a
+    figure's chart button plots it under Telemetry beside the readings.
+    Settings stay in Controls; the card offers only actions on the object
+    itself, such as remove or follow.
   - **Insights**: what the run is doing and why a setting misbehaves, each
     with its fix, beside the frame-timing strip. Its tab shows the count, and
     the top alert and its fix stay in the header whichever pane is open.
@@ -276,12 +284,23 @@ full-height Inspector beside them.
   The button at the right of the header steps the deck through compact,
   standard and tall, and the grip on its top edge drags it to any height
   (arrow keys on the grip step it; Enter restores the standard height).
-- **Inspector**: the lab's formula above five tabs: Controls, Experiments,
-  Guide, Math and Library. Controls opens with the lab's quick actions, then
-  its settings in sections such as Setup, Physics and Display. Fold a
-  section away, or use its **Reset** to return it to the scene's values; a
-  section whose changes restart the run says so once. A disabled control
-  says why underneath.
+- **Inspector**: the lab's formula above five tabs.
+  - **Controls** opens with the lab's quick actions, then its settings in
+    sections such as Setup, Physics and Display. Fold a section away, or use
+    its **Reset** to return it to the scene's values; a section whose changes
+    restart the run says so once. A disabled control says why underneath.
+  - **Experiments**: guided experiments with live progress checks.
+  - **Guide**: the lab's tools, views and scenes as cards that pick them,
+    marked as they change, with its notes and how to move around.
+  - **Math**: the formulas behind the lab, wired to the run. A formula shows
+    the live values of its symbols, sliders for the parameters it contains
+    (the same settings as Controls, kept in step), a check that sets the
+    formula's prediction beside what the simulation measures, and, where it
+    helps, a plot: the speed distribution against Maxwell–Boltzmann, the
+    double slit's fringes against λL/d, the pendulums' separation.
+  - **Library**: one press records a clip or a dataset or saves the state,
+    each card saying what it will keep for this lab; everything saved is
+    listed below.
 - **Selecting things**: click a body in Gravity, a ball in Collisions (with
   Grab), a particle in Fields (with Move), a post in Fluid (with any tool but
   Obstacle), a source in Waves, or a pendulum or a dot on the map in Chaos.
@@ -349,8 +368,9 @@ Instruments. The layout reflows to one column below 1180 px.
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
 
-Everything saved appears in the **Library** page of the notebook. The
-Library tab shows how many items are saved and marks new ones. When the
+Each can also be started from the cards at the top of the **Library** page,
+where everything saved is listed. The Library tab shows how many items are
+saved and marks new ones. When the
 page runs as a published artifact, the library syncs with the artifact;
 otherwise it lives in this browser.
 
@@ -493,7 +513,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.4.1-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.5.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
