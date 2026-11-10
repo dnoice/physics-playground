@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: View Camera (digiSpace Edition - v2.1)
+    - Title: View Camera (digiSpace Edition - v2.7)
     - File Name: camera.js
     - Relative Path: js/shell/camera.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.7.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — toScreen()
+      takes a point of a lab drawn by the stage camera to stage pixels, for
+      the head-up display's target box.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Zoom
       limits moved onto each lab.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -61,6 +64,8 @@ export function fitCam(lab) {
   return { x: W.w / 2, y: W.h / 2, z };
 }
 export function camXf(lab) { const c = camOf(lab); return { z: c.z, ox: view.w / 2 - c.x * c.z, oy: view.h / 2 - c.y * c.z }; }
+/* A point of a lab drawn by the stage camera (2D) to stage pixels, with the zoom, for the head-up display. */
+export function toScreen(lab, x, y) { const { z, ox, oy } = camXf(lab); return { x: x * z + ox, y: y * z + oy, z }; }
 export function toWorld(lab, s) {
   if (is3D(lab)) return lab.pick3(s);
   const { z, ox, oy } = camXf(lab);

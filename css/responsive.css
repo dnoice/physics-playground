@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Responsive Styles (digiSpace Edition - v2.6)
+    - Title: Responsive Styles (digiSpace Edition - v2.7)
     - File Name: responsive.css
     - Relative Path: css/responsive.css
     - Artifact Type: stylesheet
-    - Version: 2.6.0
+    - Version: 2.7.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,14 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
+      button keeps its glyph only below 1024 px, like Graphics and Units.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On phones
       (560 px and below) the lab tabs take a row of their own, where all seven
       fit with the selected lab's name; beside the actions they had 77 px.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
       custom deck heights apply in the stacked layout too, and the Units
       button keeps only its glyph on narrow screens.
-    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Stacks
-      the colophon's two credits on phones; the header now lists the
-      breakpoints as they are.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -67,7 +66,7 @@
 /* The lab rail needs the top bar's room first: the Graphics and Units buttons keep their glyphs and titles only. */
 @media (max-width: 1024px) {
   .gfx-btn { padding: 0 8px; }
-  #btn-gfx-label, #btn-units-label { display: none; }
+  #btn-gfx-label, #btn-units-label, #btn-hud-label { display: none; }
 }
 @media (max-width: 760px) {
   .bento { padding: 0 6px 6px; gap: 6px; }
