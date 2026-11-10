@@ -13,9 +13,12 @@
 
 ✒ Changelog:
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
-      Random dice: a toggle under the tools, dashed while off and lit amber
-      while on, that rolls when it turns on and becomes an icon in the bottom
-      bar at 720 px and below.
+      Random dice: a toggle the size of a tool, dashed while off and lit amber
+      while on, that rolls when it turns on. With an odd number of tools it
+      takes the empty cell of their last row, so the rail grows only when the
+      tools fill their rows and still fits a 1440 by 900 stage in every lab;
+      it sits inline in the bottom bar at 720 px and below. The section gap
+      and tool height are variables the short-stage rules set.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail
       hangs from the top-right corner instead of centring on the stage edge,
       so its camera group no longer moves between labs; it gains a named View
@@ -139,7 +142,7 @@
   display: flex; flex-direction: column; gap: 12px; padding: 11px 10px 12px; border-radius: 18px; background: var(--glass);
   box-shadow: inset 0 0 0 1px var(--hair), 0 16px 40px -18px rgba(0, 0, 0, 0.8); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
 }
-.nav-sec { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.nav-sec { display: flex; flex-direction: column; align-items: stretch; gap: var(--sec-gap, 8px); }
 .nav-sec[hidden] { display: none; }
 .nav-sec + .nav-sec { padding-top: 11px; box-shadow: inset 0 1px 0 var(--hair); }
 .nav-cap { font: 500 11px/1 var(--font-body); color: var(--muted); padding-left: 2px; }
@@ -156,20 +159,24 @@
 .nav-extra { display: flex; flex-wrap: wrap; gap: 4px; }
 .nav-extra:empty { display: none; }
 .dock { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.dock-btn { appearance: none; position: relative; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 11px; background: color-mix(in oklab, var(--text) 5%, transparent); color: color-mix(in oklab, var(--text) 78%, var(--muted)); cursor: pointer; transition: background 0.15s, transform 0.12s var(--ease); }
+.dock-btn { appearance: none; position: relative; height: var(--dock-h, 40px); display: grid; place-items: center; padding: 0; border: 0; border-radius: 11px; background: color-mix(in oklab, var(--text) 5%, transparent); color: color-mix(in oklab, var(--text) 78%, var(--muted)); cursor: pointer; transition: background 0.15s, transform 0.12s var(--ease); }
 .dock-btn .ms { font-size: 21px; }
 .dock-btn:hover { color: var(--text); background: color-mix(in oklab, var(--text) 11%, transparent); }
 .dock-btn:active { transform: scale(0.95); }
 .dock-btn[aria-checked="true"], .view-btn[aria-checked="true"] { color: #1a1206; background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 88%, white), var(--amber)); box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--amber) 80%, transparent); }
 .dock-btn:focus-visible, .view-btn:focus-visible, .nav-btn:focus-visible, .nav-zoom:focus-visible, .dock-dice:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
-/* Random placement: a toggle under the tools, dashed while off and lit amber while on. */
+/* Random placement: a toggle the size of a tool, dashed while off and lit amber while on. With an odd number of
+   tools it takes the empty cell of their last row (pulled up by one row and the section gap), so the rail only
+   grows when the tools fill their rows. */
 .dock-dice {
-  appearance: none; position: relative; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px;
-  border: 1px dashed color-mix(in oklab, var(--text) 20%, transparent); border-radius: 10px; background: none; cursor: pointer;
-  color: var(--muted); font: 500 12px/1 var(--font-body); transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s var(--ease);
+  appearance: none; position: relative; width: calc(50% - 2px); height: var(--dock-h, 40px); display: grid; place-items: center; padding: 0;
+  border: 1px dashed color-mix(in oklab, var(--text) 22%, transparent); border-radius: 11px; background: none; cursor: pointer;
+  color: var(--muted); transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s var(--ease);
 }
+.nav-tools.odd .dock-dice { margin-top: calc(-1 * (var(--dock-h, 40px) + var(--sec-gap, 8px))); margin-left: auto; }
+.nav-tools:not(.odd) .dock-dice { margin-top: calc(4px - var(--sec-gap, 8px)); }
 .dock-dice[hidden] { display: none; }
-.dock-dice .ms { font-size: 18px; }
+.dock-dice .ms { font-size: 20px; }
 .dock-dice:hover { color: var(--text); border-color: color-mix(in oklab, var(--text) 40%, transparent); }
 .dock-dice:active { transform: scale(0.96); }
 .dock-dice[aria-pressed="true"] { color: var(--amber); border-style: solid; border-color: color-mix(in oklab, var(--amber) 55%, transparent); background: color-mix(in oklab, var(--amber) 12%, transparent); }
@@ -229,8 +236,7 @@
   .nav-cap, .orbit, .stage-hint, [data-tip]::after { display: none; }
   .dock, .views { display: flex; flex-direction: row; }
   .dock-btn, .view-btn, .dock-dice { width: 38px; height: 36px; }
-  .dock-dice { padding: 0; }
-  .dock-dice-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .nav-tools .dock-dice, .nav-tools.odd .dock-dice { margin: 0; }
   .view-btn { justify-content: center; padding: 0; }
   .view-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .nav-btn { flex: none; width: 36px; height: 36px; }
@@ -244,8 +250,8 @@
 }
 /* A short stage keeps the rail clear of the scale bar and overview: the captions go first, then the axis ball. */
 @container stage (min-width: 721px) and (max-height: 520px) { .orbit { width: 64px; height: 64px; } }
-@container stage (min-width: 721px) and (max-height: 460px) { .nav { gap: 9px; padding: 9px 9px 10px; } .nav-sec { gap: 6px; } .nav-sec + .nav-sec { padding-top: 8px; } .nav-cap { display: none; } }
-@container stage (min-width: 721px) and (max-height: 400px) { .orbit { display: none; } .dock-btn, .nav-btn { height: 32px; } .view-btn { height: 30px; } }
+@container stage (min-width: 721px) and (max-height: 460px) { .nav { gap: 9px; padding: 9px 9px 10px; --sec-gap: 6px; } .nav-sec + .nav-sec { padding-top: 8px; } .nav-cap { display: none; } }
+@container stage (min-width: 721px) and (max-height: 400px) { .orbit { display: none; } .nav { --dock-h: 32px; } .nav-btn { height: 32px; } .view-btn { height: 30px; } }
 
 .nav-btn .ms { font-size: 19px; }
 .hud [hidden] { display: none !important; }

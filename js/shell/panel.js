@@ -18,7 +18,8 @@
       On Dennis's call to retire the long sliders, every number is a
       thumbwheel dial (dial.js) in a grid of compact cards, its note held to
       two lines; a changed setting also refreshes the rail's Random dice and
-      the Guide's cards at once.
+      the Guide's cards at once. The dice fades in with the tools when a lab
+      opens.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A control
       with a quantity kind shows its value, and takes typed values, in the
       chosen unit system; the lab keeps its own units underneath.
@@ -282,7 +283,7 @@ export function buildPanel(lab) {
   resetGauges();
   updateReadouts(); drawChart();
   for (const f of math.querySelectorAll('.f')) { formulaRO.observe(f); f.addEventListener('scroll', () => markClip(f), { passive: true }); }
-  if (!reduceMotion) for (const b of document.querySelectorAll('#scene-body, #params-body, #math, #guide, #dock')) if (b.animate) b.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
+  if (!reduceMotion) for (const b of document.querySelectorAll('#scene-body, #params-body, #math, #guide, #dock, #dock-dice')) if (b.animate) b.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
 }
 export function navHelp(lab) {
   const pan = lab.rightButton ? 'drag with the middle button, or hold <b>Space</b> and drag, to pan' : 'drag with the right or middle button, or hold <b>Space</b> and drag, to pan';

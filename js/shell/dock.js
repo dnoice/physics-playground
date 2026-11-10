@@ -16,7 +16,8 @@
       call for random placement, a lab that declares random gets a dice under
       its tools that turns it on and off; it stays in step with the Controls
       switch and the Guide's card. Choosing a tool or a view also marks the
-      Guide's cards at once.
+      Guide's cards at once. The rail marks an odd number of tools, so the
+      dice can take the free cell.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tools and
       views are separate radio groups on the rail, each with the full keyboard
       contract: the checked option is the one tab stop, arrows move and
@@ -95,6 +96,8 @@ export function buildDock(lab) {
   // A lab that places things can randomize what it places; the dice under its tools turns that on and off.
   const R = lab.random;
   diceEl.hidden = !R;
+  // An odd number of tools leaves a cell free in their last row; the dice takes it (see .nav-tools.odd).
+  $('#nav-tools').classList.toggle('odd', !!(d && d.options.length % 2));
   if (R) { diceEl.setAttribute('aria-label', R.label); diceEl.dataset.tip = R.tip || R.label; }
   updateDock(); syncDice();
 }
