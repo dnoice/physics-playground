@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.5)
+    - Title: Gravity Lab (digiSpace Edition - v2.6)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
+      Math page's Kepler panel now times a full turn of the followed planet,
+      in its own orbital plane, against 2π√(a³/μ) instead of restating the
+      law; the virial check averages K and U over the energy chart's window,
+      as the theorem holds only on average; the Kepler formula shows G(M + m)
+      as the panel computes it; the Insights give lengths in the chosen units.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       G and ε as sliders, the leapfrog's energy, circular speed and Kepler's
       period for the followed or heaviest planet, and the virial ratio;
@@ -26,9 +32,6 @@
       around a one-solar-mass star, which sets the year, speeds in km/s or
       mi/s, masses in solar, Jupiter or Earth masses, and the HUD's days or
       years.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are grouped into Physics, New bodies, Display and View, with short names
-      for the switches.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -339,6 +342,27 @@ export const gravity = {
       this.lastSample = this.t; this.energy();
       this.series.ke.push(this.t, this.KE); this.series.pe.push(this.t, this.PE); this.series.e.push(this.t, this.E);
     }
+    this.watchOrbit();
+  },
+  /* Kepler's period, measured for the Math page: the angle the followed (or heaviest) planet sweeps about its
+     reference body, taken in its own orbital plane so tilted and polar orbits count too, summed once a frame. Each
+     full turn gives a period to set beside 2π√(a³/μ). A new body, reference, mass, setting or a rewind starts over. */
+  kepW: null, kepT: NaN,
+  watchOrbit() {
+    const o = this.orbitOf();
+    if (!o) { this.kepW = null; this.kepT = NaN; return; }
+    const rx = o.b.x - o.P.x, ry = o.b.y - o.P.y, rz = o.b.z - o.P.z, key = `${o.b.id}|${o.P.id}|${o.b.m}|${o.P.m}|${this.p.G}|${this.p.soft}`;
+    const w = this.kepW;
+    if (!w || w.key !== key || this.t < w.t) { this.kepW = { key, t: this.t, rx, ry, rz, acc: 0, t0: this.t }; if (!w || w.key !== key) this.kepT = NaN; return; }
+    const cx = w.ry * rz - w.rz * ry, cy = w.rz * rx - w.rx * rz, cz = w.rx * ry - w.ry * rx;
+    const hx = ry * (o.b.vz - o.P.vz) - rz * (o.b.vy - o.P.vy), hy = rz * (o.b.vx - o.P.vx) - rx * (o.b.vz - o.P.vz), hz = rx * (o.b.vy - o.P.vy) - ry * (o.b.vx - o.P.vx);
+    const sgn = cx * hx + cy * hy + cz * hz >= 0 ? 1 : -1, d = Math.atan2(sgn * Math.hypot(cx, cy, cz), w.rx * rx + w.ry * ry + w.rz * rz);
+    if (w.acc + d >= TAU && d > 0) {
+      // The turn completes inside this frame: place the crossing by the share of this frame's angle it needed.
+      const tc = w.t + (TAU - w.acc) / d * (this.t - w.t);
+      this.kepT = tc - w.t0; w.t0 = tc; w.acc = w.acc + d - TAU;
+    } else w.acc += d;
+    Object.assign(w, { t: this.t, rx, ry, rz });
   },
   onParam(key) {
     if (key === 'zoom') { this.cam.z = this.p.zoom; if (navAnim.lab === this) navAnim.lab = null; }
@@ -719,20 +743,20 @@ export const gravity = {
           if (v > 0) { const steps = d / v / h; if (steps < worst) { worst = steps; wd = d; } }
         }
         const fixes = [];
-        if (this.p.soft < 12) fixes.push({ label: `Soften to ε = ${Math.min(30, Math.max(8, this.p.soft * 2))} px`, run() { setParam(gravity, 'soft', Math.min(30, Math.max(8, gravity.p.soft * 2))); } });
+        if (this.p.soft < 12) fixes.push({ label: `Soften to ε = ${fmtQ(this, 'len', Math.min(30, Math.max(8, this.p.soft * 2)))}`, run() { setParam(gravity, 'soft', Math.min(30, Math.max(8, gravity.p.soft * 2))); } });
         if (!this.p.merge) fixes.push({ label: 'Merge on contact', run() { setParam(gravity, 'merge', true); } });
         out.push({ id: 'g-drift', level: ad > 5 ? 'crit' : 'warn', title: 'Energy is drifting',
-          body: `Total energy has moved <b>${drift.toFixed(2)}%</b> since the last change.${Number.isFinite(worst) ? ` The tightest pass (${wd.toFixed(0)} px apart) lasts only about <b>${worst.toFixed(1)} steps</b> of 1/480 s, too few to follow the curve.` : ''} Softening or merging tames close encounters.`, fixes });
+          body: `Total energy has moved <b>${drift.toFixed(2)}%</b> since the last change.${Number.isFinite(worst) ? ` The tightest pass (${fmtQ(this, 'len', wd)} apart) lasts only about <b>${worst.toFixed(1)} steps</b> of 1/480 s, too few to follow the curve.` : ''} Softening or merging tames close encounters.`, fixes });
       }
       if (this.E > 0) out.push({ id: 'g-unbound', level: 'info', title: 'System is unbound', body: `Total energy is positive (${fmtSI(this.E)}), so gravity cannot hold everything together: some bodies are on escape paths.` });
       else if (this.PE) {
         const vr = 2 * this.KE / Math.abs(this.PE);
-        if (this.presetId === 'disk' || n > 40) out.push({ id: 'g-virial', level: 'info', title: 'Virial balance', body: `2K/|U| = <b>${vr.toFixed(2)}</b>. A settled self-gravitating system sits near 1; below 1 it is still collapsing, above 1 it is puffing up.` });
+        if (this.presetId === 'disk' || n > 40) out.push({ id: 'g-virial', level: 'info', title: 'Virial balance', body: `2K/|U| = <b>${vr.toFixed(2)}</b> at this instant. A settled self-gravitating system averages 1; held below 1 it is still collapsing, above 1 it is puffing up.` });
       }
     }
     if (n > 150) out.push({ id: 'g-pairs', level: 'info', title: 'Many pair forces', body: `${n} bodies means <b>${fmtSI(n * (n - 1) / 2)}</b> pair forces per step, ${fmtSI(n * (n - 1) / 2 * 480)} per simulated second. Deleting light bodies or merging speeds it up.` });
-    if (this.p.soft > 15) out.push({ id: 'g-soft', level: 'info', title: 'Wide softening', body: `With ε = ${this.p.soft} px, gravity weakens inside about ${this.p.soft} px, so close passes slide through each other instead of slingshotting.` });
-    if (this.escaped) out.push({ id: 'g-esc', level: 'info', title: 'Bodies escaped', body: `${this.escaped} bod${this.escaped === 1 ? 'y' : 'ies'} passed 6000 px from the centre of mass and ${this.escaped === 1 ? 'was' : 'were'} removed.` });
+    if (this.p.soft > 15) out.push({ id: 'g-soft', level: 'info', title: 'Wide softening', body: `With ε = ${fmtQ(this, 'len', this.p.soft)}, gravity weakens inside about that distance, so close passes slide through each other instead of slingshotting.` });
+    if (this.escaped) out.push({ id: 'g-esc', level: 'info', title: 'Bodies escaped', body: `${this.escaped} bod${this.escaped === 1 ? 'y' : 'ies'} passed ${fmtQ(this, 'len', 6000)} from the centre of mass and ${this.escaped === 1 ? 'was' : 'were'} removed.` });
     return out;
   },
   perfFixes() {
@@ -778,11 +802,20 @@ export const gravity = {
     },
     kepler: {
       vars: L => { const o = L.orbitOf(); return o ? [['a', Number.isFinite(o.a) ? fmtQ(L, 'len', o.a) : 'unbound', `Semi-major axis of ${o.name}'s orbit.`], ['M', L.massText(o.P.m, true), `The mass of ${o.ref}.`], ['T', Number.isFinite(o.a) ? L.timeText(TAU * Math.sqrt(o.a ** 3 / o.mu)) : '—', 'The period this law gives.']] : []; },
-      check: L => { const o = L.orbitOf(); return o && Number.isFinite(o.a) ? { text: `${o.name} goes round ${o.ref} once every ${L.timeText(TAU * Math.sqrt(o.a ** 3 / o.mu))}; double a and the period grows 2^1.5 ≈ 2.8 times.`, state: 'ok' } : null; },
+      // The law from the orbit's size now, against the time the planet actually took for its last full turn.
+      check: L => { const o = L.orbitOf(); if (!o) return { text: 'Add a planet around a star to time its orbit.' }; if (!Number.isFinite(o.a)) return { text: `${o.name} is not bound to ${o.ref}, so it has no period.`, state: 'warn' }; return { what: `${o.name}, one full orbit`, theory: TAU * Math.sqrt(o.a ** 3 / o.mu), sim: L.kepT, fmt: v => L.timeText(v), tol: 0.05, wait: `Period: timing ${o.name}'s next full turn around ${o.ref}…` }; },
     },
     virial: {
       vars: L => [['K', fmtSI(L.KE), 'Kinetic energy of every body.'], ['U', fmtSI(L.PE), 'Potential energy of every pair.'], ['2K / |U|', L.PE ? (2 * L.KE / Math.abs(L.PE)).toFixed(3) : '—', 'The virial ratio.']],
-      check: L => (L.bodies.length > 1 && L.E < 0 ? { what: 'Virial ratio 2K / |U|', theory: 1, sim: L.PE ? 2 * L.KE / Math.abs(L.PE) : NaN, fmt: v => v.toFixed(3), tol: 0.1 } : { text: 'The virial theorem describes a settled, bound system: total energy below zero.' }),
+      // The theorem holds for averages over time, not at each instant (an eccentric orbit swings the instantaneous
+      // ratio far from 1), so the check averages K and U over the energy chart's window, up to 40 s.
+      check: L => {
+        if (!(L.bodies.length > 1 && L.E < 0)) return { text: 'The virial theorem describes a settled, bound system: total energy below zero.' };
+        const K = L.series.ke, U = L.series.pe, n = Math.min(K.n, U.n);
+        let k = 0, u = 0; for (let i = 0; i < n; i++) { k += K.v[K.idx(i)]; u += U.v[U.idx(i)]; }
+        const span = n > 1 ? K.t[K.idx(n - 1)] - K.t[K.idx(0)] : 0;
+        return { what: `Virial ratio 2⟨K⟩ / |⟨U⟩| over ${span.toFixed(0)} s`, theory: 1, sim: n >= 30 && u ? 2 * k / Math.abs(u) : NaN, fmt: v => v.toFixed(3), tol: 0.1, wait: 'Virial ratio: averaging K and U over a few seconds of the run…' };
+      },
     },
   },
   math: `
@@ -792,11 +825,12 @@ export const gravity = {
     <div class="f" data-live="leapfrog" data-tex="\\begin{aligned} \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\\\ \\mathbf x &amp;\\leftarrow \\mathbf x + \\mathbf v\\,\\Delta t \\\\ \\mathbf v &amp;\\leftarrow \\mathbf v + \\tfrac12\\,\\mathbf a\\,\\Delta t \\end{aligned}"></div>
     <p>Clicking drops a body at this speed times the drop-speed setting, so at 1× its orbit is a circle:</p>
     <div class="f" data-live="vcirc" data-tex="v = \\sqrt{\\frac{G\\,(M + m)}{r}}"></div>
-    <p>Kepler’s third law ties the period to the semi-major axis alone. The Kepler scene gives three eccentricities one axis, so all three share one period.</p>
-    <div class="f" data-live="kepler" data-tex="T = 2\\pi \\sqrt{\\frac{a^3}{G M}}"></div>
+    <p>Kepler’s third law ties the period to the semi-major axis alone, for the pair of masses together. The Kepler scene gives three eccentricities one axis, so all three share one period; the panel times a full turn of the followed planet against it.</p>
+    <div class="f" data-live="kepler" data-tex="T = 2\\pi \\sqrt{\\frac{a^3}{G\\,(M + m)}}"></div>
     <p>The potential field draws Φ for the 24 heaviest bodies. Each contour band is a factor of 10<sup>¼</sup> in |Φ|.</p>
-    <div class="f" data-live="virial" data-tex="\\Phi(\\mathbf r) = -\\sum_j \\frac{G\\, m_j}{|\\mathbf r - \\mathbf r_j|}"></div>
-    <p>A settled, bound system satisfies the virial theorem, 2K ≈ |U|. The figure-eight uses the initial conditions of <cite>Chenciner &amp; Montgomery (2000)</cite>.</p>`,
+    <div class="f" data-tex="\\Phi(\\mathbf r) = -\\sum_j \\frac{G\\, m_j}{|\\mathbf r - \\mathbf r_j|}"></div>
+    <p>A settled, bound system satisfies the virial theorem, on average over time: an eccentric orbit swings the ratio at each instant, so the panel averages over the energy chart's window. The figure-eight uses the initial conditions of <cite>Chenciner &amp; Montgomery (2000)</cite>.</p>
+    <div class="f" data-live="virial" data-tex="2\\,\\langle K \\rangle = -\\langle U \\rangle"></div>`,
 };
 
 
