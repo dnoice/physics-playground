@@ -15,7 +15,9 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.5.0: live maths in the highlights, and the notebook's tabs described
       one by one (Controls, Experiments, Guide, Math, Library), with Inspect's
-      history and focus chart and the Library's capture cards.
+      history and focus chart and the Library's capture cards. Then the dials
+      that replaced the sliders, and random placement with Gravity's planet
+      types.
     - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Badges
       regrouped on Dennis's report that they broke up the flow: one row of
       four project badges under the tagline, the stack badges at the head of
@@ -110,7 +112,11 @@ runs.
   object you click, and let the insights say why a setting misbehaves and
   offer the one-click fix.
 - **Live maths.** Every formula is wired to the run: its symbols' values,
-  sliders for its parameters, and a check of theory against the simulation.
+  dials for its parameters, and a check of theory against the simulation.
+- **Random placement.** Turn on the dice under the tools, and every planet,
+  ball, post, source or charge you place comes out different: Gravity draws
+  a planet type (rocky, ocean, ice giant, gas giant or brown dwarf) and a
+  mass to suit it.
 - **Real-world units.** Metric, US customary or the simulation's own
   pixels: every reading, control and scale bar follows your choice.
 - **Guided experiments** with live progress checks that measure the claim
@@ -261,7 +267,10 @@ full-height Inspector beside them.
   what belongs to this lab: its **Tools** (what a click does), its **View**
   (what the stage shows, in Chaos and Waves) and its scene extras, such as
   Gravity's Follow. Tools and views are radio groups: arrow keys move within
-  one, and a view never restarts or rewinds the run.
+  one, and a view never restarts or rewinds the run. In the labs that place
+  things (Gravity, Collisions, Fluid, Waves and Fields), the **Random** dice
+  under the tools makes each new object different: a random planet type and
+  mass, ball size, post size, source frequency and phase, or charge.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
   data and save buttons.
 - **Instruments**: three panes over one header.
@@ -286,14 +295,18 @@ full-height Inspector beside them.
   (arrow keys on the grip step it; Enter restores the standard height).
 - **Inspector**: the lab's formula above five tabs.
   - **Controls** opens with the lab's quick actions, then its settings in
-    sections such as Setup, Physics and Display. Fold a section away, or use
-    its **Reset** to return it to the scene's values; a section whose changes
-    restart the run says so once. A disabled control says why underneath.
+    sections such as Setup, Physics and Display. Each number is a compact
+    dial: drag its ridged wheel sideways (Shift for fine), tap either side or
+    a chevron to nudge it, scroll once it has focus, use the arrow keys, or
+    click the value to type one. Fold a section away, or use its **Reset** to
+    return it to the scene's values; a section whose changes restart the run
+    says so once. A disabled control says why underneath.
   - **Experiments**: guided experiments with live progress checks.
   - **Guide**: the lab's tools, views and scenes as cards that pick them,
-    marked as they change, with its notes and how to move around.
+    marked as they change, with the Random switch beside the tools, the lab's
+    notes and how to move around.
   - **Math**: the formulas behind the lab, wired to the run. A formula shows
-    the live values of its symbols, sliders for the parameters it contains
+    the live values of its symbols, dials for the parameters it contains
     (the same settings as Controls, kept in step), a check that sets the
     formula's prediction beside what the simulation measures, and, where it
     helps, a plot: the speed distribution against Maxwell–Boltzmann, the

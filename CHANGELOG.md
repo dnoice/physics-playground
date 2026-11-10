@@ -60,7 +60,9 @@ here in full, newest first.
 
 A notebook wired to the simulations, and a page with light in it, on
 Dennis's call for more interactive Math and Guide pages, less empty space,
-new features where they help, and a subtle sheen, texture and glass.
+new features where they help, and a subtle sheen, texture and glass. Then,
+on his further call: compact dials in place of the long sliders, random
+placement in every lab that places things, and new parameters.
 
 ### Live Math
 
@@ -99,18 +101,75 @@ new features where they help, and a subtle sheen, texture and glass.
   over time: the one the lab names (a ball's speed, a body's distance, a
   pendulum's lower angle), or whichever is clicked.
 
+### Controls: thumbwheel dials
+
+- Every number on the Controls page is a compact dial instead of a long
+  slider (`js/shell/dial.js`): a ridged wheel with the value set in its
+  middle, a chevron at each end and a hairline for the range with the
+  scene's mark. Drag the wheel sideways (Shift for fine), tap either side or
+  hold a chevron to nudge it, scroll once it has focus, use the arrow keys,
+  or click the value to type one.
+- Dials sit in a grid of cards, two across in the inspector, with each note
+  held to two lines and given in full as its tooltip. The Math page's
+  parameters use the same dial.
+- A native range input stays under each wheel, so the keyboard, screen
+  readers and every listener work as before; a control that restarts the run
+  restarts it once per gesture.
+
+### Random placement
+
+- A **Random** dice under the tools on the stage rail, a switch in
+  Controls and a card in the Guide, in every lab that places things, all in
+  step.
+- **Gravity**: every body now has a planet type (rocky, ocean, ice giant,
+  gas giant, brown dwarf or star) with its own colour in 2D and its surface
+  in 3D, kept through mergers (which grow into a heavier class when they
+  cross its mass), rewind and saved states. Random draws a type by its odds
+  and a mass in its range; the throw preview shows the body that will fly.
+- **Collisions**: random ball sizes, 4 to 24 px, and so random masses.
+- **Fluid**: random post sizes; the ring under the pointer shows the next
+  post.
+- **Waves**: each new source gets its own frequency, from half to twice f,
+  and a random phase; Inspect shows a source's own frequency.
+- **Fields**: each charge gets 1 to 4 units, and each launched particle a
+  random charge-to-mass ratio and sign.
+
+### New parameters
+
+- Gravity: **Type of new bodies** (by mass, or any planet type) and **Speed
+  of dropped bodies**, in times the circular speed (1× circles, √2 escapes),
+  also a dial on the Math page's circular-speed formula.
+- Fluid: **Radius of new posts**, in a new New posts section.
+- Fields: **Size of new charges**, 1 to 5 units.
+- Cloth: **Gustiness**, how much the wind rises and falls about its mean, and
+  **Ball size** for the Ball tool.
+
 ### Design
 
 - The page has a fine grain and soft cool, warm and violet light behind
-  everything; tiles are frosted glass with a sheen along their top edge and
-  upper-left corner, and cards inside them catch a faint highlight.
+  everything; tiles carry a faint cool light at the top and a sheen along
+  their top edge, and cards inside them catch a faint highlight.
+- The tiles are opaque and unblurred. A backdrop blur, translucency and a
+  diagonal sheen were measured at under half the frame rate where the page is
+  drawn without a GPU (5 fps against 11 for 2.4.1 in the test browser), for a
+  difference the soft light behind them barely showed.
 
-### Notebook tests
+### Fixes in this release
 
-- New `tests/notebook.py`: live panels in every lab, live sliders kept in
-  step with Controls, Collisions' and Gravity's checks agreeing with the
-  run, the Guide's cards, the Library's dataset card, and the Inspect focus
-  chart.
+- The site check (`npm run site`) read the `url(#n)` filter reference inside
+  the grain's inline SVG as a missing file; quoted CSS `url()` values are now
+  read whole.
+
+### New test suites
+
+- New `tests/notebook.py`: live panels in every lab, live dials kept in step
+  with Controls, Collisions' and Gravity's checks agreeing with the run, the
+  Guide's cards, the Library's dataset card, and the Inspect focus chart.
+- New `tests/placement.py`: the dials' drag, tap, chevron, wheel, keys and
+  typing, one restart per gesture; the dice, switch and Guide card in step;
+  random draws in every lab within their ranges; Gravity's chosen type, drop
+  speed and types kept through rewind and saved states; the new parameters.
+- `tests/shell.py` taps the thumbwheels where it used to click the sliders.
 
 ## 2.4.1 (11/10/2026)
 
