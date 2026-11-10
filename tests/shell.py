@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.5)
+    - Title: Shell Regression Test (digiSpace Edition - v2.6)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      fps_recovers counts a hundred frames after the load stops, however long
+      a renderer without a GPU takes to draw them, and holds the meter to the
+      rate those frames actually ran at, where before it waited a fixed 3 s
+      and asked for 1.5 times the loaded rate, which an idle software renderer
+      could not reach in time.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The B and
       Particles checks tap the controls' thumbwheels, which replaced the
       sliders.
@@ -432,9 +438,13 @@ with sync_playwright() as p:
     ok("fps_tracks_slow_frames", abs(fps - true_fps) / true_fps < 0.3, (round(fps, 1), round(true_fps, 1)))
     ok("fps_below_step_cap", fps < 18, round(fps, 1))
     slow = fps
-    pg.evaluate("window.burning = false"); pg.wait_for_timeout(3000)
-    fps = state("perf.fps")
-    ok("fps_recovers", fps > slow * 1.5, (round(slow, 1), round(fps, 1)))
+    # Recovery is counted in frames as well, and the meter is held to the true rate it recovers to, rather than to a
+    # fixed multiple of the slow rate that a page drawn without a GPU, at 11 to 13 fps, can only just reach.
+    pg.evaluate("""() => { window.burning = false; window.recTimes = [];
+      const rec = () => { recTimes.push(performance.now()); if (recTimes.length < 100) requestAnimationFrame(rec); }; requestAnimationFrame(rec); }""")
+    pg.wait_for_function("recTimes.length >= 100", polling=250, timeout=60000)
+    fps, true_after = pg.evaluate("""() => { const t = recTimes, n = t.length - 1; return [PhysicsPlayground.perf.fps, 40000 / (t[n] - t[n - 40])] }""")
+    ok("fps_recovers", fps > slow * 1.2 and abs(fps - true_after) / true_after < 0.3, (round(slow, 1), round(fps, 1), round(true_after, 1)))
     pg.wait_for_timeout(200)
     ok("hud_fps_shows_meter", abs(float(pg.inner_text("#hud-fps").split()[0]) - state("perf.fps")) < 8, pg.inner_text("#hud-fps"))
     pg.context.close()
