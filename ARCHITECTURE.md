@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.5)
+    - Title: Architecture Guide (digiSpace Edition - v2.6)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math
+      checks: the scale for a theory that can be zero, and the three rules
+      every check keeps (its theory never comes from the measurement beside
+      it, it is for the law the run uses, and it says when its formula does
+      not apply).
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds Live
       Math (mathLive and data-live), the Guide and the Library's capture
       cards, Inspect's history and focus, and the page's grain, light and
@@ -403,7 +408,22 @@ lab's `math` HTML marked `data-live="name"` gets a panel built from the lab's
   follows; parameters that restart the run are left out.
 - `check(lab)` returns `{ what, theory, sim, fmt, tol, wait }` to set the
   formula's prediction beside a measurement (agreement within `tol` is green,
-  within three times it is amber), or `{ text, state }` for a plain note.
+  within three times it is amber), or `{ text, state }` for a plain note. A
+  quantity whose theory can be zero, such as an angle, adds `scale`: near
+  zero the gap is judged against it and given in the quantity's own units.
+
+A check is a test the run can fail, so three rules hold for every lab:
+
+- **The theory never comes from the measurement it is set beside.** Chaos
+  forecasts the horizon halfway to parting and keeps the forecast; Gravity
+  times a real orbit against the law instead of restating it.
+- **The theory is for the law the run uses.** Gravity's circular speed is
+  the softened one, Collisions' pressure is Henderson's hard-disc equation
+  of state, and Fluid checks the evenness of its density, which is what its
+  method holds, not a rest density it settles a tenth below.
+- **A check says when its formula does not apply** (an eccentric orbit, a
+  phased array whose sources are not a row, an empty tank) rather than
+  report a miss.
 - `plot(c, lab)` draws into a canvas context; several labs pass their own
   chart's `draw`.
 
