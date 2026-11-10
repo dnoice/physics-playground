@@ -4,7 +4,7 @@
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.4.0
+    - Version: 2.4.1
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.4.1 release.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.4.0 release.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -49,6 +51,23 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.4.1 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+The README's badges regrouped on Dennis's report that they broke up its
+flow: ten badges in two rows under the tagline wrapped unevenly on GitHub,
+leaving the coffee badge alone on a third line between the tagline and the
+links.
+
+- One row of four under the tagline: live demo, Pages status, release and
+  licence, the badges about the project itself.
+- The stack badges (ES modules, three.js, KaTeX, Playwright) open the Stack
+  section they describe; the Node.js badge is dropped, since Quick start
+  already states the version.
+- The coffee badge signs off the Credits section, above the signature.
+- Release 2.4.1 in the badge, `package.json` and `package-lock.json`.
 
 ## 2.4.0 (11/10/2026)
 
