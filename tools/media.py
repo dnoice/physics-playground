@@ -124,7 +124,7 @@ LABS = [
     ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, None),
     ('fluid', 'Fluid', 'dam', 'Dam break', 'water_drop', 1.4, None),
     ('waves', 'Waves', 'double', 'Double slit', 'airwave', 6.0, None),
-    ('chaos', 'Chaos', 'chaos', 'Sensitive start · Phase space', 'cyclone', 9.0, CHAOS_SETUP),
+    ('chaos', 'Chaos', 'chaos', 'Sensitive start · Pendulum and phase map', 'cyclone', 9.0, CHAOS_SETUP),
     ('cloth', 'Cloth', 'flag', 'Flag in wind', 'texture', 4.0, None),
     ('fields', 'Fields', 'cyclotron', 'Cyclotron motion', 'electric_bolt', 3.0, None),
 ]
