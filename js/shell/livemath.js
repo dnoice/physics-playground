@@ -15,7 +15,9 @@
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A parameter
       in more than one formula gets a dial in each with its own id, numbered
       after the first, so no two dials share an id and each symbol's label
-      focuses its own dial.
+      focuses its own dial. A check whose theory can be zero, such as an
+      angle, names a scale: near zero the gap is judged against it and given
+      in the quantity's own units.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for a Math page wired to the simulations: each formula can
       carry the running numbers, sliders for its parameters, a check of theory
@@ -129,11 +131,14 @@ export function updateLiveMath(lab, force = false) {
     if (ch) {
       let text = ch.text, state = ch.state || 'idle';
       if (text == null) {
-        const f = ch.fmt || (v => v.toPrecision(3)), gap = Math.abs(ch.sim - ch.theory) / Math.max(Math.abs(ch.theory), 1e-12);
+        // A quantity whose theory can be zero, such as an angle, names a scale: the gap is judged against it there, and
+        // reported in the quantity's own units, since a share of zero means nothing.
+        const f = ch.fmt || (v => v.toPrecision(3)), diff = Math.abs(ch.sim - ch.theory), small = ch.scale && Math.abs(ch.theory) < ch.scale;
+        const gap = diff / Math.max(Math.abs(ch.theory), ch.scale || 1e-12);
         if (Number.isFinite(ch.sim) && Number.isFinite(ch.theory)) {
           const tol = ch.tol || 0.05;
           state = gap <= tol ? 'ok' : gap <= tol * 3 ? 'warn' : 'crit';
-          text = `${ch.what}: theory ${f(ch.theory)} · simulation ${f(ch.sim)} · ${(gap * 100).toFixed(gap < 0.1 ? 1 : 0)} % apart`;
+          text = `${ch.what}: theory ${f(ch.theory)} · simulation ${f(ch.sim)} · ${small ? f(diff) : `${(gap * 100).toFixed(gap < 0.1 ? 1 : 0)} %`} apart`;
         } else { text = ch.wait || `${ch.what}: waiting for the run to show it`; state = 'idle'; }
       }
       if (P.check.textContent !== text) P.check.textContent = text;

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.5)
+    - Title: Waves Lab (digiSpace Edition - v2.6)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.6.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
+      phased-array formula, its readout, Insight and check apply only to a row
+      of like sources, evenly spaced and started together, and say so when
+      sources placed by hand or with Random sources break the row; the fringe
+      check asks for the scene's lone plane wave; a beam angle near zero is
+      judged in degrees rather than as a share of zero.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       c and damping with the Courant number, Snell's index, the double slit's
       fringe spacing measured against λL/d with the detector plotted, the
@@ -24,8 +30,6 @@
       any tool selects a source it lands on for the Inspect pane, which
       removes it; lengths and speeds follow the chosen units at a ripple-tank
       scale of 4 mm per cell.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
-      are grouped into Medium, Sources and Display.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -459,11 +463,20 @@ export const waves = {
     const hv = this.hover;
     if (hv && this.p.tool !== 'source') brushRing(g, hv, { pulse: 3, wall: 1.6, erase: 3.2, glass: 3.2 }[this.p.tool] * cs, THEME.text);
   },
+  /* The array formula's inputs from the first two point sources. It holds for a row of like sources: evenly spaced
+     along a line, at one frequency, started in step and differing only by the phase step. `row` says whether the
+     sources are such a row; sources placed by hand at other times, or with Random sources, are not. */
   steering() {
     const pts = this.sources.filter(s => s.type === 'point');
     if (pts.length < 2) return null;
-    const d = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y), lam = this.p.c / this.p.f, s = (this.p.phaseStep * Math.PI / 180) * lam / (TAU * d);
-    return { d, lam, s };
+    const ex = pts[1].x - pts[0].x, ey = pts[1].y - pts[0].y, d = Math.hypot(ex, ey), lam = this.p.c / this.p.f, s = (this.p.phaseStep * Math.PI / 180) * lam / (TAU * d);
+    const f0 = this.p.f * (pts[0].fm || 1);
+    const row = d > 0 && pts.every((q, k) => {
+      const lag = ((q.t0 - pts[0].t0) * f0) % 1, a = k ? pts[k - 1] : q;
+      return (q.fm || 1) === (pts[0].fm || 1) && Math.abs(q.phase - pts[0].phase) < 1e-6 && Math.min(Math.abs(lag), 1 - Math.abs(lag)) < 0.02
+        && (!k || Math.hypot(q.x - a.x - ex, q.y - a.y - ey) < 0.75);
+    });
+    return { d, lam, s, row };
   },
   /* Fringe spacing measured on the detector: twice the offset of the first dark band each side of the centre.
      That band sits at half the angle of the next bright fringe, so it stays on the detector in a short tank. NaN until one shows. */
@@ -505,7 +518,7 @@ export const waves = {
       ['Courant number cΔt/Δx', (c * this.dt()).toFixed(2), 'ok'],
       ['Wavelength λ = c/f', this.sources.length ? `${fmtQ(this, 'len', lam)}${hasGlass ? ` · ${fmtQ(this, 'len', lam / this.p.glassN)} in glass` : ''}` : '—', this.sources.length ? (lam / (hasGlass ? this.p.glassN : 1) < 8 ? 'warn' : 'ok') : undefined, 'derived'],
       ['Sources', String(this.sources.length)],
-      ['Beam steering angle', st && this.p.phaseStep !== 0 ? (Math.abs(st.s) <= 1 ? `${(Math.asin(st.s) * 180 / Math.PI).toFixed(1)}°` : 'no main beam') : '—'],
+      ['Beam steering angle', st && st.row && this.p.phaseStep !== 0 ? (Math.abs(st.s) <= 1 ? `${(Math.asin(st.s) * 180 / Math.PI).toFixed(1)}°` : 'no main beam') : '—'],
       ['Solver steps per second', this.stepRate.toFixed(0)],
     ];
   },
@@ -526,7 +539,7 @@ export const waves = {
         : { id: 'w-doppler', level: 'info', title: `Doppler shift at ${M.toFixed(2)}× c`, body: `Ahead of the source the frequency rises to f/(1−M) = <b>${(this.p.f / (1 - M)).toFixed(2)} Hz</b>; behind it falls to f/(1+M) = <b>${(this.p.f / (1 + M)).toFixed(2)} Hz</b>.` });
     }
     const st = this.steering();
-    if (st && pts > 2 && this.p.phaseStep !== 0) {
+    if (st && st.row && pts > 2 && this.p.phaseStep !== 0) {
       out.push(Math.abs(st.s) <= 1
         ? { id: 'w-steer', level: 'info', title: 'Beam steering', body: `Sources ${fmtQ(this, 'len', st.d)} apart with Δφ = ${this.p.phaseStep}° tilt the main beam by asin(Δφ λ / 2πd) = <b>${(Math.asin(st.s) * 180 / Math.PI).toFixed(1)}°</b>.${st.d > lam / 2 + 0.5 ? ' Spacing above λ/2 also lets grating lobes appear.' : ''}` }
         : { id: 'w-steer', level: 'info', title: 'No main beam', body: `With Δφ = ${this.p.phaseStep}° the required steering sine is ${st.s.toFixed(2)}, beyond 1, so the array cannot form a forward beam; energy leaks into side lobes.` });
@@ -569,14 +582,15 @@ export const waves = {
     slits: {
       params: ['f'],
       vars: L => (L.slits ? [['λ', fmtQ(L, 'len', L.p.c / L.p.f), 'Wavelength c / f.'], ['d', fmtQ(L, 'len', L.slits.d), 'Distance between the slit centres.'], ['L', fmtQ(L, 'len', L.detectorX() - L.slits.x), 'From the slits to the detector line.']] : []),
-      check: L => (L.slits ? { what: 'Fringe spacing Δy', theory: L.fringeTheory(L.p.f), sim: L.fringeSpacing(), fmt: v => fmtQ(L, 'len', v), tol: 0.12, wait: 'Fringe spacing: waiting for the pattern to build up on the detector…' } : { text: 'Load the Double slit scene to measure the fringes.' }),
+      check: L => (L.slits && !(L.sources.length === 1 && L.sources[0].type === 'line' && (L.sources[0].fm || 1) === 1) ? { text: 'The formula is for one plane wave at f through the slits; other sources in the tank change the pattern. Reset the Double slit scene to measure the fringes.' }
+        : L.slits ? { what: 'Fringe spacing Δy', theory: L.fringeTheory(L.p.f), sim: L.fringeSpacing(), fmt: v => fmtQ(L, 'len', v), tol: 0.12, wait: 'Fringe spacing: waiting for the pattern to build up on the detector…' } : { text: 'Load the Double slit scene to measure the fringes.' }),
       plot: (c, L) => L.chart.draw(c),
       plotLabel: 'Time-averaged intensity along the detector line',
     },
     phased: {
       params: ['phaseStep', 'f'],
       vars: L => { const st = L.steering(); return st ? [['Δφ', `${L.p.phaseStep}°`, 'Each source lags the one before it by this much.'], ['d', fmtQ(L, 'len', st.d), 'Spacing of the sources.'], ['λ', fmtQ(L, 'len', st.lam), 'Wavelength.']] : []; },
-      check: L => { const st = L.steering(); if (!st) return { text: 'Needs two or more point sources: load the Phased array scene.' }; if (Math.abs(st.s) > 1) return { text: 'Δφ λ / 2πd is beyond 1: no main beam can form at this setting.', state: 'warn' }; return { what: 'Beam angle θ', theory: Math.asin(st.s) * 180 / Math.PI, sim: L.beamAngle(), fmt: v => `${v.toFixed(1)}°`, tol: 0.15, wait: 'Beam angle: waiting for the waves to reach the arc…' }; },
+      check: L => { const st = L.steering(); if (!st) return { text: 'Needs two or more point sources: load the Phased array scene.' }; if (!st.row) return { text: 'The formula is for a row of like sources, evenly spaced and started together; these differ in spacing, frequency or timing. Load the Phased array scene to steer a beam.' }; if (Math.abs(st.s) > 1) return { text: 'Δφ λ / 2πd is beyond 1: no main beam can form at this setting.', state: 'warn' }; return { what: 'Beam angle θ', theory: Math.asin(st.s) * 180 / Math.PI, sim: L.beamAngle(), fmt: v => `${(Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`, tol: 0.15, scale: 10, wait: 'Beam angle: waiting for the waves to reach the arc…' }; },
     },
     mach: {
       params: ['srcSpeed'],
