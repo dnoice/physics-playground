@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.4)
+    - Title: Fluid Lab (digiSpace Edition - v2.5)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      densities plotted around rest, k and k-near as sliders with the pressure
+      they give, viscosity, and the share of particles at the speed cap;
+      Inspect follows a post's contact. A New posts section: the radius of new
+      posts, and Random posts for a random size each time, previewed by the
+      ring under the pointer.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Any tool
       but Obstacle selects a post for the Inspect pane, with figures measured
       from the liquid around it and a remove action; speeds, lengths and
@@ -21,9 +27,6 @@
       vanishing when Particles changed: keep() hands them over and build()
       places them before the liquid. Controls are grouped into Setup, Physics
       and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig and tool overlay; a seeded generator and Float64 snapshots make
-      replay exact; GPU failure now says so.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -33,6 +36,8 @@
 ✒ Key Features:
     - Dam break, obstacle course, droplet, twin columns and zero-g scenes.
     - Stir, push, pull, pour, obstacle and drain tools.
+    - Posts of a chosen radius, or of a random size with Random posts; the
+      ring under the pointer shows the next post.
     - Posts placed by hand outlast a change of Particles; a scene load or
       Reset starts clean.
     - Diagnostics for compression and speed capping, with fixes.
@@ -86,6 +91,7 @@ export const fluid = {
     'Pick a tool from the dock, then drag inside the tank.',
     '<b>Stir</b> drags the liquid along. <b>Push</b> and <b>Pull</b> blow it apart or draw it in. <b>Pour</b> adds liquid and <b>Drain</b> removes it.',
     '<b>Obstacle</b> places a fixed post where you click; click a post again to remove it. Tilt gravity to slosh the tank.',
+    'Set the size of new posts under Controls, or turn on <b>Random</b>, under the tools, for a random size each time; the ring under the pointer shows the next post.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'stir', label: 'Stir', key: 's', icon: 'stir', hint: 'Drag to stir the liquid along with the pointer · click a post to inspect it' },
@@ -95,7 +101,8 @@ export const fluid = {
     { id: 'obstacle', label: 'Obstacle', key: 'b', icon: 'obstacle', hint: 'Click to place a post · click a post to remove it' },
     { id: 'drain', label: 'Drain', key: 'x', icon: 'drain', hint: 'Hold to remove liquid under the pointer' },
   ] },
-  p: { tool: 'stir', colorBy: 'water', count: 1400, gravity: 900, tilt: 0, k: 0.08, kNear: 0.05, visc: 0.08, surface: true },
+  p: { tool: 'stir', colorBy: 'water', count: 1400, gravity: 900, tilt: 0, k: 0.08, kNear: 0.05, visc: 0.08, surface: true, postR: 1.5, rand: false },
+  random: { key: 'rand', label: 'Random posts', tip: 'Random posts: each post you place gets a random size' },
   presetId: 'dam',
   presets: [
     { id: 'dam', label: 'Dam break', params: { gravity: 900, tilt: 0 } },
@@ -107,6 +114,7 @@ export const fluid = {
   groups: [
     { id: 'setup', label: 'Setup', icon: 'flag' },
     { id: 'physics', label: 'Physics', icon: 'balance' },
+    { id: 'posts', label: 'New posts', icon: 'radio_button_checked' },
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
@@ -118,6 +126,8 @@ export const fluid = {
     { type: 'range', key: 'kNear', label: 'Near stiffness k-near', min: 0.005, max: 0.3, step: 0.005, note: 'Higher values spread the liquid into a lighter, foamier body.', group: 'physics' },
     { type: 'range', key: 'visc', label: 'Viscosity σ', min: 0, max: 0.8, step: 0.01, group: 'physics' },
     { type: 'toggle', key: 'surface', label: 'Liquid surface rendering (GPU)', group: 'display', short: 'Liquid surface (GPU)' },
+    { type: 'range', key: 'postR', label: 'Radius of new posts', min: 0.6, max: 3, step: 0.1, fmt: v => (fluid.U ? fmtQ(fluid, 'len', v * fluid.U) : v.toFixed(1)), note: 'Place posts with the Obstacle tool; a larger post parts the flow more widely.', group: 'posts' },
+    { type: 'toggle', key: 'rand', label: 'Random posts: a random size for each post placed', short: 'Random sizes', group: 'posts' },
   ],
   actions: [
     { label: 'Level the tank', run() { setParam(fluid, 'tilt', 0); } },
@@ -200,7 +210,19 @@ export const fluid = {
     }
   },
   worldRect() { return { w: this.Wu * this.U, h: this.Hu * this.U }; },
-  enabled(key) { return key === 'surface' && is3D(this) ? 'Shapes the 2D view; the 3D tank always draws the water.' : true; },
+  enabled(key) {
+    if (key === 'surface' && is3D(this)) return 'Shapes the 2D view; the 3D tank always draws the water.';
+    if (key === 'postR' && this.p.rand) return 'Random posts picks each size.';
+    return true;
+  },
+  /* The radius the next post will have, in particle spacings. With Random posts on it is drawn ahead, so the
+     preview ring shows the post that a click will place. */
+  pendR: null,
+  nextPostR() {
+    if (!this.p.rand) return this.p.postR;
+    if (this.pendR == null) this.pendR = Number((0.8 + Math.random() * 1.8).toFixed(2));
+    return this.pendR;
+  },
   buildGrid() {
     const n = this.n, cols = this.cols, rows = this.rows, start = this.cellStart, fill = this.fillPos, cellOf = this.cellOf, items = this.cellItems;
     start.fill(0);
@@ -349,7 +371,7 @@ export const fluid = {
     if (this.p.tool === 'obstacle') {
       const hit = post, ux = p.x / this.U, uy = p.y / this.U;
       if (hit >= 0) { if (this.post() === this.obs[hit]) this.selAt = null; this.obs.splice(hit, 1); }
-      else if (this.obs.length < 24) this.obs.push({ x: ux, y: uy, r: 1.5 });
+      else if (this.obs.length < 24) { this.obs.push({ x: ux, y: uy, r: this.nextPostR() }); this.pendR = null; }
       else announce('Obstacle limit reached (24).');
     }
   },
@@ -370,7 +392,7 @@ export const fluid = {
       if (d2 < flow) { nf++; sp += Math.hypot(this.vx[i], this.vy[i]) * s; }
     }
     const k = this.obs.indexOf(o) + 1;
-    return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, title: 'Steel post', color: '#56677c', rows: [
+    return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, focus: 'Liquid touching it', title: 'Steel post', color: '#56677c', rows: [
       ['Centre', fmtPos(this, o.x * U, o.y * U), 'Across and down from the tank\'s top-left corner.'],
       ['Radius', fmtQ(this, 'len', o.r * U), 'The post\'s size, which is also how far it pushes liquid back.'],
       ['Liquid touching it', `${touch} particles`, 'Particles within half a particle spacing of its surface right now.'],
@@ -414,7 +436,7 @@ export const fluid = {
     }
     const hv = this.hover, tool = this.p.tool;
     if (hv && tool !== 'obstacle') brushRing(g, hv, tool === 'pour' ? 0.6 * U : tool === 'drain' ? 2 * U : 3.2 * U, tool === 'drain' ? THEME.crit : THEME.text);
-    if (hv && tool === 'obstacle') brushRing(g, hv, 1.5 * U, THEME.amber);
+    if (hv && tool === 'obstacle') brushRing(g, hv, this.nextPostR() * U, THEME.amber);
   },
   /* Screen overlay in 3D: each tool's reach, drawn where it acts, on the tank's mid-plane.
      A post is previewed at both its ends; red marks the post a click would remove. */
@@ -444,7 +466,7 @@ export const fluid = {
     g.save(); g.lineWidth = 1.5; g.lineCap = 'round';
     if (tool === 'obstacle') {
       const hit = this.obs.find(o => (o.x - hv.x / U) ** 2 + (o.y - hv.y / U) ** 2 < (o.r + 0.3) ** 2);
-      const x = hit ? hit.x * U : hv.x, y = hit ? hit.y * U : hv.y, r = (hit ? hit.r : 1.5) * U;
+      const x = hit ? hit.x * U : hv.x, y = hit ? hit.y * U : hv.y, r = (hit ? hit.r : this.nextPostR()) * U;
       g.strokeStyle = hit ? THEME.crit : THEME.amber; g.globalAlpha = 0.85;
       if (!hit) g.setLineDash([5, 5]);
       ring(x, y, r, d);
@@ -547,17 +569,53 @@ export const fluid = {
       drawSeries(c.g, box, s, 0, hi * 1.08, THEME.amber, { fill: true });
     },
   },
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    density: {
+      vars: L => [['ρ₀', L.rho0.toFixed(2), 'Rest density, in neighbour-weight units.'], ['ρ̄ / ρ₀', L.mean.toFixed(3), 'Mean density of the liquid over the rest density.'], ['peak', `${L.peak.toFixed(2)}×`, 'The densest particle.']],
+      check: L => ({ what: 'Mean density at rest', theory: 1, sim: L.mean, fmt: v => `${v.toFixed(3)} ρ₀`, tol: 0.12, wait: 'Waiting for liquid…' }),
+      /* How the particles' densities spread around ρ₀: a narrow peak at 1 is a calm, incompressible liquid. */
+      plot: (c, L) => {
+        const { g, w, h } = c, B = 40, top = 2.5, hist = new Float64Array(B);
+        for (let i = 0; i < L.n; i++) hist[Math.min(B - 1, Math.max(0, Math.floor(L.rho[i] / L.rho0 / top * B)))]++;
+        let mx = 1; for (const v of hist) mx = Math.max(mx, v);
+        const x0 = 8, x1 = w - 8, y1 = h - 18, bw = (x1 - x0) / B;
+        g.fillStyle = THEME.cyan; g.globalAlpha = 0.6;
+        hist.forEach((v, k) => { const hh = v / mx * (y1 - 10); g.fillRect(x0 + k * bw + 0.5, y1 - hh, bw - 1, hh); });
+        g.globalAlpha = 1; const xr = x0 + (1 / top) * (x1 - x0);
+        g.strokeStyle = THEME.amber; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(xr, 6); g.lineTo(xr, y1); g.stroke(); g.setLineDash([]);
+        g.font = `400 10px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textBaseline = 'alphabetic';
+        g.textAlign = 'left'; g.fillText('0', x0, h - 5); g.textAlign = 'center'; g.fillStyle = THEME.amber; g.fillText('ρ₀', xr, h - 5);
+        g.fillStyle = THEME.muted; g.textAlign = 'right'; g.fillText(`${top} ρ₀`, x1, h - 5);
+      },
+      plotLabel: 'Histogram of particle densities, with the rest density marked',
+    },
+    pressure: {
+      params: ['k', ['kNear', 'k-near']],
+      vars: L => [['k', L.p.k.toFixed(3), 'Stiffness: pressure per unit of excess density.'], ['k-near', L.p.kNear.toFixed(3), 'Near stiffness: keeps neighbours from clumping.'], ['P̄', (L.p.k * (L.mean - 1) * L.rho0).toFixed(4), 'The pressure at the mean density, k (ρ̄ − ρ₀), in solver units.']],
+      check: L => ({ text: L.peak > 1.5 ? `The bottom is squeezed to ${L.peak.toFixed(2)} ρ₀: raise k to stiffen the liquid against gravity.` : `Densities stay within ${((L.peak - 1) * 100).toFixed(0)} % of rest: k holds the liquid nearly incompressible.`, state: L.peak > 2.2 ? 'crit' : L.peak > 1.5 ? 'warn' : 'ok' }),
+    },
+    visc: {
+      params: ['visc'],
+      vars: L => [['σ', L.p.visc.toFixed(2), 'Linear viscosity: how strongly approaching neighbours lose relative speed.'], ['Δt', `${(L.TICK * 1000).toFixed(2)} ms`, 'One solver tick.']],
+      check: L => ({ text: L.p.visc > 0.3 ? 'High σ: ripples die within a few sloshes, like syrup.' : L.p.visc > 0 ? 'Some σ: splashes settle while the liquid still flows freely.' : 'σ = 0: only the near-pressure damps motion, so the liquid sloshes for a long time.' }),
+    },
+    velocity: {
+      vars: L => { let vmax = 0; for (let i = 0; i < L.n; i++) vmax = Math.max(vmax, L.vx[i] ** 2 + L.vy[i] ** 2); return [['v max', fmtQ(L, 'speed', Math.sqrt(vmax) * L.U / L.TICK), 'The fastest particle now.'], ['capped', `${(L.clampRate * 100).toFixed(2)} %`, 'Particles that hit the per-tick speed cap.']]; },
+      check: L => ({ what: 'Particles at the speed cap', theory: 0, sim: L.clampRate, fmt: v => `${(v * 100).toFixed(2)} %`, text: L.clampRate < 0.002 ? `Only ${(L.clampRate * 100).toFixed(2)} % of particles touch the cap: velocities are the liquid's own.` : `${(L.clampRate * 100).toFixed(2)} % of particles hit the cap: the motion is faster than a tick can follow.`, state: L.clampRate < 0.002 ? 'ok' : L.clampRate < 0.02 ? 'warn' : 'crit' }),
+    },
+  },
   math: `
     <p>Density and near-density sum over neighbours closer than the interaction radius <i>h</i>, with q = r<sub>ij</sub> / h:</p>
-    <div class="f" data-tex="\\rho_i = \\sum_j (1 - q)^2, \\qquad \\rho_i^{\\text{near}} = \\sum_j (1 - q)^3"></div>
+    <div class="f" data-live="density" data-tex="\\rho_i = \\sum_j (1 - q)^2, \\qquad \\rho_i^{\\text{near}} = \\sum_j (1 - q)^3"></div>
     <p>They set a pressure and a near-pressure:</p>
-    <div class="f" data-tex="P_i = k\\,(\\rho_i - \\rho_0), \\qquad P_i^{\\text{near}} = k^{\\text{near}}\\,\\rho_i^{\\text{near}}"></div>
+    <div class="f" data-live="pressure" data-tex="P_i = k\\,(\\rho_i - \\rho_0), \\qquad P_i^{\\text{near}} = k^{\\text{near}}\\,\\rho_i^{\\text{near}}"></div>
     <p>Each neighbour pair is pushed apart along r̂<sub>ij</sub>, half to each particle:</p>
     <div class="f" data-tex="\\mathbf D_{ij} = \\Delta t^2 \\left[ P_i\\,(1 - q) + P_i^{\\text{near}}\\,(1 - q)^2 \\right] \\hat{\\mathbf r}_{ij}"></div>
     <p>Approaching pairs lose relative speed <i>u</i> to viscosity:</p>
-    <div class="f" data-tex="\\mathbf I = \\Delta t\\,(1 - q)\\,(\\sigma u + \\beta u^2)\\,\\hat{\\mathbf r}_{ij}"></div>
+    <div class="f" data-live="visc" data-tex="\\mathbf I = \\Delta t\\,(1 - q)\\,(\\sigma u + \\beta u^2)\\,\\hat{\\mathbf r}_{ij}"></div>
     <p>Velocities come back from positions, capped at 0.6 h per tick so one bad step cannot explode. Method of <cite>Clavet, Beaudoin &amp; Poulin (2005)</cite>.</p>
-    <div class="f" data-tex="\\mathbf v = \\frac{\\mathbf x - \\mathbf x_{\\text{prev}}}{\\Delta t}"></div>
+    <div class="f" data-live="velocity" data-tex="\\mathbf v = \\frac{\\mathbf x - \\mathbf x_{\\text{prev}}}{\\Delta t}"></div>
     <p>The water surface is drawn on the GPU. Each particle adds a smooth bump to a density field, the liquid is wherever that sum crosses a threshold, and the field’s slope and depth give the highlights and colour.</p>`,
 };
 

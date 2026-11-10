@@ -1,24 +1,28 @@
 /*
 ✒ Metadata
-    - Title: Design Tokens (digiSpace Edition - v2.2)
+    - Title: Design Tokens (digiSpace Edition - v2.5)
     - File Name: tokens.css
     - Relative Path: css/tokens.css
     - Artifact Type: stylesheet
-    - Version: 2.2.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
+      gets its light on Dennis's call for sheen, texture and glass: a fine
+      grain and soft cool, warm and violet washes behind everything, and
+      tokens for the tiles' glass, their sheen and a card highlight. The tiles
+      are opaque, in one gradient with plain hex stops and the sheen as an
+      inset shadow: blur, translucency, extra layers and color-mix() stops
+      were each measured to slow the page where it is drawn without a GPU.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
       grid gains a third row for the colophon.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A darker
       bench, hairline edges and more generous spacing.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0 on Dennis's direction: the formal stack; tokens moved out of
-      the v1.3 single file and extended for tiles.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -26,10 +30,12 @@
     keyboard keys.
 
 ✒ Key Features:
-    - Dark bench palette with amber and cyan accents.
-    - Tile, gap, radius and shadow tokens for the console.
-    - Body grid pins content to the viewport width so nothing widens the
-      page: top bar, console, then the colophon.
+    - Colour, type, spacing and radius tokens for the console.
+    - The page background: grain over layered gradient light, fixed while the
+      page scrolls.
+    - Glass tokens, all cheap to paint: the tiles' one-layer fill with a faint
+      cool light at the top, the warm sheen along their top edge as an inset
+      shadow, and a highlight for cards inside them.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -65,14 +71,32 @@
   --radius: 16px;
   --pad: 16px;
   --well: color-mix(in oklab, var(--ink) 72%, var(--bench));
-  --tile-shadow: 0 1px 0 color-mix(in oklab, white 5%, transparent) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  --tile-shadow: inset 0 1px 0 rgba(255, 228, 186, 0.11), 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  /* Glass, kept cheap: an opaque tile in one gradient layer, with a faint cool light at the top, and a warm sheen
+     along its top edge drawn as an inset shadow (--tile-shadow). Translucent, blurred or diagonally lit tiles were
+     measured at half the frame rate where the page is drawn without a GPU, and every extra layer cost a few per
+     cent more, for a difference the soft light behind them barely shows. The stops are plain hex (#17232d is
+     --tile-hi with 5% of --cyan): a color-mix() stop makes the browser interpolate the gradient in Oklab, off
+     its fast path, which cost about a tenth of the frame rate on tiles that repaint as the readings change. */
+  --glass-tile: linear-gradient(180deg, #17232d, #0e131b 200px);
+  --card-sheen: inset 0 1px 0 color-mix(in oklab, white 4.5%, transparent);
+  /* A faint film grain, so the large dark areas read as a surface rather than a void. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color-scheme: dark;
   interpolate-size: allow-keywords;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: radial-gradient(1400px 700px at 18% -12%, color-mix(in oklab, var(--cyan) 5%, transparent), transparent 62%), radial-gradient(1000px 600px at 100% 110%, color-mix(in oklab, var(--amber) 3%, transparent), transparent 60%), var(--ink);
+  /* The page's light: a cool wash from the upper left, a warm one from the lower right, a faint band across the
+     middle, and grain over all of it. The glass tiles above pick these up. */
+  background:
+    var(--grain) 0 0 / 180px 180px,
+    radial-gradient(1400px 760px at 14% -14%, color-mix(in oklab, var(--cyan) 9%, transparent), transparent 62%),
+    radial-gradient(1100px 680px at 104% 112%, color-mix(in oklab, var(--amber) 7%, transparent), transparent 60%),
+    radial-gradient(900px 420px at 62% 46%, color-mix(in oklab, #7a8cff 3.5%, transparent), transparent 70%),
+    linear-gradient(160deg, #090d14, var(--ink) 55%, #07090e);
+  background-attachment: fixed;
   color: var(--text); font: 500 14px/1.5 var(--font-body);
   /* Raleway's default numerals are old-style and bounce on the baseline; JetBrains' ligatures would rewrite symbols. */
   font-variant-numeric: lining-nums; font-variant-ligatures: none;

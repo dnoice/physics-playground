@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.4)
+    - Title: Physics Playground (digiSpace Edition - v2.5)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -13,6 +13,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Inspect
+      card gains its focus chart and a note on how it works; the Library page
+      opens with its capture cards. The stage rail gains the Random dice under
+      the tools, and the icon subset adds the dice and the dial chevrons.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The stage
       rail is regrouped on Dennis's brief for one interaction architecture: a
       fixed Camera group, then the lab's Tools, View and scene groups. The
@@ -22,8 +26,6 @@
       bar, with U and V on the keyboard sheet.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       balance, flag and visibility glyphs the control sections use.
-    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      digiSpace Studio colophon Dennis asked for, with a coffee glyph.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -37,7 +39,7 @@
     - Console layout: the stage with its player bar, an instruments deck
       beneath it, and a full-height inspector beside them.
     - Stage rail anchored top right: Camera (axis ball, zoom, pan, frame),
-      then the lab's Tools, View and This scene groups.
+      then the lab's Tools with the Random dice, View and This scene groups.
     - Instruments deck with Telemetry, Inspect and Insights panes, compact,
       standard and tall sizes, and a grip to drag it to any height.
     - Units menu (U): metric, US customary or simulation units for every
@@ -80,7 +82,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,check_circle,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -168,6 +170,7 @@
         <div class="nav-sec nav-tools" id="nav-tools" role="group" aria-labelledby="tools-key" hidden>
           <span class="nav-cap" id="tools-key">Tools</span>
           <div class="dock" id="dock" role="radiogroup" aria-labelledby="tools-key"></div>
+          <button type="button" class="dock-dice" id="dock-dice" aria-pressed="false" hidden><span class="ms" aria-hidden="true">casino</span></button>
         </div>
         <div class="nav-sec nav-views" id="nav-views" role="group" aria-labelledby="views-key" hidden>
           <span class="nav-cap" id="views-key">View</span>
@@ -234,9 +237,14 @@
         <article class="details" id="details" aria-label="Selected object" hidden>
           <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
           <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3>
-            <div class="details-actions" id="details-actions"></div></div>
+            <div class="details-actions" id="details-actions"></div>
+            <p class="details-how">Figures are read-only and live. Click one to follow it in the chart, or its chart button to plot it under Telemetry. Click another object on the stage to switch; × clears.</p></div>
           <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
           <dl class="details-rows" id="details-rows"></dl>
+          <div class="details-focus" id="details-focus">
+            <p class="details-focus-cap" id="details-focus-cap"></p>
+            <div class="details-plot-wrap"><canvas class="details-plot" id="details-plot" role="img" aria-label="The focused figure of the selected object over time"></canvas></div>
+          </div>
         </article>
         <div class="inspect-empty" id="inspect-empty">
           <span class="ms" aria-hidden="true">ads_click</span>
@@ -273,6 +281,7 @@
       <div role="tabpanel" id="np-guide" aria-labelledby="nt-guide" hidden><div id="guide"></div></div>
       <div role="tabpanel" id="np-math" aria-labelledby="nt-math" hidden><div class="math" id="math"></div></div>
       <div role="tabpanel" id="np-library" aria-labelledby="nt-library" hidden>
+        <div class="lib-capture" id="lib-capture" role="group" aria-label="Capture this run"></div>
         <div class="lib-store" id="lib-store" role="status">Connecting to storage…</div>
         <div id="lib-filter"></div>
         <ul class="lib-list" id="lib-list" aria-label="Saved clips, datasets and states"></ul>

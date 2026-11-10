@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.4)
+    - Title: Collisions Lab (digiSpace Edition - v2.5)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,14 +12,17 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      the impulse with e and the energy it keeps, the speed distribution
+      checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
+      and friction's spin share; Inspect follows a ball's speed. Random new
+      balls gives each ball added a random size from 4 to 24 px, and so a
+      random mass.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       radii and speeds follow the chosen units, one pixel being 1.09 cm; the
       empty Inspect pane says how to select a ball.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Setup, Physics, New balls and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig, tilt, sphere picking and tool overlay; snapshots use Float64,
-      so rewind replays exactly.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -30,6 +33,8 @@
     - Sweep-and-prune broad phase for up to 1500 discs.
     - Maxwell–Boltzmann speed histogram and an ideal-gas pressure check.
     - Grab, heat, cool and erase tools; a Brownian tracer with its path.
+    - Random new balls: a random size, and so a random mass, for each ball
+      added.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -73,6 +78,7 @@ export const collisions = {
     '<b>Grab</b>: drag a ball to throw it, or click empty space to add one and keep dragging to throw it.',
     '<b>Heat</b> and <b>Cool</b> brushes speed up or slow down every ball under them; watch the energy spread out.',
     '<b>Erase</b> removes balls under the brush. Lower restitution <i>e</i> to watch kinetic energy drain away; raise friction μ to make balls roll and spin, marked by the dot on each one.',
+    '<b>Random</b>, under the tools, gives each ball you add a random size, and so a random mass.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'grab', label: 'Grab', key: 'g', icon: 'grab', hint: 'Drag a ball to throw it · click empty space to add one' },
@@ -80,7 +86,8 @@ export const collisions = {
     { id: 'cool', label: 'Cool', key: 'c', icon: 'cool', hint: 'Hold over the gas to slow balls down' },
     { id: 'erase', label: 'Erase', key: 'x', icon: 'erase', hint: 'Brush over balls to remove them' },
   ] },
-  p: { tool: 'grab', colorBy: 'speed', count: 260, gravity: 0, e: 1, drag: 0, radius: 9, mu: 0 },
+  p: { tool: 'grab', colorBy: 'speed', count: 260, gravity: 0, e: 1, drag: 0, radius: 9, mu: 0, rand: false },
+  random: { key: 'rand', label: 'Random new balls', tip: 'Random new balls: each ball you add gets a random size, and so a random mass' },
   presetId: 'gas',
   presets: [
     { id: 'gas', label: 'Ideal gas', params: { gravity: 0, e: 1, drag: 0, count: 260, mu: 0 } },
@@ -102,6 +109,7 @@ export const collisions = {
     { type: 'range', key: 'mu', label: 'Contact friction μ', min: 0, max: 1, step: 0.01, note: 'Friction at contacts and walls turns sliding into spin.', group: 'physics' },
     { type: 'range', key: 'drag', label: 'Air drag', min: 0, max: 2, step: 0.01, unit: '/s', group: 'physics' },
     { type: 'range', key: 'radius', label: 'Radius of new balls', min: 3, max: 30, step: 1, qty: 'len', group: 'spawn' },
+    { type: 'toggle', key: 'rand', label: 'Random new balls: a random size, and so mass, for each one added', short: 'Random sizes', group: 'spawn' },
   ],
   actions: [
     { label: 'Shake the box', run() { const c = collisions; for (let i = 0; i < c.n; i++) { const a = rand(0, TAU), s = rand(150, 400); c.vx[i] += s * Math.cos(a); c.vy[i] += s * Math.sin(a); } c.KE0 = c.stats().etot; } },
@@ -176,7 +184,11 @@ export const collisions = {
   onResize(w, h) { this.w = w; this.h = h; },
   worldRect() { return { w: this.w, h: this.h }; },
   onParam(key) { if (key === 'e' || key === 'gravity' || key === 'drag' || key === 'mu') { this.KE0 = this.stats().etot; this.wallImp = 0; this.wallTime = 0; this.Z = NaN; } },
-  enabled(key) { return key === 'count' && this.presetId === 'pool' ? 'Fixed by the 15-ball rack in this scene.' : true; },
+  enabled(key) {
+    if (key === 'count' && this.presetId === 'pool') return 'Fixed by the 15-ball rack in this scene.';
+    if (key === 'radius' && this.p.rand) return 'Random new balls picks each size.';
+    return true;
+  },
   step(dt) {
     const n = this.n, g = this.p.gravity, damp = Math.max(0, 1 - this.p.drag * dt), X = this.x, Y = this.y, VX = this.vx, VY = this.vy, R = this.r, IM = this.im;
     const G = this.grab, ANG = this.ang, OM = this.om, mu = this.p.mu;
@@ -279,7 +291,7 @@ export const collisions = {
   inspect() {
     const i = this.picked; if (i < 0 || i >= this.n) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
-    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
+    return { id: `ball-${i}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${i + 1}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
   inspectHint: 'With the Grab tool, click a ball to inspect it here.',
@@ -291,7 +303,8 @@ export const collisions = {
     let i = this.hit(p);
     this.picked = i;
     if (i < 0) {
-      const r = this.p.radius;
+      // Random sizes spread evenly in log from 4 to 24 px, so small and large balls come up about as often.
+      const r = this.p.rand ? Math.round(4 * Math.pow(6, Math.random())) : this.p.radius;
       i = this.add(clamp(p.x, r, this.w - r), clamp(p.y, r, this.h - r), 0, 0, r);
       if (i < 0) { announce(`Ball limit reached (${COLL_CAP}).`); return; }
     }
@@ -541,18 +554,60 @@ export const collisions = {
       g.textAlign = 'center'; g.fillText('speed →', (box.x0 + box.x1) / 2, c.h - 5);
     },
   },
+  /* The Math page's live panels: what each formula is doing in the run right now (livemath.js). */
+  mathLive: {
+    impulse: {
+      params: ['e'],
+      vars: L => { const s = L.stats(); return [
+        ['e', L.p.e.toFixed(2), 'Restitution: the share of the approach speed each contact gives back.'],
+        ['e²', L.p.e ** 2 < 0.995 ? `${(L.p.e ** 2 * 100).toFixed(0)} %` : '100 %', 'The share of the relative-motion energy along the normal a contact keeps.'],
+        ['contacts', `${fmtSI(L.hitRate)} /s`, 'Contacts resolved per simulated second.'],
+        ['energy now', L.KE0 > 0 ? `${(s.etot / L.KE0 * 100).toFixed(1)} %` : '—', 'Total kinetic energy, against its value when the scene or a setting last changed.'],
+      ]; },
+      check: L => (L.p.gravity === 0 && L.p.drag === 0 && L.p.e === 1 && L.KE0 > 0
+        ? { what: 'Energy kept with e = 1', theory: 1, sim: L.stats().etot / L.KE0, fmt: v => `${(v * 100).toFixed(1)} %`, tol: 0.01 }
+        : { text: L.p.e < 1 ? `With e = ${L.p.e.toFixed(2)} every head-on contact keeps ${(L.p.e ** 2 * 100).toFixed(0)} % of its relative-motion energy, so the total drains away.` : 'Gravity or drag adds or removes energy, so the total is not conserved here.' }),
+    },
+    mb: {
+      vars: L => {
+        let v2 = 0, v1 = 0, n = 0;
+        for (let i = 0; i < L.n; i++) { if (i === L.tracer) continue; const s2 = L.vx[i] ** 2 + L.vy[i] ** 2; v2 += s2; v1 += Math.sqrt(s2); n++; }
+        const sig = n ? Math.sqrt(v2 / n / 2) : NaN;
+        return [['σ', fmtQ(L, 'speed', sig), 'From σ² = ½⟨v²⟩: the most likely speed.'], ['⟨v⟩', fmtQ(L, 'speed', n ? v1 / n : NaN), 'The mean speed of the balls now.'], ['N', String(n), 'Balls counted (the Brownian tracer is left out).']];
+      },
+      check: L => {
+        let v2 = 0, v1 = 0, n = 0, m0 = -1, equal = true;
+        for (let i = 0; i < L.n; i++) { if (i === L.tracer) continue; const s2 = L.vx[i] ** 2 + L.vy[i] ** 2; v2 += s2; v1 += Math.sqrt(s2); n++; if (m0 < 0) m0 = L.r[i]; else if (Math.abs(L.r[i] - m0) > 1e-6) equal = false; }
+        if (n < 20) return { text: 'Needs twenty or more balls to compare.' };
+        if (!equal) return { text: 'The balls differ in mass, so the Rayleigh curve does not apply.' };
+        return { what: 'Mean speed σ√(π/2)', theory: Math.sqrt(v2 / n / 2) * Math.sqrt(Math.PI / 2), sim: v1 / n, fmt: v => fmtQ(L, 'speed', v), tol: 0.03 };
+      },
+      plot: (c, L) => L.chart.draw(c),
+      plotLabel: 'Histogram of ball speeds against the Maxwell–Boltzmann curve for the same mean energy',
+    },
+    gas: {
+      vars: L => { const s = L.stats(); return [['N', String(L.n), 'Balls in the box.'], ['φ', `${(s.phi * 100).toFixed(1)} %`, 'Packing fraction: the share of the box the balls cover.'], ['PA / NkT', Number.isFinite(L.Z) ? L.Z.toFixed(3) : '—', 'Measured from the momentum the balls deliver to the walls.']]; },
+      check: L => (L.p.gravity !== 0 ? { text: 'Set gravity to 0: the law describes a gas at rest in an empty box.' }
+        : { what: 'PA / NkT ≈ 1 + 2φ', theory: 1 + 2 * L.stats().phi, sim: L.Z, fmt: v => v.toFixed(3), tol: 0.06, wait: 'PA / NkT: collecting wall impacts…' }),
+    },
+    friction: {
+      params: ['mu'],
+      vars: L => { const s = L.stats(); return [['μ', L.p.mu.toFixed(2), 'Contact friction: the most the tangential impulse may be, as a share of the normal one.'], ['spin share', s.etot > 0 ? `${(s.kr / s.etot * 100).toFixed(1)} %` : '—', 'The share of the energy in spin rather than motion.']]; },
+      check: L => ({ text: L.p.mu > 0 ? 'Friction turns sliding into spin: watch the spin share climb toward its steady value.' : 'With μ = 0 contacts cannot spin the balls; raise μ to see the spin share grow.' }),
+    },
+  },
   math: `
     <p>Each contact gets an impulse along its normal <i>n</i>, set by the restitution <i>e</i> and the reduced mass μ:</p>
-    <div class="f" data-tex="\\begin{aligned} J &amp;= -(1 + e)\\,\\mu\\,(\\mathbf v_2 - \\mathbf v_1)\\cdot\\hat{\\mathbf n} \\\\ \\mu &amp;= \\frac{m_1 m_2}{m_1 + m_2} \\end{aligned}"></div>
+    <div class="f" data-live="impulse" data-tex="\\begin{aligned} J &amp;= -(1 + e)\\,\\mu\\,(\\mathbf v_2 - \\mathbf v_1)\\cdot\\hat{\\mathbf n} \\\\ \\mu &amp;= \\frac{m_1 m_2}{m_1 + m_2} \\end{aligned}"></div>
     <div class="f" data-tex="\\mathbf v_1 \\leftarrow \\mathbf v_1 - \\frac{J}{m_1}\\,\\hat{\\mathbf n}, \\qquad \\mathbf v_2 \\leftarrow \\mathbf v_2 + \\frac{J}{m_2}\\,\\hat{\\mathbf n}"></div>
     <p><i>e</i> = 1 is perfectly elastic; <i>e</i> = 0 removes all relative speed along the normal. Disc mass grows with area, m ∝ r².</p>
     <p>With equal masses, speeds settle into the two-dimensional Maxwell–Boltzmann (Rayleigh) distribution:</p>
-    <div class="f" data-tex="f(v) = \\frac{v}{\\sigma^2}\\, e^{-v^2/2\\sigma^2}, \\qquad \\sigma^2 = \\tfrac12 \\langle v^2 \\rangle"></div>
+    <div class="f" data-live="mb" data-tex="f(v) = \\frac{v}{\\sigma^2}\\, e^{-v^2/2\\sigma^2}, \\qquad \\sigma^2 = \\tfrac12 \\langle v^2 \\rangle"></div>
     <p>Pressure is the momentum delivered to the walls per unit length per second. In two dimensions the ideal-gas law reads:</p>
-    <div class="f" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
+    <div class="f" data-live="gas" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
     <p>Hard discs raise it by roughly a factor 1 + 2φ, where φ is the packing fraction. In the Brownian scene the heavy disc’s mean-squared displacement grows linearly with time, ⟨Δr<sup>2</sup>⟩ ∝ t.</p>
     <p>With contact friction μ, a tangential impulse stops the two surfaces sliding past each other, but never more than μ times the normal impulse (Coulomb’s law). Each ball is a uniform disc, I = ½ m r², so the impulse also spins it:</p>
-    <div class="f" data-tex="\\begin{aligned} J_t &amp;= -\\frac{v_t}{3\\,(1/m_1 + 1/m_2)}, \\quad |J_t| \\le \\mu J \\\\ \\Delta\\omega_k &amp;= -\\frac{J_t\\, r_k}{I_k} \\end{aligned}"></div>
+    <div class="f" data-live="friction" data-tex="\\begin{aligned} J_t &amp;= -\\frac{v_t}{3\\,(1/m_1 + 1/m_2)}, \\quad |J_t| \\le \\mu J \\\\ \\Delta\\omega_k &amp;= -\\frac{J_t\\, r_k}{I_k} \\end{aligned}"></div>
     <p>Here v<sub>t</sub> is the sliding speed of the touching surfaces, including ω r from each spin. Walls work the same way with an infinitely heavy partner.</p>`,
 };
 

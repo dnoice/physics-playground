@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.4)
+    - Title: Chaos Lab (digiSpace Edition - v2.5)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      the equations with their ratios as sliders, the predictability horizon
+      checked against when the copies part, the energy fence and the normal
+      modes; Inspect follows the lower angle.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Three views
       on Dennis's brief: Pendulum, Phase map and Both, switched without
       touching the run. The map is labelled as a projection of the 4-D state;
@@ -25,9 +29,6 @@
       energy cannot cross, fading trails broken at the wrap, torus edge marks,
       and a hover preview of any start with its pose and reach. Bobs can be
       dragged in both views; controls are grouped.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig and hover overlay; energy drift is measured against the rest
-      energy, and snapshots carry parameters.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -334,7 +335,7 @@ export const pendulum = {
     ];
     if (i > 0) rows.push(['Started apart by', `${(i * this.p.delta).toExponential(1)} rad`, 'This copy began with θ₂ larger than the front one\'s by this much, and nothing else different.'],
       ['Distance from the front copy', gap < 1e-3 ? gap.toExponential(2) : gap.toFixed(3), 'The distance between the two states in all four coordinates (spins in units of √(L/g)), as the separation chart measures it.']);
-    return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, short: i === 0 ? 'Front copy' : `Copy ${i + 1}`, title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
+    return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, short: i === 0 ? 'Front copy' : `Copy ${i + 1}`, focus: 'Lower angle θ₂', title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
       actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
   },
   deselect() { this.sel = -1; },
@@ -764,16 +765,40 @@ export const pendulum = {
       g.textAlign = 'right'; g.fillText(`${s.t[s.idx(s.n - 1)].toFixed(1)} s`, box.x1, c.h - 5);
     },
   },
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    eom: {
+      params: [['mass', 'm₂/m₁'], ['len', 'L₂/L₁'], 'g', ['damp', 'b']],
+      vars: L => { const s = L.s, d = t => `${(wrapAngle(t) * 180 / Math.PI).toFixed(1)}°`; return L.N ? [['θ₁', d(s[0]), 'Upper arm, from straight down.'], ['θ₂', d(s[1]), 'Lower arm, from straight down.'], ['ω₁', `${s[2].toFixed(2)} rad/s`, 'Upper arm spin.'], ['ω₂', `${s[3].toFixed(2)} rad/s`, 'Lower arm spin.']] : []; },
+      note: 'the front pendulum, now',
+    },
+    horizon: {
+      vars: L => [['δ₀', L.p.delta.toExponential(0), 'Starting gap between neighbouring copies.'], ['λ', Number.isFinite(L.lyap) ? `${L.lyap.toFixed(2)} s⁻¹` : '—', 'Lyapunov estimate from the separation so far.'], ['t', Number.isFinite(L.lyap) && L.lyap > 0 ? `${(Math.log(0.1 / L.p.delta) / L.lyap).toFixed(1)} s` : '—', 'Predicted time for the gap to reach 0.1.']],
+      check: L => (L.N < 2 ? { text: 'Needs two or more copies.' } : !(L.lyap > 0.05) ? { text: 'λ is still too small to predict a horizon: regular motion, or the run has only just started.' }
+        : { what: 'Copies diverge at', theory: Math.log(0.1 / L.p.delta) / L.lyap, sim: L.divergeAt, fmt: v => `${v.toFixed(1)} s`, tol: 0.25, wait: `Predicted divergence at t ≈ ${(Math.log(0.1 / L.p.delta) / L.lyap).toFixed(1)} s; waiting for the copies to part…` }),
+      plot: (c, L) => L.chart.draw(c),
+      plotLabel: 'Separation of the first two copies on a log scale',
+    },
+    potential: {
+      params: ['g'],
+      vars: L => { if (!L.N) return []; const V = L.potential(L.s[0], L.s[1]), E = L.energy(0), M = L.p.mass, top = (1 + M) * L.p.g + M * L.p.g * L.p.len; return [['V', fmtQ(L, 'spec', V, { digits: 3 }), 'Potential energy of the front pendulum now.'], ['E', fmtQ(L, 'spec', E, { digits: 3 }), 'Its total energy.'], ['V max', fmtQ(L, 'spec', top, { digits: 3 }), 'Both arms straight up: the top of the landscape.']]; },
+      check: L => { if (!L.N) return null; const E = L.energy(0), M = L.p.mass, top = (1 + M) * L.p.g + M * L.p.g * L.p.len; return { text: E >= top ? 'E is above the top of the landscape: both arms can flip, and the whole map is open.' : `E is ${((1 - E / top) * 100).toFixed(0)} % short of the top: the curve V = E fences the motion in.`, state: 'ok' }; },
+    },
+    modes: {
+      vars: L => { const w = s => Math.sqrt((2 + s * Math.SQRT2) * L.p.g / 1); return [['ω₋', `${w(-1).toFixed(3)} rad/s`, 'The slow, in-phase mode (equal masses and lengths, L = 1 m).'], ['ω₊', `${w(1).toFixed(3)} rad/s`, 'The fast, opposed mode.'], ['T₋', `${(TAU / w(-1)).toFixed(2)} s`, 'Period of the slow mode.']]; },
+      check: L => ({ text: L.p.mass === 1 && L.p.len === 1 ? 'Load the Normal mode scene: the copies swing together at ω₋ with θ₂ / θ₁ = √2.' : 'These frequencies hold for equal masses and lengths; set both ratios to 1.', state: L.p.mass === 1 && L.p.len === 1 ? 'ok' : 'warn' }),
+    },
+  },
   math: `
     <p>The equations of motion come from the Lagrangian of two point masses on light rods (m<sub>1</sub> = 1 kg, L<sub>1</sub> = 1 m), integrated with fourth-order Runge–Kutta at Δt = 1/600 s. For the first arm, with ω = dθ/dt and Δ = θ<sub>1</sub> − θ<sub>2</sub>:</p>
-    <div class="f" data-tex="\\alpha_1 = \\frac{\\begin{array}{c} -g\\,(2m_1 + m_2)\\sin\\theta_1 - m_2 g\\sin(\\theta_1 - 2\\theta_2) \\\\ -\\,2m_2 \\sin\\Delta\\,(\\omega_2^2 L_2 + \\omega_1^2 L_1\\cos\\Delta) \\end{array}}{L_1\\,(2m_1 + m_2 - m_2\\cos 2\\Delta)}"></div>
+    <div class="f" data-live="eom" data-tex="\\alpha_1 = \\frac{\\begin{array}{c} -g\\,(2m_1 + m_2)\\sin\\theta_1 - m_2 g\\sin(\\theta_1 - 2\\theta_2) \\\\ -\\,2m_2 \\sin\\Delta\\,(\\omega_2^2 L_2 + \\omega_1^2 L_1\\cos\\Delta) \\end{array}}{L_1\\,(2m_1 + m_2 - m_2\\cos 2\\Delta)}"></div>
     <p>Copy <i>k</i> starts with θ<sub>2</sub> shifted by kδ<sub>0</sub>. The gap between copies grows as δ(t) ≈ δ<sub>0</sub>e<sup>λt</sup> until it reaches the size of the motion itself, so predictability lasts only about:</p>
-    <div class="f" data-tex="t \\approx \\frac{1}{\\lambda}\\,\\ln\\frac{0.1}{\\delta_0}"></div>
+    <div class="f" data-live="horizon" data-tex="t \\approx \\frac{1}{\\lambda}\\,\\ln\\frac{0.1}{\\delta_0}"></div>
     <p>The phase map plots (θ<sub>1</sub>, θ<sub>2</sub>) wrapped to (−π, π]. Strictly, that is the configuration space: the full phase space has four coordinates, (θ<sub>1</sub>, θ<sub>2</sub>, ω<sub>1</sub>, ω<sub>2</sub>), and the map is its projection onto the two angles. Two states with the same angles and different spins land on the same point, so paths may cross on the map although they never cross in the full space. The map's opposite edges join, so the square is really a torus, drawn beside the map in the Phase map view with the same paths. Behind the paths lies the potential energy:</p>
-    <div class="f" data-tex="V(\\theta_1, \\theta_2) = -(m_1 + m_2)\\,g L_1 \\cos\\theta_1 - m_2\\, g L_2 \\cos\\theta_2"></div>
+    <div class="f" data-live="potential" data-tex="V(\\theta_1, \\theta_2) = -(m_1 + m_2)\\,g L_1 \\cos\\theta_1 - m_2\\, g L_2 \\cos\\theta_2"></div>
     <p>Kinetic energy is never negative, so a pendulum with total energy E can only visit angles where V ≤ E. The bright curve V = E fences in every path the front pendulum can take; start it higher on the landscape and the fence opens, until with E above the inverted maximum both arms can flip and the whole torus is open.</p>
     <p>Small swings with equal masses and lengths have two normal modes, θ<sub>2</sub> / θ<sub>1</sub> = ±√2, with frequencies:</p>
-    <div class="f" data-tex="\\omega^2 = \\left(2 \\mp \\sqrt2\\right)\\frac{g}{L}"></div>
+    <div class="f" data-live="modes" data-tex="\\omega^2 = \\left(2 \\mp \\sqrt2\\right)\\frac{g}{L}"></div>
     <p>The Normal mode scene starts on the slower, in-phase one.</p>
     <p>The bobs are drawn with volume proportional to mass (radius ∝ m<sup>1/3</sup>, equal density), but the equations still treat them as point masses on massless rods.</p>`,
 };

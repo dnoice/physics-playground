@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.4)
+    - Title: README Media Manifest (digiSpace Edition - v2.5)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero,
+      the Collisions, Fluid, Waves and Fields pictures and the 2D and 3D pair
+      are recaptured from release 2.5.0, showing the Controls page's dials and
+      the Random dice on the stage rail; the hero's planets show their type
+      colours.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero,
       gallery and 2D and 3D pair are recaptured from release 2.4.0, showing
       the anchored stage rail, the deck's panes and metric units; Chaos is
@@ -74,17 +79,19 @@ python tools/media.py --headed
 change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
-The hero, the gallery and the 2D and 3D pair were captured from release
-2.4.0 on 11/10/2026, headless in software WebGL on four CPU cores, in
-metric units; each 3D page took four to eight minutes. The banner shows no
-interface, so it stands from release 2.3.0.
+The hero, the Collisions, Fluid, Waves and Fields pictures and the 2D and
+3D pair were captured from release 2.5.0 on 11/10/2026, headless in
+software WebGL on four CPU cores, in metric units, so they show the
+Controls page's dials and the Random dice on the stage rail. Chaos and
+Cloth, whose rails have no dice, stand from release 2.4.0, and the banner,
+which shows no interface, from release 2.3.0.
 
 ## The pictures
 
 | File | Size (px) | Shows | Used in |
 | --- | --- | --- | --- |
 | `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's star system | README title |
-| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 7 simulated seconds (about a year and a half), with the stage rail, the instruments deck on Telemetry, the sectioned Controls page and the colophon | README, under the badges |
+| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 8 simulated seconds (about 1.8 years), its ocean worlds and gas giants in their type colours, with the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and the colophon | README, under the badges |
 | `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in | Lab gallery |
 | `lab-fluid.webp` | 1106 × 610 | Fluid, Dam break, 1.4 s in | Lab gallery |
 | `lab-waves.webp` | 1106 × 610 | Waves, Double slit, 6 s in | Lab gallery |

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.4)
+    - Title: Frame Loop (digiSpace Edition - v2.5)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,16 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — At panel
+      rate, the live formulas, the Guide's marks and the Library's capture
+      cards refresh with the readings. The rail's Random dice is kept current
+      at the same rate.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
       clock adds the lab's own time note, so Gravity shows its simulated days
       or years.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Meters
       read the true frame gap, so a slow run reports itself; the frame loop
       drives the automatic graphics tier.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single file; v2.0 runs the guided experiment check with
-      the panel update.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -46,7 +47,10 @@ import { dataRec, drawRecOverlay, histBranch, histCapture, sampleData, updateCap
 import { drawPerf, evaluateDiagnostics, updatePerfNums } from './diagnostics.js';
 import { tickExperiment } from './experiments.js';
 import { updateDetails } from './details.js';
-import { updateDock } from './dock.js';
+import { updateLiveMath } from './livemath.js';
+import { syncGuide } from './guide.js';
+import { syncLibraryCapture } from './library.js';
+import { syncDice, updateDock } from './dock.js';
 import { resizeLab } from './lifecycle.js';
 import { updateNav, updateOrbit } from './navigator.js';
 import { tickWorld } from './mode.js';
@@ -100,7 +104,7 @@ export function frame(now) {
       $('#hud-fps').textContent = `${Math.round(perf.fps)} fps`;
       updateNav();
     }
-    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
+    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); updateLiveMath(active); syncGuide(); syncDice(); syncLibraryCapture(); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
     if ((diagClock += real) >= 0.5) { diagClock = 0; evaluateDiagnostics(); }
   }
   requestAnimationFrame(frame);

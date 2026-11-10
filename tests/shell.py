@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.4)
+    - Title: Shell Regression Test (digiSpace Edition - v2.5)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The B and
+      Particles checks tap the controls' thumbwheels, which replaced the
+      sliders.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
       split-view checks select the Both view by name, now that Phase map shows
       the map alone.
@@ -261,8 +264,8 @@ with sync_playwright() as p:
     ok("gradb_unlocks_from_keyboard", pg.is_enabled("#ctl-fields-gradB"), state("labs.fields.p.B"))
     pg.keyboard.press("ArrowLeft")
     ok("gradb_locks_again_at_zero_b", pg.is_disabled("#ctl-fields-gradB"), state("labs.fields.p.B"))
-    r = pg.locator("#ctl-fields-B").bounding_box()
-    pg.locator("#ctl-fields-B").click(position={"x": r["width"] * 0.8, "y": r["height"] / 2})
+    r = pg.locator("#ctl-fields-B-wheel").bounding_box()
+    pg.mouse.click(r["x"] + r["width"] * 0.8, r["y"] + r["height"] / 2)
     ok("gradb_unlocks_from_mouse", pg.is_enabled("#ctl-fields-gradB"), state("labs.fields.p.B"))
     pg.context.close()
 
@@ -356,7 +359,7 @@ with sync_playwright() as p:
         x, y = stage_point(fx, 0.5); pg.mouse.click(x, y); pg.wait_for_timeout(150)
     placed, n0 = pg.evaluate(OBSTACLES), state("labs.fluid.n")
     ok("fluid_posts_placed", placed.count('"r"') == 2, placed)
-    r = pg.locator("#ctl-fluid-count").bounding_box()
+    r = pg.locator("#ctl-fluid-count-wheel").bounding_box()
     pg.mouse.click(r["x"] + r["width"] * 0.3, r["y"] + r["height"] / 2); pg.wait_for_timeout(300)
     ok("fluid_particles_rebuilt", state("labs.fluid.n") != n0 and lab_t() < 0.5, (n0, state("labs.fluid.n")))
     ok("fluid_posts_survive_particles", pg.evaluate(OBSTACLES) == placed, pg.evaluate(OBSTACLES))

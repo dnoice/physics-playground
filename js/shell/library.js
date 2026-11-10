@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Library (digiSpace Edition - v2.1)
+    - Title: Library (digiSpace Edition - v2.5)
     - File Name: library.js
     - Relative Path: js/shell/library.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
+      cards on Dennis's call to fill the Library: record a clip, record a
+      dataset or save the state with one press, each saying what it will keep
+      for this lab and what it is doing now.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Keyboard
       focus survives rebuilds; read-only artifacts hide write actions; sync
       failures are shown; datasets state their real rate.
@@ -26,10 +30,15 @@
     of saved items with preview, download, rename and delete.
 
 ✒ Key Features:
-    - Items update in place, so open previews and focus survive refreshes.
-    - Rename field takes focus as soon as it exists, so no keystroke reaches
-      the stage.
-    - The Library tab shows a count and a dot for new items.
+    - Capture cards: clip, dataset and state, with their keys, what they keep
+      for this lab, and their progress while recording.
+    - Storage status and, when synced to an artifact, a usage meter.
+    - One list for clips, datasets and saved states, filtered to this lab or
+      all.
+    - Rename, download, load and delete for each item, with a confirmation
+      before delete.
+    - Capture settings: video quality and labels, the data sample rate, and
+      tracks.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -41,7 +50,7 @@
 import { icon } from '../core/icons.js';
 import { $, clamp, el, fmtSI, keepFocus, store } from '../core/util.js';
 import { labsById } from '../labs/index.js';
-import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, vrec } from './capture.js';
+import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, saveState, toggleData, toggleVideo, vrec } from './capture.js';
 import { radioGroup } from './panel.js';
 import { active, announce } from './state.js';
 import { vault } from './vault.js';
@@ -69,7 +78,7 @@ export function renderLibrary() {
   storeEl.replaceChildren(...kids); storeEl.dataset.mode = vault.mode;
   const items = vault.list().filter(i => lib.filter === 'all' || !active || i.lab === active.id);
   emptyEl.hidden = items.length > 0;
-  emptyEl.textContent = lib.filter === 'all' ? 'Nothing saved yet. Record a clip or a dataset, or save a state.' : `Nothing saved for ${active ? active.name : 'this lab'} yet. Record a clip or a dataset, or save a state.`;
+  emptyEl.textContent = lib.filter === 'all' ? 'Nothing saved yet: clips, datasets and saved states from any lab will gather here.' : `Nothing saved for ${active ? active.name : 'this lab'} yet: the clips, datasets and states you capture above will gather here.`;
   const keep = new Map([...listEl.children].map(li => [li.dataset.id, li]));
   const rows = items.map(item => {
     const li = keep.get(item.id) || el('li', { class: 'lib-item', 'data-id': item.id });
@@ -147,6 +156,39 @@ export function renderItem(li, item) {
     }
   }
   keepFocus(li, () => li.replaceChildren(...kids));
+}
+/* ---------- capture cards: the three ways to keep a run, one press each ---------- */
+let capCards = null;
+export function buildLibraryCapture(lab) {
+  const host = $('#lib-capture'); if (!host || !lab) return;
+  const card = (kind, title, key, run) => {
+    const name = el('span', { class: 'cap-name', text: title }), sub = el('span', { class: 'cap-sub' });
+    const b = el('button', { type: 'button', class: 'cap-card', 'data-kind': kind, 'aria-pressed': 'false' }, el('span', { class: 'cap-ico', html: icon(KIND[kind].icon) }), name, key ? el('kbd', { text: key }) : el('span'), sub);
+    b.addEventListener('click', () => { run(); syncLibraryCapture(); });
+    return { b, name, sub };
+  };
+  const cols = (lab.dataColumns || []).length;
+  capCards = {
+    clip: card('clip', 'Record a clip', 'M', toggleVideo),
+    run: card('run', 'Record a dataset', 'D', toggleData),
+    state: card('state', 'Save this state', null, () => saveState()),
+    cols, lab,
+  };
+  host.replaceChildren(capCards.clip.b, capCards.run.b, capCards.state.b,
+    el('p', { class: 'cap-cols', text: cols ? `A dataset holds ${cols} columns for ${lab.name}: ${lab.dataColumns.join(', ')}.` : '' }));
+  syncLibraryCapture();
+}
+/* Panel rate: each card says what it will do, or what it is doing now. */
+export function syncLibraryCapture() {
+  if (!capCards) return;
+  const { clip, run, state, cols } = capCards, set = (c, name, sub, on) => {
+    if (c.name.textContent !== name) c.name.textContent = name;
+    if (c.sub.textContent !== sub) c.sub.textContent = sub;
+    c.b.setAttribute('aria-pressed', String(!!on));
+  };
+  set(clip, vrec.mr ? 'Stop the clip' : 'Record a clip', vrec.mr ? `${fmtDur((performance.now() - vrec.t0) / 1000)} · ${fmtBytes(vrec.bytes)}` : `WebM of the stage, ${vrec.quality} quality${vrec.overlay ? ', labelled' : ''}`, vrec.mr);
+  set(run, dataRec.on ? 'Stop the dataset' : 'Record a dataset', dataRec.on ? `${dataRec.rows.length.toLocaleString()} rows so far` : `${cols} columns at ${dataRec.rate} Hz of simulated time`, dataRec.on);
+  set(state, 'Save this state', 'The exact scene, to reload later or share', false);
 }
 export function buildCaptureSettings() {
   const host = $('#capture-settings'); if (!host) return;

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.4)
+    - Title: Cloth Lab (digiSpace Edition - v2.5)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,13 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
+      gravity, wind and damping as sliders for the Verlet step, and the
+      constraint passes with the stretch they leave. Gustiness scales how much
+      the wind rises and falls about its mean, and Ball size scales the Ball
+      tool's collider.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity,
       wind and mesh spacing follow the chosen units, one pixel being 1.09 cm.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Controls
       are grouped into Setup, Forces, Fabric and Display.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      3D rig, tool overlay and a stated visual relief; snapshots use
-      Float64, and resizing no longer restarts the scene.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -27,8 +29,10 @@
 
 ✒ Key Features:
     - Curtain, hammock, flag and fragile net scenes.
-    - Tearing past a stretch threshold, cutting with right-drag, pin and
-      ball tools.
+    - Tearing past a stretch threshold, cutting with right-drag, pin and ball
+      tools.
+    - Wind with adjustable gustiness about its mean, and a ball whose size can
+      be set.
     - Stretch and tearing-rate readouts with a runaway guard.
 
 ✒ Other Important Information:
@@ -65,7 +69,7 @@ export const cloth = {
   blurb: 'A sheet of points stepped with position Verlet and held together by distance constraints that are relaxed several times per step. The fabric darkens where it bunches into folds and shows its lining where it turns over. Threads colour by how far they are stretched, and tear when they pass their limit.',
   interact: [
     '<b>Grab</b> pulls the nearest point. <b>Cut</b> slices every link your stroke crosses. <b>Pin</b> fixes or frees the point you click.',
-    '<b>Ball</b> drags a round collider through the sheet, so you can drape and push it.',
+    '<b>Ball</b> drags a round collider through the sheet, so you can drape and push it; set its size under Controls, and how gusty the wind blows.',
     'Hold <b>Shift</b> or use the right mouse button to cut with any tool. In 3D mode the right button still cuts and Shift-drag pans, so orbit with the middle button or the axis ball.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
@@ -75,7 +79,7 @@ export const cloth = {
     { id: 'ball', label: 'Ball', key: 'b', icon: 'ball', hint: 'Drag the ball through the cloth to push and drape it' },
   ] },
   units: { len: 'px', m: PX_M }, scaleNote: 'In Cloth one pixel is 1.09 cm, as in Fluid and Collisions: the default gravity of 900 px/s² is 9.81 m/s².',
-  p: { tool: 'grab', gravity: 900, wind: 0, iters: 8, damping: 0.01, tearable: true, tear: 3, spacing: 14, fabric: true },
+  p: { tool: 'grab', gravity: 900, wind: 0, gust: 1, iters: 8, damping: 0.01, tearable: true, tear: 3, spacing: 14, fabric: true, ballK: 1 },
   presetId: 'curtain',
   presets: [
     { id: 'curtain', label: 'Curtain', params: { gravity: 900, wind: 140, tear: 3, spacing: 14, iters: 8 } },
@@ -87,11 +91,14 @@ export const cloth = {
     { id: 'setup', label: 'Setup', icon: 'flag' },
     { id: 'forces', label: 'Forces', icon: 'balance' },
     { id: 'fabric', label: 'Fabric', icon: 'texture' },
+    { id: 'ball', label: 'Ball', icon: 'sports_baseball' },
     { id: 'display', label: 'Display', icon: 'visibility' },
   ],
   controls: [
     { type: 'range', key: 'gravity', label: 'Gravity', min: 0, max: 2000, step: 10, qty: 'acc', group: 'forces' },
     { type: 'range', key: 'wind', label: 'Wind', min: -1500, max: 1500, step: 10, qty: 'acc', note: 'The push of the wind on the cloth, as an acceleration. Negative values blow to the left.', group: 'forces' },
+    { type: 'range', key: 'gust', label: 'Gustiness', min: 0, max: 2, step: 0.05, fmt: v => v.toFixed(2) + '×', note: 'How much the wind rises and falls about its mean: 0 is a steady push, 2 a squall.', group: 'forces' },
+    { type: 'range', key: 'ballK', label: 'Ball size', min: 0.5, max: 2, step: 0.05, fmt: v => v.toFixed(2) + '×', note: 'The ball of the Ball tool, relative to its size for this mesh.', group: 'ball' },
     { type: 'range', key: 'iters', label: 'Constraint iterations', min: 1, max: 24, step: 1, note: 'More iterations make the cloth stiffer.', group: 'fabric' },
     { type: 'range', key: 'damping', label: 'Damping', min: 0, max: 0.1, step: 0.001, group: 'forces' },
     { type: 'range', key: 'tear', label: 'Tear at stretch', min: 1.3, max: 6, step: 0.05, fmt: v => v.toFixed(2) + '× rest', group: 'fabric' },
@@ -110,7 +117,7 @@ export const cloth = {
   meanStretch: 0, maxStretch: 0, aliveCount: 0,
   dt() { return 1 / 120; }, maxSteps: 16,
 
-  ballR() { return clamp(this.p.spacing * 3.5, 30, 90); },
+  ballR() { return clamp(this.p.spacing * 3.5, 30, 90) * this.p.ballK; },
   build(preset, w, h) {
     Object.assign(this, { w, h, n: 0, L: 0, grab: null, ball: null, cutTrail: [], capped: 0, tearClock: 0, tornLast: 0, tearRate: 0 });
     let s = this.p.spacing, cols, rows, x0, y0;
@@ -149,8 +156,9 @@ export const cloth = {
       OX[i] = X[i]; OY[i] = Y[i];
       let ax = 0, ay = g;
       if (wd) {
-        const gust = 0.62 + 0.38 * Math.sin(t * 1.9 + Y[i] * 0.017) + 0.25 * Math.sin(t * 5.3 + X[i] * 0.031 + Y[i] * 0.011);
-        ax += wd * gust; ay += wd * 0.18 * Math.sin(t * 3.1 + X[i] * 0.02);
+        // Gusts swing about a mean push of 0.62 of the wind; Gustiness scales the swing and leaves the mean alone.
+        const gk = this.p.gust, gust = 0.62 + gk * (0.38 * Math.sin(t * 1.9 + Y[i] * 0.017) + 0.25 * Math.sin(t * 5.3 + X[i] * 0.031 + Y[i] * 0.011));
+        ax += wd * gust; ay += wd * 0.18 * gk * Math.sin(t * 3.1 + X[i] * 0.02);
       }
       X[i] += vx + ax * dt2; Y[i] += vy + ay * dt2;
     }
@@ -379,11 +387,23 @@ export const cloth = {
   perfFixes() { return this.p.iters > 10 || this.p.spacing < 12 ? [{ label: 'Iterations 8, spacing 14', run() { cloth.p.iters = 8; syncControl('iters'); setParam(cloth, 'spacing', 14); } }] : []; },
   sane() { for (let i = 0; i < this.n; i++) if (!Number.isFinite(this.x[i]) || !Number.isFinite(this.y[i])) return false; return true; },
   chart: null,
+  /* The Math page's live panels (livemath.js). */
+  mathLive: {
+    verlet: {
+      params: ['gravity', 'wind', 'damping'],
+      vars: L => [['Δt', `${(L.dt() * 1000).toFixed(2)} ms`, 'One step.'], ['g', fmtQ(L, 'acc', L.p.gravity), 'Gravity.'], ['wind', fmtQ(L, 'acc', L.p.wind), 'The wind\'s push, as an acceleration.'], ['damping', L.p.damping.toFixed(3), 'The share of each step\'s motion lost.']],
+    },
+    constraint: {
+      params: ['iters', 'tear'],
+      vars: L => [['passes', String(L.p.iters), 'Constraint passes per step: each pulls every link halfway back to its rest length.'], ['mean', `${(L.meanStretch * 100).toFixed(2)} %`, 'Mean stretch of the intact links.'], ['peak', `${(L.maxStretch * 100).toFixed(1)} %`, 'The most stretched link.']],
+      check: L => ({ text: L.maxStretch > 0.8 ? 'Links are stretched far past their rest length: more passes per step pull them back.' : `Links hold within ${(L.maxStretch * 100).toFixed(1)} % of their rest length.`, state: L.maxStretch < 0.25 ? 'ok' : L.maxStretch < 0.8 ? 'warn' : 'crit' }),
+    },
+  },
   math: `
     <p>Position Verlet stores each point’s previous position instead of a velocity, with Δt = 1/120 s:</p>
-    <div class="f" data-tex="\\mathbf x_{n+1} = \\mathbf x_n + (\\mathbf x_n - \\mathbf x_{n-1})(1 - \\text{damping}) + \\mathbf a\\,\\Delta t^2"></div>
+    <div class="f" data-live="verlet" data-tex="\\mathbf x_{n+1} = \\mathbf x_n + (\\mathbf x_n - \\mathbf x_{n-1})(1 - \\text{damping}) + \\mathbf a\\,\\Delta t^2"></div>
     <p>Each link with rest length L<sub>0</sub> moves its two ends back toward that length, half each unless one end is pinned:</p>
-    <div class="f" data-tex="\\Delta = \\frac{|\\mathbf d| - L_0}{|\\mathbf d|}\\cdot\\frac{\\mathbf d}{2}"></div>
+    <div class="f" data-live="constraint" data-tex="\\Delta = \\frac{|\\mathbf d| - L_0}{|\\mathbf d|}\\cdot\\frac{\\mathbf d}{2}"></div>
     <p>Repeating that relaxation <i>k</i> times per step converges toward a stiff sheet; fewer iterations give stretchier fabric. Technique after <cite>Jakobsen (2001), Advanced Character Physics</cite>.</p>
     <p>A link tears once |d| passes the tear factor × L<sub>0</sub>. The ball collider pushes any point inside it back to its surface on every iteration, and a per-step cap of ${CL_MAXSTEP} px keeps extreme wind from flinging points off the stage.</p>
     <p>The fabric shade comes from each panel’s area A against its rest area A<sub>0</sub>: a sheet seen edge-on looks smaller, so bunching into folds reads as cloth turning away from the light. A negative area means the panel has flipped over, and the warm lining shows.</p>
@@ -395,9 +415,9 @@ export const cloth = {
 Object.assign(cloth, genericState, {
   histBudget: 16e6, histInterval: 0.25,
   snapshot() {
-    const n = this.n, a = new Float64Array(n * 4), { gravity, wind, iters, damping, tearable, tear } = this.p;
+    const n = this.n, a = new Float64Array(n * 4), { gravity, wind, gust, iters, damping, tearable, tear } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 4; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.ox[i]; a[o + 3] = this.oy[i]; }
-    return { n, L: this.L, a, alive: this.alive.slice(0, this.L), pin: this.pin.slice(0, n), p: { gravity, wind, iters, damping, tearable, tear } };
+    return { n, L: this.L, a, alive: this.alive.slice(0, this.L), pin: this.pin.slice(0, n), p: { gravity, wind, gust, iters, damping, tearable, tear } };
   },
   restore(s) {
     if (s.n !== this.n || s.L !== this.L) return false;

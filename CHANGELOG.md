@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.4)
+    - Title: Changelog (digiSpace Edition - v2.5)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.4.1
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.5.0 release.
     - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.4.1 release.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -51,6 +53,136 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.5.0 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A notebook wired to the simulations, and a page with light in it, on
+Dennis's call for more interactive Math and Guide pages, less empty space,
+new features where they help, and a subtle sheen, texture and glass. Then,
+on his further call: compact dials in place of the long sliders, random
+placement in every lab that places things, and new parameters.
+
+### Live Math
+
+- Formula cards carry live panels (`js/shell/livemath.js`): the values
+  their symbols have in the run now, sliders for the parameters they contain
+  (the same settings as Controls, which follow along), a check that sets the
+  formula's prediction beside what the simulation measures, and plots.
+- Every lab is wired. Among the checks: Collisions' mean speed against the
+  Rayleigh curve's σ√(π/2) and PA / NkT against 1 + 2φ; Gravity's circular
+  speed and the virial ratio; the double slit's fringe spacing against
+  λL/d, measured on the detector; the phased array's beam angle; the
+  pendulums' predictability horizon against when the copies actually part;
+  the E × B drift, measured as displacement over a full cyclotron period.
+- Plots: the speed histogram against Maxwell–Boltzmann, the fluid's
+  densities around rest, the detector's intensity, the pendulums'
+  separation.
+
+### Guide
+
+- The lab's tools and views as cards (icon, key, what a click does) that
+  pick them, and its scenes as cards that load them, marked as they change
+  however they were chosen (`js/shell/guide.js`); the lab's notes and the
+  navigation help follow.
+
+### Library
+
+- Capture cards at the top: record a clip, record a dataset or save the
+  state with one press. Each says what it will keep for the lab (the
+  dataset's columns, the video quality) and shows its progress while
+  recording.
+
+### Inspect
+
+- Every figure keeps its history since the selection began, as a
+  sparkline, and a focus chart fills the rest of the pane with one figure
+  over time: the one the lab names (a ball's speed, a body's distance, a
+  pendulum's lower angle), or whichever is clicked.
+
+### Controls: thumbwheel dials
+
+- Every number on the Controls page is a compact dial instead of a long
+  slider (`js/shell/dial.js`): a ridged wheel with the value set in its
+  middle, a chevron at each end and a hairline for the range with the
+  scene's mark. Drag the wheel sideways (Shift for fine), tap either side or
+  hold a chevron to nudge it, scroll once it has focus, use the arrow keys,
+  or click the value to type one.
+- Dials sit in a grid of cards, two across in the inspector, with each note
+  held to two lines and given in full as its tooltip. The Math page's
+  parameters use the same dial.
+- A native range input stays under each wheel, so the keyboard, screen
+  readers and every listener work as before; a control that restarts the run
+  restarts it once per gesture.
+
+### Random placement
+
+- A **Random** dice under the tools on the stage rail, a switch in
+  Controls and a card in the Guide, in every lab that places things, all in
+  step.
+- **Gravity**: every body now has a planet type (rocky, ocean, ice giant,
+  gas giant, brown dwarf or star) with its own colour in 2D and its surface
+  in 3D, kept through mergers (which grow into a heavier class when they
+  cross its mass), rewind and saved states. Random draws a type by its odds
+  and a mass in its range; the throw preview shows the body that will fly.
+- **Collisions**: random ball sizes, 4 to 24 px, and so random masses.
+- **Fluid**: random post sizes; the ring under the pointer shows the next
+  post.
+- **Waves**: each new source gets its own frequency, from half to twice f,
+  and a random phase; Inspect shows a source's own frequency.
+- **Fields**: each charge gets 1 to 4 units, and each launched particle a
+  random charge-to-mass ratio and sign.
+
+### New parameters
+
+- Gravity: **Type of new bodies** (by mass, or any planet type) and **Speed
+  of dropped bodies**, in times the circular speed (1× circles, √2 escapes),
+  also a dial on the Math page's circular-speed formula.
+- Fluid: **Radius of new posts**, in a new New posts section.
+- Fields: **Size of new charges**, 1 to 5 units.
+- Cloth: **Gustiness**, how much the wind rises and falls about its mean, and
+  **Ball size** for the Ball tool.
+
+### Design
+
+- The page has a fine grain and soft cool, warm and violet light behind
+  everything; tiles carry a faint cool light at the top and a sheen along
+  their top edge, and cards inside them catch a faint highlight.
+- The tiles are opaque and unblurred. A backdrop blur, translucency and a
+  diagonal sheen were measured at under half the frame rate where the page is
+  drawn without a GPU (5 fps against 11 for 2.4.1 in the test browser), for a
+  difference the soft light behind them barely showed. Each tile is one
+  gradient with its sheen as an inset shadow, and the tiles, gauges and
+  Inspect rows use plain-colour stops: a `color-mix()` stop sends the
+  gradient through Oklab interpolation, which cost another tenth of the frame
+  rate. The page now draws as fast as 2.4.1.
+
+### Fixes in this release
+
+- The site check (`npm run site`) read the `url(#n)` filter reference inside
+  the grain's inline SVG as a missing file; quoted CSS `url()` values are now
+  read whole.
+- Choosing a tool or view, by key, rail or card, marks the Guide's cards at
+  once instead of at the next panel refresh, which could lag by a second
+  where frames are slow.
+
+### New test suites
+
+- New `tests/notebook.py`: live panels in every lab, live dials kept in step
+  with Controls, Collisions' and Gravity's checks agreeing with the run, the
+  Guide's cards, the Library's dataset card, and the Inspect focus chart.
+- New `tests/placement.py`: the dials' drag, tap, chevron, wheel, keys and
+  typing, one restart per gesture; the dice, switch and Guide card in step;
+  random draws in every lab within their ranges; Gravity's chosen type, drop
+  speed and types kept through rewind and saved states; the new parameters.
+- `tests/shell.py` taps the thumbwheels where it used to click the sliders.
+- `tests/nav.py` and `tests/capture.py` wait for the end state of the wheel
+  zoom, the frame animation, the camera follow and the rewind history
+  (`view.get().moving` now says when the 2D camera is still easing) instead
+  of a fixed time; on a renderer without a GPU the fixed waits could run out a frame
+  early, on 2.4.1 as well (key 0 failed there in the test browser). The
+  assertions are unchanged.
 
 ## 2.4.1 (11/10/2026)
 

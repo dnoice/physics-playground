@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.4)
+    - Title: Gravity 3D View (digiSpace Edition - v2.5)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,14 +12,14 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Throws and
+      drops in 3D place the body drawn for the throw, random or set, and the
+      preview shows its colour and size.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hover
       and throw labels in 3D give mass and speed in the chosen units.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Now only
       the camera, picking and overlay for the world scene; the renderer
       moved to js/render/world.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0 on Dennis's direction: the 3D orbit view behind the gravity
-      lab's new 3D switch.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -180,7 +180,7 @@ export const gravity3d = {
       for (let i = 0; i < zs.length; i++) { const s = this.project3(path[i * 2], path[i * 2 + 1], zs[i]); if (!s) { on = false; continue; } if (on) g.lineTo(s.x, s.y); else g.moveTo(s.x, s.y); on = true; }
       g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
       const s0 = this.project3(A.x, A.y, A.z);
-      if (s0) { g.fillStyle = this.massColor(this.p.launchMass); g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, this.bodyRadius(this.p.launchMass) * this.scale3(s0)), 0, TAU); g.fill(); }
+      if (s0) { const look = this.nextLook(); g.fillStyle = look.css; g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, look.r * this.scale3(s0)), 0, TAU); g.fill(); }
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
       g.fillText(fmtQ(this, 'speed', Math.hypot(vx, vy)), a.x + 10, a.y - 6);
     }
@@ -205,16 +205,16 @@ export const gravity3d = {
     this.bodies = this.bodies.filter(b => { const s = this.project3(b.x, b.y, b.z); return !s || Math.hypot(s.x - p.x, s.y - p.y) > Math.max(14, this.radius3(b, s) + 6); });
     if (this.bodies.length !== before) { this.accDirty = true; this.E0 = this.energy(); }
   },
-  pointerUp3(a) {
+  pointerUp3(a, nb = this.drawNew()) {
     if (!a.moved) {
       const hit = this.bodyAt3({ x: a.sx, y: a.sy });
       if (hit) { this.followBody(hit); return; }
       const w = this.pick3({ x: a.sx, y: a.sy });
-      if (w) this.dropOrbit(w.x, w.y, w.z); else announce('Aim at the orbital plane to drop a body.');
+      if (w) this.dropOrbit(w.x, w.y, w.z, nb); else announce('Aim at the orbital plane to drop a body.');
       return;
     }
     const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
     if (!A || !B) { announce('Aim at the orbital plane to throw a body.'); return; }
-    this.addBody(this.body(A.x, A.y, (B.x - A.x) * this.LAUNCH_K, (B.y - A.y) * this.LAUNCH_K, this.p.launchMass, A.z, 0));
+    this.addBody(this.body(A.x, A.y, (B.x - A.x) * this.LAUNCH_K, (B.y - A.y) * this.LAUNCH_K, nb.m, A.z, 0, nb.kind));
   },
 };

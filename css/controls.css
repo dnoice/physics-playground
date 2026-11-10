@@ -1,38 +1,46 @@
 /*
 ✒ Metadata
-    - Title: Control Styles (digiSpace Edition - v2.3)
+    - Title: Control Styles (digiSpace Edition - v2.5)
     - File Name: controls.css
     - Relative Path: css/controls.css
     - Artifact Type: stylesheet
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Control
+      sections take the glass card treatment: a faint top light and edge
+      highlight. On Dennis's call to retire the long sliders, numbers are
+      thumbwheel dials: compact cards in an auto-filling grid, a ridged wheel
+      with the value set in its middle, step chevrons, a range hairline with
+      the scene's mark, and a note held to two lines.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles the
       control sections, the switch grid and the quick actions; removed the old
       actions row.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — One-column
       parameters and larger values for the Inspector.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged. v2.0 lets switches show why they are disabled.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Buttons, segmented choices, sliders, switches, and the Controls page:
-    quick actions, then sections.
+    Buttons, segmented choices, the thumbwheel dials, switches, and the
+    Controls page: quick actions, then sections.
 
 ✒ Key Features:
     - Sections as soft wells with an uppercase header, a glyph, a fold chevron
       and a Reset pill.
+    - Dials as compact cards in an auto-filling grid: a ridged wheel that
+      turns with the value and falls away at the ends like a cylinder, the
+      value set in its middle, chevrons at the ends, and a hairline for the
+      range with the scene's mark.
     - Switches in an auto-fitting grid, so a lone switch spans the section.
     - Disabled controls keep their reason visible underneath.
     - Quick actions as compact pills above the sections.
+    - Native range inputs keep their slider look for the player bar's speed
+      and timeline.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -76,7 +84,7 @@
 .quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 6px; }
 .btn-quick { min-height: 30px; padding: 6px 11px; font-size: 12.5px; border-radius: 999px; background: color-mix(in oklab, var(--ink) 70%, var(--tile-hi)); }
 .btn-quick:hover { border-color: color-mix(in oklab, var(--amber) 55%, var(--rule)); color: var(--text); }
-.pgroup { border-radius: 14px; background: color-mix(in oklab, var(--well) 60%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.pgroup { border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, white 2.5%, transparent), transparent 70px), color-mix(in oklab, var(--well) 55%, transparent); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); }
 .pgroup-head { display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; }
 .pgroup-toggle {
   appearance: none; flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 8px;
@@ -98,7 +106,7 @@
 .pgroup-reset[hidden] { display: none; }
 .pgroup-note { margin: -4px 14px 2px 43px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
 .pgroup-note[hidden] { display: none; }
-.pgroup-body { display: grid; gap: 18px; padding: 10px 14px 16px; }
+.pgroup-body { display: grid; gap: 14px; padding: 8px 12px 14px; }
 .pgroup-body[hidden] { display: none; }
 .pgroup-switches { display: grid; grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); gap: 12px 14px; align-items: start; }
 .pgroup-switches .switch { align-items: flex-start; }
@@ -126,6 +134,76 @@ output.ctl-val { cursor: default; }
 .ctl-note:empty { display: none; }
 .ctl-out { font: 400 12px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ctl.is-disabled label, .ctl.is-disabled .ctl-val { opacity: 0.45; }
+
+/* ---------- dials: a ridged thumbwheel per number, in a grid of compact cards ---------- */
+/* The native range input lies under the wheel, invisible and untouchable, keeping focus, keys and the value;
+   the wheel turns it (js/shell/dial.js). Ridges move with the pointer; the ends fall away like a cylinder's. */
+.dial-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
+.dial {
+  gap: 7px; padding: 8px 8px 9px; border-radius: 12px; transition: box-shadow 0.2s;
+  background: linear-gradient(180deg, color-mix(in oklab, white 3.5%, transparent), transparent 46px), color-mix(in oklab, var(--ink) 50%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair), inset 0 1px 0 color-mix(in oklab, white 5%, transparent);
+}
+.dial:hover { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 26%, var(--hair)), inset 0 1px 0 color-mix(in oklab, white 5%, transparent); }
+.dial-head { display: flex; align-items: flex-start; gap: 4px; min-height: 17px; padding: 0 2px; }
+.dial-name {
+  flex: 1; min-width: 0; font-size: 12px; line-height: 1.35; color: color-mix(in oklab, var(--text) 84%, var(--muted));
+  overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+}
+.dial-head .ctl-reset { margin-top: -1px; }
+.dial .ctl-note { font-size: 11px; line-height: 1.45; padding: 0 2px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.dial .ctl-note:empty { display: none; }
+.dial-wheel {
+  position: relative; display: grid; grid-template-columns: 17px minmax(0, 1fr) 17px; align-items: center; height: 32px;
+  border-radius: 9px; overflow: hidden; touch-action: pan-y; cursor: ew-resize; user-select: none; -webkit-user-select: none;
+  background: linear-gradient(180deg, color-mix(in oklab, white 5%, transparent), transparent 45%, color-mix(in oklab, black 28%, transparent)), var(--well);
+  box-shadow: inset 0 1px 3px color-mix(in oklab, black 55%, transparent), inset 0 0 0 1px var(--hair);
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+.dial-wheel::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in oklab, black 42%, transparent), transparent 24%, transparent 76%, color-mix(in oklab, black 42%, transparent));
+}
+.dial-wheel.is-turning { cursor: grabbing; }
+.dial-wheel:has(.dial-input:focus-visible) { box-shadow: inset 0 1px 3px color-mix(in oklab, black 55%, transparent), inset 0 0 0 1px var(--hair), 0 0 0 2px color-mix(in oklab, var(--cyan) 65%, transparent); }
+.dial-wheel .dial-input, .dial-wheel .dial-input:disabled { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; pointer-events: none; }
+.dial-ridges {
+  grid-area: 1 / 1 / 2 / -1; align-self: stretch; margin: 6px 0 7px; pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--text) 30%, transparent) 0 1px, color-mix(in oklab, black 50%, transparent) 1px 2px, transparent 2px 6px);
+  background-position: var(--turn, 0px) 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 3%, #000 32%, #000 68%, transparent 97%);
+  mask-image: linear-gradient(90deg, transparent 3%, #000 32%, #000 68%, transparent 97%);
+  transition: filter 0.2s;
+}
+.dial-wheel:has(.dial-input:focus) .dial-ridges, .dial-wheel.is-turning .dial-ridges { filter: brightness(1.45); }
+.dial-val {
+  grid-area: 1 / 2; justify-self: center; position: relative; z-index: 2; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+  padding: 5px 7px; border: 0; border-radius: 6px; font: 600 12.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--amber); white-space: nowrap;
+  background: color-mix(in oklab, var(--well) 90%, black);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--amber) 20%, var(--hair)), 0 0 14px 8px color-mix(in oklab, var(--well) 78%, transparent);
+}
+button.dial-val:hover { border: 0; background: color-mix(in oklab, var(--amber) 14%, var(--well)); }
+output.dial-val { pointer-events: none; font-size: 12px; padding: 4px 8px; }
+.dial-wheel .ctl-edit { grid-area: 1 / 2; justify-self: center; position: relative; z-index: 3; width: min(9em, 100%); text-align: center; }
+.dial-step {
+  appearance: none; position: relative; z-index: 2; height: 100%; padding: 0; border: 0; background: none; color: var(--muted);
+  cursor: pointer; display: grid; place-items: center; transition: color 0.15s;
+}
+.dial-step[data-dir="-1"] { grid-area: 1 / 1; }
+.dial-step[data-dir="1"] { grid-area: 1 / 3; }
+.dial-step .ms { font-size: 17px; }
+.dial-step:hover { color: var(--amber); }
+.dial-step:active { color: var(--text); }
+.dial-bar {
+  position: absolute; left: 17px; right: 17px; bottom: 3px; z-index: 2; height: 2px; border-radius: 1px; pointer-events: none;
+  background: linear-gradient(90deg, var(--amber) 0 var(--fill, 50%), color-mix(in oklab, var(--text) 13%, transparent) var(--fill, 50%) 100%);
+}
+.dial-bar::after { content: ""; position: absolute; top: -2px; left: calc(var(--notch, 0.5) * 100% - 1px); width: 2px; height: 6px; border-radius: 1px; background: var(--text); opacity: 0.55; }
+.dial-wheel.no-notch .dial-bar::after { display: none; }
+.dial.is-disabled .dial-wheel { cursor: not-allowed; opacity: 0.45; }
+.dial.is-disabled .dial-step, .dial.is-disabled .dial-val { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .dial, .dial-wheel, .dial-ridges { transition: none; } }
+
 .range-wrap { position: relative; }
 .range-wrap::before {
   content: ""; position: absolute; top: 4px; width: 2px; height: 14px; border-radius: 1px; pointer-events: none;

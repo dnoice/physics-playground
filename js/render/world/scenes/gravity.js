@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.1)
+    - Title: Gravity Scene (digiSpace Edition - v2.5)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A planet's
+      surface and colour come from its type, read from the lab, instead of
+      from its mass and id; stars are the bodies typed as stars, and only gas
+      giants carry rings.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: the gravity lab as open space, with procedural worlds.
     Earlier entries: see CHANGELOG.md
@@ -27,10 +31,12 @@
       drawn as a crisp point field, both centred on the camera.
     - Stars: flowing plasma surface, limb darkening, HDR colour by mass, an
       animated corona and a lens glare that a passing body can hide.
-    - Planets: rocky, oceanic and gas giant surfaces in one material and one
-      instanced mesh; close bodies move to a finer sphere in a second batch.
+    - Planets: rocky, oceanic and banded surfaces in one material and one
+      instanced mesh, chosen by each body's type (ice giants and brown dwarfs
+      are banded in their own colours); close bodies move to a finer sphere in
+      a second batch.
     - Up to three star lights, a soft terminator, a real night side, an
-      atmospheric rim, a shell of air on close worlds and rings on giants.
+      atmospheric rim, a shell of air on close worlds and rings on gas giants.
     - Trails, drop lines and velocity arrows as ribbons, thinned by tier.
     - A faint polar grid on the orbital plane, drawn analytically.
     - Merges flash and pulse the bloom; the flash is watched from the lab's
@@ -48,7 +54,7 @@ import { reduceMotion } from '../../../core/util.js';
 import { createRibbons } from '../ribbons.js';
 
 const TAU = Math.PI * 2, MAX_LIGHTS = 3, MIN_STAR_PX = 4, MIN_BODY_PX = 2.6, HERO_PX = 22, HERO_CAP = 24, RING_CAP = 48, FLASH_CAP = 16;
-const TRAIL_POINTS = 56000, MARK_POINTS = 12000, SKY_STARS = 24000, GIANT_MASS = 1.1, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
+const TRAIL_POINTS = 56000, MARK_POINTS = 12000, SKY_STARS = 24000, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
 const RING_IN = 1.46, RING_OUT = 2.02;
 /* The band crosses the home view diagonally, behind the system, with its bulge just off centre. */
 const POLE = new THREE.Vector3(-0.62, 0.73, -0.26).normalize(), BAND_U = new THREE.Vector3().crossVectors(POLE, new THREE.Vector3(0.2, 0.1, 1)).normalize(), BAND_W = new THREE.Vector3().crossVectors(POLE, BAND_U);
@@ -530,7 +536,7 @@ function starTint(m, out) {
 }
 
 export function createScene(E, lab) {
-  const scene = new THREE.Scene(), STAR_MASS = lab.STAR_MASS, CAP = lab.BODY_CAP, TRAIL_CAP = lab.TRAIL_CAP;
+  const scene = new THREE.Scene(), CAP = lab.BODY_CAP, TRAIL_CAP = lab.TRAIL_CAP;
   const fgeo = new THREE.PlaneGeometry(2, 2);
 
   /* Sky. The bake is sized by tier and only ever grows. */
@@ -610,15 +616,15 @@ export function createScene(E, lab) {
   /* Three-quarter lit by the brightest star, so the terminator shows. */
   function portrait(l) {
     const b = l.bodies.find(q => q.id === l.track); if (!b) return null;
-    const X = b.x, Y = b.z, Z = b.y, r = b.r, f = faceOf(b.id), star = b.m >= STAR_MASS, RPX = 220;
+    const X = b.x, Y = b.z, Z = b.y, r = b.r, f = faceOf(b.id), star = b.kind === 'star', RPX = 220;
     solo.planet.n = solo.star.n = solo.ring.n = 0;
     let ringed = false;
     if (star) {
       const c = starTint(b.m, rgb), i = put(solo.star, X, Y, Z, r);
       solo.star.A.array[i * 4] = f.seed; solo.star.A.array[i * 4 + 3] = RPX; solo.star.C.array.set(c.slice(0, 3), i * 3);
     } else {
-      const type = typeOf(b.m, f), c = tintOf(l.bodyColor3(b)), i = put(solo.planet, X, Y, Z, r), P = solo.planet;
-      ringed = type === 2 && b.m >= RING_MASS && f.ring;
+      const type = l.surfaceOf(b), c = tintOf(l.bodyColor3(b)), i = put(solo.planet, X, Y, Z, r), P = solo.planet;
+      ringed = b.kind === 'gas' && b.m >= RING_MASS && f.ring;
       P.A.array[0] = f.seed; P.A.array[1] = type; P.A.array[2] = ringed ? 1 : 0; P.A.array[3] = f.rate;
       P.B.array[0] = f.ax; P.B.array[1] = f.ay; P.B.array[2] = f.az; P.B.array[3] = RPX;
       P.C.array[i * 3] = c[0]; P.C.array[i * 3 + 1] = c[1]; P.C.array[i * 3 + 2] = c[2];
@@ -627,7 +633,7 @@ export function createScene(E, lab) {
     flush(solo.planet); flush(solo.star); flush(solo.ring);
     solo.atmo.count = solo.planet.n; solo.atmo.visible = solo.planet.n > 0;
     let s = null;
-    for (const q of l.bodies) if (q !== b && q.m >= STAR_MASS && (!s || q.m > s.m)) s = q;
+    for (const q of l.bodies) if (q !== b && q.kind === 'star' && (!s || q.m > s.m)) s = q;
     const dx = s ? s.x - b.x : 1, dz = s ? s.y - b.y : 0.6, c = Math.cos(0.95), n = Math.sin(0.95), ex = dx * c - dz * n, ez = dx * n + dz * c, len = Math.hypot(ex, ez) || 1, d = r * (ringed ? 10.5 : 7.4);
     return { scene: solo.scene, eye: [X + ex / len * d * 0.96, Y + d * 0.27, Z + ez / len * d * 0.96], at: [X, Y, Z], near: Math.max(0.01, d * 0.05), far: d * 4 };
   }
@@ -652,12 +658,11 @@ export function createScene(E, lab) {
     if (!f) {
       if (ids.size > 4096) ids.clear();
       const s = hash01(id), u = hash01(id + 7001), a = hash01(id + 8111) * TAU, tilt = 0.08 + 0.55 * u * u, st = Math.sin(tilt);
-      f = { seed: s, kind: id % 2, rate: 0.14 + 0.26 * hash01(id + 4111), ax: st * Math.cos(a), ay: Math.cos(tilt), az: st * Math.sin(a), ring: id % 4 !== 3 };
+      f = { seed: s, rate: 0.14 + 0.26 * hash01(id + 4111), ax: st * Math.cos(a), ay: Math.cos(tilt), az: st * Math.sin(a), ring: id % 4 !== 3 };
       ids.set(id, f);
     }
     return f;
   };
-  const typeOf = (m, f) => (m >= GIANT_MASS ? 2 : m < 0.25 ? 0 : f.kind);
   const tints = new Map();
   const tintOf = css => {
     let c = tints.get(css);
@@ -723,7 +728,7 @@ export function createScene(E, lab) {
     lit[0].b = lit[1].b = lit[2].b = null; starPx = 0;
     marks.setResolution(view.w, view.h); marks.begin();
     for (const b of B) {
-      const X = b.x, Y = b.z, Z = b.y, front = (X - ex) * fx + (Y - ey) * fy + (Z - ez) * fz, depth = Math.max(1e-3, front), star = b.m >= STAR_MASS;
+      const X = b.x, Y = b.z, Z = b.y, front = (X - ex) * fx + (Y - ey) * fy + (Z - ez) * fz, depth = Math.max(1e-3, front), star = b.kind === 'star';
       const s = Math.max(b.r, (star ? MIN_STAR_PX : MIN_BODY_PX) * depth / px), rPx = front > 0 ? s * px / depth : 0, f = faceOf(b.id);
       if (star) {
         const c = starTint(b.m, rgb);
@@ -736,7 +741,7 @@ export function createScene(E, lab) {
         }
         for (let k = 0; k < MAX_LIGHTS; k++) if (!lit[k].b || b.m > lit[k].b.m) { for (let j = MAX_LIGHTS - 1; j > k; j--) { lit[j].b = lit[j - 1].b; lit[j].c[0] = lit[j - 1].c[0]; lit[j].c[1] = lit[j - 1].c[1]; lit[j].c[2] = lit[j - 1].c[2]; } lit[k].b = b; lit[k].c[0] = c[0]; lit[k].c[1] = c[1]; lit[k].c[2] = c[2]; break; }
       } else {
-        const type = typeOf(b.m, f), c = tintOf(lab.bodyColor3(b)), ring = type === 2 && b.m >= RING_MASS && f.ring && rings.n < RING_CAP ? 1 : 0;
+        const type = lab.surfaceOf(b), c = tintOf(lab.bodyColor3(b)), ring = b.kind === 'gas' && b.m >= RING_MASS && f.ring && rings.n < RING_CAP ? 1 : 0;
         const close = rPx >= HERO_PX && nearPlanets.n < HERO_CAP, batch = close ? nearPlanets : farPlanets;
         if (close) heroes[nearPlanets.n] = b;
         const i = put(batch, X, Y, Z, s), A = batch.A.array, Bx = batch.B.array, C = batch.C.array;
@@ -762,7 +767,7 @@ export function createScene(E, lab) {
       if (sun) {
         const sx = sun.x - h.x, sy = sun.z - h.z, sz = sun.y - h.y, dist = Math.hypot(sx, sy, sz) || 1, lx = sx / dist, ly = sy / dist, lz = sz / dist;
         for (const q of B) {
-          if (q === h || q === sun || q.m >= STAR_MASS || (best && q.r <= best.r)) continue;
+          if (q === h || q === sun || q.kind === 'star' || (best && q.r <= best.r)) continue;
           const ox = q.x - h.x, oy = q.z - h.z, oz = q.y - h.y, t = ox * lx + oy * ly + oz * lz;
           if (t <= 0 || t >= dist) continue;
           const rx = ox - lx * t, ry = oy - ly * t, rz = oz - lz * t, reach = q.r + h.r + sun.r * t / dist;
@@ -817,7 +822,7 @@ export function createScene(E, lab) {
       const len0 = Math.round(lab.p.trailLen), budget = Math.max(8, Math.floor(TRAIL_POINTS * E.tier.detail / N)), glow = N > 40 ? 0.42 : 0.72, keep = N > 40 ? Math.max(90, 3600 / Math.sqrt(N) * E.tier.detail) : Infinity;
       for (const b of B) {
         const len = Math.min(b.tn, len0, keep); if (len < 2) continue;
-        const stride = Math.max(1, Math.ceil(len / budget)), star = b.m >= STAR_MASS, c = star ? starTint(b.m, rgb) : tintOf(lab.bodyColor3(b)), k = star ? 1.1 : 1.3, cl = b.r * b.r * 1.7;
+        const stride = Math.max(1, Math.ceil(len / budget)), star = b.kind === 'star', c = star ? starTint(b.m, rgb) : tintOf(lab.bodyColor3(b)), k = star ? 1.1 : 1.3, cl = b.r * b.r * 1.7;
         const r = c[0] * k, g = c[1] * k, bl = c[2] * k;
         for (let i = (len - 1) % stride; i < len; i += stride) {
           const idx = (b.th - len + i + TRAIL_CAP) % TRAIL_CAP, X = b.trail[idx * 2], Y = b.trailZ[idx], Z = b.trail[idx * 2 + 1], f = i / (len - 1);

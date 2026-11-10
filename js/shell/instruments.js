@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck (digiSpace Edition - v2.4)
+    - Title: Instruments Deck (digiSpace Edition - v2.5)
     - File Name: instruments.js
     - Relative Path: js/shell/instruments.js
     - Artifact Type: javascript
-    - Version: 2.4.0
+    - Version: 2.5.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — sparkPath()
+      is shared with the Inspect pane's figure sparklines.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Readings
       rank as primary or derived and set their units in a smaller face, so a
       narrow gauge keeps both. A selected object's figures can be plotted
@@ -21,9 +23,6 @@
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Lane
       backgrounds use rrect(), so the scope draws in browsers without
       CanvasRenderingContext2D.roundRect.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created:
-      the chart, readouts and diagnostics become one compact instrument, on
-      Dennis's call that the panels took more room than they gave back.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -161,7 +160,7 @@ function setValue(dd, text) {
   // One inline run, so the figure and its unit read and copy as one line ("1400 / 4000"), not two flex items.
   dd.replaceChildren(el('span', { class: 'val' }, el('span', { class: 'num', text: m[1] }), ' ', el('span', { class: 'unit', text: m[2] })));
 }
-function sparkPath(s) {
+export function sparkPath(s) {
   if (!s || s.n < 2) return '';
   const n = Math.min(s.n, SPARK);
   let lo = Infinity, hi = -Infinity, d = '';

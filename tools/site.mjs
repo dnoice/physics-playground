@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Pages Site Stager (digiSpace Edition - v2.2)
+    - Title: Pages Site Stager (digiSpace Edition - v2.5)
     - File Name: site.mjs
     - Relative Path: tools/site.mjs
     - Artifact Type: javascript
-    - Version: 2.2.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — CSS url()
+      values are read whole when quoted, so the url(#n) filter reference
+      inside the 2.5.0 grain texture's inline SVG data URI is no longer taken
+      for a missing file.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's direction to harden the GitHub Pages build: stages the
       runtime files and proves the staged site is complete.
@@ -100,7 +104,8 @@ function refsOf(file, text) {
     }
   } else if (ext === '.css') {
     const css = text.replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const m of css.matchAll(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g)) out.push(m[2]);
+    // A quoted value is read whole, so the url(#id) inside an inline SVG data URI is never taken for a file.
+    for (const m of css.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^'")\s]+))\s*\)/g)) out.push(m[1] ?? m[2] ?? m[3]);
     for (const m of css.matchAll(/@import\s+['"]([^'"]+)['"]/g)) out.push(m[1]);
   } else if (ext === '.js') {
     const js = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

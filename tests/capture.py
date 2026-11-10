@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.1)
+    - Title: Capture Test (digiSpace Edition - v2.5)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.5.0
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rewind
+      determinism check waits until eight history snapshots exist instead of a
+      fixed three seconds, which a renderer without a GPU could need more
+      than; the assertions are unchanged.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
       reading from the recorders, the library and rewind is now checked, the
       page starts in flat 2D mode and the marks come from the shared harness.
@@ -47,7 +51,8 @@ with sync_playwright() as p:
     ok("vault_is_local", pg.evaluate("PhysicsPlayground.capture.vault.mode") == "local", pg.evaluate("PhysicsPlayground.capture.vault.mode"))
     # --- determinism through rewind (gravity figure-eight)
     pg.evaluate("() => { const P = PhysicsPlayground; P.preset('figure8'); P.play(); }")
-    pg.wait_for_timeout(3000)
+    # History grows with simulated time; wait for enough of it rather than a fixed time a slow renderer may need.
+    pg.wait_for_timeout(1000); settle(pg, "PhysicsPlayground.history.size() >= 8", 20000)
     r = pg.evaluate("""() => { const P = PhysicsPlayground, g = P.labs.gravity; P.pause();
       const live = { t: g.t, pos: g.bodies.map(b => [b.x, b.y, b.vx, b.vy]) };
       const n = P.history.size(); const k = n - 6; P.history.seek(k);
