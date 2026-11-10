@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Test Runner (digiSpace Edition - v2.7)
+    - Title: Test Runner (digiSpace Edition - v2.8)
     - File Name: run_all.py
     - Relative Path: tests/run_all.py
     - Artifact Type: test
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,9 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
+      Solar System suite, tests/solar.py.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
-      head-up display suite, tests/hud.py, and the Solar System suite,
-      tests/solar.py.
+      head-up display suite, tests/hud.py.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
       new notebook suite. Runs the new placement suite.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the

@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: README Media Capture (digiSpace Edition - v2.7)
+    - Title: README Media Capture (digiSpace Edition - v2.8)
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,11 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — New picture
+      set sol: Gravity's Solar System in 3D, the planets out to Saturn beside
+      Jupiter followed up close with its moons. frame() takes the keycap shown
+      between windows, or none.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       Collisions picture selects the cue ball, so the gallery shows the
-      head-up display's target box and callout. New picture set sol:
-      Gravity's Solar System in 3D, the planets out to Saturn beside
-      Jupiter followed up close with its moons.
+      head-up display's target box and callout.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Chaos is
       captured in its Both view, which shows the pendulum beside its map.
     - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Settles

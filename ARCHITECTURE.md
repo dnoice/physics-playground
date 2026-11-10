@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.7)
+    - Title: Architecture Guide (digiSpace Edition - v2.8)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,14 +12,16 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      Solar System: its section (body metadata, sources and test bodies, moon
+      substeps, the sky frame, drawing to scale, orbits and names), its data
+      module in the layers, the date on its clock, and log-scale quantities in
+      significant figures.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The head-up
       display: its section, the lab hooks hud and hudTarget, the camera reader
       toScreen, its place in the boot order, frame loop and styles, and the
       convention that anything over the stage that changes keeps its own
-      compositor layer and opacity, with the measurements behind it. Then
-      Gravity's Solar System: its section (body metadata, test bodies, moon
-      substeps, the sky frame, drawing to scale), its data module in the
-      layers, and log-scale quantities in significant figures.
+      compositor layer and opacity, with the measurements behind it.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math
       checks: the scale for a theory that can be zero, and the three rules
       every check keeps (its theory never comes from the measurement beside
