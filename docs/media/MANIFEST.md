@@ -4,14 +4,18 @@
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.3.1
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The set is
+      captured, on Dennis's call to do it in the cloud session: added each
+      picture's size and a record of the run in place of the note that said
+      the folder was waiting for them.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       with the README pictures Dennis asked for: what each shows, how it is
       made, and its format and licence.
@@ -61,26 +65,28 @@ npm run dev
 python tools/media.py --headed
 ```
 
-`--only banner,hero,labs,modes` captures part of the set, for example
-`--only labs` after a change to one lab's scene. Commit the WebP files with
+`--only` captures part of the set: any of `banner`, `hero`, `labs` and
+`modes`, or single gallery labs by id, for example `--only chaos` after a
+change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
-If this folder holds only this manifest, the pictures have not been
-captured yet.
+The set here was captured from release 2.3.0 on 11/10/2026, headless in
+software WebGL on four CPU cores. Each 3D page took four to eight minutes,
+the whole set about forty-five.
 
 ## The pictures
 
-| File | Shows | Used in |
-| --- | --- | --- |
-| `banner.webp` | The title, tagline and the seven labs over a live 3D render of Gravity's star system | README title |
-| `hero-workspace.webp` | The whole workspace in 3D at the Ultra tier: Gravity's star system after 7 simulated seconds, with the instruments, the sectioned Controls page and the colophon | README, under the badges |
-| `lab-collisions.webp` | Collisions, Billiard break, 1.6 s in | Lab gallery |
-| `lab-fluid.webp` | Fluid, Dam break, 1.4 s in | Lab gallery |
-| `lab-waves.webp` | Waves, Double slit, 6 s in | Lab gallery |
-| `lab-chaos.webp` | Chaos, Sensitive start in the phase view, 9 s in, with a start previewed on the map | Lab gallery |
-| `lab-cloth.webp` | Cloth, Flag in wind, 4 s in | Lab gallery |
-| `lab-fields.webp` | Fields, Cyclotron motion, 3 s in | Lab gallery |
-| `modes-2d-3d.webp` | Waves, Double slit, 6 s in and paused, in 2D and then in 3D at the same moment | "Two modes: 2D and 3D" |
+| File | Size (px) | Shows | Used in |
+| --- | --- | --- | --- |
+| `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's star system | README title |
+| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 7 simulated seconds, with the instruments, the sectioned Controls page and the colophon | README, under the badges |
+| `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in | Lab gallery |
+| `lab-fluid.webp` | 1106 × 610 | Fluid, Dam break, 1.4 s in | Lab gallery |
+| `lab-waves.webp` | 1106 × 610 | Waves, Double slit, 6 s in | Lab gallery |
+| `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the phase view, 9 s in, with a start previewed on the map | Lab gallery |
+| `lab-cloth.webp` | 1106 × 610 | Cloth, Flag in wind, 4 s in | Lab gallery |
+| `lab-fields.webp` | 1106 × 610 | Fields, Cyclotron motion, 3 s in | Lab gallery |
+| `modes-2d-3d.webp` | 1472 × 420 | Waves, Double slit, 6 s in and paused, in 2D and then in 3D at the same moment | "Two modes: 2D and 3D" |
 
 Gravity is not in the gallery because the hero already shows it.
 

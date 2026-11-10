@@ -4,14 +4,16 @@
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.3.1
+    - Date: 11/10/2026
+    - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.3.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.3.1 release.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.3.0 release.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -45,6 +47,25 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.3.1 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+The README's pictures, captured on Dennis's call in the cloud session he
+switched to for it, rather than on his own machine as 2.3.0 planned.
+
+- All nine pictures are in `docs/media/`: the banner, the workspace hero,
+  six labs in 3D (Chaos in its new phase view) and the 2D and 3D pair of
+  the double slit, 840 KB in all. `MANIFEST.md` gives each one's size and
+  records the run.
+- The software renderer was never the obstacle: 2.3.0 had already fixed
+  the screenshots that hung. Two things remained. `tools/media.py` settles
+  each picture on 0.6 s of frames instead of 1.2 s, which halves the time
+  every 3D page takes in software WebGL, and the Chaos setup script, whose
+  second line was not an f-string, no longer reaches the browser with
+  doubled braces. `--only` now takes single gallery labs, which let the run
+  resume at Chaos instead of starting over.
 
 ## 2.3.0 (11/09/2026)
 
