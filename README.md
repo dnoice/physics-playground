@@ -4,7 +4,7 @@
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.4.0
+    - Version: 2.4.1
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.4.1 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Badges
+      regrouped on Dennis's report that they broke up the flow: one row of
+      four project badges under the tagline, the stack badges at the head of
+      Stack, the coffee badge signing off Credits, and the Node.js badge
+      dropped; release badge 2.4.1.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.4.0 on Dennis's brief for one interaction architecture: the stage
       rail, the deck's Telemetry, Inspect and Insights panes, selecting and
@@ -67,15 +72,8 @@ Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.4.0][badge-release]](CHANGELOG.md)
+[![Release 2.4.1][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
-<br>
-[![ES modules, no build step][badge-esm]](ARCHITECTURE.md#principles)
-[![three.js 0.187.0][badge-three]](vendor/VENDOR.md)
-[![KaTeX 0.19.1][badge-katex]](vendor/VENDOR.md)
-[![Node.js 20.19 or later][badge-node]](package.metadata.md)
-[![Browser tests: Playwright][badge-tests]](#development)
-[![Brewed with epic amounts of coffee][badge-coffee]](#credits-and-license)
 
 **[Open the live lab][demo]** ✦ [Quick start](#quick-start) ✦
 [The labs](#the-labs) ✦ [Deploying](#deploying-to-github-pages) ✦
@@ -352,6 +350,15 @@ otherwise it lives in this browser.
 
 ## Stack
 
+<div align="center">
+
+[![ES modules, no build step][badge-esm]](ARCHITECTURE.md#principles)
+[![three.js 0.187.0][badge-three]](vendor/VENDOR.md)
+[![KaTeX 0.19.1][badge-katex]](vendor/VENDOR.md)
+[![Browser tests: Playwright][badge-tests]](#development)
+
+</div>
+
 | Layer | Choice | Why |
 | --- | --- | --- |
 | Code | Native ES modules, no bundler | Nothing to build; every file is the file that runs |
@@ -468,17 +475,22 @@ Physics Playground is licensed under the Apache License 2.0: see
 [LICENSE](LICENSE). Third-party licences are listed in
 [vendor/VENDOR.md](vendor/VENDOR.md).
 
+<div align="center">
+
+[![Brewed with epic amounts of coffee][badge-coffee]](#credits-and-license)
+
+</div>
+
 <p align="center"><sub>︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!</sub></p>
 
 [demo]: https://dnoice.github.io/physics-playground/
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.4.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.4.1-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
 [badge-katex]: https://img.shields.io/badge/KaTeX-0.19.1-232c39?style=flat-square&labelColor=0c1118&logo=latex&logoColor=5fd0df
-[badge-node]: https://img.shields.io/badge/Node.js-20.19%2B-232c39?style=flat-square&labelColor=0c1118&logo=nodedotjs&logoColor=6fcf97
 [badge-tests]: https://img.shields.io/badge/tests-Playwright-232c39?style=flat-square&labelColor=0c1118&logo=playwright&logoColor=6fcf97
 [badge-coffee]: https://img.shields.io/badge/brewed_with-epic_amounts_of_coffee-f2a541?style=flat-square&labelColor=0c1118
