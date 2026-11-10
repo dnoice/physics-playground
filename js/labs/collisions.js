@@ -18,7 +18,13 @@
       where before it could show another ball's figures; a press on empty
       table adds a ball without clearing the selection, so adding and throwing
       in turn no longer flip the instruments between Inspect and the pane in
-      use; the tunnelling Insight gives lengths in the chosen units.
+      use; the tunnelling Insight gives lengths in the chosen units. The
+      ideal-gas check sets the pressure measured at the walls beside
+      Henderson's hard-disc equation of state, (1 + φ²/8) / (1 − φ)², which a
+      sweep of the running box matched to 1 % up to a fifth full and 4 % up to
+      half full, mixed sizes included, where 1 + 2φ, its first terms, fell 4
+      to 20 % short; the reading averages about five seconds of wall impacts,
+      where before it was about two.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
       the impulse with e and the energy it keeps, the speed distribution
       checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
@@ -70,6 +76,10 @@ import { stage3d } from './stage3d.js';
 /*  Lab 2 · Collisions                                                 */
 /* ================================================================== */
 export const COLL_CAP = 1500;
+/* Henderson's equation of state for hard discs, PA / NkT at packing fraction φ: 1 + 2φ + 3.125φ² + … at low density,
+   and within about 1 % of this box's measured pressure up to φ = 0.2 and 4 % up to 0.5, mixed sizes included, where
+   1 + 2φ, its first terms, is already 4 % short at φ = 0.12 and 20 % short at φ = 0.26. */
+export const henderson = phi => (1 + phi * phi / 8) / ((1 - phi) * (1 - phi));
 export const COLL_RGB = Array.from({ length: 24 }, (_, b) => rampRgb(RAMP_HEAT, Math.round(40 + 215 * b / 23)));
 export const collisions = {
   id: 'collisions', name: 'Collisions', title: 'Elastic and inelastic collisions',
@@ -285,7 +295,8 @@ export const collisions = {
     if (this.wallTime >= 1) {
       const P = this.wallImp / (2 * (this.w + this.h) * this.wallTime), ke = this.stats().ke;
       const Z = ke > 0 ? P * this.w * this.h / ke : NaN;
-      this.Z = Number.isFinite(this.Z) && Number.isFinite(Z) ? this.Z + (Z - this.Z) * 0.35 : Z;
+      // Each second's reading is blended in at a fifth, about five seconds of wall impacts, so a few hundred balls read steady to a few per cent.
+      this.Z = Number.isFinite(this.Z) && Number.isFinite(Z) ? this.Z + (Z - this.Z) * 0.2 : Z;
       this.wallImp = 0; this.wallTime = 0;
     }
   },
@@ -519,7 +530,7 @@ export const collisions = {
       out.push({ id: 'c-cool', level: 'info', title: 'The gas is cooling', body: `With e = ${this.p.e.toFixed(2)}, a head-on impact keeps only e² = ${(this.p.e ** 2).toFixed(2)} of its energy along the normal. Kinetic energy is now <b>${pct(ratio)}</b> of where it started.${this.p.e < 0.6 ? ' Slow balls clump together: inelastic collapse.' : ''}` });
     }
     if (this.p.gravity === 0 && Number.isFinite(this.Z) && this.n > 30) {
-      out.push({ id: 'c-z', level: 'info', title: 'Ideal-gas check', body: `PA / NkT = <b>${this.Z.toFixed(2)}</b>. An ideal gas gives 1; hard discs covering ${pct(s.phi)} of the box add excluded-area pressure (low-density theory: 1 + 2φ = ${(1 + 2 * s.phi).toFixed(2)}).` });
+      out.push({ id: 'c-z', level: 'info', title: 'Ideal-gas check', body: `PA / NkT = <b>${this.Z.toFixed(2)}</b>. An ideal gas gives 1; hard discs covering ${pct(s.phi)} of the box add excluded-area pressure: Henderson's hard-disc equation gives (1 + φ²/8) / (1 − φ)² = ${henderson(s.phi).toFixed(2)}.` });
     }
     if (this.p.mu > 0 && s.kr > 0 && s.etot > 0) out.push({ id: 'c-spin', level: 'info', title: 'Friction is spinning the balls', body: `<b>${pct(s.kr / s.etot)}</b> of the kinetic energy is now rotation. Friction trades sliding for spin at every contact, and it also dissipates energy while surfaces slide, so even with e = 1 the total slowly falls.` });
     if (this.n > 1000) out.push({ id: 'c-many', level: 'info', title: 'Large population', body: `${this.n} balls: sort-and-sweep keeps contact search near linear, but every extra ball still costs work four times per frame.` });
@@ -599,7 +610,7 @@ export const collisions = {
     gas: {
       vars: L => { const s = L.stats(); return [['N', String(L.n), 'Balls in the box.'], ['φ', `${(s.phi * 100).toFixed(1)} %`, 'Packing fraction: the share of the box the balls cover.'], ['PA / NkT', Number.isFinite(L.Z) ? L.Z.toFixed(3) : '—', 'Measured from the momentum the balls deliver to the walls.']]; },
       check: L => (L.p.gravity !== 0 ? { text: 'Set gravity to 0: the law describes a gas at rest in an empty box.' }
-        : { what: 'PA / NkT ≈ 1 + 2φ', theory: 1 + 2 * L.stats().phi, sim: L.Z, fmt: v => v.toFixed(3), tol: 0.06, wait: 'PA / NkT: collecting wall impacts…' }),
+        : { what: 'PA / NkT against hard discs', theory: henderson(L.stats().phi), sim: L.Z, fmt: v => v.toFixed(3), tol: 0.06, wait: 'PA / NkT: collecting wall impacts…' }),
     },
     friction: {
       params: ['mu'],
@@ -615,8 +626,10 @@ export const collisions = {
     <p>With equal masses, speeds settle into the two-dimensional Maxwell–Boltzmann (Rayleigh) distribution:</p>
     <div class="f" data-live="mb" data-tex="f(v) = \\frac{v}{\\sigma^2}\\, e^{-v^2/2\\sigma^2}, \\qquad \\sigma^2 = \\tfrac12 \\langle v^2 \\rangle"></div>
     <p>Pressure is the momentum delivered to the walls per unit length per second. In two dimensions the ideal-gas law reads:</p>
-    <div class="f" data-live="gas" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
-    <p>Hard discs raise it by roughly a factor 1 + 2φ, where φ is the packing fraction. In the Brownian scene the heavy disc’s mean-squared displacement grows linearly with time, ⟨Δr<sup>2</sup>⟩ ∝ t.</p>
+    <div class="f" data-tex="P A = N k T, \\qquad k T = \\langle \\tfrac12 m v^2 \\rangle"></div>
+    <p>Hard discs cover part of the box, φ, the packing fraction, and push harder than points would. Henderson’s equation of state for hard discs starts as 1 + 2φ at low density and matches the pressure measured in this box to about 1 % up to a fifth full and 4 % up to half full, mixed sizes included; the panel sets it beside the pressure measured at the walls:</p>
+    <div class="f" data-live="gas" data-tex="\\frac{P A}{N k T} = \\frac{1 + \\varphi^2 / 8}{(1 - \\varphi)^2} = 1 + 2\\varphi + 3.125\\,\\varphi^2 + \\dots"></div>
+    <p>In the Brownian scene the heavy disc’s mean-squared displacement grows linearly with time, ⟨Δr<sup>2</sup>⟩ ∝ t.</p>
     <p>With contact friction μ, a tangential impulse stops the two surfaces sliding past each other, but never more than μ times the normal impulse (Coulomb’s law). Each ball is a uniform disc, I = ½ m r², so the impulse also spins it:</p>
     <div class="f" data-live="friction" data-tex="\\begin{aligned} J_t &amp;= -\\frac{v_t}{3\\,(1/m_1 + 1/m_2)}, \\quad |J_t| \\le \\mu J \\\\ \\Delta\\omega_k &amp;= -\\frac{J_t\\, r_k}{I_k} \\end{aligned}"></div>
     <p>Here v<sub>t</sub> is the sliding speed of the touching surfaces, including ω r from each spin. Walls work the same way with an infinitely heavy partner.</p>`,
