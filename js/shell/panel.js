@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.7)
+    - Title: Panel Builder (digiSpace Edition - v2.8)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,19 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A quantity
+      on a log scale without a step shows three significant figures, where
+      fixed decimals rounded its low end to nothing (Gravity's softening read
+      0.00 AU).
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       updateReadouts reads the lab once per panel tick and gives the rows to
       Telemetry and the head-up display's tape, so both show the same text.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Comments
       speak of dials rather than sliders.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Guide
-      page moves to guide.js and the Math page gains live panels from
-      livemath.js; a control's value format is shared through controlFormat().
-      On Dennis's call to retire the long sliders, every number is a
-      thumbwheel dial (dial.js) in a grid of compact cards, its note held to
-      two lines; a changed setting also refreshes the rail's Random dice and
-      the Guide's cards at once. The dice fades in with the tools when a lab
-      opens.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -114,6 +110,9 @@ export function rangeMap({ min, max, log }) {
 /* How a range control shows its value: its own fmt, its quantity in the chosen units, or a number and its unit. */
 export function controlFormat(lab, c) {
   const q = c.qty, dec = q ? unitDecimals(lab, q, c.step) : decimalsFor(c.step);
+  // A quantity on a log scale with no step spans decades (Gravity's softening runs from 1e-4 to 30 px), so it keeps
+  // three significant figures where fixed decimals would round its low end to nothing.
+  if (!c.fmt && q && c.log && !c.step) return v => fmtQ(lab, q, v);
   return c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + (c.unit ? ' ' + c.unit : ''));
 }
 export function buildRange(lab, c) {

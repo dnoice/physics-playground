@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.7)
+    - Title: README Media Manifest (digiSpace Edition - v2.8)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — New
+      sol-system.webp: Gravity's Solar System in 3D, the planets out to Saturn
+      beside Jupiter and its moons, for the README's Our Solar System section.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero
       and the Collisions picture are recaptured from release 2.7.0, showing
       the head-up display: its readings tape, and in Collisions the target box
@@ -78,12 +81,15 @@ npm run dev
 python tools/media.py --headed
 ```
 
-`--only` captures part of the set: any of `banner`, `hero`, `labs` and
-`modes`, or single gallery labs by id, for example `--only chaos` after a
+`--only` captures part of the set: any of `banner`, `hero`, `labs`, `modes`
+and `sol`, or single gallery labs by id, for example `--only chaos` after a
 change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
-The hero and the Collisions picture were captured from release 2.7.0 on
+The Solar System pair was captured from release 2.8.0 on 11/10/2026 in the
+same way, about five months into the run (the scene also runs while the page
+boots). The hero and the Collisions picture were
+captured from release 2.7.0 on
 11/10/2026, headless in software WebGL on four CPU cores, in metric units,
 so they show the head-up display: its readings tape in both, and in
 Collisions the target box and callout on the selected cue ball. The Fluid,
@@ -104,9 +110,11 @@ banner, which shows no interface, from release 2.3.0.
 | `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the Both view (the pendulum beside its phase map), 9 s in, with a start previewed on the map | Lab gallery |
 | `lab-cloth.webp` | 1106 × 610 | Cloth, Flag in wind, 4 s in | Lab gallery |
 | `lab-fields.webp` | 1106 × 610 | Fields, Cyclotron motion, 3 s in | Lab gallery |
+| `sol-system.webp` | 1396 × 420 | Gravity, Our Solar System in 3D, as a pair: the Sun, the planets out to Saturn, Halley's comet and the asteroid belt with their orbits and names, 163 days in (June 2000); then Jupiter followed up close in September 2000, Callisto and Ganymede named on their orbits, with the head-up display's target box and callout on the planet, clear of the names | "Our Solar System" |
 | `modes-2d-3d.webp` | 1472 × 420 | Waves, Double slit, 6 s in and paused, in 2D and then in 3D at the same moment | "Two modes: 2D and 3D" |
 
-Gravity is not in the gallery because the hero already shows it.
+Gravity is not in the gallery because the hero already shows it; its Solar
+System has a picture of its own.
 
 ## Format and provenance
 
@@ -114,8 +122,8 @@ Gravity is not in the gallery because the hero already shows it.
   the Ultra graphics tier. A fake page clock drives the frame loop, so each
   frame is simulated and drawn in full, and the timing readouts show what a
   machine with a GPU shows.
-- **Framing**: the hero at 1.5×, the banner at 2× (2560 × 800), the gallery
-  and the 2D and 3D pair at 1×, so each picture has about twice the pixels
+- **Framing**: the hero at 1.5×, the banner at 2× (2560 × 800), the gallery,
+  the 2D and 3D pair and the Solar System pair at 1×, so each picture has about twice the pixels
   the README displays it at.
 - **Encoding**: WebP with an alpha channel, quality 0.9 (0.92 for the
   banner), encoded by the browser itself. `.gitattributes` marks `*.webp`

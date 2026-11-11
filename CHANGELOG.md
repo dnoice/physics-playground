@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.7)
+    - Title: Changelog (digiSpace Edition - v2.8)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.8.0 release.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.7.0 release.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -57,6 +59,127 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.8.0 (11/10/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+Our own Solar System as a Gravity scene, on Dennis's call to put our home in
+the lab: from the Sun to the moons of Jupiter, the Kuiper belt and beyond,
+with real orbits, masses and sizes, started at noon on 1 January 2000.
+
+### Our Solar System
+
+- **The scene** (`js/labs/solarsystem.js`), in the ecliptic and seen from
+  the north, every body at its real mass and radius:
+  - the Sun;
+  - the eight planets and Pluto, from JPL's J2000 elements, each placed as
+    the barycentre of itself and its moons;
+  - 17 moons in their planets' equatorial planes, set from the IAU poles:
+    the Moon; Phobos and Deimos; Io, Europa, Ganymede and Callisto, in the
+    Laplace resonance; Enceladus, Rhea, Titan and Iapetus; Miranda, Ariel,
+    Titania and Oberon, which go round with Uranus on its side; Triton,
+    which goes backwards; and Charon;
+  - Ceres, Haumea, Makemake and Eris, Sedna, and Halley's comet with its
+    backward orbit;
+  - seeded belts: 80 main-belt asteroids with the Kirkwood gaps left open,
+    30 Jupiter Trojans at L4 and L5, 24 plutinos in the 3:2 resonance with
+    Neptune, 70 classical Kuiper belt objects and 10 scattered-disc objects.
+- **The Moon starts from its true state.** Its mean elements, started as
+  they are, ran the month 1.1 % long, because the Sun swings the real orbit
+  thousands of km about the mean one. It now starts from its geocentric
+  position and velocity at J2000.0 by Meeus's lunar theory (*Astronomical
+  Algorithms*, ch. 47, all 120 terms). The tables were checked against the
+  book's worked example to the last digit, and the month now runs 0.07 %
+  short.
+- **Moons on their own clock.** The integrator splits the forces (r-RESPA).
+  Every pull but a moon's and its planet's is applied in two half kicks per
+  step. In between, each moon and its planet take as many substeps as the
+  fastest moon needs, under their mutual pull alone: Phobos, which turns in
+  under two steps, sets 80. Every other body drifts once per step as
+  before.
+- **Moon links are checked.** A moon's host must be another live body,
+  heavier than the moon, that is not itself a moon. `prepare()` cuts any
+  other link, from a tampered saved state or a merge. Without the check, a
+  self-host held the substeps at their 256 cap, and a cycle pulled the pair
+  twice per substep.
+- **Test bodies.** The belts, Sedna and Halley have no mass. They feel every
+  pull and pull nothing, so their 216 bodies cost 216 × 31 pulls a step, not
+  a share of 247².
+- **Faithful over a simulated year**, as `tests/solar.py` measures:
+  - ten periods within 0.07 % of the real ones, from Mercury to Charon;
+  - the energy error never above 8e-8 (it swings with Mercury's perihelion
+    passages and returns);
+  - Phobos's orbit unchanged to 4e-5;
+  - the Trojans still at L4 and L5;
+  - nothing merged or lost.
+- **Drawn to scale, and findable.** Each world is drawn at its real radius
+  but never smaller than a few pixels, so it is true to size up close and
+  still a dot from afar.
+  - A moon waits inside its planet's disc until a zoom draws them apart, in
+    2D and 3D, and cannot be picked until then.
+  - The zoom reaches from Sedna's orbit to Charon beside Pluto, and in 3D
+    the near plane follows the camera in to a moon.
+  - Saturn's rings sit at their real tilt in 3D.
+  - Moons drop no depth mark in 3D, and the belts' bodies drop none. A
+    mark taller than most of the stage, with its foot out of sight, is
+    left out, so a close look at Jupiter has no line rising from it.
+- **Orbits and Names** switches under Display:
+  - each named body's present (osculating) ellipse about what it circles,
+    drawn in 3D as ribbons that a planet can hide;
+  - names placed so that a moon's never covers its planet's;
+  - the head-up display's callout keeps clear of the names, through a new
+    lab hook, `hudClear`, the boxes of what a lab drew and wants left
+    visible.
+- **Readouts**:
+  - Inspect names what a body circles ("Distance from Jupiter", "Bound to
+    the Sun"), gives its real radius, and measures its tilt from the
+    ecliptic;
+  - the clock reads the date the run has reached;
+  - the hover readout names the body;
+  - the Math page's Kepler check says when a moon turns too fast to follow
+    at the chosen speed.
+- **Speed fix**: when the run falls behind, the offered fix removes the
+  belts' 214 bodies. The general fix, deleting the lightest half, would have
+  taken the small moons with them.
+
+### Fixes
+
+- **Controls**: a quantity on a log scale now shows three significant
+  figures. Fixed decimals showed Gravity's softening as 0.00 AU; it now
+  reads 7.41e-7 AU.
+
+### README pictures
+
+- New `sol-system.webp` for the README's Our Solar System section: the
+  planets out to Saturn in 3D, beside Jupiter followed up close with its
+  moons. `tools/media.py --only sol` captures it.
+
+### Tests
+
+- New `tests/solar.py` (28 checks):
+  - the scene's bodies, its moons' links and substeps, and its sources and
+    test bodies;
+  - orbits and tilts from the elements;
+  - a simulated year stepped one step at a time: ten periods counted by
+    whole turns, so eccentric orbits count true, plus energy, Phobos, the
+    Trojans and nothing lost;
+  - names, moons and floors through rewind and a saved state, and a
+    tampered state's metadata and host links checked;
+  - the date, the softening readout, the hover names, the hidden moons, the
+    head-up display's callout clear of the names, and the switches;
+  - the speed fix;
+  - in 3D: the first frame, the orbits in the scene, moons appearing when
+    apart, the target box and the near plane.
+
+  `run_all.py` runs it.
+- `tests/world.py`: the scene menu check now expects Gravity's eight
+  scenes. The frame key check waits up to 8 s for the camera to arrive
+  home, instead of reading it after a fixed 0.9 s.
+  - Cause: the camera eases on frame time, which the loop caps at 0.05 s a
+    frame, and software WebGL can draw the Waves view at 4 frames a second.
+    Main behaves the same way, reading 104.8 to 109.1 % after 0.9 s.
+  - The bound itself is unchanged: within 8 % of home.
 
 ## 2.7.0 (11/10/2026)
 

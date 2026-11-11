@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.7)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.8)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.7.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.8.0: Our Solar System in the highlights, the labs table and its own
+      section with its picture (how to explore it, how faithful it is, how it
+      is built and what it leaves out), and the release badge.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.7.0: the head-up display in the highlights, the workspace guide, the
       keyboard table and the project layout.
@@ -78,7 +82,8 @@
 
 <div align="center">
 **[Open the live lab][demo]** ✦ [Quick start](#quick-start) ✦
-[The labs](#the-labs) ✦ [Deploying](#deploying-to-github-pages) ✦
+[The labs](#the-labs) ✦ [Our Solar System](#our-solar-system) ✦
+[Deploying](#deploying-to-github-pages) ✦
 [Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
 </div>
 
@@ -91,7 +96,7 @@ controls](docs/media/hero-workspace.webp)
 
 [![Live demo: open the lab][badge-demo]][demo]
 [![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.7.0][badge-release]](CHANGELOG.md)
+[![Release 2.8.0][badge-release]](CHANGELOG.md)
 [![License: Apache 2.0][badge-license]](LICENSE)
 
 ---
@@ -120,6 +125,11 @@ runs.
   and the selected object's figures float over the run like a cockpit HUD,
   with a target box that follows the object in 2D and 3D, so your eyes never
   have to leave the simulation.
+- **Our Solar System.** Gravity's newest scene is our own system: the Sun,
+  the planets and their major moons, the dwarf planets, Halley's comet and
+  the asteroid and Kuiper belts. Orbits, masses and sizes are real, and the
+  run starts at noon on 1 January 2000. Follow a planet and zoom in to find
+  its moons.
 - **Live maths.** Every formula is wired to the run: its symbols' values,
   dials for its parameters, and a check of theory against the simulation.
 - **Random placement.** Turn on the dice under the tools, and every planet,
@@ -187,7 +197,7 @@ captured in 3D straight from the playground.
 
 | Key | Lab | What it simulates | Scenes |
 | --- | --- | --- | --- |
-| 1 | Gravity | N-body Newtonian gravity in 3D, leapfrog integrator | Star system, Kepler ellipses, Binary star, Figure-eight, Accretion disk, Tilted orbits, Empty sky |
+| 1 | Gravity | N-body Newtonian gravity in 3D, leapfrog integrator with moons on their own substeps | Star system, Our Solar System, Kepler ellipses, Binary star, Figure-eight, Accretion disk, Tilted orbits, Empty sky |
 | 2 | Collisions | Hard discs with restitution and contact friction | Ideal gas, Gravity pile, Billiard break, Brownian motion |
 | 3 | Fluid | Smoothed-particle hydrodynamics with a GPU liquid surface | Dam break, Obstacle course, Droplet splash, Twin columns, Zero-g collision |
 | 4 | Waves | The 2-D wave equation on a grid | Open tank, Double slit, Single slit, Two sources, Phased array, Glass lens, Moving source |
@@ -199,6 +209,80 @@ Every lab has live readouts, diagnostics that explain extreme settings
 and offer one-click fixes, a page of the maths behind it, and two or
 three guided experiments with live progress checks. All but Cloth also
 keep a running chart.
+
+## Our Solar System
+
+![Gravity's Our Solar System in 3D. Left: the Sun, the planets out to
+Saturn, Halley's comet and the asteroid belt, with their orbits and names
+over the ecliptic grid. Right: Jupiter followed up close, with its large
+moons on their orbits and the head-up display's target box and callout on
+the planet](docs/media/sol-system.webp)
+
+Pick **Our Solar System** from Gravity's scene menu. The real system starts
+at noon on 1 January 2000, the J2000.0 epoch that astronomers measure from,
+at its real masses and sizes:
+
+- **The Sun, the eight planets and Pluto**, from JPL's J2000 orbital
+  elements.
+- **17 moons**:
+  - our Moon;
+  - Phobos and Deimos;
+  - Jupiter's Io, Europa, Ganymede and Callisto, in their Laplace
+    resonance;
+  - Saturn's Enceladus, Rhea, Titan and Iapetus;
+  - Uranus's Miranda, Ariel, Titania and Oberon, going round with the planet
+    on its side;
+  - Neptune's backward Triton;
+  - Pluto's Charon.
+- **The dwarf planets** Ceres, Haumea, Makemake and Eris, then Sedna, and
+  Halley's comet on its backward orbit.
+- **The belts**:
+  - the main asteroid belt with its Kirkwood gaps;
+  - Jupiter's Trojans, 60° ahead of and behind the planet;
+  - the plutinos, which share Pluto's resonance with Neptune;
+  - the Kuiper belt and the scattered disc.
+
+To explore it:
+
+- **Click a planet** to follow it, then zoom in. Its moons appear as soon
+  as the zoom draws them clear of the planet. Inspect gives the planet's
+  distance from the Sun, its period, its real radius and its tilt from the
+  ecliptic. Click a moon to see its orbit about its planet.
+- **Orbits** and **Names**, under Display, draw each named body's ellipse
+  and name. In 3D the orbits are drawn in depth, so a planet hides the far
+  side of its moons' orbits.
+- **The clock** reads the date the run has reached. A year takes 4.4
+  simulated seconds.
+- **Zoom out** to find the Kuiper belt, Eris and Sedna.
+
+How faithful it is, as `tests/solar.py` measures over a simulated year:
+
+- ten periods, from Mercury's to Charon's, within 0.07 % of the real ones;
+- the energy error never above 8e-8;
+- Jupiter's Trojans still at L4 and L5.
+
+How it is built:
+
+- **Moons** from Phobos, round Mars in under 8 hours, to Iapetus share one
+  run: each moon and its planet take their own substeps inside every step.
+- **The belts' bodies** have no mass, so they feel every pull and cost
+  almost nothing.
+- **Our Moon** starts from its true position and velocity, by Meeus's lunar
+  theory.
+
+What it leaves out:
+
+- general relativity, which adds 43″ a century to Mercury's perihelion
+  shift;
+- the planets' bulges, which turn the moons' orbital planes over the years.
+
+It also simplifies two things:
+
+- **The other moons' starting positions.** They start at the right distance,
+  shape and plane, but not where they were on that day. Jupiter's four start
+  in their true resonance.
+- **The belts** are seeded samples of the real populations, not catalogued
+  asteroids.
 
 ## Quick start
 
@@ -443,7 +527,7 @@ js/core/              pure helpers: DOM, colour, charts, drawing, maths, icons, 
 js/render/            the 2D fluid surface shader
 js/render/world/      the 3D mode: engine, studio, materials, shapes, ribbons
 js/render/world/scenes/  one three.js scene per lab
-js/labs/              one module per lab, the plane camera, the gravity camera, the experiments curriculum, the registry
+js/labs/              one module per lab, the plane camera, the gravity camera, the Solar System's data, the experiments curriculum, the registry
 js/shell/             workspace: state, panel, rail, deck, head-up display, camera, stage input, loop, modes, units, capture, library, experiments
 tools/                dev server, project checker, Pages stager, README media capture
 tests/                Playwright browser suites and their runner
@@ -546,7 +630,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.7.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.8.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

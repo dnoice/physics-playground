@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.5)
+    - Title: Gravity Scene (digiSpace Edition - v2.8)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.5.0
+    - Version: 2.8.0
     - Date: 11/10/2026
     - Update: Tuesday, November 10, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
+      System: each world at its real radius above its own pixel floor,
+      Saturn's real rings at their tilt, moons hidden inside their planet's
+      disc, no depth marks from moons or belt bodies, the Orbits switch drawn
+      as depth-tested ribbons, and a portrait near plane small enough for a
+      moon. A depth mark taller than most of the stage, its foot out of sight,
+      is left out.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A planet's
       surface and colour come from its type, read from the lab, instead of
       from its mass and id; stars are the bodies typed as stars, and only gas
@@ -36,8 +43,12 @@
       are banded in their own colours); close bodies move to a finer sphere in
       a second batch.
     - Up to three star lights, a soft terminator, a real night side, an
-      atmospheric rim, a shell of air on close worlds and rings on gas giants.
-    - Trails, drop lines and velocity arrows as ribbons, thinned by tier.
+      atmospheric rim, a shell of air on close worlds and rings on gas giants
+      (on Saturn alone in the Solar System).
+    - Real-sized worlds above a pixel floor; a moon is hidden while inside its
+      planet's disc, its orbit with it.
+    - Trails, drop lines, velocity arrows and orbits as ribbons, thinned by
+      tier.
     - A faint polar grid on the orbital plane, drawn analytically.
     - Merges flash and pulse the bloom; the flash is watched from the lab's
       merge count, never written back.
@@ -54,7 +65,7 @@ import { reduceMotion } from '../../../core/util.js';
 import { createRibbons } from '../ribbons.js';
 
 const TAU = Math.PI * 2, MAX_LIGHTS = 3, MIN_STAR_PX = 4, MIN_BODY_PX = 2.6, HERO_PX = 22, HERO_CAP = 24, RING_CAP = 48, FLASH_CAP = 16;
-const TRAIL_POINTS = 56000, MARK_POINTS = 12000, SKY_STARS = 24000, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
+const TRAIL_POINTS = 56000, MARK_POINTS = 12000, ORBIT_POINTS = 8192, ORBIT_SEGS = 128, SKY_STARS = 24000, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
 const RING_IN = 1.46, RING_OUT = 2.02;
 /* The band crosses the home view diagonally, behind the system, with its bulge just off centre. */
 const POLE = new THREE.Vector3(-0.62, 0.73, -0.26).normalize(), BAND_U = new THREE.Vector3().crossVectors(POLE, new THREE.Vector3(0.2, 0.1, 1)).normalize(), BAND_W = new THREE.Vector3().crossVectors(POLE, BAND_U);
@@ -624,7 +635,7 @@ export function createScene(E, lab) {
       solo.star.A.array[i * 4] = f.seed; solo.star.A.array[i * 4 + 3] = RPX; solo.star.C.array.set(c.slice(0, 3), i * 3);
     } else {
       const type = l.surfaceOf(b), c = tintOf(l.bodyColor3(b)), i = put(solo.planet, X, Y, Z, r), P = solo.planet;
-      ringed = b.kind === 'gas' && b.m >= RING_MASS && f.ring;
+      ringed = b.real ? b.ring : b.kind === 'gas' && b.m >= RING_MASS && f.ring;
       P.A.array[0] = f.seed; P.A.array[1] = type; P.A.array[2] = ringed ? 1 : 0; P.A.array[3] = f.rate;
       P.B.array[0] = f.ax; P.B.array[1] = f.ay; P.B.array[2] = f.az; P.B.array[3] = RPX;
       P.C.array[i * 3] = c[0]; P.C.array[i * 3 + 1] = c[1]; P.C.array[i * 3 + 2] = c[2];
@@ -635,7 +646,8 @@ export function createScene(E, lab) {
     let s = null;
     for (const q of l.bodies) if (q !== b && q.kind === 'star' && (!s || q.m > s.m)) s = q;
     const dx = s ? s.x - b.x : 1, dz = s ? s.y - b.y : 0.6, c = Math.cos(0.95), n = Math.sin(0.95), ex = dx * c - dz * n, ez = dx * n + dz * c, len = Math.hypot(ex, ez) || 1, d = r * (ringed ? 10.5 : 7.4);
-    return { scene: solo.scene, eye: [X + ex / len * d * 0.96, Y + d * 0.27, Z + ez / len * d * 0.96], at: [X, Y, Z], near: Math.max(0.01, d * 0.05), far: d * 4 };
+    // The near plane follows the body's size: a real moon is a few thousandths of a pixel across.
+    return { scene: solo.scene, eye: [X + ex / len * d * 0.96, Y + d * 0.27, Z + ez / len * d * 0.96], at: [X, Y, Z], near: Math.max(1e-7, d * 0.05), far: d * 4 };
   }
 
   /* The orbital plane and everything drawn as ribbons. */
@@ -647,9 +659,11 @@ export function createScene(E, lab) {
   });
   const grid = new THREE.Mesh(new THREE.CircleGeometry(1, 96).rotateX(-Math.PI / 2), gridMat);
   grid.frustumCulled = false; grid.renderOrder = 1;
-  const trails = createRibbons(TRAIL_POINTS, { width: 1.05 }), marks = createRibbons(MARK_POINTS, { width: 1.2 });
-  trails.mesh.renderOrder = 4; marks.mesh.renderOrder = 5;
-  scene.add(grid, trails.mesh, marks.mesh);
+  const trails = createRibbons(TRAIL_POINTS, { width: 1.05 }), marks = createRibbons(MARK_POINTS, { width: 1.2 }), orbits = createRibbons(ORBIT_POINTS, { width: 0.8 });
+  trails.mesh.renderOrder = 4; marks.mesh.renderOrder = 5; orbits.mesh.renderOrder = 3;
+  scene.add(grid, trails.mesh, marks.mesh, orbits.mesh);
+  // Moons drawn this frame inside their planet's disc: their orbits wait with them.
+  const hidden = new Set();
 
   /* Per-body identity, derived once from the id; rewind restores ids, so a body keeps its face. */
   const ids = new Map();
@@ -701,9 +715,12 @@ export function createScene(E, lab) {
   const heroes = new Array(HERO_CAP).fill(null);
 
   /* A drop line and a small foot ring on the plane, sized in stage pixels. */
-  function dropMark(b, plane, depth, px, c) {
+  function dropMark(b, plane, depth, px, c, stageH) {
     const X = b.x, Y = b.z, Z = b.y, h = Y - plane;
-    if (Math.abs(h) < 0.6) return;
+    // A mark shows where a body stands over the plane by the ring at its foot; one taller than most of the stage
+    // (Jupiter's, a few pixels off the ecliptic, seen from beside its moons) has its foot out of sight and only
+    // crosses the picture.
+    if (Math.abs(h) < 0.6 || Math.abs(h) * px / depth > stageH * 0.75) return;
     const r = c[0] * 0.5 + 0.24, g = c[1] * 0.5 + 0.28, bl = c[2] * 0.5 + 0.34;
     marks.point(X, Y, Z, r, g, bl, 0.46, 0.55); marks.point(X, plane + h * 0.5, Z, r, g, bl, 0.3, 0.55); marks.point(X, plane, Z, r, g, bl, 0.2, 0.55); marks.strip();
     const rad = 3.2 * depth / px;
@@ -727,9 +744,13 @@ export function createScene(E, lab) {
     farPlanets.n = nearPlanets.n = rings.n = stars.n = corona.n = 0;
     lit[0].b = lit[1].b = lit[2].b = null; starPx = 0;
     marks.setResolution(view.w, view.h); marks.begin();
+    // A body is drawn at its own radius, never smaller than its floor in pixels (a real world's own floor, else the
+    // stars' and planets'); a moon still inside its planet's drawn disc waits until the camera draws them apart.
+    hidden.clear();
     for (const b of B) {
-      const X = b.x, Y = b.z, Z = b.y, front = (X - ex) * fx + (Y - ey) * fy + (Z - ez) * fz, depth = Math.max(1e-3, front), star = b.kind === 'star';
-      const s = Math.max(b.r, (star ? MIN_STAR_PX : MIN_BODY_PX) * depth / px), rPx = front > 0 ? s * px / depth : 0, f = faceOf(b.id);
+      const X = b.x, Y = b.z, Z = b.y, front = (X - ex) * fx + (Y - ey) * fy + (Z - ez) * fz, depth = Math.max(1e-6, front), star = b.kind === 'star';
+      const s = Math.max(b.r, (b.px || (star ? MIN_STAR_PX : MIN_BODY_PX)) * depth / px), rPx = front > 0 ? s * px / depth : 0, f = faceOf(b.id);
+      if (b.host && !lab.apart3(b)) { hidden.add(b); continue; }
       if (star) {
         const c = starTint(b.m, rgb);
         starPx = Math.max(starPx, rPx);
@@ -741,7 +762,7 @@ export function createScene(E, lab) {
         }
         for (let k = 0; k < MAX_LIGHTS; k++) if (!lit[k].b || b.m > lit[k].b.m) { for (let j = MAX_LIGHTS - 1; j > k; j--) { lit[j].b = lit[j - 1].b; lit[j].c[0] = lit[j - 1].c[0]; lit[j].c[1] = lit[j - 1].c[1]; lit[j].c[2] = lit[j - 1].c[2]; } lit[k].b = b; lit[k].c[0] = c[0]; lit[k].c[1] = c[1]; lit[k].c[2] = c[2]; break; }
       } else {
-        const type = lab.surfaceOf(b), c = tintOf(lab.bodyColor3(b)), ring = b.kind === 'gas' && b.m >= RING_MASS && f.ring && rings.n < RING_CAP ? 1 : 0;
+        const type = lab.surfaceOf(b), c = tintOf(lab.bodyColor3(b)), ring = (b.real ? b.ring : b.kind === 'gas' && b.m >= RING_MASS && f.ring) && rings.n < RING_CAP ? 1 : 0;
         const close = rPx >= HERO_PX && nearPlanets.n < HERO_CAP, batch = close ? nearPlanets : farPlanets;
         if (close) heroes[nearPlanets.n] = b;
         const i = put(batch, X, Y, Z, s), A = batch.A.array, Bx = batch.B.array, C = batch.C.array;
@@ -751,7 +772,9 @@ export function createScene(E, lab) {
         if (ring) {
           writeRing(rings, X, Y, Z, s, f, c, rPx);
         }
-        dropMark(b, plane, depth, px, c);
+        // The belts' marks would hide the planets', and a moon's would reach from its planet to the ecliptic: only
+        // bodies with mass or a name drop one, and never a moon.
+        if ((b.m > 0 || b.label) && !b.host) dropMark(b, plane, depth, px, c, view.h);
       }
       if (vectors) arrow(b, depth, px);
     }
@@ -836,6 +859,28 @@ export function createScene(E, lab) {
     trails.end();
   }
 
+  /* Orbits: each named body's osculating ellipse about what it orbits, the flat view's Orbits drawn in depth so a
+     planet can hide the far side of its moons' orbits. */
+  function syncOrbits(view) {
+    orbits.setResolution(view.w, view.h); orbits.begin();
+    if (lab.p.orbits) {
+      const cam = view.camera, ex = cam.position.x, ey = cam.position.y, ez = cam.position.z, near = cam.near * 3, fx = FW.x, fy = FW.y, fz = FW.z;
+      for (const b of lab.orbiters()) {
+        if (hidden.has(b)) continue;
+        const P = lab.pullHost(b), pts = P && lab.orbitPath(b, P, ORBIT_SEGS); if (!pts) continue;
+        const c = tintOf(lab.bodyColor3(b)), a = b.host ? 0.42 : 0.34;
+        for (let k = 0; k < pts.length; k += 3) {
+          const X = pts[k], Y = pts[k + 2], Z = pts[k + 1];
+          // As for trails, a strip must not cross the camera plane.
+          if ((X - ex) * fx + (Y - ey) * fy + (Z - ez) * fz < near) { orbits.strip(); continue; }
+          orbits.point(X, Y, Z, c[0], c[1], c[2], a, 1);
+        }
+        orbits.strip();
+      }
+    }
+    orbits.end();
+  }
+
   function syncGrid(B, view) {
     let M = 0, cx = 0, cy = 0, cz = 0, R = 260;
     for (const b of B) { M += b.m; cx += b.m * b.x; cy += b.m * b.y; cz += b.m * b.z; }
@@ -859,6 +904,7 @@ export function createScene(E, lab) {
       syncLights(view, B);
       syncEclipses(B);
       syncTrails(B, view);
+      syncOrbits(view);
       watchMerges(B, view.dt);
       flush(farPlanets); flush(nearPlanets); flush(rings); flush(stars); flush(corona); flush(glare); flush(flash);
       api.bloom.strength = (BLOOM + pulse) / (1 + (starPx / 150) ** 2);
@@ -885,7 +931,7 @@ export function createScene(E, lab) {
       for (const b of [farPlanets, nearPlanets, rings, stars, corona, glare, flash]) { b.g.dispose(); b.mesh.dispose(); }
       atmo.dispose();
       for (const m of [planetMat, atmoMat, ringMat, starMat, coronaMat, glareMat, flashMat, gridMat]) m.dispose();
-      ringGeo.dispose(); fgeo.dispose(); grid.geometry.dispose(); trails.dispose(); marks.dispose();
+      ringGeo.dispose(); fgeo.dispose(); grid.geometry.dispose(); trails.dispose(); marks.dispose(); orbits.dispose();
     },
   };
   return api;
