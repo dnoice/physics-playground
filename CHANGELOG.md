@@ -174,7 +174,12 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
 
   `run_all.py` runs it.
 - `tests/world.py`: the scene menu check now expects Gravity's eight
-  scenes.
+  scenes. The frame key check waits up to 8 s for the camera to arrive
+  home, instead of reading it after a fixed 0.9 s.
+  - Cause: the camera eases on frame time, which the loop caps at 0.05 s a
+    frame, and software WebGL can draw the Waves view at 4 frames a second.
+    Main behaves the same way, reading 104.8 to 109.1 % after 0.9 s.
+  - The bound itself is unchanged: within 8 % of home.
 
 ## 2.7.0 (11/10/2026)
 
