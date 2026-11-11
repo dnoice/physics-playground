@@ -75,140 +75,150 @@
       render as designed
 ---------
 -->
-<h1 align="center">
+<p align="center">
   <img src="docs/media/banner.webp" width="100%"
     alt="Physics Playground: seven live physics labs in one browser workspace">
-</h1>
+</p>
 
-<div align="center">
-**[Open the live lab][demo]** ✦ [Quick start](#quick-start) ✦
-[The labs](#the-labs) ✦ [Our Solar System](#our-solar-system) ✦
-[Deploying](#deploying-to-github-pages) ✦
-[Documentation](#documentation) ✦ [Changelog](CHANGELOG.md)
-</div>
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#the-labs">Explore the labs</a> ·
+  <a href="#our-solar-system">Our Solar System</a> ·
+  <a href="#deploying-to-github-pages">Deploy</a> ·
+  <a href="#documentation">Documentation</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
 ![The Physics Playground workspace in 3D: the Gravity lab's star system on
 the stage with the stage rail at its top right, the player bar beneath it,
 the instruments deck with live readings, and the inspector with the lab's
 controls](docs/media/hero-workspace.webp)
 
-<div align="center">
+<p align="center">
+  <a href="https://dnoice.github.io/physics-playground/">
+    <img src="https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541"
+      alt="Live demo: open the lab">
+  </a>
+  <a href="https://github.com/dnoice/physics-playground/actions/workflows/pages.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df"
+      alt="Pages workflow status">
+  </a>
+  <a href="CHANGELOG.md">
+    <img src="https://img.shields.io/badge/release-v2.8.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.8.0">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
+      alt="License: Apache 2.0">
+  </a>
+</p>
 
-[![Live demo: open the lab][badge-demo]][demo]
-[![Pages workflow status][badge-pages]][pages-workflow]
-[![Release 2.8.0][badge-release]](CHANGELOG.md)
-[![License: Apache 2.0][badge-license]](LICENSE)
+<h3 align="center">
+  Seven live physics labs. One browser workspace.
+</h3>
+
+<p align="center">
+  Exact simulations in 2D; physical, rendered apparatus in 3D.
+  No build step required.
+</p>
 
 ---
 
-**Seven live physics labs in one browser workspace.**<br>
-Exact in 2D, rendered as real apparatus in 3D, and nothing to build.
-</div>
+Physics Playground is an interactive physics laboratory that runs in your
+browser. Explore seven simulations in one workspace, switch between 2D and
+3D without interrupting a run, and use shared tools to inspect, measure and
+capture what happens.
 
----
+### What you can do
 
-Physics Playground is an interactive physics laboratory in the browser.
-Seven live simulations share one workspace, one capture system and one set
-of tools, and each can be seen in two modes: a flat 2D view, or a rendered
-3D world where every lab is a physical apparatus. The project is plain ES
-modules with no build step: open it through any static web server and it
-runs.
+- **Explore seven labs**, from N-body gravity to the Lorentz force, with
+  multiple scenes, live readings and interactive maths.
+- **Switch between 2D and 3D** at any time. Both modes show the same
+  simulation, and tools, rewind and recordings work in either mode.
+- **Measure and inspect the run.** Plot readings, select objects to see
+  their live figures, and use insights to understand unusual settings and
+  apply suggested fixes.
+- **See key information on the stage.** The head-up display shows readings,
+  warnings and details for the selected object without covering the
+  simulation controls.
+- **Run guided experiments** with live checks of the claims they test.
+- **Capture and revisit results** with rewind, WebM video, CSV datasets and
+  saved states in the library.
+- **Choose your units**: metric, US customary or the simulation’s own
+  units.
 
-- **Seven labs**, from N-body gravity to the Lorentz force, each with
-  several scenes, live readouts and a page of live maths behind it.
-- **Two modes, one simulation.** Press Z to flip between 2D and 3D in the
-  middle of a run; tools, rewind and recordings work in both.
-- **Instruments that explain themselves.** Plot any reading, inspect any
-  object you click, and let the insights say why a setting misbehaves and
-  offer the one-click fix.
-- **A head-up display on the stage.** The lab's key readings, its warnings
-  and the selected object's figures float over the run like a cockpit HUD,
-  with a target box that follows the object in 2D and 3D, so your eyes never
-  have to leave the simulation.
-- **Our Solar System.** Gravity's newest scene is our own system: the Sun,
-  the planets and their major moons, the dwarf planets, Halley's comet and
-  the asteroid and Kuiper belts. Orbits, masses and sizes are real, and the
-  run starts at noon on 1 January 2000. Follow a planet and zoom in to find
-  its moons.
-- **Live maths.** Every formula is wired to the run: its symbols' values,
-  dials for its parameters, and a check of theory against the simulation.
-- **Random placement.** Turn on the dice under the tools, and every planet,
-  ball, post, source or charge you place comes out different: Gravity draws
-  a planet type (rocky, ocean, ice giant, gas giant or brown dwarf) and a
-  mass to suit it.
-- **Real-world units.** Metric, US customary or the simulation's own
-  pixels: every reading, control and scale bar follows your choice.
-- **Guided experiments** with live progress checks that measure the claim
-  they make.
-- **Capture everything**: rewind, WebM video, CSV datasets and exact saved
-  states, all kept in a library.
+Gravity also includes **Our Solar System**, a scene with real planetary
+masses, sizes and orbits, plus moons, dwarf planets, Halley’s comet and
+samples from the asteroid and Kuiper belts. The run begins at noon on
+1 January 2000.
 
 ## The labs
 
-Gravity is the lab in the picture above. Here are the other six, each
-captured in 3D straight from the playground.
+Gravity is shown in the workspace image above. The other six labs are
+pictured below; each image is a 3D capture from the playground.
 
 <table>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/media/lab-collisions.webp" width="100%"
         alt="Collisions in 3D: a billiard break on a slate air table">
-      <br><b>2 · Collisions</b> ✦ Hard discs with restitution and contact
-      friction on a slate air table in walnut and brass.
+      <br><b>2 · Collisions</b><br>
+      Hard discs with restitution and contact friction on a slate air table.
     </td>
     <td width="50%" valign="top">
       <img src="docs/media/lab-fluid.webp" width="100%"
         alt="Fluid in 3D: a dam break in a glass aquarium">
-      <br><b>3 · Fluid</b> ✦ Smoothed-particle hydrodynamics in a glass
-      aquarium, with refraction and caustics.
+      <br><b>3 · Fluid</b><br>
+      Smoothed-particle hydrodynamics in a glass aquarium, with refraction
+      and caustics.
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/media/lab-waves.webp" width="100%"
         alt="Waves in 3D: double-slit interference in a walnut ripple tank">
-      <br><b>4 · Waves</b> ✦ The 2-D wave equation in a ripple tank, with a
-      screen that graphs the fringes.
+      <br><b>4 · Waves</b><br>
+      The 2D wave equation in a ripple tank, with a screen that graphs the
+      interference fringes.
     </td>
     <td width="50%" valign="top">
       <img src="docs/media/lab-chaos.webp" width="100%"
-        alt="Chaos in 3D: the pendulum on its brass dial beside the phase
-          screen, previewing a start">
-      <br><b>5 · Chaos</b> ✦ Double pendulums started a hair apart, in three
-      views: the pendulum, the map of their angles with the torus it wraps
-      onto, or both side by side.
+        alt="Chaos in 3D: a double pendulum beside its phase screen">
+      <br><b>5 · Chaos</b><br>
+      Double pendulums, explored through the pendulum, phase map or both
+      views together.
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/media/lab-cloth.webp" width="100%"
         alt="Cloth in 3D: woven fabric streaming from a flagpole">
-      <br><b>6 · Cloth</b> ✦ Verlet cloth that stretches, tears and can be
-      cut, woven and hung from a flagpole.
+      <br><b>6 · Cloth</b><br>
+      Verlet cloth that stretches, tears and can be cut, woven and hung.
     </td>
     <td width="50%" valign="top">
       <img src="docs/media/lab-fields.webp" width="100%"
         alt="Fields in 3D: charged particles in cyclotron motion over a glass bench">
-      <br><b>7 · Fields</b> ✦ Point charges, potential and the Lorentz
-      force, on a black glass bench lit by the potential.
+      <br><b>7 · Fields</b><br>
+      Point charges, electric potential, field lines and the Lorentz force.
     </td>
   </tr>
 </table>
 
 | Key | Lab | What it simulates | Scenes |
 | --- | --- | --- | --- |
-| 1 | Gravity | N-body Newtonian gravity in 3D, leapfrog integrator with moons on their own substeps | Star system, Our Solar System, Kepler ellipses, Binary star, Figure-eight, Accretion disk, Tilted orbits, Empty sky |
+| 1 | Gravity | 3D Newtonian N-body gravity with a leapfrog integrator and substepped moons | Star system, Our Solar System, Kepler ellipses, Binary star, Figure-eight, Accretion disk, Tilted orbits, Empty sky |
 | 2 | Collisions | Hard discs with restitution and contact friction | Ideal gas, Gravity pile, Billiard break, Brownian motion |
 | 3 | Fluid | Smoothed-particle hydrodynamics with a GPU liquid surface | Dam break, Obstacle course, Droplet splash, Twin columns, Zero-g collision |
-| 4 | Waves | The 2-D wave equation on a grid | Open tank, Double slit, Single slit, Two sources, Phased array, Glass lens, Moving source |
-| 5 | Chaos | Double pendulums started a hair apart; Pendulum, Phase map and Both views of their angles on the energy landscape | Sensitive start, Near inverted, Small swing, Normal mode |
+| 4 | Waves | The 2D wave equation on a grid | Open tank, Double slit, Single slit, Two sources, Phased array, Glass lens, Moving source |
+| 5 | Chaos | Double pendulums and their phase map | Sensitive start, Near inverted, Small swing, Normal mode |
 | 6 | Cloth | Verlet cloth that stretches, tears and can be cut | Curtain, Hammock, Flag in wind, Fragile net |
-| 7 | Fields | Point charges, potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
+| 7 | Fields | Point charges, electric potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
 
-Every lab has live readouts, diagnostics that explain extreme settings
-and offer one-click fixes, a page of the maths behind it, and two or
-three guided experiments with live progress checks. All but Cloth also
-keep a running chart.
+Every lab includes live readings, diagnostics with suggested fixes, and a
+Math page that connects its formulas to the simulation. Each also has
+guided experiments with live progress checks. All labs except Cloth have
+a running chart.
 
 ## Our Solar System
 
