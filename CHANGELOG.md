@@ -98,6 +98,11 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
   fastest moon needs, under their mutual pull alone: Phobos, which turns in
   under two steps, sets 80. Every other body drifts once per step as
   before.
+- **Moon links are checked.** A moon's host must be another live body,
+  heavier than the moon, that is not itself a moon. `prepare()` cuts any
+  other link, from a tampered saved state or a merge. Without the check, a
+  self-host held the substeps at their 256 cap, and a cycle pulled the pair
+  twice per substep.
 - **Test bodies.** The belts, Sedna and Halley have no mass. They feel every
   pull and pull nothing, so their 216 bodies cost 216 × 31 pulls a step, not
   a share of 247².
@@ -152,7 +157,7 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
 
 ### Tests
 
-- New `tests/solar.py` (27 checks):
+- New `tests/solar.py` (28 checks):
   - the scene's bodies, its moons' links and substeps, and its sources and
     test bodies;
   - orbits and tilts from the elements;
@@ -160,7 +165,7 @@ with real orbits, masses and sizes, started at noon on 1 January 2000.
     whole turns, so eccentric orbits count true, plus energy, Phobos, the
     Trojans and nothing lost;
   - names, moons and floors through rewind and a saved state, and a
-    tampered state's metadata checked;
+    tampered state's metadata and host links checked;
   - the date, the softening readout, the hover names, the hidden moons, the
     head-up display's callout clear of the names, and the switches;
   - the speed fix;

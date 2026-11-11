@@ -528,6 +528,10 @@ state of any scene can carry the same metadata.
   - Rewind snapshots and saved states carry it whole. A loaded state passes
     through `cleanMeta`, which checks each field, so a state file is only
     ever data.
+  - `prepare()` keeps a host link only when the host is another live body,
+    heavier than its moon, that is not itself a moon. That cuts a tampered
+    state's self-hosts, cycles and chains, and a merge that left a moon
+    heavier than its planet.
 - **Sources and test bodies.** `prepare()` splits the bodies into `srcs`
   (with mass) and `tests` (massless), and runs whenever the body list
   changes (`accDirty`).

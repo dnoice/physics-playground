@@ -33,7 +33,8 @@
       turns so eccentric orbits count true; Phobos's orbit unchanged;
       Jupiter's Trojans still at L4 and L5; energy within 2e-7 all year;
       nothing merged or lost.
-    - Rewind and saved states keep every name, moon link, radius and floor.
+    - Rewind and saved states keep every name, moon link, radius and floor;
+      a tampered state's self-host, cycle, chain or massless host is cut.
     - Display: the date beside the clock, the softening in significant
       figures, the names in the hover readout, moons hidden inside their
       planet until a zoom draws them apart, the head-up display's callout
@@ -171,6 +172,20 @@ with sync_playwright() as p:
       {G}.deserialize(o); const io = {G}.bodies.find(b => b.id === q.id);
       return {{ name: io.name.length, px: io.px ?? null, host: io.host ?? null, meta: Object.keys(io.meta).includes('extra') }}; }})()""")
     ok("sol_saved_state_meta_checked", bad == {"name": 40, "px": None, "host": None, "meta": False}, bad)
+    # Host links in a tampered state: Io its own host, Europa and Ganymede each other's, Jupiter a moon of the Sun
+    # (which would make Callisto a moon's moon), Titan a moon of a massless belt body. Only valid links survive.
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()")
+    links = pg.evaluate(f"""(() => {{ const L = {G}, o = L.serialize(), by = n => o.bodies.find(d => d.meta && d.meta.name === n), belt = o.bodies.find(d => d.m === 0 && !(d.meta && d.meta.name));
+      by('Io').meta.hostId = by('Io').id; by('Europa').meta.hostId = by('Ganymede').id; by('Ganymede').meta.hostId = by('Europa').id;
+      by('Jupiter').meta.hostId = by('Sun').id; by('Titan').meta.hostId = belt.id;
+      L.deserialize(o); const B = L.bodies, named = n => B.find(b => b.name === n), host = n => (named(n).host || {{}}).name || null;
+      for (let k = 0; k < 20; k++) {{ L.step(L.dt()); L.t += L.dt(); }}
+      return {{ self: B.some(b => b.host === b), chain: B.some(b => b.host && b.host.host), heavier: B.every(b => !b.host || b.host.m > b.m),
+        io: host('Io'), europa: host('Europa'), ganymede: host('Ganymede'), jupiter: host('Jupiter'), callisto: host('Callisto'), titan: host('Titan'),
+        moon: host('Moon'), sub: L.sub, finite: L.sane() && Number.isFinite(L.energy()) }}; }})()""")
+    ok("sol_saved_state_host_links_checked", links["self"] is False and links["chain"] is False and links["heavier"] is True and links["io"] is None
+       and links["ganymede"] is None and links["europa"] == "Ganymede" and links["jupiter"] == "Sun" and links["callisto"] is None
+       and links["titan"] is None and links["moon"] == "Earth" and links["sub"] == 80 and links["finite"] is True, links)
 
     # ---- Display: the date, the softening, the hover readout, moons hidden in their planet, the switches
     pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(300)

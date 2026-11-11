@@ -20,7 +20,9 @@
       in its planet until a zoom parts them; the Orbits and Names switches;
       the date on the clock; and a speed fix that removes the belts and keeps
       the moons. The names drawn are its hudClear, which the head-up display's
-      callout keeps off.
+      callout keeps off. prepare() keeps a moon's host only when it is another
+      live body, heavier than the moon and not itself a moon, so a tampered
+      state's self-host, cycle or chain is cut.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: bodies, energy, drift and virial ratio on its tape, and the
       followed body as its target, in 2D and 3D.
@@ -344,9 +346,15 @@ export const gravity = {
     for (const b of B) {
       (b.m > 0 ? this.srcs : this.tests).push(b);
       if (b.real) this.sky = true;
-      if (b.host && !live.has(b.host)) b.host = null;
+      // A moon's host is another live body heavier than it. That rules out a self-host (a zero-length orbit that
+      // would hold the substeps at their cap) and a cycle (a pair pulled twice in the substeps), whether they come
+      // from a tampered saved state or a merge that left a moon heavier than its planet.
+      if (b.host && (!live.has(b.host) || b.host === b || !(b.host.m > b.m))) b.host = null;
       b.fast = false;
     }
+    // And a host is not itself a moon: the substeps hold one level of pairs. Links are only ever cut here, so each one
+    // kept has a host that stays top-level.
+    for (const b of B) if (b.host && b.host.host) b.host = null;
     let Tmin = Infinity;
     for (const b of B) {
       if (!b.host) continue;
