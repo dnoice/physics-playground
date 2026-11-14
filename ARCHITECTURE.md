@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.10)
+    - Title: Architecture Guide (digiSpace Edition - v2.11)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.10.0
+    - Version: 2.11.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
+      anatomy (text(), the parted ridges, the keyboard-only ring, the wheel as
+      the field) and their grid of equal cells on a subgrid; the Math page's
+      dials in equal cells.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — orbitFrame
       and orbitCurve, the fading orbits in 2D and 3D, depth marks and merge
       flashes in the Solar System section; the zoomPace and zoomLimits3 hooks.
@@ -315,9 +319,15 @@ own lab back to 2D. The simulation never notices any of this.
 first, then one section per entry in `groups`, each holding the controls
 whose `group` names it, numbers and choices first and switches in a grid
 below. A number is a thumbwheel dial (`js/shell/dial.js`): a ridged wheel
-with the value set in its middle, chevrons at its ends and a hairline for
-the range with the scene's mark. Consecutive dials share a grid of compact
-cards. A native range input lies under each wheel, invisible and
+with the value in its middle and its unit set back (`text()`), chevrons at
+its ends and a hairline along its foot for the range with the scene's mark.
+The wheel is the only box: the ridges part round the value at its measured
+width and come up under the pointer and with focus. Consecutive dials share
+an open grid of equal cells; each cell puts its name, wheel and note on rows
+it shares with the cells beside it (a CSS subgrid), so a row's wheels line
+up past a two-line name or a note. The focus ring shows for the keyboard
+only, and while a value is typed the wheel itself is the field. A native
+range input lies under each wheel, invisible and
 untouchable, and stays the single source of truth: it takes focus and the
 arrow keys and tells screen readers the value, and the wheel only sets its
 value and fires its `input` events. A drag, a nudge or a burst of wheel
@@ -457,7 +467,9 @@ lab's `math` HTML marked `data-live="name"` gets a panel built from the lab's
   units.
 - `params` lists control keys (or `[key, symbol]` pairs). Each gets a compact
   dial that changes the parameter through `setParam`, so the Controls page
-  follows; parameters that restart the run are left out.
+  follows; parameters that restart the run are left out. The dials sit as the
+  Controls page's do, in equal cells side by side, each its symbol over its
+  wheel.
 - `check(lab)` returns `{ what, theory, sim, fmt, tol, wait }` to set the
   formula's prediction beside a measurement (agreement within `tol` is green,
   within three times it is amber), or `{ text, state }` for a plain note. A
@@ -707,7 +719,7 @@ The stylesheets load in this order, each building on the last:
 | `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass tokens (opaque tiles in one plain-colour gradient with the sheen as an inset shadow; see Conventions) |
 | `icons.css` | Material Symbols styling and tab glyph animations |
 | `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
-| `controls.css` | Buttons, segmented choices, the thumbwheel dials and their card grid, switches, the player bar's native sliders |
+| `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
 | `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and the HUD menu |
 | `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), Live Math panels, Guide cards, tabs |

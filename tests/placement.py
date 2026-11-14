@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Dials and Placement Tests (digiSpace Edition - v2.9)
+    - Title: Dials and Placement Tests (digiSpace Edition - v2.11)
     - File Name: placement.py
     - Relative Path: tests/placement.py
     - Artifact Type: test
-    - Version: 2.9.0
+    - Version: 2.11.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
+      new look: value without a box and unit set back, the degree sign, the
+      ridges parted round the value, wheels level past a two-line name and
+      beside a note, the focus ring for the keyboard only, the wheel as the
+      field when typing, and the Math page's wheels equal and side by side.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Random
       draws cover the research reference's six classes, and a chosen class
       keeps the placed body's mass in its range.
@@ -30,6 +35,11 @@
 ✒ Key Features:
     - Dials: a 64 px drag moves Restitution e by 64/320 of its range; taps
       and chevrons move one notch; the wheel turns a focused dial only.
+    - Dial look: the value without a box and its unit set back, the degree
+      sign against its number, the ridges parted round the value, a row's
+      wheels level past a two-line name or a note, the focus ring for the
+      keyboard only, the wheel as the field when typing, and the Math page's
+      wheels equal and side by side.
     - Random: the dice shows only in labs that place things, and its three
       switches stay in step.
     - Gravity: random bodies come in every planet type within its mass range;
@@ -101,6 +111,33 @@ with sync_playwright() as p:
     pg.mouse.move(c["x"] + c["width"] * 0.5, cyc); pg.mouse.down(); pg.mouse.move(c["x"] + c["width"] * 0.5 + 40, cyc, steps=8); pg.mouse.up(); pg.wait_for_timeout(300)
     ok("dial_restart_once_per_drag", pg.evaluate("window.rebuilds") == 1 and st("count") > 260 and pg.evaluate(P + ".active.n") == st("count"), (pg.evaluate("window.rebuilds"), st("count")))
     ok("dial_cards_in_grid", pg.locator("#params-body .dial-grid .dial").count() >= 5)
+    pg.context.close()
+
+    # ---- Dial look (2.11.0): the value without a box, its unit set back, the ridges parted round it, wheels in line,
+    # the focus ring for the keyboard only, the wheel as the field when typing, and the Math page's wheels in line
+    pg = fresh("chaos")
+    parts = pg.evaluate("[...document.querySelectorAll('#ctl-chaos-g-out > span')].map(s => [s.className, s.textContent])")
+    ok("dial_unit_set_back", parts == [["dial-num", "9.81"], ["dial-unit", "m/s²"]] and pg.inner_text("#ctl-chaos-g-out") == "9.81 m/s²", parts)
+    ok("dial_degree_against_number", pg.inner_text("#ctl-chaos-theta1-out") == "120°", pg.inner_text("#ctl-chaos-theta1-out"))
+    gap = pg.evaluate("(() => { const w = document.querySelector('#ctl-chaos-g-wheel'), v = document.querySelector('#ctl-chaos-g-out'); return [parseFloat(w.style.getPropertyValue('--gap')), v.offsetWidth / 2, getComputedStyle(v).backgroundColor, getComputedStyle(v).boxShadow]; })()")
+    ok("dial_ridges_part_round_value", gap[0] > 10 and abs(gap[0] - gap[1]) < 0.6 and gap[2] == "rgba(0, 0, 0, 0)" and gap[3] == "none", gap)
+    top = lambda sel: pg.locator(sel).bounding_box()["y"]
+    ok("dial_wheels_level_past_two_line_name", abs(top("#ctl-chaos-copies-wheel") - top("#ctl-chaos-delta-wheel")) < 0.5, (top("#ctl-chaos-copies-wheel"), top("#ctl-chaos-delta-wheel")))
+    ring = lambda: pg.evaluate("(() => { const w = document.querySelector('#ctl-chaos-len-wheel'); return [w.classList.contains('by-pointer'), getComputedStyle(w).boxShadow.includes('0px 0px 0px 2px')]; })()")
+    w = pg.locator("#ctl-chaos-len-wheel").bounding_box(); cy = w["y"] + w["height"] / 2
+    pg.mouse.move(w["x"] + 40, cy); pg.mouse.down(); pg.mouse.move(w["x"] + 70, cy, steps=4); pg.mouse.up(); pg.wait_for_timeout(250)
+    r_ptr = ring(); pg.keyboard.press("ArrowRight"); pg.wait_for_timeout(250); r_key = ring()
+    ok("dial_focus_ring_for_keyboard_only", r_ptr == [True, False] and r_key == [False, True], (r_ptr, r_key))
+    pg.click("#ctl-chaos-damp-out"); pg.wait_for_timeout(150)
+    fld = pg.evaluate("(() => { const w = document.querySelector('#ctl-chaos-damp-wheel'), e = w.querySelector('.ctl-edit'); return e && [e.offsetWidth, w.clientWidth - 40, getComputedStyle(w.querySelector('.dial-ridges')).visibility]; })()")
+    pg.keyboard.press("Escape")
+    ok("dial_wheel_is_the_field_when_typing", fld and abs(fld[0] - fld[1]) <= 1 and fld[2] == "hidden" and pg.is_visible("#ctl-chaos-damp-out"), fld)
+    pg.click("#nt-math"); pg.wait_for_timeout(600)
+    boxes = pg.evaluate("[...document.querySelector('#math .fl-params').querySelectorAll('.dial-wheel')].map(w => { const r = w.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width)]; })")
+    ok("math_wheels_equal_side_by_side", len(boxes) == 4 and len({b[2] for b in boxes}) == 1 and len({b[0] for b in boxes}) == 2 and len({b[1] for b in boxes}) == 2, boxes)
+    pg.context.close()
+    pg = fresh("gravity")
+    ok("dial_wheels_level_beside_a_note", abs(pg.locator("#ctl-gravity-G-wheel").bounding_box()["y"] - pg.locator("#ctl-gravity-soft-wheel").bounding_box()["y"]) < 0.5)
     pg.context.close()
 
     # ---- Random: the dice, the Controls switch and the Guide card agree; the dice shows where things are placed
