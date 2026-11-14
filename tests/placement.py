@@ -126,7 +126,13 @@ with sync_playwright() as p:
     ring = lambda: pg.evaluate("(() => { const w = document.querySelector('#ctl-chaos-len-wheel'); return [w.classList.contains('by-pointer'), getComputedStyle(w).boxShadow.includes('0px 0px 0px 2px')]; })()")
     w = pg.locator("#ctl-chaos-len-wheel").bounding_box(); cy = w["y"] + w["height"] / 2
     pg.mouse.move(w["x"] + 40, cy); pg.mouse.down(); pg.mouse.move(w["x"] + 70, cy, steps=4); pg.mouse.up(); pg.wait_for_timeout(250)
-    r_ptr = ring(); pg.keyboard.press("ArrowRight"); pg.wait_for_timeout(250); r_key = ring()
+    # The ring eases in over 0.2 s, so the keyboard's ring is awaited (up to 2 s) rather than read mid-transition.
+    r_ptr = ring(); pg.keyboard.press("ArrowRight")
+    try:
+        pg.wait_for_function("getComputedStyle(document.querySelector('#ctl-chaos-len-wheel')).boxShadow.includes('0px 0px 0px 2px')", timeout=2000)
+    except Exception:
+        pass
+    r_key = ring()
     ok("dial_focus_ring_for_keyboard_only", r_ptr == [True, False] and r_key == [False, True], (r_ptr, r_key))
     pg.click("#ctl-chaos-damp-out"); pg.wait_for_timeout(150)
     fld = pg.evaluate("(() => { const w = document.querySelector('#ctl-chaos-damp-wheel'), e = w.querySelector('.ctl-edit'); return e && [e.offsetWidth, w.clientWidth - 40, getComputedStyle(w.querySelector('.dial-ridges')).visibility]; })()")

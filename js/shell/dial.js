@@ -16,7 +16,9 @@
       Dennis's call to calm the dials: text() shows the value as its number
       with its unit set back, the ridges part round it at its measured width
       (re-measured as a wheel first shows or resizes), and the focus ring is
-      for the keyboard, not after a pointer took the wheel.
+      for the keyboard, not after a pointer took the wheel. An unchanged value
+      is left as it is, since the Math page redraws its dials four times a
+      second.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call to replace the long horizontal sliders with something
       more compact and refined: a ridged thumbwheel with the value set into
@@ -163,8 +165,12 @@ export function makeWheel({ id, min, max, step = 'any', label = null, describedb
     clearTimeout(wheelTimer); wheelTimer = setTimeout(() => { wheelAcc = 0; finish(); }, 280);
   }, { passive: false });
 
-  /* Show the value as read: the number, then its unit or suffix in a quieter tone, the space between kept as text. */
+  /* Show the value as read: the number, then its unit or suffix in a quieter tone, the space between kept as text.
+     The Math page redraws its dials four times a second, so an unchanged value is left as it is. */
+  let shown = null;
   function text(s) {
+    if (s === shown && val.firstChild) return;
+    shown = s;
     const m = SPLIT.exec(s);
     if (m) val.replaceChildren(el('span', { class: 'dial-num', text: m[1] }), m[2], el('span', { class: 'dial-unit', text: m[3] }));
     else val.textContent = s;

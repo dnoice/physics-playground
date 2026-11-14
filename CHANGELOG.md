@@ -85,7 +85,8 @@ size wherever they can, not stacked one on another.
   while turning.
 - **The unit set back.** A value reads as its number with its unit or
   suffix in a quieter tone (`9.81 m/s²`, `1.50×`), through the dial's new
-  `text()`. A degree sign sits against its number (`120°`, not `120 °`).
+  `text()`, which leaves an unchanged value alone. A degree sign sits
+  against its number (`120°`, not `120 °`).
 - **Quieter chevrons and range line.** The chevrons are smaller and muted
   until the pointer comes. The range line runs along the wheel's foot, with
   a fine tick for the scene's value.
@@ -108,6 +109,8 @@ size wherever they can, not stacked one on another.
 
 ### Tests
 
+- **`tests/interact.py`:** the Chaos start-angle dial now reads `35.1°`,
+  with no space before the degree sign.
 - **`tests/placement.py`, eight new checks:**
   - the value has no box, and its unit is set back;
   - the degree sign sits against its number;
