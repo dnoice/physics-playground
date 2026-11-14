@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Our Solar System (digiSpace Edition - v2.8)
+    - Title: Our Solar System (digiSpace Edition - v2.9)
     - File Name: solarsystem.js
     - Relative Path: js/labs/solarsystem.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The planets
+      and moons take the research reference's classes: Mercury, Venus, Earth
+      and Mars terrestrial (Earth keeping its ocean surface), the large moons
+      moons.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for our own Solar System as a Gravity scene, from the Sun
       to the moons of the giants, the Kuiper belt and beyond. The Moon starts
@@ -70,10 +74,10 @@ const D2R = Math.PI / 180, TAU = Math.PI * 2, AU_KM = 149597870.7, SUN_KG = 1.98
 /* Planets: a (AU), e, I, L, long. perihelion, long. node (degrees), mass (Sun = 1), radius (km). JPL Table 1, J2000.
    Earth's row is the Earth–Moon barycentre's, and Pluto's the Pluto–Charon barycentre's. */
 const PLANETS = [
-  { name: 'Mercury', el: [0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593], m: 1.6601e-7, R: 2439.7, kind: 'rocky', tint: [150, 146, 142], desc: 'Terrestrial planet', px: 2.4 },
-  { name: 'Venus', el: [0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255], m: 2.4478e-6, R: 6051.8, kind: 'rocky', tint: [226, 198, 140], desc: 'Terrestrial planet', px: 2.8 },
-  { name: 'Earth', el: [1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0], m: 3.0035e-6, R: 6371, kind: 'ocean', tint: [74, 138, 222], desc: 'Terrestrial planet: home', px: 2.9 },
-  { name: 'Mars', el: [1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891], m: 3.2272e-7, R: 3389.5, kind: 'rocky', tint: [204, 104, 70], desc: 'Terrestrial planet', px: 2.6, pole: [317.681, 52.887] },
+  { name: 'Mercury', el: [0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593], m: 1.6601e-7, R: 2439.7, kind: 'terrestrial', tint: [150, 146, 142], desc: 'Terrestrial planet', px: 2.4 },
+  { name: 'Venus', el: [0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255], m: 2.4478e-6, R: 6051.8, kind: 'terrestrial', tint: [226, 198, 140], desc: 'Terrestrial planet', px: 2.8 },
+  { name: 'Earth', el: [1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0], m: 3.0035e-6, R: 6371, kind: 'terrestrial', surface: 1, tint: [74, 138, 222], desc: 'Terrestrial planet: home', px: 2.9 },
+  { name: 'Mars', el: [1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891], m: 3.2272e-7, R: 3389.5, kind: 'terrestrial', tint: [204, 104, 70], desc: 'Terrestrial planet', px: 2.6, pole: [317.681, 52.887] },
   { name: 'Jupiter', el: [5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909], m: 9.5479e-4, R: 69911, kind: 'gas', tint: [216, 178, 132], desc: 'Gas giant', px: 4.2, pole: [268.057, 64.495] },
   { name: 'Saturn', el: [9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448], m: 2.8589e-4, R: 58232, kind: 'gas', tint: [228, 204, 146], desc: 'Gas giant, ringed', px: 3.9, ring: true, pole: [40.589, 83.537] },
   { name: 'Uranus', el: [19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503], m: 4.3662e-5, R: 25362, kind: 'ice', tint: [156, 216, 222], desc: 'Ice giant, tipped on its side', px: 3.4, pole: [257.311, -15.175] },
@@ -182,8 +186,8 @@ export function buildSolarSystem(lab, { G, AU, SUN }) {
     const cr = [0, 0, 0], cv = [0, 0, 0];
     rel.forEach((q, k) => { for (let j = 0; j < 3; j++) { cr[j] += mm[k] * q.r[j] / mSys; cv[j] += mm[k] * q.v[j] / mSys; } });
     const pr = s.r.map((x, j) => x - cr[j]), pv = s.v.map((x, j) => x - cv[j]);
-    const host = add(pr, pv, mp, pl.kind, { name: pl.name, desc: pl.desc, tint: pl.tint, r: pl.R * km, px: pl.px, real: true, label: true, ring: !!pl.ring });
-    moons.forEach((mo, k) => add(rel[k].r.map((x, j) => pr[j] + x), rel[k].v.map((x, j) => pv[j] + x), mm[k], mo.R > 600 ? 'rocky' : 'icy',
+    const host = add(pr, pv, mp, pl.kind, { name: pl.name, desc: pl.desc, tint: pl.tint, r: pl.R * km, px: pl.px, real: true, label: true, ring: !!pl.ring, ...(pl.surface != null ? { surface: pl.surface } : {}) });
+    moons.forEach((mo, k) => add(rel[k].r.map((x, j) => pr[j] + x), rel[k].v.map((x, j) => pv[j] + x), mm[k], mo.R > 600 ? 'moon' : 'icy',
       { name: mo.name, desc: `Moon of ${pl.name}`, tint: mo.tint, r: mo.R * km, px: mo.R > 1000 ? 1.9 : 1.5, real: true, label: true, noTrail: true, hostId: host.id }));
   }
   for (const d of DWARFS) {

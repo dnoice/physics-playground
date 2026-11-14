@@ -1,17 +1,19 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.8)
+    - Title: Changelog (digiSpace Edition - v2.9)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.9.0 release.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.8.0 release.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -59,6 +61,115 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.9.0 (11/14/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+Gravity's planet types, on Dennis's research. "By mass" had called every body
+under 1.1 Jupiter masses a rocky or an ocean world, alternating by id, so a
+Saturn could be "rocky". His research reference,
+`docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md`, now in the
+repository, sets out the five planet classes with the firmest footing, their
+physics and their data. Gravity now uses them.
+
+### Planet classes
+
+- **Five classes**, from the reference's taxonomy:
+  - terrestrial (0.02–1.5 Earth masses);
+  - super-Earth (1.5–10);
+  - sub-Neptune (3–15);
+  - ice giant (10–40);
+  - gas giant (0.15–13 Jupiter masses).
+
+  Then brown dwarfs, from the 13 Jupiter-mass deuterium limit, and stars,
+  from 0.08 solar masses. Rocky and ocean worlds retire as classes: the
+  reference folds ocean worlds into the super-Earth and sub-Neptune
+  profiles. Earth keeps its ocean look as a world of its own.
+- **By mass** follows the reference's boundaries: 1.5 Earth masses; 4.37,
+  where measured worlds turn from bare rock to gas envelopes (Müller et al.
+  2024); 10; 50; and 13 Jupiter masses.
+  - It classes 19 of the reference's 22 benchmark planets as the reference
+    does.
+  - The other three are rocky super-Earths of 4.8 to 8 Earth masses, where
+    mass alone cannot tell rock from an envelope. Super-Earth can still be
+    chosen up to 10.
+  - The threshold now sits at 13 Jupiter masses exactly. It had been 13
+    simulation masses, which is 13.6 Jupiter masses.
+- **Random** draws a class (sub-Neptunes and super-Earths most often, after
+  the reference's occurrence rates), then a mass across the class's range.
+- **Type and mass stay consistent**, as the reference asks of its controls:
+  - choosing a class moves the mass to a typical member's (Earth, LHS 1140 b,
+    GJ 1214 b, Neptune, Jupiter);
+  - a mass dialled out of the class's range hands the type back to By mass;
+  - a body placed with a class always lands inside its range.
+
+  The mass dial now reaches 0.02 Earth masses, so terrestrial planets can be
+  made by hand.
+- **Mergers keep their composition.** Rocky worlds stay rocky, so two
+  super-Earths make a heavier super-Earth, not an ice giant. A world with an
+  envelope keeps it, and the class follows the new mass, never down.
+- **The Solar System** takes the classes too. Mercury, Venus, Earth and Mars
+  are terrestrial, Jupiter and Saturn gas giants, Uranus and Neptune ice
+  giants, and the large moons are moons.
+- **Old saved states.** Bodies typed rocky or ocean are classed again by
+  mass, and moons as moons.
+
+### Physical models in Inspect
+
+- **Radius.** The real radius in the Solar System. Elsewhere, an estimate
+  from the mass along the class's branch of the reference's mass–radius
+  relation (Model 4.4.3):
+  - rock, 1.03 M^0.29 (Otegi et al. 2020);
+  - envelopes, 0.56 M^0.67 (Müller et al. 2024);
+  - gas giants on a cold-giant curve: Müller's slope, through Jupiter, held
+    to the 0.9–1.15 Jupiter radii the reference keeps mature cold giants in.
+    Müller's own height fits hot, inflated giants and would make Jupiter 15 %
+    too large.
+- **Density, gravity and escape speed** from that radius (Model 4.1.2).
+  Gravity is at the surface for rocky worlds and at the cloud tops for
+  giants. The units are SI, or US customary in US.
+  - In the Solar System they match the reference's Table 5.1: Jupiter
+    1326 kg/m³, 25.9 m/s² and 60.2 km/s; Earth 5514 kg/m³, 9.82 m/s² and
+    11.2 km/s.
+  - A sandbox Jupiter comes out at 71,500 km and 59.5 km/s.
+- **Hill sphere** at periapsis (Model 4.1.4). The formula reproduces the
+  reference's 53.1 Gm for Jupiter.
+- **Roche limit** of what a Solar System body orbits, with a note when the
+  body is inside it, as Phobos is inside Mars's.
+- **IAU mass ratio.** A world of a planet class heavier than 1/25 of its
+  star is flagged as a binary companion, not a planet.
+- The Guide explains the classes.
+
+### Fixes
+
+- **Stale host on a paused selection.** The body a selected body orbits was
+  chosen from a source list that only rebuilt on the next step. While paused,
+  a body selected right after a heavier one was added could be measured
+  against the wrong host. `pullHost` now rebuilds the list first.
+
+### Tests
+
+- **New `tests/planets.py`** (20 checks), against the reference's own data:
+  - the 22 benchmark planets by mass;
+  - every class boundary;
+  - the rocky branch within 3 % of the rocky worlds' radii, the volatile
+    branch on the ice giants, and the cold-giant curve through Jupiter;
+  - Inspect's density, gravity and escape speed for six planets and the Sun;
+  - Jupiter's Hill sphere and the reference's 53.1 Gm;
+  - Phobos inside Mars's Roche limit and the Moon outside Earth's;
+  - US units;
+  - the Solar System's and Star system's classes;
+  - the IAU flag;
+  - eight mergers;
+  - the seven type buttons, the mass dial's reach, and type and mass kept
+    consistent;
+  - old saved states.
+
+  `run_all.py` runs it.
+- **`tests/placement.py`**:
+  - random draws now cover the six classes;
+  - a new check that a chosen class keeps the body's mass in range.
 
 ## 2.8.0 (11/10/2026)
 

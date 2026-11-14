@@ -1,17 +1,21 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.8)
+    - Title: Architecture Guide (digiSpace Edition - v2.9)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      planet classes: KINDS and its fields, kindOf, mergedKind, storedKind,
+      the coupled controls, planetRadius, physique and Inspect's Hill, Roche
+      and IAU rows; Random placement draws classes.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       Solar System: its section (body metadata, sources and test bodies, moon
       substeps, the sky frame, drawing to scale, orbits and names), its data
@@ -485,10 +489,11 @@ made.
 ## Random placement
 
 A lab that places things declares `random: { key, label, tip }` and reads
-`p[key]` wherever it places an object. Gravity draws a planet type by its
-odds and then a mass spread evenly in log across the type's range; the body
-keeps its type (`kind`) through merges, rewind snapshots and saved states,
-and the type sets its colour in 2D and its surface in 3D. Collisions draws a
+`p[key]` wherever it places an object. Gravity draws a planet class by its
+odds and then a mass spread evenly in log across the class's range (see
+Gravity's planet classes below); the body keeps its class (`kind`) through
+rewind snapshots and saved states, and the class sets its colour in 2D and its
+surface in 3D. Collisions draws a
 ball's radius, Fluid a post's radius, Waves a source's frequency multiple and
 phase, and Fields a charge's size and a launched particle's charge-to-mass
 ratio and sign. Where a preview shows the next object (Gravity's throw,
@@ -573,6 +578,72 @@ state of any scene can carry the same metadata.
     dwarfs and comets, then moons by mass. A name that would overlap one
     already placed is left out. The names drawn, with their bodies, are the
     lab's `hudClear`, so the head-up display's callout keeps off them.
+
+## Gravity's planet classes
+
+Gravity's classes come from its research reference,
+`docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md`, and live in
+`js/labs/gravity.js`. Masses are thousandths of the Sun's; `JUP` and `EARTH`
+give Jupiter and Earth in those units, from the IAU mass ratios.
+
+- **`KINDS`** holds the five planet classes (`terrestrial`, `superEarth`,
+  `subNeptune`, `ice`, `gas`), then `brown` and `star`, then the Solar System's
+  `moon`, `dwarf`, `asteroid`, `icy` and `comet`. A class has these fields:
+
+  | Field | What it holds |
+  | --- | --- |
+  | `me` | Its mass range in Earth masses (the reference's Table 5.2), copied to `m` in simulation units |
+  | `typ` | A typical member's mass |
+  | `odds` | Its weight among Random's draws |
+  | `family` | `rock` or `gas`: what a merger keeps |
+  | `rgb` | Its colour |
+  | `surface` | Its 3D surface: 0 rocky, 1 ocean, 2 banded |
+
+  A body's own `surface` (Earth's ocean) overrides the class's.
+- **`kindOf(m)`** is By mass. Its boundaries are 1.5, 4.37, 10 and 50 Earth
+  masses, 13 Jupiter masses and 80 (0.08 solar masses).
+  - 4.37 is where Müller et al. (2024) find measured worlds turning from bare
+    rock to gas envelopes.
+  - The class ranges overlap where composition decides. A rocky super-Earth up
+    to 10 Earth masses is a type you can choose; mass alone does not give it.
+- **`mergedKind(big, small, m)`** keeps a merger's family. Rock stays rock and
+  an envelope stays, then the class follows the new mass, never down. Brown
+  dwarfs and stars follow mass outright, and the Solar System's named worlds
+  keep their class.
+- **`storedKind`** reads a class from a snapshot or a saved state. A state
+  from before 2.9 (rocky or ocean worlds) is classed again: a moon as a moon,
+  and anything else by mass.
+- **Controls.** A chosen class keeps the launch mass inside its range:
+  - `drawNew` clamps the mass;
+  - `onParam('kind')` moves the dial to the class's typical mass;
+  - `onParam('launchMass')` hands the type back to By mass when the dial
+    leaves the class's range.
+
+  The dial reaches 0.02 Earth masses.
+- **`planetRadius(m, kind)`** gives a radius in Earth radii from the
+  reference's Model 4.4.3:
+  - Rock follows the extended rocky branch, 1.03 M^0.29 (Otegi et al. 2020).
+  - Envelopes follow the volatile branch, 0.56 M^0.67 (Müller et al. 2024).
+  - Gas giants follow the volatile branch until it meets a degenerate curve.
+    That curve has Müller's slope, M^-0.06, but passes through Jupiter and is
+    held to 0.9–1.15 Jupiter radii. The reference locks mature cold giants
+    there, while Müller's own 18.6 fits a sample of hot, inflated giants.
+
+  It is a population median: Saturn, rich in heavy elements, comes out larger
+  than it is. Brown dwarfs, stars and the small worlds have no relation and
+  return null.
+- **`physique(b)`** turns the real radius (Solar System) or the estimated one
+  into density, gravity GM/R² and escape speed √(2GM/R), in SI. `physRows`
+  puts them in Inspect, with US customary units in US and SI otherwise; these
+  have no simulation unit.
+- **Inspect's orbit section** adds:
+  - the Hill sphere at periapsis, a(1−e)·(m/3(M+m))^⅓ (Model 4.1.4);
+  - for real pairs, the fluid Roche limit 2.456 R(ρ_host/ρ)^⅓, with a note
+    when the body is inside it;
+  - for a planet class heavier than 1/25 of its star, a row saying it fails
+    the IAU working definition.
+- **Drawing.** The drawn radius (`bodyRadius`) stays a scale for seeing, and
+  is also the collision radius. The physical radius is only reported.
 
 ## Guided experiments
 
