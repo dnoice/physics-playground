@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.9)
+    - Title: README Media Manifest (digiSpace Edition - v2.10)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.9.0
+    - Version: 2.10.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Solar
+      System pair is recaptured from release 2.10.0: its orbits fade back
+      round from each body, the depth marks give way to them, and the close-up
+      reads its zoom in short form.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero is
       recaptured from release 2.9.0: the Star system's planets as the research
       classes make them, gas giants, and the planet-class buttons under New
@@ -90,9 +94,10 @@ and `sol`, or single gallery labs by id, for example `--only chaos` after a
 change to that lab's scene. Commit the WebP files with
 the change that made them necessary.
 
-The Solar System pair was captured from release 2.8.0 on 11/10/2026 in the
+The Solar System pair was captured from release 2.10.0 on 11/14/2026 in the
 same way, about five months into the run (the scene also runs while the page
-boots). The hero was captured from release 2.9.0 on 11/14/2026, headless in
+boots). Its orbits fade back round from each body, and the close-up's zoom
+reads in short form (41.8k%). The hero was captured from release 2.9.0 on 11/14/2026, headless in
 software WebGL on four CPU cores, in metric units. It shows the head-up
 display's readings tape, and the Star system's planets as the gas giants the
 research classes make them, with the planet-class buttons under New bodies.
@@ -115,7 +120,7 @@ banner, which shows no interface, from release 2.3.0.
 | `lab-chaos.webp` | 1106 × 610 | Chaos, Sensitive start in the Both view (the pendulum beside its phase map), 9 s in, with a start previewed on the map | Lab gallery |
 | `lab-cloth.webp` | 1106 × 610 | Cloth, Flag in wind, 4 s in | Lab gallery |
 | `lab-fields.webp` | 1106 × 610 | Fields, Cyclotron motion, 3 s in | Lab gallery |
-| `sol-system.webp` | 1396 × 420 | Gravity, Our Solar System in 3D, as a pair: the Sun, the planets out to Saturn, Halley's comet and the asteroid belt with their orbits and names, 163 days in (June 2000); then Jupiter followed up close in September 2000, Callisto and Ganymede named on their orbits, with the head-up display's target box and callout on the planet, clear of the names | "Our Solar System" |
+| `sol-system.webp` | 1396 × 420 | Gravity, Our Solar System in 3D, as a pair: the Sun, the planets out to Saturn, Halley's comet and the asteroid belt with their orbits fading back from each body and their names, 150 days in (May 2000); then Jupiter followed up close in September 2000, Callisto and Ganymede named on their orbits, with the head-up display's target box and callout on the planet, clear of the names | "Our Solar System" |
 | `modes-2d-3d.webp` | 1472 × 420 | Waves, Double slit, 6 s in and paused, in 2D and then in 3D at the same moment | "Two modes: 2D and 3D" |
 
 Gravity is not in the gallery because the hero already shows it; its Solar

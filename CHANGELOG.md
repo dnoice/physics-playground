@@ -124,6 +124,15 @@ in Our Solar System, and his call for more flexible zoom there.
   - the outer limit shows all of Sedna's orbit, and the readout is in short
     form.
 
+### Docs
+
+- **README:** the Our Solar System guide covers the fading orbits and the
+  new zoom range, and the release badge reads 2.10.0.
+- **ARCHITECTURE:** `orbitFrame` and `orbitCurve`, and the `zoomPace` and
+  `zoomLimits3` hooks.
+- **`docs/media/sol-system.webp`** is recaptured with the fading orbits and
+  the short-form zoom reading, and `docs/media/MANIFEST.md` records the run.
+
 ## 2.9.0 (11/14/2026)
 
 [dendogg + Anthropic - Claude Opus 5.5]
