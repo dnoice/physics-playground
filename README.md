@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.8)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.9)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.9.0: the Planet classes section (the five classes, By mass, the
+      coupled controls, Random, Inspect's physical figures and mergers), the
+      research reference in the layout and Documentation, the Gravity 3D row
+      and the Random rail note, and the release badge.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.8.0: Our Solar System in the highlights, the labs table and its own
       section with its picture (how to explore it, how faithful it is, how it
@@ -104,8 +109,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.8.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.8.0">
+    <img src="https://img.shields.io/badge/release-v2.9.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.9.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -150,7 +155,8 @@ capture what happens.
 Gravity also includes **Our Solar System**, a scene with real planetary
 masses, sizes and orbits, plus moons, dwarf planets, Halley’s comet and
 samples from the asteroid and Kuiper belts. The run begins at noon on
-1 January 2000.
+1 January 2000. Every world in Gravity belongs to one of the five
+[planet classes](#planet-classes) of its research reference.
 
 ## The labs
 
@@ -256,8 +262,10 @@ To explore it:
 
 - **Click a planet** to follow it, then zoom in. Its moons appear as soon
   as the zoom draws them clear of the planet. Inspect gives the planet's
-  distance from the Sun, its period, its real radius and its tilt from the
-  ecliptic. Click a moon to see its orbit about its planet.
+  distance from the Sun, its period and its tilt from the ecliptic, and its
+  real radius, density, gravity, escape speed and Hill sphere. Click a moon
+  to see its orbit about its planet, and the Roche limit it must keep clear
+  of: Phobos is already inside Mars's.
 - **Orbits** and **Names**, under Display, draw each named body's ellipse
   and name. In 3D the orbits are drawn in depth, so a planet hides the far
   side of its moons' orbits.
@@ -294,6 +302,46 @@ It also simplifies two things:
 - **The belts** are seeded samples of the real populations, not catalogued
   asteroids.
 
+## Planet classes
+
+Gravity names its worlds by the five planet classes of its research
+reference,
+[Planetary Classification and Governing Physics](docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md).
+They are the classes with the firmest footing in data and theory, and the
+reference adds brown dwarfs and stars above them:
+
+| Class | Mass | Radius | What it is |
+| --- | --- | --- | --- |
+| Terrestrial | 0.02–1.5 Earth masses | up to 1.2 Earth radii | Compact rock and iron, like Mercury, Venus, Earth and Mars |
+| Super-Earth | 1.5–10 Earth masses | 1.2–1.8 Earth radii | Rock squeezed denser than Earth's, below the radius valley; none in our Solar System |
+| Sub-Neptune | 3–15 Earth masses | 1.8–3.5 Earth radii | A rocky core under a few per cent of hydrogen and helium: the most common planet in close orbits about Sun-like stars |
+| Ice giant | 10–40 Earth masses | 3.5–6 Earth radii | Water, ammonia and methane under a hydrogen envelope, like Uranus and Neptune |
+| Gas giant | 0.15–13 Jupiter masses | over 6 Earth radii | Mostly hydrogen and helium, like Jupiter and Saturn |
+| Brown dwarf | 13 Jupiter masses to 0.08 solar masses | — | Past the deuterium-burning limit that caps a planet, so not one; above 0.08 solar masses, hydrogen burns and it is a star |
+
+- **By mass**, under Type of new bodies, gives the class a body of that mass
+  usually is. The boundaries are the reference's: 1.5 Earth masses; 4.37, where
+  measured worlds turn from bare rock to gas envelopes; 10; 50; and 13 Jupiter
+  masses. Between 4.4 and 10 Earth masses, mass alone cannot tell a rocky
+  super-Earth from a sub-Neptune, so choose Super-Earth to have one.
+- **A chosen type keeps its mass in range.** Choosing one moves the mass to a
+  typical member's (Earth, LHS 1140 b, GJ 1214 b, Neptune, Jupiter), and
+  dialling the mass out of its range hands the type back to By mass.
+- **Random** draws a class, sub-Neptunes and super-Earths most often, then a
+  mass evenly across its range.
+- **Inspect** gives a world's radius, density, gravity at its surface or
+  cloud tops, escape speed and Hill sphere. In the Solar System these come
+  from the real radius and match the reference's table. Elsewhere the radius
+  is estimated from the mass, along the class's branch of the reference's
+  mass–radius relation. Inspect also says when a "planet" outweighs 1/25 of
+  its star, which makes it a binary companion under the IAU's definition.
+- **Mergers keep their composition**: rocky worlds stay rocky, a world with
+  an envelope keeps it, and the class follows the new mass.
+
+The stage still draws every world larger than life, so it can be seen;
+Inspect gives the size it would really have. `tests/planets.py` checks
+each class and figure against the reference's own data.
+
 ## Quick start
 
 The fastest way in is the **[live lab][demo]**, served by GitHub Pages.
@@ -328,7 +376,7 @@ load, the workspace stays in 2D and says why.
 
 | Lab | In 3D |
 | --- | --- |
-| Gravity | Open space: a nebula, plasma stars, and rocky, ocean and ringed gas worlds |
+| Gravity | Open space: a nebula, plasma stars, and worlds in their planet class's colours: rocky terrestrials and super-Earths, hazy sub-Neptunes, banded ice and gas giants, some ringed |
 | Collisions | A slate air table in walnut and brass, which tilts when gravity is on |
 | Fluid | A glass aquarium of real-looking liquid, with refraction and caustics |
 | Waves | A walnut ripple tank with projected caustics and a screen graphing the fringes |
@@ -372,8 +420,9 @@ full-height Inspector beside them.
   Gravity's Follow. Tools and views are radio groups: arrow keys move within
   one, and a view never restarts or rewinds the run. In the labs that place
   things (Gravity, Collisions, Fluid, Waves and Fields), the **Random** dice
-  under the tools makes each new object different: a random planet type and
-  mass, ball size, post size, source frequency and phase, or charge.
+  under the tools makes each new object different: a random planet class and
+  a mass in its range, ball size, post size, source frequency and phase, or
+  charge.
 - **Head-up display**: the run's numbers on the stage itself, in thin cyan
   lines over the simulation. A tape down the left edge carries the lab's key
   readings, each with its trend and a short trace; caution lights near the
@@ -543,6 +592,7 @@ tools/                dev server, project checker, Pages stager, README media ca
 tests/                Playwright browser suites and their runner
 vendor/katex/         KaTeX stylesheet, fonts and licence
 docs/media/           README banner and screenshots, with their manifest
+docs/research/md/     the research reference behind Gravity's planet classes
 .github/workflows/    the Pages verify-and-deploy workflow
 .nojekyll             tells GitHub Pages to serve files as they are
 ```
@@ -618,6 +668,7 @@ without it the workspace says so and stays in 2D.
 | [vendor/VENDOR.md](vendor/VENDOR.md) | Third-party code: versions, sources, licences and what happens offline |
 | [package.metadata.md](package.metadata.md) | What `package.json` declares, and every npm script |
 | [docs/media/MANIFEST.md](docs/media/MANIFEST.md) | The README pictures: what each shows, where it came from, how to recapture it |
+| [docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md](docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md) | The research behind Gravity's planet classes: the five classes, their physics, the mass–radius relations and the reference dataset |
 
 ## Credits and license
 
@@ -640,7 +691,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.8.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.9.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

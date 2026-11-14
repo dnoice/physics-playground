@@ -1,17 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.8)
+    - Title: Gravity Lab (digiSpace Edition - v2.9)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Planet
+      classes from Dennis's research reference (docs/research/md):
+      terrestrial, super-Earth, sub-Neptune, ice giant and gas giant, then
+      brown dwarfs and stars, By mass on the reference's boundaries in place
+      of rocky and ocean worlds alternating by id; mergers keep their family;
+      a chosen class keeps the launch mass in its range, and the dial reaches
+      0.02 Earth masses. Inspect gives a world's radius (real, or from the
+      reference's mass-radius relation), density, gravity, escape speed and
+      Hill sphere, the Roche limit of a real host, and the IAU mass-ratio
+      test. pullHost rebuilds a stale source list.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
       System (built by solarsystem.js): body metadata carried through rewind
       and saved states and checked on load; massless test bodies; moons on
@@ -26,17 +36,6 @@
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: bodies, energy, drift and virial ratio on its tape, and the
       followed body as its target, in 2D and 3D.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
-      Math page's Kepler panel now times a full turn of the followed planet,
-      in its own orbital plane, against 2π√(a³/μ) instead of restating the
-      law; the virial check averages K and U over the energy chart's window,
-      as the theorem holds only on average; the Kepler formula shows G(M + m)
-      as the panel computes it; the Insights give lengths in the chosen units.
-      The virial ratio, its check and dataset column, and whether the system
-      is bound, are taken in the centre-of-mass frame, so a throw that sets
-      the whole system drifting no longer reads as heat; the circular-speed
-      check compares with the softened speed the run uses and names an
-      eccentric orbit as an ellipse rather than a miss.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -55,17 +54,22 @@
       step (r-RESPA), so Phobos and the Kuiper belt share one run.
     - Real-sized named worlds above a pixel floor, osculating orbits and
       ranked names in 2D, and the date on the clock.
-    - Planet types (rocky, ocean, ice giant, gas giant, brown dwarf, star),
-      each with its colour in 2D and its surface in 3D; a merger that crosses
-      a class boundary becomes the heavier class.
-    - New bodies: their mass, a chosen type, the drop speed in times the
-      circular speed, and the tilt of new orbits; Random new bodies draws each
-      type and mass instead, and the throw preview shows the body that will
-      fly.
+    - Planet classes from the research reference (terrestrial, super-Earth,
+      sub-Neptune, ice giant, gas giant, then brown dwarf and star), each with
+      its colour in 2D and its surface in 3D; By mass on the reference's
+      boundaries, and mergers that keep their composition.
+    - Physical models in Inspect: radius from the reference's mass-radius
+      relation (or the real one), density, gravity, escape speed, Hill sphere,
+      Roche limit and the IAU mass ratio.
+    - New bodies: their mass, a chosen class that keeps the mass in its range,
+      the drop speed in times the circular speed, and the tilt of new orbits;
+      Random new bodies draws each class and mass instead, and the throw
+      preview shows the body that will fly.
     - Readouts for energy drift, virial ratio, momentum and the range of orbit
       tilts.
     - Datasets and tracks carry z and vz; saved states and rewind keep the
-      third dimension, each body's type and its metadata.
+      third dimension, each body's class and its metadata, and states from
+      before the classes are classed again.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -109,25 +113,72 @@ export const bodyRadius = m => 1.5 + 1.65 * Math.cbrt(m);
 export const massIdx = m => clamp(Math.round(70 + 185 * Math.log10(m + 1) / Math.log10(2001)), 0, 255);
 export const massColor = m => RAMP_HEAT.css[massIdx(m)];
 export const massRgb = m => rampRgb(RAMP_HEAT, massIdx(m));
-/* Planet types. A body knows its type: the scenes' bodies are typed by mass, as the inspector always named them
-   (rocky and ocean worlds alternate below 1.1 Jupiter masses); bodies dropped with Random new bodies on draw a
-   type by its odds, then a mass spread evenly in log across its range (1 is Jupiter's mass, 1000 the Sun's).
-   The surface is the 3D world's: 0 rocky, 1 ocean, 2 banded. */
+/* Masses here are thousandths of the Sun's, so the Sun is 1000; Jupiter (JUP) and Earth (EARTH) in those units, from
+   the IAU mass ratios. */
+export const JUP = 1000 / 1047.348644, EARTH = 1000 / 332946.0487;
+/* Planet classes, from the research reference (docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md): the five
+   classes with the firmest empirical footing, then brown dwarfs above the deuterium-burning limit and stars above
+   hydrogen burning. A body knows its class. me is the class's mass range in Earth masses (the reference's Table 5.2),
+   which Random new bodies draws from, evenly in log; the ranges overlap where composition decides and mass cannot
+   (a world of 6 Earth masses may be bare rock or carry a gas envelope). family is what a merger keeps: rock, or an
+   envelope of gas. The odds lean on the reference's occurrence rates (sub-Neptunes, then super-Earths, are the most
+   common planets found), with giants kept common enough for a random sky to show them. typ is the mass a chosen
+   class starts from: Earth, LHS 1140 b, GJ 1214 b, Neptune and Jupiter (the reference's Table 5.1). The surface is
+   the 3D world's: 0 rocky, 1 ocean, 2 banded. */
 export const KINDS = {
-  rocky: { label: 'Rocky world', short: 'Rocky', m: [0.0005, 0.012], rgb: [186, 140, 108], surface: 0, odds: 0.24, rank: 0 },
-  ocean: { label: 'Ocean world', short: 'Ocean', m: [0.002, 0.03], rgb: [78, 156, 228], surface: 1, odds: 0.16, rank: 0 },
-  ice: { label: 'Ice giant', short: 'Ice giant', m: [0.03, 0.12], rgb: [124, 214, 212], surface: 2, odds: 0.2, rank: 1 },
-  gas: { label: 'Gas giant', short: 'Gas giant', m: [0.2, 10], rgb: [224, 178, 122], surface: 2, odds: 0.3, rank: 2 },
-  brown: { label: 'Brown dwarf', short: 'Brown dwarf', m: [13, 70], rgb: [178, 86, 80], surface: 2, odds: 0.1, rank: 3 },
-  star: { label: 'Star', short: 'Star', surface: -1, rank: 4 },
-  // The Solar System's smaller worlds; with no odds they are never drawn at random or offered as a type.
+  terrestrial: { label: 'Terrestrial planet', short: 'Terrestrial', me: [0.02, 1.5], typ: 1, rgb: [186, 140, 108], surface: 0, odds: 0.16, rank: 1, family: 'rock' },
+  superEarth: { label: 'Super-Earth', short: 'Super-Earth', me: [1.5, 10], typ: 5.6, rgb: [168, 102, 80], surface: 0, odds: 0.2, rank: 2, family: 'rock' },
+  subNeptune: { label: 'Sub-Neptune', short: 'Sub-Neptune', me: [3, 15], typ: 8.17, rgb: [150, 166, 222], surface: 2, odds: 0.22, rank: 3, family: 'gas' },
+  ice: { label: 'Ice giant', short: 'Ice giant', me: [10, 40], typ: 17.15, rgb: [124, 214, 212], surface: 2, odds: 0.14, rank: 4, family: 'gas' },
+  gas: { label: 'Gas giant', short: 'Gas giant', me: [50, 4130], typ: 317.8, rgb: [224, 178, 122], surface: 2, odds: 0.2, rank: 5, family: 'gas' },
+  brown: { label: 'Brown dwarf', short: 'Brown dwarf', m: [13 * JUP, 70], typ: 30 / EARTH, rgb: [178, 86, 80], surface: 2, odds: 0.08, rank: 6, family: 'gas' },
+  star: { label: 'Star', short: 'Star', surface: -1, rank: 7 },
+  // The Solar System's moons and smaller worlds; with no odds they are never drawn at random or offered as a type.
+  moon: { label: 'Moon', short: 'Moon', rgb: [168, 166, 160], surface: 0, rank: 0 },
   dwarf: { label: 'Dwarf planet', short: 'Dwarf', rgb: [204, 186, 160], surface: 0, rank: 0 },
   asteroid: { label: 'Asteroid', short: 'Asteroid', rgb: [150, 138, 124], surface: 0, rank: 0 },
   icy: { label: 'Icy body', short: 'Icy', rgb: [176, 196, 212], surface: 0, rank: 0 },
   comet: { label: 'Comet', short: 'Comet', rgb: [206, 222, 236], surface: 0, rank: 0 },
 };
+for (const k of Object.values(KINDS)) if (k.me) k.m = k.me.map(v => v * EARTH);
+/* 0.08 solar masses: hydrogen burning, above which a body is a star. */
 export const STAR_LIMIT = 80;
-export const kindOf = (m, id) => (m > STAR_LIMIT ? 'star' : m >= 13 ? 'brown' : m >= 1.1 ? 'gas' : m < 0.25 || id % 2 === 0 ? 'rocky' : 'ocean');
+/* By mass: the class a body of that mass most often is, on the reference's boundaries. 1.5 Earth masses tops the
+   terrestrial planets; at 4.37 the measured mass-radius relation turns from bare rock to gas envelopes (Müller et al.
+   2024), so heavier is a sub-Neptune rather than a super-Earth; 10 starts the ice giants, 50 (0.15 Jupiter masses)
+   the gas giants, and 13 Jupiter masses, the deuterium-burning limit in the IAU's definition of a planet, the brown
+   dwarfs. A rocky super-Earth up to 10 Earth masses can be chosen as a type, but mass alone cannot tell it. */
+export const kindOf = m => (m > STAR_LIMIT ? 'star' : m >= 13 * JUP ? 'brown' : m >= 50 * EARTH ? 'gas' : m >= 10 * EARTH ? 'ice'
+  : m >= 4.37 * EARTH ? 'subNeptune' : m >= 1.5 * EARTH ? 'superEarth' : 'terrestrial');
+/* A merger keeps what its bodies were made of: rock stays rock, and a body with a gas envelope keeps one. The class
+   then follows the new mass within that family, never down; brown dwarfs and stars follow mass outright. */
+export function mergedKind(big, small, m) {
+  const byMass = kindOf(m), up = k => (KINDS[k].rank > KINDS[big.kind].rank ? k : big.kind);
+  if (byMass === 'star' || byMass === 'brown') return up(byMass);
+  const gas = KINDS[big.kind].family === 'gas' || KINDS[small.kind].family === 'gas';
+  return up(gas ? (m >= 50 * EARTH ? 'gas' : m >= 10 * EARTH ? 'ice' : 'subNeptune') : m >= 1.5 * EARTH ? 'superEarth' : 'terrestrial');
+}
+/* A class from a rewind snapshot or a saved state; the types from before the research classes (rocky and ocean
+   worlds) are classed again, a moon as a moon and anything else by its mass. */
+const storedKind = (k, m, meta) => (KINDS[k] ? k : meta && meta.hostId != null ? 'moon' : kindOf(m));
+/* A planet's radius in Earth radii from its mass and class (the reference's Model 4.4.3). Rock follows the extended
+   rocky branch, 1.03 M^0.29 (Otegi et al. 2020); worlds with an envelope the volatile branch, 0.56 M^0.67 (Müller et
+   al. 2024). Gas giants take the volatile branch until it meets the degenerate one, whose slope (M^-0.06) is Müller's
+   but whose height is not: his 18.6 fits a sample of hot, inflated giants, and the reference locks mature cold giants
+   onto a curve of 0.9 to 1.15 Jupiter radii (Table 6.1, and its fifth hard constraint), so here the curve passes
+   through Jupiter itself and stays in that band. Null where the reference gives no relation: brown dwarfs, stars and
+   the small worlds. */
+const R_EARTH_KM = 6371, R_JUP_KM = 71492, G_SI = 6.6743e-11, SIM_KG = 1.98847e27;
+/* Each class's mass-radius branch, for Inspect to say which it used. */
+const BRANCH = { terrestrial: 'rocky branch, 1.03 M^0.29', superEarth: 'rocky branch, 1.03 M^0.29', subNeptune: 'volatile branch, 0.56 M^0.67', ice: 'volatile branch, 0.56 M^0.67',
+  gas: 'volatile branch, 0.56 M^0.67, then the degenerate one through Jupiter, held to 0.9 to 1.15 Jupiter radii for a mature cold giant' };
+export function planetRadius(m, kind) {
+  const M = m / EARTH;
+  if (kind === 'terrestrial' || kind === 'superEarth') return 1.03 * M ** 0.29;
+  if (kind === 'subNeptune' || kind === 'ice') return 0.56 * M ** 0.67;
+  if (kind === 'gas') { const cold = R_JUP_KM / R_EARTH_KM * clamp((M / (JUP / EARTH)) ** -0.06, 0.9, 1.15); return M < 127 ? Math.min(0.56 * M ** 0.67, cold) : cold; }
+  return null;
+}
 const hash01 = n => { let x = Math.imul(n + 1, 2654435761) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
 /* A body's colour: its type's, a shade lighter or darker by its id, in eight steps so the 3D tint cache stays
    small; a star keeps the heat ramp of its mass, and a real world (the Solar System's) its own tint. Cached on the
@@ -158,6 +209,7 @@ function applyMeta(b, meta) {
   if (meta.tint) b.tint = meta.tint;
   if (meta.r != null) b.r = meta.r;
   if (meta.px) b.px = meta.px;
+  if (meta.surface != null) b.surface = meta.surface;
   b.real = !!meta.real; b.label = !!meta.label; b.ring = !!meta.ring; b.noTrail = !!meta.noTrail;
 }
 /* A saved state's meta, checked field by field, since a state file is only text. */
@@ -165,7 +217,7 @@ function cleanMeta(m) {
   if (!m || typeof m !== 'object') return null;
   const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : undefined), num = (v, lo, hi) => (Number.isFinite(+v) && +v >= lo && +v <= hi ? +v : undefined);
   const tint = Array.isArray(m.tint) && m.tint.length === 3 && m.tint.every(c => Number.isFinite(+c)) ? m.tint.map(c => clamp(Math.round(+c), 0, 255)) : undefined;
-  return { name: str(m.name, 40), desc: str(m.desc, 80), tint, r: num(m.r, 1e-9, 1e4), px: num(m.px, 0.5, 12), real: !!m.real, label: !!m.label, ring: !!m.ring, noTrail: !!m.noTrail, hostId: num(m.hostId, 0, 1e9) };
+  return { name: str(m.name, 40), desc: str(m.desc, 80), tint, r: num(m.r, 1e-9, 1e4), px: num(m.px, 0.5, 12), surface: [0, 1, 2].includes(m.surface) ? m.surface : undefined, real: !!m.real, label: !!m.label, ring: !!m.ring, noTrail: !!m.noTrail, hostId: num(m.hostId, 0, 1e9) };
 }
 /* Moons find their planets by id once every body of a scene, a rewind or a saved state exists. */
 function linkHosts(B) {
@@ -184,7 +236,8 @@ export const gravity = {
   blurb: 'Newtonian gravity between every pair of bodies, stepped with a kick-drift-kick leapfrog that keeps orbital energy from creeping away. Throw bodies, build systems, and watch the three-body figure-eight hold its choreography.',
   interact: [
     '<b>Throw</b>: drag to launch a body along the dashed 5-second preview, or click empty sky to drop one into orbit around the heaviest mass: a circle at a drop speed of 1×, an ellipse slower or faster.',
-    '<b>Random</b>, under the tools, gives each body you place a random planet type (rocky, ocean, ice giant, gas giant or brown dwarf) and a mass to suit it. Off, the type and mass come from New bodies in Controls.',
+    '<b>Random</b>, under the tools, gives each body you place a random planet class (terrestrial, super-Earth, sub-Neptune, ice giant or gas giant, now and then a brown dwarf) and a mass in that class\'s range. Off, the type and mass come from New bodies in Controls, where a chosen type keeps the mass within its range.',
+    '<b>Planet classes</b> follow the research reference: by mass, a world under 1.5 Earth masses is terrestrial, then a super-Earth to 4.4, a sub-Neptune to 10, an ice giant to 50 and a gas giant to 13 Jupiter masses, where brown dwarfs begin. Follow a planet to read its radius, density, gravity and escape speed in Inspect.',
     '<b>Click a body</b> to follow it with the camera, then zoom in to see its sunlit face. Click it again, or press Follow in the view controls, to let go.',
     '<b>Delete</b> removes bodies you click or brush over. <b>Pan</b> drags the view. Hover a body to read its name, mass and speed.',
     '<b>Our Solar System</b>: click a planet to follow it, then zoom in; its moons appear once they stand clear of it. <b>Orbits</b> and <b>Names</b> under Display draw each named body\'s ellipse and name, and the clock reads the date.',
@@ -217,7 +270,8 @@ export const gravity = {
   controls: [
     { type: 'range', key: 'G', label: 'Gravity strength G', min: 0.1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'physics' },
     { type: 'range', key: 'soft', label: 'Softening length ε', min: 0.0001, max: 30, log: true, qty: 'len', group: 'physics', note: 'Keeps close passes finite. The Solar System needs almost none: its moons sit a fraction of a pixel from their planets.' },
-    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.1, max: 2000, log: true, note: 'The star in most scenes weighs 1000 here, one solar mass; a mass of 1 is about Jupiter\'s.',
+    // Down to the lightest terrestrial planet the reference admits (0.02 Earth masses), up to stars.
+    { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.02 * EARTH, max: 2000, log: true, note: 'The star in most scenes weighs 1000 here, one solar mass; Jupiter is about 1 and Earth 0.003. A chosen type keeps the mass within its range.',
       fmt: v => (unitSystem() === 'sim' ? v.toPrecision(3).replace(/\.?0+$/, '') : gravity.massText(v, true)), group: 'spawn' },
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: TRAIL_CAP, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'range', key: 'zoom', label: 'Zoom', min: 0.002, max: 20000, log: true, fmt: v => (v >= 100 ? Math.round(v).toString() : v >= 10 ? v.toFixed(1) : v >= 0.1 ? v.toFixed(2) : v.toPrecision(2)) + '×', group: 'view' },
@@ -249,14 +303,18 @@ export const gravity = {
      adds exact zeros to every sum below, so flat scenes step bit-for-bit as
      they did in two dimensions. */
   body(x, y, vx, vy, m, z = 0, vz = 0, kind = null, meta = null) {
-    const id = ++this.uid, b = { x, y, z, vx, vy, vz, ax: 0, ay: 0, az: 0, fx: 0, fy: 0, fz: 0, m, r: bodyRadius(m), kind: kind || kindOf(m, id), trail: NO_TRAIL, trailZ: NO_TRAIL, tn: 0, th: 0, dead: false, id };
+    const id = ++this.uid, b = { x, y, z, vx, vy, vz, ax: 0, ay: 0, az: 0, fx: 0, fy: 0, fz: 0, m, r: bodyRadius(m), kind: kind || kindOf(m), trail: NO_TRAIL, trailZ: NO_TRAIL, tn: 0, th: 0, dead: false, id };
     if (meta) applyMeta(b, meta);
     if (!b.noTrail) { b.trail = new Float32Array(TRAIL_CAP * 2); b.trailZ = new Float32Array(TRAIL_CAP); }
     return b;
   },
   /* The mass and type of the next body placed: drawn at random with Random new bodies on, else the panel's. */
   drawNew() {
-    if (!this.p.rand) return { m: this.p.launchMass, kind: this.p.kind === 'auto' ? null : this.p.kind };
+    if (!this.p.rand) {
+      // A chosen class keeps the body inside its mass range: the reference's controls never let mass and class disagree.
+      const kind = this.p.kind === 'auto' ? null : this.p.kind, r = kind && KINDS[kind].m;
+      return { m: r ? clamp(this.p.launchMass, r[0], r[1]) : this.p.launchMass, kind };
+    }
     let u = Math.random() * Object.values(KINDS).reduce((t, k) => t + (k.odds || 0), 0), kind = 'gas';
     for (const [id, k] of Object.entries(KINDS)) if (k.odds && (u -= k.odds) < 0) { kind = id; break; }
     const [a, b] = KINDS[kind].m;
@@ -264,10 +322,10 @@ export const gravity = {
   },
   /* How the body about to be placed looks, for the throw preview. */
   nextLook() {
-    const nb = this.next || this.drawNew(), id = this.uid + 1, b = { m: nb.m, kind: nb.kind || kindOf(nb.m, id), id };
+    const nb = this.next || this.drawNew(), b = { m: nb.m, kind: nb.kind || kindOf(nb.m), id: this.uid + 1 };
     return { css: bodyCss(b), r: bodyRadius(nb.m) };
   },
-  surfaceOf(b) { return KINDS[b.kind].surface; },
+  surfaceOf(b) { return b.surface ?? KINDS[b.kind].surface; },
   vCirc(M, d) { const G = G0 * this.p.G, e2 = this.p.soft * this.p.soft; return Math.sqrt(G * M * d * d / Math.pow(d * d + e2, 1.5)); },
   orbit(host, d, ang, m, dir = 1) {
     const v = this.vCirc(host.m + m, d);
@@ -444,8 +502,9 @@ export const gravity = {
       big.vx = (big.vx * big.m + small.vx * small.m) / m; big.vy = (big.vy * big.m + small.vy * small.m) / m; big.vz = (big.vz * big.m + small.vz * small.m) / m;
       // A real world grows by volume; the drawn worlds keep the radius their mass gives them.
       big.m = m; big.r = big.real ? Math.cbrt(big.r ** 3 + small.r ** 3) : bodyRadius(m); small.dead = true; this.merged++;
-      // A merger that crosses into a heavier class becomes it: gas giants into brown dwarfs, brown dwarfs into stars.
-      const grown = kindOf(m, big.id); if (KINDS[grown].rank > KINDS[big.kind].rank) big.kind = grown;
+      // A merger keeps its family and moves up a class as its mass grows: rock into a super-Earth, an envelope into an
+      // ice or gas giant, gas giants into brown dwarfs, brown dwarfs into stars. The Solar System's worlds stay named.
+      if (!big.real) big.kind = mergedKind(big, small, m);
       if (small.id === this.track) this.track = big.id;
     }
     this.bodies = this.bodies.filter(b => !b.dead);
@@ -514,6 +573,16 @@ export const gravity = {
   onParam(key) {
     if (key === 'zoom') { this.cam.z = this.p.zoom; if (navAnim.lab === this) navAnim.lab = null; }
     if (key === 'follow' && this.p.follow) this.track = null;
+    // Mass and class stay consistent: choosing a class brings the mass into its range, at a typical member's, and a
+    // mass dialled out of the chosen class's range hands the type back to By mass.
+    if (key === 'kind' && this.p.kind !== 'auto') {
+      const k = KINDS[this.p.kind], [lo, hi] = k.m;
+      if (!(this.p.launchMass >= lo && this.p.launchMass <= hi)) { this.p.launchMass = Number((k.typ * EARTH).toPrecision(3)); syncControl('launchMass'); }
+    }
+    if (key === 'launchMass' && this.p.kind !== 'auto') {
+      const [lo, hi] = KINDS[this.p.kind].m;
+      if (this.p.launchMass < lo * 0.995 || this.p.launchMass > hi * 1.005) { this.p.kind = 'auto'; syncControl('kind'); }
+    }
     if (key === 'G' || key === 'soft') { this.accDirty = true; this.E0 = this.energy(); for (const s of Object.values(this.series)) s.clear(); }
   },
   heaviest() { let h = null; for (const b of this.bodies) if (!h || b.m > h.m) h = b; return h; },
@@ -570,7 +639,8 @@ export const gravity = {
     const P = this.pullHost(b), title = b.desc || KINDS[b.kind].label, name = nameOf(b);
     const rows = [b.m > 0 ? ['Mass of this body', this.massText(b.m), unitSystem() === 'sim' ? 'In simulation units. The star in most scenes has mass 1000.' : 'The star in most scenes is one solar mass; a planet of mass 1 is about Jupiter\'s.']
       : ['Mass of this body', 'too small to pull', 'A test body: it feels every pull and pulls on nothing, as the belts\' bodies do here.']];
-    if (b.real) rows.push(['Radius', `${sig(b.r * AU_M / 1000 / AU_PX, 4)} km`, 'Its real radius. Far off, the stage still draws it as a dot you can find.']);
+    const ph = this.physique(b);
+    if (ph) rows.push(...this.physRows(b, ph));
     let focus = null;
     if (P) {
       const ref = refName(P), rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz), u = Math.hypot(ux, uy, uz);
@@ -586,13 +656,52 @@ export const gravity = {
         ['Orbit shape', `${e.toFixed(3)}, ${shape}`, 'The eccentricity: 0 is a perfect circle, and 1 or more never comes back.'],
         ['Orbit tilt', `${i.toFixed(1)}°`, this.sky ? 'The inclination: the angle between this orbit and the ecliptic, the plane of Earth\'s orbit. Above 90° it runs backwards.' : 'The inclination: the angle between this orbit and the flat plane. Above 90° it runs backwards.'],
         ['Orbit status', bound ? `Bound to ${ref}` : `Escaping ${ref}`, `Whether this body has too little energy to leave ${ref}.`]);
-    } else rows.push(['Radius of this body', fmtQ(this, 'len', b.r), 'The drawn and collision radius.'], ['Speed through space', fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz)), 'Nothing else is here to measure against.']);
+      // The reference's Model 4.1.4: how far out it can hold moons, and how near it may come to what it orbits.
+      const q = a * (1 - e);
+      if (bound && b.m > 0 && P.m > b.m) rows.push(['Hill sphere', this.lenText(q * Math.cbrt(b.m / (3 * (P.m + b.m)))), `Within about this distance its own gravity holds moons against the pull of ${ref}: the Hill sphere, taken at the nearest point of its orbit.`]);
+      const pP = P.real && ph && this.physique(P);
+      if (bound && pP) {
+        const d = 2.456 * pP.R * Math.cbrt(pP.rho / ph.rho), inside = q * AU_M / AU_PX <= d;
+        rows.push([`Roche limit of ${ref}`, `${this.physText(d, 'len')}${inside ? ', and it is inside' : ''}`, `Closer than this to ${ref}, tides would pull a fluid body of this density apart: the fluid Roche limit. A rigid moon can last inside it for a time, as Phobos does.`]);
+      }
+      if (KINDS[b.kind].family && b.kind !== 'brown' && P.kind === 'star' && b.m * 25 >= P.m) rows.push(['Planet by IAU rules', `no: ${(b.m / P.m * 100).toFixed(1)} % of its star's mass`, 'The IAU\'s working definition of an exoplanet needs less than 1/25 of the mass of what it orbits; heavier, it is a binary companion.']);
+    } else rows.push(...(ph ? [] : [['Radius of this body', fmtQ(this, 'len', b.r), 'The drawn and collision radius.']]), ['Speed through space', fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz)), 'Nothing else is here to measure against.']);
     return { id: b.id, kicker: `${name} · camera following`, short: name, focus, title, color: this.bodyColor3(b), spot: true, rows, actions: [
       { label: 'Release camera', run: () => this.deselect() },
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
     ] };
   },
   deselect() { this.track = null; updateNav(); },
+  /* What a world is like up close: its radius (real, or estimated from its mass and class by the reference's Model
+     4.4.3) and from that its bulk density, gravity and escape speed (Model 4.1.2), in SI. Null for a body with no
+     mass, or with no radius to go on (a brown dwarf or star of the sandbox). */
+  physique(b) {
+    if (!(b.m > 0)) return null;
+    const est = !b.real, R = est ? (planetRadius(b.m, b.kind) || 0) * R_EARTH_KM * 1000 : b.r * AU_M / AU_PX;
+    if (!R) return null;
+    const M = b.m * SIM_KG, GM = G_SI * M;
+    return { R, est, rho: M / (4 / 3 * Math.PI * R ** 3), g: GM / (R * R), vesc: Math.sqrt(2 * GM / R), cloud: KINDS[b.kind].family === 'gas' };
+  },
+  /* A physical quantity in the chosen system: US customary in US, else SI, for there is no simulation unit for these. */
+  physText(v, kind) {
+    const us = unitSystem() === 'us';
+    // Up to a million km in km (or miles); beyond, in AU, as a star's Roche limit is.
+    if (kind === 'len') return v >= 1e9 ? `${sig(v / AU_M, 3)} AU` : us ? `${sig(v / 1609.344, 4)} mi` : `${sig(v / 1000, 4)} km`;
+    if (kind === 'rho') return us ? `${sig(v * 0.0624280, 3)} lb/ft³` : `${sig(v, v >= 1000 ? 4 : 3)} kg/m³`;
+    if (kind === 'g') return us ? `${sig(v * 3.280840, 3)} ft/s²` : `${sig(v, 3)} m/s²`;
+    return us ? `${sig(v / 1609.344, 3)} mi/s` : `${sig(v / 1000, 3)} km/s`;
+  },
+  /* A simulated length: in pixels for Simulation units, else as physText reads it, so a moon's Hill sphere is in km. */
+  lenText(px) { return unitSystem() === 'sim' ? fmtQ(this, 'len', px) : this.physText(px * AU_M / AU_PX, 'len'); },
+  physRows(b, ph) {
+    const cls = KINDS[b.kind].label.toLowerCase();
+    return [
+      ['Radius', `${ph.est ? '≈ ' : ''}${this.physText(ph.R, 'len')}`, ph.est ? `Estimated from its mass for a ${cls}, on the ${BRANCH[b.kind]} in Earth units (the research reference's Model 4.4.3). The stage draws every world larger than this, so it can be seen.` : 'Its real radius. Far off, the stage still draws it as a dot you can find.'],
+      ['Density', this.physText(ph.rho, 'rho'), 'Its mass over its volume. Rock and iron run from about 3,900 to 8,000 kg/m³; worlds wrapped in gas are lighter, and Saturn would float.'],
+      [ph.cloud ? 'Cloud-top gravity' : 'Surface gravity', this.physText(ph.g, 'g'), ph.cloud ? 'GM/R² at the top of its envelope, the 1-bar level of a giant: a world of gas has no ground to stand on.' : 'GM/R² at its surface, for a sphere that does not spin.'],
+      ['Escape speed', this.physText(ph.vesc, 'v'), 'The launch speed from its surface or cloud tops that never falls back: the square root of 2GM/R.'],
+    ];
+  },
   /* The direction an orbit's angular momentum points for it to go round forwards. The stage's y runs down the screen,
      so a frame that shows the real sky from its north, as the Solar System does, turns prograde orbits' r × v to −z;
      the drawn scenes go round the other way and keep +z. */
@@ -623,7 +732,7 @@ export const gravity = {
   },
   massText(m, short) {
     if (unitSystem() === 'sim') return short ? `m ${m < 10 ? m.toFixed(2) : m.toFixed(0)}` : fmtSI(m);
-    const sun = m / 1000, jup = sun / 9.546e-4, earth = sun / 3.003e-6;
+    const sun = m / 1000, jup = m / JUP, earth = m / EARTH;
     // Abbreviations in plain letters: the astronomical symbols for the Sun, Jupiter and Earth are missing from many fonts.
     return sun >= 0.05 ? `${sig(sun)} ${short ? 'Msun' : 'solar masses'}` : jup >= 0.03 ? `${sig(jup)} ${short ? 'MJup' : 'Jupiter masses'}` : `${sig(earth)} ${short ? 'MEarth' : 'Earth masses'}`;
   },
@@ -704,7 +813,7 @@ export const gravity = {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
     const X = new Float64Array(N), Y = new Float64Array(N), Z = new Float64Array(N), VX = new Float64Array(N), VY = new Float64Array(N), VZ = new Float64Array(N), M = new Float64Array(N), R = new Float64Array(N);
     for (let i = 0; i < n; i++) { const b = B[i]; X[i] = b.x; Y[i] = b.y; Z[i] = b.z; VX[i] = b.vx; VY[i] = b.vy; VZ[i] = b.vz; M[i] = b.m; R[i] = b.r; }
-    X[n] = x0; Y[n] = y0; Z[n] = z0; VX[n] = vx0; VY[n] = vy0; M[n] = this.next ? this.next.m : this.p.launchMass;
+    X[n] = x0; Y[n] = y0; Z[n] = z0; VX[n] = vx0; VY[n] = vy0; M[n] = (this.next || this.drawNew()).m;
     const AX = new Float64Array(N), AY = new Float64Array(N), AZ = new Float64Array(N), out = [x0, y0], dt = 1 / 60;
     if (heights) heights.push(z0);
     for (let s = 0; s < 300; s++) {
@@ -763,6 +872,8 @@ export const gravity = {
      placed by hand is seen to go round its planet and a planet the star. */
   pullHost(b) {
     if (b.host) return b.host;
+    // The source list is rebuilt on the next step; a body added while paused must already count.
+    if (this.accDirty) this.prepare();
     let best = null, f = 0;
     for (const q of this.srcs.length ? this.srcs : this.bodies) {
       if (q === b || q.m <= b.m) continue;
@@ -1123,7 +1234,7 @@ Object.assign(gravity, {
     const st = s.stride || 5;
     for (let i = 0; i < s.ids.length; i++) {
       const o = i * st, meta = s.metas ? s.metas[i] : null, b = this.body(s.a[o], s.a[o + 1], s.a[o + 2], s.a[o + 3], s.a[o + 4], st >= 7 ? s.a[o + 5] : 0, st >= 7 ? s.a[o + 6] : 0, null, meta);
-      b.id = s.ids[i]; b.kind = (s.kinds && KINDS[s.kinds[i]] ? s.kinds[i] : null) || kindOf(b.m, b.id); B.push(b);
+      b.id = s.ids[i]; b.kind = storedKind(s.kinds && s.kinds[i], b.m, meta); B.push(b);
     }
     linkHosts(B);
     Object.assign(this, { bodies: B, merged: s.merged, escaped: s.escaped, cam: { ...this.cam, ...s.cam }, stepCount: s.stepCount, aim: null, pan: null, accDirty: true });
@@ -1140,7 +1251,7 @@ Object.assign(gravity, {
   },
   deserialize(o) {
     if (!o || !Array.isArray(o.bodies)) return false;
-    this.bodies = o.bodies.map(d => { const b = this.body(+d.x, +d.y, +d.vx, +d.vy, +d.m, +d.z || 0, +d.vz || 0, null, cleanMeta(d.meta)); if (d.id != null) b.id = d.id; b.kind = KINDS[d.kind] ? d.kind : kindOf(b.m, b.id); return b; });
+    this.bodies = o.bodies.map(d => { const b = this.body(+d.x, +d.y, +d.vx, +d.vy, +d.m, +d.z || 0, +d.vz || 0, null, cleanMeta(d.meta)); if (d.id != null) b.id = d.id; b.kind = storedKind(d.kind, b.m, b.meta); return b; });
     linkHosts(this.bodies);
     this.uid = Math.max(this.uid, ...this.bodies.map(b => +b.id || 0));
     this.merged = o.merged || 0; this.escaped = o.escaped || 0; this.stepCount = o.stepCount || 0;
@@ -1163,4 +1274,4 @@ Object.assign(gravity, {
 });
 
 /* ---------- 3D mode: the lab's own camera, picking and overlays (gravity3d.js) ---------- */
-Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, KINDS, bodyRadius, massColor, bodyCss });
+Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, KINDS, JUP, EARTH, STAR_LIMIT, kindOf, mergedKind, planetRadius, bodyRadius, massColor, bodyCss });

@@ -1,17 +1,19 @@
 """
 ✒ Metadata
-    - Title: Test Runner (digiSpace Edition - v2.8)
+    - Title: Test Runner (digiSpace Edition - v2.9)
     - File Name: run_all.py
     - Relative Path: tests/run_all.py
     - Artifact Type: test
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
+      planet classes suite, tests/planets.py.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
       Solar System suite, tests/solar.py.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
@@ -57,7 +59,7 @@ import sys
 from harness import NOISE, URL
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement', 'hud', 'solar']
+SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement', 'hud', 'solar', 'planets']
 TIMEOUT_S = 600
 
 

@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Dials and Placement Tests (digiSpace Edition - v2.5)
+    - Title: Dials and Placement Tests (digiSpace Edition - v2.9)
     - File Name: placement.py
     - Relative Path: tests/placement.py
     - Artifact Type: test
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.9.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Random
+      draws cover the research reference's six classes, and a chosen class
+      keeps the placed body's mass in its range.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for release 2.5.0: the thumbwheel dials, random placement in every lab
       that places things, and the new placement parameters.
@@ -121,7 +124,7 @@ with sync_playwright() as p:
     draws = pg.evaluate("(() => { const L = PhysicsPlayground.active, out = []; for (let i = 0; i < 400; i++) out.push(L.drawNew()); return out; })()")
     kinds = pg.evaluate("Object.fromEntries(Object.entries(PhysicsPlayground.labs.gravity.KINDS).filter(([, v]) => v.m).map(([k, v]) => [k, v.m]))")
     seen = sorted({d["kind"] for d in draws})
-    ok("random_draws_every_planet_type", seen == ["brown", "gas", "ice", "ocean", "rocky"], seen)
+    ok("random_draws_every_planet_type", seen == ["brown", "gas", "ice", "subNeptune", "superEarth", "terrestrial"], seen)
     ok("random_masses_in_type_range", all(kinds[d["kind"]][0] * 0.995 <= d["m"] <= kinds[d["kind"]][1] * 1.005 for d in draws), kinds)
     n0 = pg.evaluate(P + ".active.bodies.length")
     for fx, fy in [(0.25, 0.3), (0.7, 0.3), (0.3, 0.7), (0.65, 0.72)]:
@@ -133,8 +136,10 @@ with sync_playwright() as p:
     b1 = pg.evaluate("""(() => { const L = PhysicsPlayground.active, H = L.heaviest(); L.dropOrbit(H.x + 200, H.y); const b = L.bodies.at(-1);
       const v = Math.hypot(b.vx - H.vx, b.vy - H.vy), vc = L.vCirc(H.m + b.m, Math.hypot(b.x - H.x, b.y - H.y)); return [b.kind, v / vc]; })()""")
     ok("chosen_type_and_drop_speed", b1[0] == "ice" and abs(b1[1] - 1.25) < 1e-6, b1)
+    # The fixed mass (2) is far above an ice giant's range, so the body takes the top of it: class and mass agree.
+    ok("chosen_type_keeps_its_mass_range", pg.evaluate("(() => { const L = PhysicsPlayground.active, b = L.bodies.at(-1), [lo, hi] = L.KINDS.ice.m; return b.m >= lo && b.m <= hi * 1.000001; })()"))
     kinds_before = pg.evaluate(P + ".active.bodies.map(b => b.kind)")
-    snap = pg.evaluate("(() => { const L = PhysicsPlayground.active, s = L.snapshot(); L.bodies.forEach(b => b.kind = 'rocky'); L.restore(s); return L.bodies.map(b => b.kind); })()")
+    snap = pg.evaluate("(() => { const L = PhysicsPlayground.active, s = L.snapshot(); L.bodies.forEach(b => b.kind = 'terrestrial'); L.restore(s); return L.bodies.map(b => b.kind); })()")
     ok("types_survive_rewind", snap == kinds_before, (kinds_before[-4:], snap[-4:]))
     ser = pg.evaluate("(() => { const L = PhysicsPlayground.active, o = JSON.parse(JSON.stringify(L.serialize())); L.deserialize(o); return L.bodies.map(b => b.kind); })()")
     ok("types_survive_saved_state", ser == kinds_before)
