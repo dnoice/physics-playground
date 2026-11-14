@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Solar System Tests (digiSpace Edition - v2.8)
+    - Title: Solar System Tests (digiSpace Edition - v2.10)
     - File Name: solar.py
     - Relative Path: tests/solar.py
     - Artifact Type: test
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits
+      stay smooth with the 3D camera inside them and in 2D; the zoom's limits,
+      pace toward the cursor, reach to all of Sedna's orbit and short-form
+      reading.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for release 2.8.0: Gravity's Our Solar System scene.
 
@@ -57,6 +61,9 @@
       turns in ten steps is still counted turn by turn.
 ---------
 """
+import math
+import re
+
 from playwright.sync_api import sync_playwright
 from harness import URL, finish, launch, ok, open_page, settle
 
@@ -247,6 +254,58 @@ with sync_playwright() as p:
     ok("sol_3d_target_on_followed_planet", z["box"] is not None and z["box"] < 1 and z["r"] >= z["px"], z)
     z = pg.evaluate(ZOOM, 8)
     ok("sol_3d_near_plane_follows_in", z["near"] < 1e-2 and z["near"] <= z["dist"] * 0.0041, z)
+    pg.close()
+
+    # ---- Orbits stay smooth curves where the 3D view sits inside them: 10.7 years in, the camera turned as in the
+    # report, Pluto's orbit passes 425 px from it, and its 128 chords had crossed the stage as lines 25,000 px long.
+    pg = fresh("3d")
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()")
+    settle(pg, f"{P}.mode.world.engine && {P}.mode.world.engine.info().calls > 0")
+    pg.evaluate(f"() => {{ const L = {G}, end = L.t + 47.16; while (L.t < end) {{ L.step(L.dt()); L.t += L.dt(); }} L.after(); }}")
+    pg.wait_for_timeout(800); pg.evaluate(f"{P}.view.orbit(160, -40)"); pg.wait_for_timeout(1500)
+    SPANS = f"""(() => {{ const L = {G}, V = L.basis3(), cut = V.near * 3, out = {{}};
+      const project = p => {{ const s = L.project3(p[0], p[1], p[2]); return s && s.w > cut ? s : null; }}, inside = s => s.x >= 0 && s.y >= 0 && s.x <= V.w && s.y <= V.h;
+      for (const b of L.orbiters()) {{ const P = L.pullHost(b), f = P && L.orbitFrame(b, P); if (!f) continue;
+        let last = null, worst = 0, old = 0; const pts = L.orbitPath(b, P, 128);
+        L.orbitCurve(f, project, (p, s) => {{ if (!p) {{ last = null; return; }} if (last && inside(last) && inside(s)) worst = Math.max(worst, Math.hypot(s.x - last.x, s.y - last.y)); last = s; }}, {{ maxPx: 7, w: V.w, h: V.h, cap: 1400 }});
+        for (let k = 0; k + 3 < pts.length; k += 3) {{ const a = project([pts[k], pts[k + 1], pts[k + 2]]), c = project([pts[k + 3], pts[k + 4], pts[k + 5]]); if (a && c) old = Math.max(old, Math.hypot(a.x - c.x, a.y - c.y)); }}
+        out[b.name] = [Math.round(worst), Math.round(old)]; }}
+      return out; }})()"""
+    sp = pg.evaluate(SPANS)
+    ok("sol_3d_orbits_smooth_inside_them", all(v[0] <= 8 for v in sp.values()) and sp["Pluto"][1] > 1000, {k: v for k, v in sp.items() if v[1] > 100})
+
+    # ---- Zoom: the wheel zooms toward the cursor, twice as far a notch as elsewhere, from a few thousand km to all of
+    # Sedna's orbit, and the rail reads deep zooms in short form
+    zm = pg.evaluate(f"""(() => {{ const L = {G}, c = L.c3(), D0 = L.dist0(), [lo, hi] = L.zoomLimits3();
+      {P}.view.zoomBy(1e12); const near = c.distT / D0; {P}.view.zoomBy(1e-12); const far = c.distT / D0; {P}.view.frame();
+      return {{ lo, hi, near, far, follow: L.p.follow }}; }})()""")
+    ok("sol_3d_zoom_limits", zm["lo"] == 1e-6 and zm["hi"] == 80 and abs(zm["near"] / 1e-6 - 1) < 1e-6 and abs(zm["far"] / 80 - 1) < 1e-6 and zm["follow"] is False, zm)
+    pg.wait_for_timeout(1500)
+    box = pg.locator("#stage-canvas").bounding_box()
+    pg.mouse.move(box["x"] + box["width"] * 0.25, box["y"] + box["height"] * 0.5)
+    d0 = pg.evaluate(f"[{G}.c3().distT, {G}.c3().txT]")
+    pg.mouse.wheel(0, -100); pg.wait_for_timeout(200)
+    d1 = pg.evaluate(f"[{G}.c3().distT, {G}.c3().txT]")
+    ok("sol_wheel_zooms_toward_cursor_at_double_pace", abs(d1[0] / d0[0] - math.exp(-0.3)) < 1e-6 and abs(d1[1] - d0[1]) > 1, (d0, d1))
+    pg.evaluate(f"{P}.view.zoomBy(1e-12)")
+    pg.wait_for_timeout(1800)
+    ap = pg.evaluate(f"""(() => {{ const L = {G}, s = L.bodies.find(b => b.name === 'Sedna'), S = L.bodies.find(b => b.name === 'Sun'), f = L.orbitFrame(s, S), V = L.basis3(), c = f.a * (-1 - f.e);
+      const p = L.project3(f.cx + f.Px * c, f.cy + f.Py * c, f.cz + f.Pz * c); return [p && p.x > 0 && p.y > 0 && p.x < V.w && p.y < V.h, document.getElementById('nav-zoom').textContent]; }})()""")
+    pg.evaluate(f"{P}.view.zoomBy(1e5)"); pg.wait_for_timeout(1800)
+    deep = pg.inner_text("#nav-zoom")
+    ok("sol_zoom_out_shows_sedna_and_readout_fits", ap[0] is True and ap[1] == "1.3%" and re.fullmatch(r"\d+(\.\d+)?k%", deep) is not None, (ap, deep))
+    pg.close()
+
+    # ---- 2D: the same curves on the flat stage, close on Jupiter's moons
+    pg = fresh("2d")
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(200)
+    pg.evaluate(f"(() => {{ const L = {G}, J = L.bodies.find(b => b.name === 'Jupiter'); L.track = J.id; L.trackEase = 1; {P}.view.zoomBy(420); }})()"); pg.wait_for_timeout(1500)
+    flat = pg.evaluate(f"""(() => {{ const L = {G}, {{ ox, oy, z }} = L.viewXf, w = innerWidth, h = innerHeight, project = p => ({{ x: p[0] * z + ox, y: p[1] * z + oy }}), out = {{}};
+      for (const b of L.orbiters()) {{ if (b.host && !L.apart(b, z)) continue; const P = L.pullHost(b), f = P && L.orbitFrame(b, P); if (!f) continue; let last = null, worst = 0;
+        L.orbitCurve(f, project, (p, s) => {{ if (!p) {{ last = null; return; }} if (last && last.x > 0 && last.x < w && s.x > 0 && s.x < w && last.y > 0 && s.y > 0 && last.y < h && s.y < h) worst = Math.max(worst, Math.hypot(s.x - last.x, s.y - last.y)); last = s; }}, {{ maxPx: 5, w, h }});
+        out[b.name] = Math.round(worst); }}
+      return out; }})()""")
+    ok("sol_2d_orbits_smooth", all(v <= 6 for v in flat.values()) and {"Io", "Europa", "Ganymede", "Callisto"} <= set(flat), flat)
     pg.close()
 
     b.close()

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.9)
+    - Title: Gravity Lab (digiSpace Edition - v2.10)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.9.0
+    - Version: 2.10.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits as
+      smooth curves (orbitFrame, orbitCurve): any span that would draw long is
+      halved again, so an orbit the camera sits inside no longer crosses the
+      stage in straight chords, and each fades back round from its body. Names
+      carry a dark halo. Our Solar System zooms twice as far a step (zoomPace)
+      and no longer follows its centre of mass, so the wheel zooms toward the
+      cursor.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Planet
       classes from Dennis's research reference (docs/research/md):
       terrestrial, super-Earth, sub-Neptune, ice giant and gas giant, then
@@ -33,9 +40,6 @@
       callout keeps off. prepare() keeps a moon's host only when it is another
       live body, heavier than the moon and not itself a moon, so a tampered
       state's self-host, cycle or chain is cut.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: bodies, energy, drift and virial ratio on its tape, and the
-      followed body as its target, in 2D and 3D.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -52,8 +56,11 @@
     - Multi-scale stepping: massless test bodies feel every pull and pull
       nothing, and each moon and its planet take their own substeps inside a
       step (r-RESPA), so Phobos and the Kuiper belt share one run.
-    - Real-sized named worlds above a pixel floor, osculating orbits and
-      ranked names in 2D, and the date on the clock.
+    - Real-sized named worlds above a pixel floor, osculating orbits drawn as
+      smooth curves that fade back round from each body, ranked names with a
+      dark halo in 2D, and the date on the clock.
+    - Zoom to suit the scene: Our Solar System zooms twice as far a step and
+      reaches from a few thousand km to all of Sedna's orbit.
     - Planet classes from the research reference (terrestrial, super-Earth,
       sub-Neptune, ice giant, gas giant, then brown dwarf and star), each with
       its colour in 2D and its surface in 3D; By mass on the reference's
@@ -252,8 +259,9 @@ export const gravity = {
   presetId: 'solar',
   presets: [
     { id: 'solar', label: 'Star system', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.85, follow: true, orbits: false } },
-    // Our own: real masses, sizes and orbits, with softening far below any distance in it (a few hundred km).
-    { id: 'sol', label: 'Our Solar System', params: { incl: 0, G: 1, soft: 0.0001, merge: true, zoom: 0.28, follow: true, orbits: true, labels: true } },
+    // Our own: real masses, sizes and orbits, with softening far below any distance in it (a few hundred km). Its
+    // centre of mass is built at rest, so following it adds nothing; left off, the wheel zooms toward the cursor.
+    { id: 'sol', label: 'Our Solar System', params: { incl: 0, G: 1, soft: 0.0001, merge: true, zoom: 0.28, follow: false, orbits: true, labels: true } },
     { id: 'kepler', label: 'Kepler ellipses', params: { incl: 0, G: 1, soft: 0.5, merge: true, zoom: 0.8, follow: true, orbits: false } },
     { id: 'binary', label: 'Binary star', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.7, follow: true, orbits: false } },
     { id: 'figure8', label: 'Figure-eight', params: { incl: 0, G: 1, soft: 0.5, merge: false, zoom: 1.4, follow: true, orbits: false } },
@@ -706,6 +714,8 @@ export const gravity = {
      so a frame that shows the real sky from its north, as the Solar System does, turns prograde orbits' r × v to −z;
      the drawn scenes go round the other way and keep +z. */
   pole() { return this.sky ? -1 : 1; },
+  /* The Solar System spans eight decades of scale, so a wheel notch or zoom button goes twice as far there. */
+  zoomPace() { return this.sky ? 2 : 1; },
   /* The head-up display: its readings, and the followed body in stage pixels, where the stage draws it. */
   hud: [['Bodies', 'BODIES'], ['Total energy E', 'ENERGY E'], ['Energy drift since last change', 'E DRIFT'], ['Virial ratio 2K / |U|', 'VIRIAL 2K/|U|']],
   hudTarget(three) {
@@ -882,9 +892,10 @@ export const gravity = {
     }
     return best;
   },
-  /* The ellipse a body is on now about P, from its position and velocity relative to P (its osculating orbit), as n
-     points by eccentric anomaly, in simulation coordinates; null when it is not bound. */
-  orbitPath(b, P, n = 96) {
+  /* The ellipse a body is on now about P, from its position and velocity relative to P (its osculating orbit): its
+     centre (P), its axes P̂ (to periapsis) and Q̂ (the way the body moves there), a, b and e, and E0, the body's own
+     eccentric anomaly, so a drawing can start at the body. Null when the body is not bound. */
+  orbitFrame(b, P) {
     const mu = G0 * this.p.G * (P.m + b.m), rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, vx = b.vx - P.vx, vy = b.vy - P.vy, vz = b.vz - P.vz;
     const r = Math.hypot(rx, ry, rz), v2 = vx * vx + vy * vy + vz * vz, a = 1 / (2 / r - v2 / mu);
     if (!(a > 0) || !Number.isFinite(a)) return null;
@@ -894,31 +905,69 @@ export const gravity = {
     if (e >= 1) return null;
     const [Px, Py, Pz] = e > 1e-9 ? [ex / e, ey / e, ez / e] : [rx / r, ry / r, rz / r];
     const Qx = (hy * Pz - hz * Py) / H, Qy = (hz * Px - hx * Pz) / H, Qz = (hx * Py - hy * Px) / H, bb = a * Math.sqrt(1 - e * e);
+    const E0 = Math.atan2((rx * Qx + ry * Qy + rz * Qz) / bb, (rx * Px + ry * Py + rz * Pz) / a + e);
+    return { cx: P.x, cy: P.y, cz: P.z, Px, Py, Pz, Qx, Qy, Qz, a, bb, e, E0 };
+  },
+  /* The same ellipse as n points by eccentric anomaly from periapsis, in simulation coordinates; null when unbound. */
+  orbitPath(b, P, n = 96) {
+    const f = this.orbitFrame(b, P); if (!f) return null;
     const out = new Float64Array((n + 1) * 3);
     for (let k = 0; k <= n; k++) {
-      const E = TAU * k / n, c = a * (Math.cos(E) - e), s = bb * Math.sin(E);
-      out[k * 3] = P.x + Px * c + Qx * s; out[k * 3 + 1] = P.y + Py * c + Qy * s; out[k * 3 + 2] = P.z + Pz * c + Qz * s;
+      const E = TAU * k / n, c = f.a * (Math.cos(E) - f.e), s = f.bb * Math.sin(E);
+      out[k * 3] = f.cx + f.Px * c + f.Qx * s; out[k * 3 + 1] = f.cy + f.Py * c + f.Qy * s; out[k * 3 + 2] = f.cz + f.Pz * c + f.Qz * s;
     }
     return out;
+  },
+  /* An orbit as a smooth curve on the stage. A fixed polygon fails when the view is inside the orbit: the Solar
+     System's 3D camera sits within Pluto's and Eris's, whose 128 chords then crossed the stage as long straight lines.
+     So it starts at 96 points by eccentric anomaly, from the body back round the orbit, and halves any span that would
+     draw longer than maxPx on a stage of w × h; spans wholly off the stage stay coarse, and the curve breaks where
+     project() says a point is behind the camera (null). emit(p, s, u) gets each point (p in simulation coordinates,
+     s on the stage) with u, the share of the orbit behind the body (0 at it), and emit(null) at a break. */
+  orbitCurve(f, project, emit, { maxPx = 6, w = 1, h = 1, cap = 1600 } = {}) {
+    const at = E => { const c = f.a * (Math.cos(E) - f.e), s = f.bb * Math.sin(E); return [f.cx + f.Px * c + f.Qx * s, f.cy + f.Py * c + f.Qy * s, f.cz + f.Pz * c + f.Qz * s]; };
+    const M = Math.max(w, h), seen = (a, b) => Math.max(a.x, b.x) >= -M && Math.min(a.x, b.x) <= w + M && Math.max(a.y, b.y) >= -M && Math.min(a.y, b.y) <= h + M;
+    let n = 0, open = false;
+    const put = (p, s, E) => { emit(p, s, (f.E0 - E) / TAU); open = true; n++; };
+    const cut = () => { if (open) { emit(null); open = false; } };
+    const span = (E1, p1, s1, E2, p2, s2, d) => {
+      if (s1 && s2) {
+        if (d >= 14 || n >= cap || !seen(s1, s2) || Math.hypot(s2.x - s1.x, s2.y - s1.y) <= maxPx) { put(p2, s2, E2); return; }
+      } else if (d >= 14 || n >= cap || (!s1 && !s2 && d >= 3)) { cut(); if (s2) put(p2, s2, E2); return; }
+      const Em = (E1 + E2) / 2, pm = at(Em), sm = project(pm);
+      span(E1, p1, s1, Em, pm, sm, d + 1); span(Em, pm, sm, E2, p2, s2, d + 1);
+    };
+    let E1 = f.E0, p1 = at(E1), s1 = project(p1);
+    if (s1) put(p1, s1, E1);
+    for (let k = 1; k <= 96; k++) { const E2 = f.E0 - TAU * k / 96, p2 = at(E2), s2 = project(p2); span(E1, p1, s1, E2, p2, s2, 0); E1 = E2; p1 = p2; s1 = s2; }
+    cut();
   },
   /* Whose orbits Orbits draws: every named body; in a scene without names, the twelve heaviest planets. */
   orbiters() {
     const named = this.bodies.filter(b => b.label && b.kind !== 'star');
     return named.length ? named : this.bodies.filter(b => b.kind !== 'star' && b.m > 0).sort((a, b) => b.m - a.m).slice(0, 12);
   },
-  drawOrbits(g, ox, oy, z) {
-    g.lineWidth = 1; g.setLineDash([]);
+  drawOrbits(g, ox, oy, z, w, h) {
+    g.lineWidth = 1; g.setLineDash([]); g.lineJoin = 'round'; g.lineCap = 'round';
+    const project = p => ({ x: p[0] * z + ox, y: p[1] * z + oy });
     for (const b of this.orbiters()) {
-      const P = this.pullHost(b); if (!P) continue;
-      const pts = this.orbitPath(b, P); if (!pts) continue;
       // A moon's orbit shows once it is drawn clear of its planet.
       if (b.host && !this.apart(b, z)) continue;
-      g.strokeStyle = bodyCss(b); g.globalAlpha = b.host ? 0.32 : 0.26;
-      g.beginPath();
-      for (let k = 0; k < pts.length; k += 3) { const X = pts[k] * z + ox, Y = pts[k + 1] * z + oy; k ? g.lineTo(X, Y) : g.moveTo(X, Y); }
-      g.stroke();
+      const P = this.pullHost(b), f = P && this.orbitFrame(b, P); if (!f) continue;
+      // Brightest at the body and fading back round the orbit, so each line shows which way its body goes.
+      const base = b.host ? 0.46 : 0.38, alpha = k => base * (1 - 0.72 * k / 7);
+      let band = -1, open = false;
+      g.strokeStyle = bodyCss(b);
+      this.orbitCurve(f, project, (p, s, u) => {
+        if (!p) { if (open) g.stroke(); open = false; return; }
+        const k = Math.min(7, Math.floor(u * 8));
+        if (!open) { g.globalAlpha = alpha(k); g.beginPath(); g.moveTo(s.x, s.y); open = true; band = k; return; }
+        g.lineTo(s.x, s.y);
+        if (k !== band) { g.stroke(); g.globalAlpha = alpha(k); g.beginPath(); g.moveTo(s.x, s.y); band = k; }
+      }, { maxPx: 5, w, h });
+      if (open) g.stroke();
     }
-    g.globalAlpha = 1;
+    g.globalAlpha = 1; g.lineCap = 'butt';
   },
   /* The hover readout: the name, if it has one; the mass, if it has any; and the speed. */
   hoverText(b) { return `${b.name ? `${b.name} · ` : ''}${b.m > 0 ? `${this.massText(b.m, true)} · ` : ''}${fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz))}`; },
@@ -926,6 +975,7 @@ export const gravity = {
      its planet. */
   drawNames(g, list) {
     g.font = `500 10.5px ${THEME.mono}`; g.textBaseline = 'middle'; g.textAlign = 'left';
+    g.lineJoin = 'round'; g.lineWidth = 3; g.strokeStyle = 'rgba(5,8,13,0.78)';
     // Where names would overlap, the more important one keeps its place: the followed body, the Sun, the planets,
     // the dwarf planets and comets, then the moons, heaviest first.
     const major = b => !b.host && b.kind !== 'dwarf' && b.kind !== 'icy' && b.kind !== 'comet';
@@ -939,7 +989,9 @@ export const gravity = {
       const x = X + (b.kind === 'star' ? R * 1.7 : R) + 4, y = Y - Math.min(R, 6) - 2, l = x - 2, r = x + g.measureText(b.name).width + 2, t = y - 7, d = y + 7;
       if (taken.some(q => l < q[2] && r > q[0] && t < q[3] && d > q[1])) continue;
       taken.push([l, t, r, d]); this.hudClear.push({ l: X - R - 2, t, r, b: d });
-      g.fillStyle = major(b) ? 'rgba(232,238,246,0.86)' : 'rgba(176,190,206,0.74)';
+      // A dark halo keeps a name legible where it crosses an orbit or a trail.
+      g.strokeText(b.name, x, y);
+      g.fillStyle = major(b) ? 'rgba(232,238,246,0.88)' : 'rgba(176,190,206,0.76)';
       g.fillText(b.name, x, y);
     }
   },
@@ -982,7 +1034,7 @@ export const gravity = {
       }
       g.globalAlpha = 1;
     }
-    if (this.p.orbits) this.drawOrbits(g, ox, oy, z);
+    if (this.p.orbits) this.drawOrbits(g, ox, oy, z, w, h);
     const S = B.filter(b => b.kind === 'star'), names = this.p.labels ? [] : null;
     for (const b of B) {
       const X = b.x * z + ox, Y = b.y * z + oy, R = this.drawR(b, z);

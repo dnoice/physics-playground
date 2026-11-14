@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.8)
+    - Title: Gravity Scene (digiSpace Edition - v2.10)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits
+      from the lab's orbitCurve: smooth however near the camera passes, faded
+      where nearest it and back round from each body. In the Solar System
+      depth marks give way to orbits. Merge flashes are about half the size,
+      and many at once share their light.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
       System: each world at its real radius above its own pixel floor,
       Saturn's real rings at their tilt, moons hidden inside their planet's
@@ -23,8 +28,6 @@
       surface and colour come from its type, read from the lab, instead of
       from its mass and id; stars are the bodies typed as stars, and only gas
       giants carry rings.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for the 3D mode: the gravity lab as open space, with procedural worlds.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -61,11 +64,11 @@
 ---------
 */
 import * as THREE from 'three';
-import { reduceMotion } from '../../../core/util.js';
+import { clamp, reduceMotion } from '../../../core/util.js';
 import { createRibbons } from '../ribbons.js';
 
 const TAU = Math.PI * 2, MAX_LIGHTS = 3, MIN_STAR_PX = 4, MIN_BODY_PX = 2.6, HERO_PX = 22, HERO_CAP = 24, RING_CAP = 48, FLASH_CAP = 16;
-const TRAIL_POINTS = 56000, MARK_POINTS = 12000, ORBIT_POINTS = 8192, ORBIT_SEGS = 128, SKY_STARS = 24000, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
+const TRAIL_POINTS = 56000, MARK_POINTS = 12000, ORBIT_POINTS = 32768, SKY_STARS = 24000, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
 const RING_IN = 1.46, RING_OUT = 2.02;
 /* The band crosses the home view diagonally, behind the system, with its bulge just off centre. */
 const POLE = new THREE.Vector3(-0.62, 0.73, -0.26).normalize(), BAND_U = new THREE.Vector3().crossVectors(POLE, new THREE.Vector3(0.2, 0.1, 1)).normalize(), BAND_W = new THREE.Vector3().crossVectors(POLE, BAND_U);
@@ -701,11 +704,16 @@ export function createScene(E, lab) {
     for (const b of B) lastM.set(b.id, b.m);
     pulse *= Math.exp(-dt * 6);
     flash.n = 0;
+    // A flash spans a few times its body, and many at once (the accretion disk's first seconds) share the light, so a
+    // crowd of merges reads as sparks rather than one white blot.
+    let live = 0;
+    for (const f of flashes) if (f.age < 1) live++;
+    const share = Math.min(1, 2 / Math.sqrt(Math.max(1, live)));
     for (const f of flashes) {
       if (f.age >= 1) continue;
       f.age = Math.min(1, f.age + dt / 0.9);
-      const R = (f.r + 3) * (3.5 + 3 * f.gain), i = put(flash, f.x, f.y, f.z, R), c = flash.C.array, a = flash.A.array;
-      a[i * 4] = f.age; a[i * 4 + 1] = f.gain; c[i * 3] = 1; c[i * 3 + 1] = 0.72; c[i * 3 + 2] = 0.42;
+      const R = (f.r + 2) * (2.2 + 1.6 * f.gain), i = put(flash, f.x, f.y, f.z, R), c = flash.C.array, a = flash.A.array;
+      a[i * 4] = f.age; a[i * 4 + 1] = f.gain * share; c[i * 3] = 1; c[i * 3 + 1] = 0.72; c[i * 3 + 2] = 0.42;
     }
   }
 
@@ -773,8 +781,9 @@ export function createScene(E, lab) {
           writeRing(rings, X, Y, Z, s, f, c, rPx);
         }
         // The belts' marks would hide the planets', and a moon's would reach from its planet to the ecliptic: only
-        // bodies with mass or a name drop one, and never a moon.
-        if ((b.m > 0 || b.label) && !b.host) dropMark(b, plane, depth, px, c, view.h);
+        // bodies with mass or a name drop one, and never a moon. In the Solar System the orbits, when drawn, show
+        // each tilt better than marks would: a steep orbit's mark is a long stick across the view.
+        if ((b.m > 0 || b.label) && !b.host && !(lab.sky && lab.p.orbits)) dropMark(b, plane, depth, px, c, view.h);
       }
       if (vectors) arrow(b, depth, px);
     }
@@ -860,21 +869,24 @@ export function createScene(E, lab) {
   }
 
   /* Orbits: each named body's osculating ellipse about what it orbits, the flat view's Orbits drawn in depth so a
-     planet can hide the far side of its moons' orbits. */
+     planet can hide the far side of its moons' orbits. The lab's orbitCurve keeps each a smooth curve however near the
+     camera it passes, breaking it at the near plane; the stretch closest to the camera fades out, so an orbit the
+     view sits inside (Pluto's, Eris's) does not sweep across the stage, and each line fades back round from its body,
+     so it shows which way the body goes. */
   function syncOrbits(view) {
     orbits.setResolution(view.w, view.h); orbits.begin();
     if (lab.p.orbits) {
-      const cam = view.camera, ex = cam.position.x, ey = cam.position.y, ez = cam.position.z, near = cam.near * 3, fx = FW.x, fy = FW.y, fz = FW.z;
+      const V = lab.basis3(), cut = V.near * 3, dist = lab.c3().dist, fade0 = dist * 0.06, fade1 = dist * 0.2;
+      const project = p => { const s = lab.project3(p[0], p[1], p[2]); return s && s.w > cut ? s : null; };
       for (const b of lab.orbiters()) {
         if (hidden.has(b)) continue;
-        const P = lab.pullHost(b), pts = P && lab.orbitPath(b, P, ORBIT_SEGS); if (!pts) continue;
-        const c = tintOf(lab.bodyColor3(b)), a = b.host ? 0.42 : 0.34;
-        for (let k = 0; k < pts.length; k += 3) {
-          const X = pts[k], Y = pts[k + 2], Z = pts[k + 1];
-          // As for trails, a strip must not cross the camera plane.
-          if ((X - ex) * fx + (Y - ey) * fy + (Z - ez) * fz < near) { orbits.strip(); continue; }
-          orbits.point(X, Y, Z, c[0], c[1], c[2], a, 1);
-        }
+        const P = lab.pullHost(b), f = P && lab.orbitFrame(b, P); if (!f) continue;
+        const c = tintOf(lab.bodyColor3(b)), base = b.host ? 0.5 : 0.4;
+        lab.orbitCurve(f, project, (p, s, u) => {
+          if (!p) { orbits.strip(); return; }
+          const near = clamp((s.w - fade0) / (fade1 - fade0), 0, 1);
+          orbits.point(p[0], p[2], p[1], c[0], c[1], c[2], base * (1 - 0.72 * u) * near * near * (3 - 2 * near), 1);
+        }, { maxPx: 7, w: view.w, h: view.h, cap: 1400 });
         orbits.strip();
       }
     }

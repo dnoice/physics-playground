@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.9)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.10)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.9.0
+    - Version: 2.10.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.10.0: Our Solar System's orbits fade back from each body and stay
+      smooth in 3D, and it zooms anywhere, from a few thousand km to all of
+      Sedna's orbit; the release badge.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.9.0: the Planet classes section (the five classes, By mass, the
       coupled controls, Random, Inspect's physical figures and mergers), the
@@ -109,8 +113,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.9.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.9.0">
+    <img src="https://img.shields.io/badge/release-v2.10.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.10.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -267,11 +271,17 @@ To explore it:
   to see its orbit about its planet, and the Roche limit it must keep clear
   of: Phobos is already inside Mars's.
 - **Orbits** and **Names**, under Display, draw each named body's ellipse
-  and name. In 3D the orbits are drawn in depth, so a planet hides the far
-  side of its moons' orbits.
+  and name. Each orbit is brightest at its body and fades back round, so it
+  shows which way the body goes. The orbits stay smooth even when the 3D
+  camera sits inside them. They are drawn in depth, so a planet hides the
+  far side of its moons' orbits.
 - **The clock** reads the date the run has reached. A year takes 4.4
   simulated seconds.
-- **Zoom out** to find the Kuiper belt, Eris and Sedna.
+- **Zoom anywhere.** The wheel zooms toward the cursor, and each notch goes
+  twice as far as in the other scenes. It reaches from a few thousand
+  kilometres, close enough to see the Earth and Moon without following
+  either, out to the whole of Sedna's orbit, 936 AU at its far end. The rail
+  shows deep zooms in short form, such as 125k%.
 
 How faithful it is, as `tests/solar.py` measures over a simulated year:
 
@@ -691,7 +701,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.9.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.10.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
