@@ -150,7 +150,7 @@ physics and their data. Gravity now uses them.
 
 ### Tests
 
-- **New `tests/planets.py`** (20 checks), against the reference's own data:
+- **New `tests/planets.py`** (19 checks), against the reference's own data:
   - the 22 benchmark planets by mass;
   - every class boundary;
   - the rocky branch within about 3 % of the rocky worlds' radii, the volatile
