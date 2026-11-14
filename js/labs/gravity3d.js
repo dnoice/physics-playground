@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.8)
+    - Title: Gravity 3D View (digiSpace Edition - v2.10)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      zoomLimits3: the Solar System's free camera comes in to a few thousand
+      km and out to all of Sedna's orbit; elsewhere from a fiftieth of the
+      system to eight times it.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
       System in 3D: the first frame reaches Saturn and the zoom out reaches
       the Kuiper belt; bodies keep their own pixel floor; a moon inside its
@@ -21,8 +25,6 @@
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Throws and
       drops in 3D place the body drawn for the throw, random or set, and the
       preview shows its colour and size.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hover
-      and throw labels in 3D give mass and speed in the chosen units.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -135,9 +137,14 @@ export const gravity3d = {
     c.tx += -cy * dx * k - sy * dy * k / sp; c.tz += sy * dx * k - cy * dy * k / sp; c.txT = c.tx; c.tzT = c.tz;
     this.cam.x = c.tx; this.cam.y = c.tz;
   },
+  /* How far the camera may come in and go out, as multiples of the framing distance. A tracked body may fill the
+     stage. In the Solar System the free camera may come in to a few thousand km of the ecliptic, to look at the
+     Earth and Moon without following either, and out to all of Sedna's orbit; elsewhere, to a fiftieth of the system
+     and out to eight times it. */
+  zoomLimits3() { return this.sky ? [1e-6, 80] : [0.02, 8]; },
   zoom3(f, s, instant) {
-    // A tracked body may fill the stage; the free camera stops at a fraction of the system.
-    const c = this.c3(), D0 = this.dist0(), tb = this.tracked3(), nd = clamp(c.distT / f, tb ? Math.min(tb.r * 2.5, D0 * 0.04) : D0 * 0.04, D0 * (this.sky ? 12 : 6));
+    const c = this.c3(), D0 = this.dist0(), tb = this.tracked3(), [lo, hi] = this.zoomLimits3();
+    const nd = clamp(c.distT / f, tb ? Math.min(tb.r * 2.5, D0 * lo) : D0 * lo, D0 * hi);
     if (s && !this.camLocked()) { const p = this.pick3(s); if (p) { const k = 1 - nd / c.distT; c.txT += (p.x - c.txT) * k; c.tzT += (p.y - c.tzT) * k; } }
     c.distT = nd;
     if (instant || reduceMotion) { c.dist = c.distT; c.tx = c.txT; c.tz = c.tzT; }

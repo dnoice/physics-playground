@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Stage Input (digiSpace Edition - v2.1)
+    - Title: Stage Input (digiSpace Edition - v2.10)
     - File Name: stage.js
     - Relative Path: js/shell/stage.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The wheel
+      zoom takes the lab's zoomPace.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Shift-drag pans in 3D, a cancelled pointer never commits, and the
       stage draws the 3D world.
@@ -40,7 +42,7 @@
 */
 import { THEME } from '../core/color.js';
 import { view } from '../core/view.js';
-import { camOf, clampCam, fitCam, is3D, navPan, navZoomBy, toWorld, worldOf } from './camera.js';
+import { camOf, clampCam, fitCam, is3D, navPan, navZoomBy, toWorld, worldOf, zoomPace } from './camera.js';
 
 import { drawWorld, in3D } from './mode.js';
 import { updateNav } from './navigator.js';
@@ -161,6 +163,6 @@ export function init() {
     e.preventDefault();
     const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? view.h : 1;
     if (e.shiftKey && !e.ctrlKey) { navPan(-(e.deltaY || e.deltaX) * k, 0); return; }
-    navZoomBy(Math.exp(-e.deltaY * k * (e.ctrlKey ? 0.01 : 0.0015)), ptrPos(e));
+    navZoomBy(Math.exp(-e.deltaY * k * (e.ctrlKey ? 0.01 : 0.0015) * zoomPace()), ptrPos(e));
   }, { passive: false });
 }

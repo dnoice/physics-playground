@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.9)
+    - Title: Architecture Guide (digiSpace Edition - v2.10)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.9.0
+    - Version: 2.10.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — orbitFrame
+      and orbitCurve, the fading orbits in 2D and 3D, depth marks and merge
+      flashes in the Solar System section; the zoomPace and zoomLimits3 hooks.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       planet classes: KINDS and its fields, kindOf, mergedKind, storedKind,
       the coupled controls, planetRadius, physique and Inspect's Hill, Roche
@@ -212,6 +215,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, and the lab's own length per stage pixel for the scale bar |
 | `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units menu; `timeNote` adds to the HUD clock |
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
+| `zoomPace()`, `zoomLimits3()` | How strongly the user's zoom controls act (the wheel, the rail's buttons and drag, the keys raise their factor to this power; Gravity's Solar System, eight decades of scale, returns 2), and Gravity's 3D zoom limits as multiples of the framing distance. Pinch and scripted zooms keep their exact factor |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
 | `snapshot()`, `restore(s)`, `histBudget`, `histInterval` | Rewind history |
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
@@ -569,11 +573,31 @@ state of any scene can carry the same metadata.
   - The 3D near plane follows the camera in. Floored at 1e-7 in sky scenes,
     it lets the camera reach a moon a few thousandths of a pixel across.
 - **Orbits and names.**
-  - `orbitPath(b, P)` returns the osculating ellipse from the eccentricity
-    vector, about `pullHost(b)`: the body's host, else what pulls on it
-    hardest.
-  - The 2D view strokes it on the canvas. The 3D scene draws it as a
-    depth-tested ribbon, so planets hide what is behind them.
+  - `orbitFrame(b, P)` gives the osculating ellipse about `pullHost(b)`,
+    the body's host or else what pulls on it hardest. It holds the centre,
+    the axes from the eccentricity vector, a, b, e, and the body's own
+    eccentric anomaly. `orbitPath(b, P, n)` samples that ellipse at n
+    points.
+  - **`orbitCurve(f, project, emit, opts)`** draws an orbit on screen. A
+    fixed polygon fails when the view is inside the orbit: the 3D camera
+    sits within Pluto's and Eris's, and their 128 chords once crossed the
+    stage as lines thousands of pixels long. So the curve:
+    - starts with 96 points, from the body back round its orbit;
+    - halves any span that would draw longer than `maxPx`, leaving spans
+      wholly off the stage coarse;
+    - breaks where `project` puts a point behind the camera;
+    - hands `emit` each point with u, the share of the orbit behind the
+      body.
+  - **2D** strokes the curve in eight bands of fading alpha.
+  - **3D** draws it as a depth-tested ribbon, so planets hide what is behind
+    them, and fades the stretch nearest the camera, so an orbit the view
+    sits inside does not sweep across the stage.
+  - In both, the line is brightest at the body and fades back round,
+    showing which way the body goes.
+  - In the Solar System, depth marks give way to the orbits while Orbits is
+    on, since a steep orbit's mark is a long stick across the view.
+  - Many merge flashes at once share their light, so the accretion disk's
+    first seconds read as sparks.
   - `drawNames` places names by rank: the followed body, the Sun, planets,
     dwarfs and comets, then moons by mass. A name that would overlap one
     already placed is left out. The names drawn, with their bodies, are the

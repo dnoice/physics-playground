@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.7)
+    - Title: Transport and Keys (digiSpace Edition - v2.10)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The + and
+      - keys take the lab's zoomPace.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Shift+H
       shows or hides the head-up display, ahead of the tool letters so a lab
       whose tool is H keeps it; Escape also closes the HUD menu; a held H acts
@@ -20,9 +22,6 @@
       through the active lab's views and U opens the Units menu; Escape closes
       the Units menu. The diagnostics sheet it used to close is now the deck's
       Insights pane.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Reset
-      restarts the scene clean through restart(), so edits a parameter rebuild
-      keeps never survive it.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,7 +43,7 @@
 */
 import { $, clamp, store } from '../core/util.js';
 import { labs } from '../labs/index.js';
-import { is3D, navFrame, navPan, navZoomBy } from './camera.js';
+import { is3D, navFrame, navPan, navZoomBy, zoomPace } from './camera.js';
 import { histBranch, histCapture, rewindStep, toggleData, toggleVideo, updateRewind } from './capture.js';
 import { evaluateDiagnostics } from './diagnostics.js';
 import { nextView, selectDock } from './dock.js';
@@ -106,8 +105,8 @@ export function init() {
       e.preventDefault();
       if (!e.repeat && !ptr.space) { ptr.space = true; ptr.spaceUsed = false; refreshCursor(); }
     } else if (k === '.') { e.preventDefault(); stepOnce(); }
-    else if (k === '+' || k === '=') { e.preventDefault(); navZoomBy(1.5, null); }
-    else if (k === '-' || k === '_') { e.preventDefault(); navZoomBy(1 / 1.5, null); }
+    else if (k === '+' || k === '=') { e.preventDefault(); navZoomBy(1.5 ** zoomPace(), null); }
+    else if (k === '-' || k === '_') { e.preventDefault(); navZoomBy(1.5 ** -zoomPace(), null); }
     else if (k === '0') { e.preventDefault(); navFrame(); }
     else if (k.startsWith('Arrow') && (t === document.body || t === canvas || t === stageEl || !t)) {
       e.preventDefault();

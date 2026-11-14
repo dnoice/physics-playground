@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.9)
+    - Title: Changelog (digiSpace Edition - v2.10)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.9.0
+    - Version: 2.10.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.10.0 release.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.9.0 release.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -61,6 +63,75 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.10.0 (11/14/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A polish pass over Gravity's scenes, on Dennis's report of glitchy orbit lines
+in Our Solar System, and his call for more flexible zoom there.
+
+### Orbit lines
+
+- **The glitch.** In 3D the camera sits inside the outer orbits. Pluto's
+  passed 425 px from it, so each of its 128 straight chords drew across the
+  stage as a line up to 25,000 px long. Eris's, Haumea's, Makemake's,
+  Neptune's and Sedna's did the same, and Eris's chords crossed the camera's
+  plane.
+- **The fix: orbits are now smooth curves** (`orbitFrame`, `orbitCurve`),
+  in 2D and 3D. Each starts with 96 points from its body, and any span that
+  would draw longer than a few pixels is halved again. The curve breaks
+  cleanly at the near plane. In 3D the stretch nearest the camera fades out,
+  so an orbit the view sits inside no longer sweeps across it. The longest
+  visible span in that view is now 7 px.
+- **Each orbit fades back round from its body**, brightest at the body, so
+  it shows which way the body goes.
+- **In the Solar System, depth marks give way to orbits** while Orbits is
+  on. A steep orbit's mark was a long stick across the view.
+
+### Zoom
+
+- **Wider 3D limits.** In the Solar System the free camera now comes in to a
+  few thousand km, close enough for the Earth and Moon without following
+  either, and goes out to the whole of Sedna's orbit (936 AU at aphelion).
+  That is 10⁻⁶ to 80 times the framing distance, where the limits had been
+  0.04 and 12. Elsewhere the range is 0.02 to 8, from 0.04 to 6.
+- **Faster in the Solar System.** Its eight decades of scale zoom twice as
+  far per step, through a new lab hook, `zoomPace`. It covers the wheel, the
+  rail's buttons and drag, and the keys. Pinch and scripted zooms keep
+  their exact factor.
+- **The wheel zooms toward the cursor there.** The scene no longer follows
+  the centre of mass, which it builds at rest, so following it only pinned
+  zoom to the Sun.
+- **Short-form readout.** The rail shows deep zooms as 125k% or 7.14M%, and
+  small ones to two figures.
+
+### Styles
+
+- **Names** carry a dark halo, so they stay legible over orbits and trails.
+- **Merge flashes** are about half their old size. Many at once share their
+  light, so the accretion disk's first seconds read as sparks, not white
+  blots.
+
+### Tests
+
+- **`tests/solar.py`, five new checks:**
+  - the orbits stay smooth with the 3D camera inside them (the longest
+    visible span 7 px, where the old chords reached thousands);
+  - the orbits stay smooth in 2D on Jupiter's moons;
+  - the zoom limits;
+  - the wheel zooms toward the cursor, twice as far a notch;
+  - the outer limit shows all of Sedna's orbit, and the readout is in short
+    form.
+
+### Docs
+
+- **README:** the Our Solar System guide covers the fading orbits and the
+  new zoom range, and the release badge reads 2.10.0.
+- **ARCHITECTURE:** `orbitFrame` and `orbitCurve`, and the `zoomPace` and
+  `zoomLimits3` hooks.
+- **`docs/media/sol-system.webp`** is recaptured with the fading orbits and
+  the short-form zoom reading, and `docs/media/MANIFEST.md` records the run.
 
 ## 2.9.0 (11/14/2026)
 

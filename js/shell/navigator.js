@@ -1,26 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Stage Gizmo (digiSpace Edition - v2.6)
+    - Title: Stage Gizmo (digiSpace Edition - v2.10)
     - File Name: navigator.js
     - Relative Path: js/shell/navigator.js
     - Artifact Type: javascript
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
+      zoom buttons, drag and keys take the lab's zoomPace, and the zoom
+      reading puts deep zooms in short form (125k%, 7.14M%).
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Marks which
       ends of the scrolling rail have more tools beyond them, as it scrolls,
       resizes or changes lab, for the fade in stage.css.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
       lab-scene group shows only when the lab has extras, and the scale bar is
       labelled in the chosen unit system with a prefix to suit (cm, ft, AU).
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The axis
-      ball compares against what it wrote, so it no longer reparses every
-      frame.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,15 +44,18 @@ import { canvasContext } from '../core/chart.js';
 import { THEME } from '../core/color.js';
 import { icon } from '../core/icons.js';
 import { v3dot } from '../core/math3d.js';
-import { prefixFor, unitOf } from '../core/units.js';
+import { prefixFor, sig, unitOf } from '../core/units.js';
 import { $, el } from '../core/util.js';
 import { view } from '../core/view.js';
-import { camOf, is3D, navActual, navCenter, navFrame, navPan, navZoomBy, toWorld, worldOf, zoomPct } from './camera.js';
+import { camOf, is3D, navActual, navCenter, navFrame, navPan, navZoomBy, toWorld, worldOf, zoomPace, zoomPct } from './camera.js';
 import { updateDock } from './dock.js';
 import { ptr, refreshCursor } from './stage.js';
 import { active, announce } from './state.js';
 
 /* ---------- view gizmo, scale bar and overview ---------- */
+/* The rail's zoom reading: whole percent in the usual range, a decimal below 10 %, and thousands and millions in
+   short form, so the Solar System's deepest zoom still fits the rail. */
+export const zoomText = z => (z >= 1e6 ? `${sig(z / 1e6, 3)}M%` : z >= 1e4 ? `${sig(z / 1e3, 3)}k%` : z >= 9.95 ? `${Math.round(z)}%` : z >= 0.1 ? `${z.toFixed(1)}%` : `${sig(z, 2)}%`);
 export const navZoomEl = $('#nav-zoom'), navPanEl = $('#nav-pan'), navExtraEl = $('#nav-extra'), orbitEl = $('#nav-orbit');
 export const miniEl = $('#minimap'), miniCanvas = $('#minimap-canvas'), scaleEl = $('#scalebar');
 export const mini = { k: 1, ox: 0, oy: 0 };
@@ -131,7 +134,7 @@ export function updateOrbit() {
 }
 export function updateNav() {
   const lab = active; if (!lab) return;
-  const three = is3D(lab), z = zoomPct(lab), txt = (z >= 9.95 ? Math.round(z) : z.toFixed(1)) + '%';
+  const three = is3D(lab), z = zoomPct(lab), txt = zoomText(z);
   if (navZoomEl.textContent !== txt) { navZoomEl.textContent = txt; navZoomEl.setAttribute('aria-label', `Zoom ${txt}. Drag up or down to zoom, or press for 100%.`); }
   navPanEl.setAttribute('aria-pressed', String(ptr.panMode));
   for (const x of navExtras) x.b.setAttribute('aria-pressed', String(!!x.o.pressed()));
@@ -183,13 +186,13 @@ export const miniEnd = e => { if (miniDrag === e.pointerId) { miniDrag = null; u
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
-  $('#nav-in').addEventListener('click', () => { navZoomBy(1.5, null); updateNav(); });
-  $('#nav-out').addEventListener('click', () => { navZoomBy(1 / 1.5, null); updateNav(); });
+  $('#nav-in').addEventListener('click', () => { navZoomBy(1.5 ** zoomPace(), null); updateNav(); });
+  $('#nav-out').addEventListener('click', () => { navZoomBy(1.5 ** -zoomPace(), null); updateNav(); });
   $('#nav-fit').addEventListener('click', () => { navFrame(); announce('View framed'); });
-  dragButton(navZoomEl, (dx, dy) => navZoomBy(Math.exp(-dy * 0.012), null, true), () => { navActual(); announce('Zoom 100%'); });
+  dragButton(navZoomEl, (dx, dy) => navZoomBy(Math.exp(-dy * 0.012 * zoomPace()), null, true), () => { navActual(); announce('Zoom 100%'); });
   navZoomEl.addEventListener('keydown', e => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); navZoomBy(1.25, null); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); navZoomBy(0.8, null); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); navZoomBy(1.25 ** zoomPace(), null); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); navZoomBy(0.8 ** zoomPace(), null); }
   });
   dragButton(navPanEl, (dx, dy) => navPan(dx, dy), () => setPanMode(!ptr.panMode));
   miniCanvas.addEventListener('pointerdown', e => { miniDrag = e.pointerId; try { miniCanvas.setPointerCapture(e.pointerId); } catch (_) { /* best-effort */ } miniJump(e); });

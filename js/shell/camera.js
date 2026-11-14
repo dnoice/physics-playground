@@ -1,24 +1,25 @@
 /*
 ✒ Metadata
-    - Title: View Camera (digiSpace Edition - v2.7)
+    - Title: View Camera (digiSpace Edition - v2.10)
     - File Name: camera.js
     - Relative Path: js/shell/camera.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.10.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — zoomPace:
+      a lab's power on the user's zoom controls (Gravity's Solar System zooms
+      twice as far a step).
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — toScreen()
       takes a point of a lab drawn by the stage camera to stage pixels, for
       the head-up display's target box.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Zoom
       limits moved onto each lab.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single file; v2.0 adds the Fields lab's zoom range.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -78,6 +79,10 @@ export function clampCam(lab) {
 }
 export function unfit(lab) { const c = camOf(lab); if (c.fit && !lab.selfCam) Object.assign(c, fitCam(lab)); c.fit = false; return c; }
 export const navAnim = { lab: null, z: 1, anchor: null, wx: 0, wy: 0, cx: null, cy: null, done: null };
+/* How strongly the user's zoom controls act: the wheel, the zoom buttons, the zoom drag and the keys raise their factor
+   to this power. A lab spanning many decades of scale (Gravity's Solar System) zooms faster; pinch and scripted zooms
+   keep their exact factor. */
+export const zoomPace = () => (active && active.zoomPace ? active.zoomPace() : 1);
 /* Zoom by factor f toward screen point s (stage centre when s is null or the camera is locked to a body). */
 export function navZoomBy(f, s, instant) {
   const lab = active; if (!lab) return;
