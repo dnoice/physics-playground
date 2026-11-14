@@ -121,9 +121,10 @@ size wherever they can, not stacked one on another.
 
 - **ARCHITECTURE:** the dials' anatomy and grid, and the Math page's layout.
 - **README:** the release badge.
-- **Media:** the hero, the lab gallery and the 2D and 3D pair are
+- **Media:** the hero, the one picture that shows the Controls page, is
   recaptured with the new dials, and `docs/media/MANIFEST.md` records the
-  run.
+  run. It no longer says the gallery and the 2D and 3D pair show the
+  dials: they show the stage.
 
 ## 2.10.0 (11/14/2026)
 

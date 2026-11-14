@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.10)
+    - Title: README Media Manifest (digiSpace Edition - v2.11)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.10.0
+    - Version: 2.11.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero
+      is recaptured from release 2.11.0 with the refined dials. The gallery
+      and the 2D and 3D pair are no longer said to show the Controls page
+      dials; they show the stage.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Solar
       System pair is recaptured from release 2.10.0: its orbits fade back
       round from each body, the depth marks give way to them, and the close-up
@@ -97,14 +101,17 @@ the change that made them necessary.
 The Solar System pair was captured from release 2.10.0 on 11/14/2026 in the
 same way, about five months into the run (the scene also runs while the page
 boots). Its orbits fade back round from each body, and the close-up's zoom
-reads in short form (41.8k%). The hero was captured from release 2.9.0 on 11/14/2026, headless in
+reads in short form (41.8k%). The hero was captured from release 2.11.0 on 11/14/2026, headless in
 software WebGL on four CPU cores, in metric units. It shows the head-up
-display's readings tape, and the Star system's planets as the gas giants the
-research classes make them, with the planet-class buttons under New bodies.
+display's readings tape, the Star system's planets as the gas giants the
+research classes make them, the planet-class buttons under New bodies, and
+the refined dials: open cells, the value unframed with its unit set back,
+and each row's wheels level.
 The Collisions picture was captured from release 2.7.0 on 11/10/2026 in the
 same way, and shows the target box and callout on the selected cue ball. The Fluid,
 Waves and Fields pictures and the 2D and 3D pair stand from release 2.5.0,
-with the Controls page's dials and the Random dice on the stage rail;
+with the Random dice on the stage rail; they show the stage, not the
+Controls page, so the dials' later refinements do not touch them;
 Chaos and Cloth, whose rails have no dice, from release 2.4.0; and the
 banner, which shows no interface, from release 2.3.0.
 
