@@ -153,7 +153,7 @@ physics and their data. Gravity now uses them.
 - **New `tests/planets.py`** (20 checks), against the reference's own data:
   - the 22 benchmark planets by mass;
   - every class boundary;
-  - the rocky branch within 3 % of the rocky worlds' radii, the volatile
+  - the rocky branch within about 3 % of the rocky worlds' radii, the volatile
     branch on the ice giants, and the cold-giant curve through Jupiter;
   - Inspect's density, gravity and escape speed for six planets and the Sun;
   - Jupiter's Hill sphere and the reference's 53.1 Gm;
