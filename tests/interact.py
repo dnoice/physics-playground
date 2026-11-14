@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Interaction Test (digiSpace Edition - v2.4)
+    - Title: Interaction Test (digiSpace Edition - v2.11)
     - File Name: interact.py
     - Relative Path: tests/interact.py
     - Artifact Type: test
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.11.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
+      start-angle dial reads its degrees against the number (35.1°), as the
+      controls now write a degree sign.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Waves'
       Intensity view is picked from the stage rail, where it moved from the
       Controls page.
@@ -102,7 +105,7 @@ with sync_playwright() as p:
     pg.mouse.move(box["x"] + bob[0], box["y"] + bob[1]); pg.mouse.down(); pg.mouse.move(box["x"] + bob[0] + 80, box["y"] + bob[1] - 60, steps=5); pg.mouse.up()
     r = pg.evaluate("PhysicsPlayground.labs.chaos.p.theta2")
     ok("bob_drag_sets_theta2", abs(r - t0) > 5, (t0, r))
-    ok("theta2_slider_follows", pg.inner_text("#ctl-chaos-theta2-out") == f"{r:.1f} °", pg.inner_text("#ctl-chaos-theta2-out"))
+    ok("theta2_slider_follows", pg.inner_text("#ctl-chaos-theta2-out") == f"{r:.1f}°", pg.inner_text("#ctl-chaos-theta2-out"))
     pg.evaluate("PhysicsPlayground.play()")
     pg.wait_for_timeout(9000); pg.screenshot(path=shot("chaos2.png"))
     # cloth: cut across
