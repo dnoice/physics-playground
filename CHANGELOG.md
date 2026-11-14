@@ -148,6 +148,13 @@ physics and their data. Gravity now uses them.
   a body selected right after a heavier one was added could be measured
   against the wrong host. `pullHost` now rebuilds the list first.
 
+### README pictures
+
+- **The hero is recaptured.** Its Star system now shows the gas giants the
+  classes make of planets weighing 0.3 to 2 Jupiter masses, where the old id
+  parity had painted some as ocean worlds. The Controls page shows the
+  planet-class buttons.
+
 ### Tests
 
 - **New `tests/planets.py`** (19 checks), against the reference's own data:
