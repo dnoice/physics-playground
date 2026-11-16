@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Library Styles (digiSpace Edition - v2.5)
+    - Title: Library Styles (digiSpace Edition - v2.15)
     - File Name: library.css
     - Relative Path: css/library.css
     - Artifact Type: stylesheet
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      Library restructured: Capture and Saved sections with their headers, the
+      capture control bar with record and stop marks, the folding settings and
+      column chips, compact storage line, item cards coloured by kind with a
+      filled main action and a corner trash button, and CSS glyphs with empty
+      alt text.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
       cards for clips, datasets and states at the head of the Library.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -21,12 +27,18 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Storage status, meter, filter and saved-item cards of the Library page.
+    The Library page: the Capture section's control bar and folding settings,
+    and the Saved section's storage status, meter, filter and item cards.
 
 ✒ Key Features:
-    - Item cards with kind glyph, metadata and actions.
-    - Inline rename and delete confirmation.
-    - Video preview sized to the card.
+    - Record buttons with a red record dot that turns to a stop square on a
+      pulsing disc while recording.
+    - Item cards coloured by kind through --k: tile, tag and the filled main
+      action; Delete as a quiet corner trash button.
+    - Glyphs drawn from data-ico with empty alt text, so a button's spoken
+      name is only its words.
+    - Inline rename, delete confirmation and a video preview sized to the
+      card.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -35,62 +47,140 @@
       16.4+)
 ---------
 */
-/* ---------- library: storage status, saved clips, datasets and states ---------- */
-.lib-store { margin: 0; display: grid; gap: 8px; padding: 12px 14px; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }
-.lib-status { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; line-height: 1.5; color: var(--text); }
-.lib-status::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--muted); }
+/* ---------- library: two sections, Capture and Saved ---------- */
+/* Glyphs drawn by CSS carry empty alt text (content: … / ""), so a button's accessible name is only its words; the
+   plain declaration before it is the fallback for engines without the alt syntax. */
+.lib-sec { display: grid; gap: 10px; }
+.lib-sec + .lib-sec { padding-top: 14px; border-top: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); }
+.lib-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+.lib-count { color: var(--text); letter-spacing: 0.04em; }
+.lib-head .seg button { min-height: 26px; padding: 3px 10px; font-size: 11.5px; }
+/* A quiet header button that folds out a section's settings. */
+.lib-tog {
+  appearance: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 7px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; background: none; color: var(--muted); font: 500 12px/1 var(--font-body); transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.lib-tog .ms { font-size: 17px; }
+.lib-tog:hover { color: var(--text); background: color-mix(in oklab, var(--text) 6%, transparent); }
+.lib-tog[aria-expanded="true"] { color: var(--text); border-color: var(--rule); background: color-mix(in oklab, var(--well) 70%, transparent); }
+
+/* ---------- capture: a control bar of two recorders and a save ---------- */
+/* Three equal buttons, never stretched past a comfortable reach when the notebook runs the window's width. */
+.lib-capture { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 600px; }
+.cap-card {
+  appearance: none; position: relative; display: grid; justify-items: center; align-content: start; gap: 5px; padding: 14px 6px 11px; min-width: 0;
+  border: 0; border-radius: 12px; cursor: pointer; text-align: center; color: var(--text); font: inherit;
+  background: linear-gradient(180deg, color-mix(in oklab, white 4%, transparent), transparent 46px), color-mix(in oklab, var(--well) 74%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
+}
+.cap-card:hover:not(:disabled) { background: color-mix(in oklab, var(--text) 8%, var(--well)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--text) 22%, transparent), var(--card-sheen); }
+.cap-card:active:not(:disabled) { transform: scale(0.97); }
+.cap-card:disabled { cursor: not-allowed; opacity: 0.45; }
+.cap-card kbd { position: absolute; top: 6px; right: 6px; }
+.cap-name { font: 600 12.5px/1.25 var(--font-body); }
+.cap-sub { min-height: 2.7em; font: 400 10.5px/1.35 var(--font-mono); color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+/* The mark: a ring, and inside it a red record dot, or the state's bookmark. */
+.cap-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--text) 28%, transparent); transition: background 0.2s, box-shadow 0.2s; }
+.cap-card:is([data-kind="clip"], [data-kind="run"]) .cap-mark::before {
+  content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--crit);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--crit) 55%, transparent); transition: width 0.2s var(--ease), height 0.2s var(--ease), border-radius 0.2s var(--ease), background 0.2s;
+}
+.cap-card:hover:not(:disabled) .cap-mark { box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--crit) 70%, transparent); }
+.cap-card[data-kind="state"] .cap-mark::before {
+  content: attr(data-ico); content: attr(data-ico) / ""; font-family: "Material Symbols Rounded"; font-size: 19px; line-height: 1; color: var(--ok);
+  font-feature-settings: "liga"; -webkit-font-feature-settings: "liga"; font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20;
+}
+.cap-card[data-kind="state"]:hover:not(:disabled) .cap-mark { box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--ok) 70%, transparent); }
+html.no-icons .cap-card[data-kind="state"] .cap-mark::before { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--ok); }
+/* Recording: the dot becomes a stop square on a pulsing red disc, and the button glows red. */
+.cap-card[aria-pressed="true"] {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--crit) 20%, transparent), color-mix(in oklab, var(--crit) 7%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--crit) 55%, transparent);
+}
+.cap-card[aria-pressed="true"] .cap-mark { background: var(--crit); color: var(--crit); box-shadow: none; animation: ping 1.6s ease-out infinite; }
+.cap-card[aria-pressed="true"] .cap-mark::before { width: 11px; height: 11px; border-radius: 2px; background: #fff; box-shadow: none; }
+.cap-card[aria-pressed="true"] .cap-sub { color: var(--text); }
+/* Saved: the state button confirms for a moment. */
+.cap-card.is-saved { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ok) 60%, transparent); background: color-mix(in oklab, var(--ok) 12%, var(--well)); }
+.cap-card.is-saved .cap-mark { background: color-mix(in oklab, var(--ok) 20%, transparent); }
+/* What a dataset holds, folded under the bar. */
+.cap-cols { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
+.cap-cols summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
+.cap-cols summary::-webkit-details-marker { display: none; }
+.cap-cols summary::before { content: "expand_more"; content: "expand_more" / ""; font-family: "Material Symbols Rounded"; font-size: 16px; line-height: 1; font-feature-settings: "liga"; transform: rotate(-90deg); transition: transform 0.15s; }
+.cap-cols[open] summary::before { transform: none; }
+html.no-icons .cap-cols summary::before { content: "›"; font-family: inherit; }
+.cap-cols summary:hover { color: var(--text); }
+.cap-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 2px; }
+.cap-chips code { font: 400 10.5px/1 var(--font-mono); padding: 4px 6px; border-radius: 5px; color: var(--text); background: color-mix(in oklab, var(--cyan) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 22%, transparent); }
+.capture-settings { display: grid; gap: 14px; padding: 12px 12px 4px; border-radius: 10px; background: color-mix(in oklab, var(--well) 60%, transparent); box-shadow: inset 0 0 0 1px var(--hair); animation: rise 0.2s var(--ease) both; }
+.capture-settings[hidden] { display: none; }
+
+/* ---------- saved: storage status, then the items ---------- */
+.lib-store { display: grid; gap: 6px; }
+.lib-status { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 1px; font-size: 12px; line-height: 1.45; color: var(--text); }
+.lib-status::before { content: ""; flex: none; align-self: center; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.lib-status-head { font-weight: 600; }
 .lib-store[data-mode="cloud"] .lib-status::before, .lib-store[data-mode="local"] .lib-status::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ok) 22%, transparent); }
 .lib-store[data-mode="memory"] .lib-status::before, .lib-store[data-mode="cloud-ro"] .lib-status::before { background: var(--warn); }
-.lib-sub { font-size: 12px; line-height: 1.5; color: var(--muted); }
+.lib-sub { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
 .meter { height: 5px; border-radius: 3px; background: var(--rule); overflow: hidden; }
 .meter > span { display: block; height: 100%; min-width: 2px; border-radius: 3px; background: linear-gradient(90deg, var(--cyan), var(--amber)); transition: width 0.4s var(--ease); }
 .meter-row { display: flex; justify-content: space-between; font: 400 11px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-.lib-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+/* One column in the side panel; side by side when the notebook is wide. */
+.lib-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 8px; align-items: start; }
 .lib-list:empty { display: none; }
-.lib-item { border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--ink) 92%, white 2%), var(--ink)); animation: rise 0.3s var(--ease) both; }
+/* An item: its kind's colour runs through its tile, tag and main action. */
+.lib-item { --k: var(--cyan); border-radius: 12px; padding: 11px 12px; display: grid; gap: 10px; animation: rise 0.3s var(--ease) both;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--ink) 92%, white 2%), var(--ink)); box-shadow: inset 0 0 0 1px var(--rule); }
+.lib-item[data-kind="clip"] { --k: var(--amber); }
+.lib-item[data-kind="state"] { --k: var(--ok); }
 .lib-main { display: flex; gap: 10px; align-items: flex-start; }
-.lib-ico { color: var(--amber); padding-top: 1px; display: inline-flex; }
+.lib-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: var(--k); background: color-mix(in oklab, var(--k) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--k) 26%, transparent); }
 .lib-ico .ms { font-size: 19px; }
-.lib-item[data-kind="run"] .lib-ico { color: var(--cyan); }
-.lib-item[data-kind="state"] .lib-ico { color: var(--ok); }
-.lib-text { display: grid; gap: 2px; min-width: 0; }
+.lib-text { flex: 1 1 auto; display: grid; gap: 3px; min-width: 0; padding-top: 1px; }
+.lib-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .lib-title { appearance: none; background: none; border: 0; padding: 0; text-align: left; font: 600 13px/1.35 var(--font-body); color: var(--text); cursor: text; overflow-wrap: anywhere; }
-.lib-title:hover { text-decoration: underline dotted color-mix(in oklab, var(--amber) 70%, transparent); text-underline-offset: 3px; }
+/* Rename is offered with a pencil that shows on hover or focus. */
+.lib-title:not(:disabled)::after { content: attr(data-ico); content: attr(data-ico) / ""; font-family: "Material Symbols Rounded"; font-size: 14px; line-height: 1; vertical-align: -2px; margin-left: 5px; font-feature-settings: "liga"; color: var(--muted); opacity: 0; transition: opacity 0.15s; }
+.lib-title:hover::after, .lib-title:focus-visible::after { opacity: 1; }
+html.no-icons .lib-title::after { display: none; }
 .lib-rename { width: 100%; text-align: left; font-size: 12.5px; }
-.lib-meta { font: 400 11px/1.45 var(--font-mono); color: var(--muted); }
+.lib-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; font: 400 11px/1.45 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.lib-kind { font: 500 9.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--k); padding: 3px 5px; border-radius: 4px; background: color-mix(in oklab, var(--k) 12%, transparent); }
 .lib-note { font-size: 11.5px; color: var(--warn); }
-.lib-badge { font: 500 9.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 2px 4px; margin-left: 6px; vertical-align: 2px; }
-.lib-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.lib-actions .btn { min-height: 28px; padding: 5px 9px; font-size: 12px; }
-.btn-del:hover { color: var(--crit); border-color: color-mix(in oklab, var(--crit) 55%, var(--rule)); }
+.lib-badge { font: 500 9.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); border: 1px solid currentColor; border-radius: 3px; padding: 2px 4px; }
+/* Actions: the main one filled in the kind's colour, downloads named by format, Delete apart at the end. */
+.lib-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lib-act {
+  appearance: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 7px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--rule); background: transparent; color: var(--text); font: 500 12px/1 var(--font-body); transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lib-act::before { content: attr(data-ico); content: attr(data-ico) / ""; font-family: "Material Symbols Rounded"; font-size: 16px; line-height: 1; color: var(--muted); font-feature-settings: "liga"; -webkit-font-feature-settings: "liga"; font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20; }
+html.no-icons .lib-act::before { display: none; }
+.lib-act:hover { background: color-mix(in oklab, var(--text) 7%, transparent); border-color: color-mix(in oklab, var(--text) 26%, var(--rule)); }
+.lib-act-main { border-color: color-mix(in oklab, var(--k) 48%, transparent); background: color-mix(in oklab, var(--k) 15%, transparent); }
+.lib-act-main::before { color: var(--k); font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20; }
+.lib-act-main:hover { background: color-mix(in oklab, var(--k) 24%, transparent); border-color: color-mix(in oklab, var(--k) 65%, transparent); }
+.lib-act-main[aria-expanded="true"] { background: color-mix(in oklab, var(--k) 24%, transparent); }
+/* Delete: a trash button in the card's corner, quiet until hovered. */
+.lib-del {
+  appearance: none; position: relative; flex: none; display: grid; place-items: center; width: 28px; height: 28px; margin: -3px -4px 0 0; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; background: none; color: var(--muted); transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.lib-del::before { content: attr(data-ico); content: attr(data-ico) / ""; font-family: "Material Symbols Rounded"; font-size: 17px; line-height: 1; font-feature-settings: "liga"; -webkit-font-feature-settings: "liga"; }
+html.no-icons .lib-del::before { content: "×"; content: "×" / ""; font-family: inherit; }
+.lib-del:hover, .lib-del:focus-visible { color: var(--crit); background: color-mix(in oklab, var(--crit) 12%, transparent); border-color: color-mix(in oklab, var(--crit) 40%, transparent); }
+.lib-item:has(.lib-confirm) .lib-del { color: var(--crit); }
 .lib-preview { display: grid; gap: 6px; overflow-x: auto; }
-.lib-preview video { width: 100%; max-height: 260px; border-radius: 6px; display: block; background: #000; }
+.lib-preview video { width: 100%; max-height: 260px; border-radius: 8px; display: block; background: #000; }
 .lib-sum { width: 100%; border-collapse: collapse; font: 400 11px/1.55 var(--font-mono); font-variant-numeric: tabular-nums; }
 .lib-sum th { text-align: left; color: var(--muted); font-weight: 400; padding: 1px 8px 1px 0; }
 .lib-sum td { text-align: right; padding: 1px 0 1px 8px; }
 .lib-sum tr:first-child th { color: var(--text); border-bottom: 1px solid var(--rule); }
-.lib-confirm { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--crit); flex-wrap: wrap; }
+.lib-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; color: var(--text);
+  background: color-mix(in oklab, var(--crit) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--crit) 35%, transparent); }
+.lib-confirm > span { flex: 1 1 140px; }
+.lib-confirm .lib-yes { color: #fff; background: var(--crit); border-color: var(--crit); }
 .lib-empty { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); text-align: center; padding: 18px 16px; border: 1px dashed var(--rule); border-radius: 10px; }
 .lib-empty[hidden] { display: none; }
-.capture-settings { display: grid; gap: 14px; padding-top: 16px; margin-top: 2px; border-top: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); }
-/* Capture cards: clip, dataset and state, each a single press, with what it will keep for this lab. */
-.lib-capture { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; margin-bottom: 12px; }
-.cap-card {
-  appearance: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 3px 8px; padding: 10px 11px 11px;
-  border: 0; border-radius: 12px; cursor: pointer; text-align: left; color: var(--text); font: inherit;
-  background: linear-gradient(180deg, color-mix(in oklab, white 3%, transparent), transparent 44px), color-mix(in oklab, var(--well) 70%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
-}
-.cap-card:hover { background: color-mix(in oklab, var(--text) 7%, var(--well)); }
-.cap-card:active { transform: scale(0.985); }
-.cap-ico { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: color-mix(in oklab, var(--amber) 14%, transparent); color: var(--amber); }
-.cap-ico .ms { font-size: 17px; }
-.cap-card[data-kind="run"] .cap-ico { background: color-mix(in oklab, var(--cyan) 14%, transparent); color: var(--cyan); }
-.cap-card[data-kind="state"] .cap-ico { background: color-mix(in oklab, var(--ok) 14%, transparent); color: var(--ok); }
-.cap-name { font-weight: 600; font-size: 13px; }
-.cap-sub { grid-column: 1 / -1; font: 400 11px/1.4 var(--font-mono); color: var(--muted); }
-.cap-card[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in oklab, var(--crit) 16%, transparent), color-mix(in oklab, var(--crit) 6%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--crit) 50%, transparent); }
-.cap-card[aria-pressed="true"] .cap-ico { background: var(--crit); color: #fff; animation: ping 1.6s ease-out infinite; }
-.cap-card[aria-pressed="true"] .cap-sub { color: var(--text); }
-.cap-cols { grid-column: 1 / -1; margin: 2px 2px 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
-.cap-cols:empty { display: none; }

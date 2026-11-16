@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.14)
+    - Title: Architecture Guide (digiSpace Edition - v2.15)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.14.0
+    - Version: 2.15.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      studio's camera-following glow and fill, the light link, contact
+      shadows, haze, enamel and plaques, room() past an apparatus and
+      studioOf(); the tiers' fuller budget, the GPU caps and the four
+      verdicts. The Library's two sections, the capture bar's states, the item
+      cards' kind colour and the alt-less CSS glyphs.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Conventions: selection is one rule in tokens.css, with .selectable to
       opt in. The Star system's massless comet, and mergedKind's rule for
@@ -296,9 +302,35 @@ Gravity is really three-dimensional, so it keeps its own camera in
 | `dispose()` | Free what it made |
 
 The studio is the room: softboxes baked into image-based light, a shadowed
-key, a polished floor with a planar reflection, and a backdrop the floor
-dissolves into. Rim light lives in the softboxes rather than in lights, so it
-edges the apparatus without a streak across the floor.
+key, a polished concrete floor with a planar reflection, and a backdrop the
+floor dissolves into. Rim light lives in the softboxes rather than in lights,
+so it edges the apparatus without a streak across the floor. Around that:
+
+- **The backdrop's glow turns with the camera.** Each scene's `glowDir` is
+  for the home view; turned by the camera's heading, the glow stays behind
+  the apparatus from any side.
+- **A fill follows the camera.** It is shadowless and sits above the camera
+  to its right, so the side facing the camera is modelled.
+- **The fill is light-linked away from the floor.** The floor faces straight
+  up, so its shader subtracts the fill's exact share, and the key's shadows
+  stay under the apparatus.
+- **A warm bounce lights undersides.**
+- **The key leaves only a faint glint on the floor.** A softbox reflects as
+  the environment's broad shapes, not as a point.
+- **A contact shadow pools under every apparatus, on every tier.** It is
+  fitted on the first frame to whatever casts a shadow, unless the scene
+  gives footprints with `studio.ground([{ x, z, w, d }])`.
+- **A faint beam of haze runs from the key to the floor** on High and Ultra.
+
+Every apparatus can be walked all the way round, so backs are finished:
+- **Enamel for backs** (`M.enamel()`). It is a dielectric, because bare
+  metal seen from behind mirrors only the dark room behind the camera.
+- **A maker's plaque** (`M.plaque(title, line)`).
+
+A shader that draws what lies past an apparatus, as the Fluid tank's water
+does, shows the room there (`room()`), never the softboxes. They light the
+studio but stand nowhere in it. `engine.studioOf(labId)` hands a scene's
+studio to the tests.
 
 A scene can reuse the lab's own 2D drawing instead of rebuilding it in
 three.js. The Chaos phase view paints `drawPhase` onto a screen whose face
@@ -311,7 +343,27 @@ the scene needs no picking code of its own.
 `js/core/tiers.js` holds the ladder and the device probe, and needs no
 three.js, so the shell can show the choice first. A tier sets resolution,
 MSAA, shadow size, the reflection's share of resolution, bloom, grade and a
-`detail` scale that scenes use to thin their own meshes. `tickWorld` runs the
+`detail` scale that scenes use to thin their own meshes. It also sets:
+
+- **The painted textures:** their largest edge (`tex`) and filtering
+  (`aniso`). The shop repaints in idle time on a change, and on Ultra paints
+  its 2048 maps there too, after a first copy at 1024.
+- **The environment's cube size** (`env`; three.js takes 256 at least).
+- **The shadow's penumbra** (`soft`), in texels of a 2048 map, so a shadow is
+  as soft on every tier.
+- **The studio's lights:** whether the fill and bounce (`fill`), the haze
+  (`haze`) and the contact shadow (`contact`) are on.
+
+`mode.js` caps the budget at what the GPU reports (MSAA samples, anisotropy,
+texture size) before the engine sees it. The suggested starting tier is the
+cheapest of four verdicts from `suggestTier`:
+
+- the GPU by name;
+- the CPU by its threads and a 16 ms benchmark;
+- the memory the browser reports;
+- the largest texture the GPU takes.
+
+The Graphics sheet names the part that set it. `tickWorld` runs the
 Auto mode from the frame loop: three-second windows, a step down above 25 ms
 per frame, a step up after twelve seconds under 17.6 ms. A step down that does
 not improve the frame time by 8% is undone and adapting stops, because the
@@ -556,10 +608,28 @@ The dice in the rail, the switch in Controls and the Guide's card are three
 views of one parameter: each changes it through `setParam`, and
 `syncControl()` refreshes the others.
 
-The Library page opens with capture cards (`buildLibraryCapture` in
-`library.js`): a clip, a dataset or a saved state with one press. Each says
-what it will keep for the lab (the dataset's columns) and, while recording,
-how far it has got.
+The Library page has two sections in `index.html`, each headed by an
+`h4.sub` with its controls in `.lib-head`.
+
+- **Capture** is a control bar built by `buildLibraryCapture` in
+  `library.js`.
+  - Two recorders wear a CSS record dot, which becomes a stop square under
+    `aria-pressed`.
+  - Save state flashes `.is-saved` when the vault has it.
+  - `syncLibraryCapture` keeps each button's two lines current: what it
+    will keep, or how far it has got.
+  - `#btn-cap-settings` folds out `#capture-settings`, and the fold is
+    remembered.
+  - A `<details>` lists the dataset's columns.
+- **Saved** has the count, the filter and the storage line, then the items
+  from `renderItem`.
+  - Each item's kind sets `--k`, the colour of its tile, tag and main action.
+  - Downloads are named by format.
+  - Delete is the corner `.lib-del`.
+
+Action glyphs come from `data-ico` through CSS, with empty alt text
+(`content: … / ""`), so a button's text and accessible name are only its
+words.
 
 ## Gravity's Solar System
 

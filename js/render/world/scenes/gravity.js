@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.12)
+    - Title: Gravity Scene (digiSpace Edition - v2.15)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.12.0
+    - Version: 2.15.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A world
+      seen against its star shows a thin ring of forward-scattered light round
+      its night side, as Earth's does seen from the Moon in an eclipse, so it
+      reads as a sphere, not a hole; night sides are a touch less black.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Calm
       worlds (surface 3): faint bands under a cool haze for sub-Neptunes and
       ice giants, Uranus and Neptune among them. A storm on about half the
@@ -22,13 +26,6 @@
       where nearest it and back round from each body. In the Solar System
       depth marks give way to orbits. Merge flashes are about half the size,
       and many at once share their light.
-    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
-      System: each world at its real radius above its own pixel floor,
-      Saturn's real rings at their tilt, moons hidden inside their planet's
-      disc, no depth marks from moons or belt bodies, the Orbits switch drawn
-      as depth-tested ribbons, and a portrait near plane small enough for a
-      moon. A depth mark taller than most of the stage, its foot out of sight,
-      is left out.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -343,7 +340,8 @@ const PLANET_FS = `
       alb = mix(tint * 0.75, alb, smoothstep(2.5, 7.0, px));
     }
     vec3 No = normalize(p - 0.9 * (G - dot(G, p) * p)), N = normalize(vX * No.x + vY * No.y + vZ * No.z);
-    vec3 col = alb * 0.012 + tint * 0.003, A = normalize(vY);
+    // Faint light on the night side, from the sky and the other worlds, so a sphere still reads as one.
+    vec3 col = alb * 0.02 + tint * 0.004, A = normalize(vY);
     float day = 0.0;
     for (int i = 0; i < uLN; i++) {
       vec3 Lv = uL[i].xyz - vW; float dist = length(Lv); vec3 L = Lv / dist, lc = uLC[i].rgb * uL[i].w / (1.0 + dist / uFall);
@@ -368,6 +366,10 @@ const PLANET_FS = `
       // Fresnel rim in the planet's tint, carried a little past the terminator.
       float rimL = smoothstep(-0.28, 0.4, ng);
       surface += atm * atmC * lc * pow(1.0 - mu, 3.4) * rimL * 0.42;
+      // Seen against its star, a world's air scatters light forward round its limb, as Earth's does seen from the Moon
+      // in an eclipse: a thin bright ring about the night side, so a world between the camera and its star reads as a
+      // sphere, not a hole. Strong on giants and ocean worlds, faint on bare rock.
+      surface += atm * atmC * lc * pow(1.0 - mu, 4.0) * pow(max(dot(L, -V), 0.0), 4.0) * 0.6;
       col += surface; day = max(day, lit);
     }
     // The night side: dark, but for city light on land under oceanic skies.

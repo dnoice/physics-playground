@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Waves Scene (digiSpace Edition - v2.1)
+    - Title: Waves Scene (digiSpace Edition - v2.15)
     - File Name: waves.js
     - Relative Path: js/render/world/scenes/waves.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      screen's back is finished for the camera that goes round: stove enamel,
+      two steel stiffeners and a "Ripple Tank" plaque, where bare gunmetal
+      read as a black slab.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: the wave grid as a real ripple tank on a stand.
     Earlier entries: see CHANGELOG.md
@@ -584,7 +588,11 @@ export function createScene(E, lab) {
     const stand = new THREE.Group();
     stand.position.set(hw + RIM * 0.62, y0 + 0.17, 0); stand.rotation.z = -0.3; above.add(stand);
     const face = new THREE.Group(); face.rotation.y = -Math.PI / 2; face.position.y = BOARD / 2 + 0.05; stand.add(face);
-    const back = piece(roundedBox(L + 0.14, BOARD + 0.14, 0.09, 0.03, 3), M.gunmetal(), 0, 0, -0.05, face); back.castShadow = true;
+    const back = piece(roundedBox(L + 0.14, BOARD + 0.14, 0.09, 0.03, 3), M.enamel(), 0, 0, -0.05, face); back.castShadow = true;
+    // Its back, for the camera that goes round: steel stiffeners across the enamel and the maker's plaque.
+    for (const y of [-0.27, 0.27]) piece(roundedBox(L - 0.3, 0.05, 0.035, 0.014, 3), M.steel(), 0, y * BOARD, -0.11, face).castShadow = true;
+    const plaque = piece(roundedBox(0.84, 0.26, 0.012, 0.006, 2), M.plaque('Ripple Tank', 'INTENSITY ON THE SCREEN'), 0, 0, -0.1, face);
+    plaque.rotation.y = Math.PI;
     const frame = piece(ringFrame(L, BOARD, 0.04, 0.05, 0.02, 0.012), trimMat, 0, 0, 0, face);
     const glass = piece(new THREE.PlaneGeometry(L, BOARD), screenMat, 0, 0, 0.002, face); glass.castShadow = false; glass.receiveShadow = false; frame.castShadow = false;
     for (const s of [-1, 1]) {

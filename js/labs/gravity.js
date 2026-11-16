@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.14)
+    - Title: Gravity Lab (digiSpace Edition - v2.15)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.14.0
+    - Version: 2.15.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's report of Pluto's orbit hula-hooping: a planet's orbit is its
+      whole system's (system(), relative()), the planet and its moons
+      together, in the drawn orbits, Inspect, the orbit tilts and the live
+      Math, and the line is carried with the planet so it still passes through
+      it.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
       system's and Tilted orbits' comets are massless, as Halley's is: at a
       third of a moon's mass, the Star system's comet knocked a moon into its
@@ -27,14 +33,6 @@
       it a moon; throwText reads the throw out beside the arrow. throwFrom
       starts a throw begun on a body just outside it, so the new body launches
       from the surface instead of merging into it at once.
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call for variety: the Star system shows every class (a grey
-      rock, a rust super-Earth, an ocean world at 1 AU, a lavender
-      sub-Neptune, a banded giant, a ringed pale giant, a blue ice giant), a
-      moon on each giant, softening of 1 px so the moons keep their planets,
-      and a comet that is a comet; Tilted orbits' comet too. Each class has a
-      few hues a world picks by its id; sub-Neptunes and ice giants are calm
-      (surface 3); ringed() gives rings in 2D and 3D alike.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -448,10 +446,10 @@ export const gravity = {
   /* The force lists, rebuilt whenever bodies come or go: the sources (bodies with mass), the massless test bodies
      (the belts: they feel every source and pull nothing), and the moons, which take substeps about their planets,
      with as many substeps a step as the fastest moon's orbit needs. */
-  srcs: [], tests: [], moons: [], fastBodies: [], sub: 0, sky: false,
+  srcs: [], tests: [], moons: [], sats: new Map(), fastBodies: [], sub: 0, sky: false,
   prepare() {
     const B = this.bodies, live = new Set(B), G = G0 * this.p.G;
-    this.srcs = []; this.tests = []; this.moons = []; this.sky = false;
+    this.srcs = []; this.tests = []; this.moons = []; this.sats = new Map(); this.sky = false;
     for (const b of B) {
       (b.m > 0 ? this.srcs : this.tests).push(b);
       if (b.real) this.sky = true;
@@ -470,6 +468,7 @@ export const gravity = {
       const h = b.host, mu = G * (h.m + b.m), r = Math.hypot(b.x - h.x, b.y - h.y, b.z - h.z);
       if (!(mu > 0)) { b.host = null; continue; }
       this.moons.push(b); b.fast = true; h.fast = true;
+      if (this.sats.has(h)) this.sats.get(h).push(b); else this.sats.set(h, [b]);
       Tmin = Math.min(Tmin, TAU * Math.sqrt(r * r * r / mu));
     }
     this.fastBodies = B.filter(b => b.fast);
@@ -735,8 +734,10 @@ export const gravity = {
     if (ph) rows.push(...this.physRows(b, ph));
     let focus = null;
     if (P) {
-      const ref = refName(P), rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, ux = b.vx - P.vx, uy = b.vy - P.vy, uz = b.vz - P.vz, r = Math.hypot(rx, ry, rz), u = Math.hypot(ux, uy, uz);
-      const mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
+      // Speed and distance are the body's own; the orbit's figures are its system's (relative()), so Pluto's hold still.
+      const ref = refName(P), r = Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z), u = Math.hypot(b.vx - P.vx, b.vy - P.vy, b.vz - P.vz);
+      const { rx, ry, rz, vx: ux, vy: uy, vz: uz, mu } = this.relative(b, P), rs = Math.hypot(rx, ry, rz), us = Math.hypot(ux, uy, uz);
+      const E = us * us / 2 - mu / rs, hx = ry * uz - rz * uy, hy = rz * ux - rx * uz, hz = rx * uy - ry * ux, h2 = hx * hx + hy * hy + hz * hz;
       const a = -mu / (2 * E), e = Math.sqrt(Math.max(0, 1 + 2 * E * h2 / (mu * mu))), bound = E < 0, i = Math.acos(clamp(this.pole() * hz / Math.sqrt(h2 || 1), -1, 1)) * 180 / Math.PI;
       focus = `Distance from ${ref}`;
       const shape = !bound ? 'open path' : e < 0.05 ? 'near circle' : e < 0.5 ? 'oval' : 'long ellipse';
@@ -977,11 +978,30 @@ export const gravity = {
     }
     return best;
   },
-  /* The ellipse a body is on now about P, from its position and velocity relative to P (its osculating orbit): its
-     centre (P), its axes P̂ (to periapsis) and Q̂ (the way the body moves there), a, b and e, and E0, the body's own
+  /* A body with its moons, as one: their total mass and their barycentre's place and motion; a body without moons is
+     itself. A planet swings round that point once each moon's turn, Pluto by some 2100 km about Charon, at about 24 m/s
+     against its 4.7 km/s round the Sun: enough to swing an ellipse taken from Pluto alone by 0.4 AU every 6.4 days,
+     a fast hula-hoop at the Solar System's pace. The orbit the planet is on is its system's, as the elements are. */
+  system(b) {
+    if (this.accDirty) this.prepare();
+    const S = this.sats.get(b); if (!S) return b;
+    let m = b.m, x = b.m * b.x, y = b.m * b.y, z = b.m * b.z, vx = b.m * b.vx, vy = b.m * b.vy, vz = b.m * b.vz;
+    for (const q of S) { m += q.m; x += q.m * q.x; y += q.m * q.y; z += q.m * q.z; vx += q.m * q.vx; vy += q.m * q.vy; vz += q.m * q.vz; }
+    return { m, x: x / m, y: y / m, z: z / m, vx: vx / m, vy: vy / m, vz: vz / m };
+  },
+  /* How a body moves about what it orbits, for its orbit's elements: a moon about its planet as the two are, anything
+     else as its system about P's, with mu, the pull between them. (ox, oy, oz) is where the ellipse is centred so it
+     still passes through the body: P's system, carried with the body's own small swing round its barycentre. */
+  relative(b, P) {
+    const nest = b.host === P, A = nest ? b : this.system(b), C = nest ? P : this.system(P);
+    return { rx: A.x - C.x, ry: A.y - C.y, rz: A.z - C.z, vx: A.vx - C.vx, vy: A.vy - C.vy, vz: A.vz - C.vz, mu: G0 * this.p.G * (A.m + C.m),
+      ox: C.x + b.x - A.x, oy: C.y + b.y - A.y, oz: C.z + b.z - A.z };
+  },
+  /* The ellipse a body is on now about P, from its system's position and velocity relative to P's (its osculating
+     orbit, see relative()): its centre (P), its axes P̂ (to periapsis) and Q̂ (the way the body moves there), a, b and e, and E0, the body's own
      eccentric anomaly, so a drawing can start at the body. Null when the body is not bound. */
   orbitFrame(b, P) {
-    const mu = G0 * this.p.G * (P.m + b.m), rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, vx = b.vx - P.vx, vy = b.vy - P.vy, vz = b.vz - P.vz;
+    const { rx, ry, rz, vx, vy, vz, mu, ox, oy, oz } = this.relative(b, P);
     const r = Math.hypot(rx, ry, rz), v2 = vx * vx + vy * vy + vz * vz, a = 1 / (2 / r - v2 / mu);
     if (!(a > 0) || !Number.isFinite(a)) return null;
     const hx = ry * vz - rz * vy, hy = rz * vx - rx * vz, hz = rx * vy - ry * vx, H = Math.hypot(hx, hy, hz); if (!H) return null;
@@ -991,7 +1011,7 @@ export const gravity = {
     const [Px, Py, Pz] = e > 1e-9 ? [ex / e, ey / e, ez / e] : [rx / r, ry / r, rz / r];
     const Qx = (hy * Pz - hz * Py) / H, Qy = (hz * Px - hx * Pz) / H, Qz = (hx * Py - hy * Px) / H, bb = a * Math.sqrt(1 - e * e);
     const E0 = Math.atan2((rx * Qx + ry * Qy + rz * Qz) / bb, (rx * Px + ry * Py + rz * Pz) / a + e);
-    return { cx: P.x, cy: P.y, cz: P.z, Px, Py, Pz, Qx, Qy, Qz, a, bb, e, E0 };
+    return { cx: ox, cy: oy, cz: oz, Px, Py, Pz, Qx, Qy, Qz, a, bb, e, E0 };
   },
   /* The same ellipse as n points by eccentric anomaly from periapsis, in simulation coordinates; null when unbound. */
   orbitPath(b, P, n = 96) {
@@ -1222,7 +1242,7 @@ export const gravity = {
     // Each orbit about what it goes round (a moon about its planet), measured from the scene's forward pole.
     for (const b of this.bodies) {
       const H = this.pullHost(b); if (!H) continue;
-      const rx = b.x - H.x, ry = b.y - H.y, rz = b.z - H.z, vx = b.vx - H.vx, vy = b.vy - H.vy, vz = b.vz - H.vz;
+      const { rx, ry, rz, vx, vy, vz } = this.relative(b, H);
       const lx = ry * vz - rz * vy, ly = rz * vx - rx * vz, lz = rx * vy - ry * vx, L = Math.hypot(lx, ly, lz); if (!L) continue;
       const i = Math.acos(clamp(this.pole() * lz / L, -1, 1)) * 180 / Math.PI; lo = Math.min(lo, i); hi = Math.max(hi, i);
     }
@@ -1298,8 +1318,8 @@ export const gravity = {
     const b = (this.track != null && this.bodies.find(q => q.id === this.track)) || this.bodies.filter(q => q.kind !== 'star').sort((x, y) => y.m - x.m)[0];
     if (!b) return null;
     const P = this.pullHost(b); if (!P) return null;
-    const rx = b.x - P.x, ry = b.y - P.y, rz = b.z - P.z, vx = b.vx - P.vx, vy = b.vy - P.vy, vz = b.vz - P.vz;
-    const r = Math.hypot(rx, ry, rz), u = Math.hypot(vx, vy, vz), mu = G0 * this.p.G * (P.m + b.m), E = u * u / 2 - mu / r;
+    const { rx, ry, rz, vx, vy, vz, mu } = this.relative(b, P);
+    const r = Math.hypot(rx, ry, rz), u = Math.hypot(vx, vy, vz), E = u * u / 2 - mu / r;
     // Eccentricity vector ((u² − μ/r) r − (r·v) v) / μ: how far the orbit is from a circle.
     const k = u * u - mu / r, rv = rx * vx + ry * vy + rz * vz, e = Math.hypot(k * rx - rv * vx, k * ry - rv * vy, k * rz - rv * vz) / mu;
     return { b, P, r, u, mu, e, a: E < 0 ? -mu / (2 * E) : Infinity, name: nameOf(b), ref: refName(P) };

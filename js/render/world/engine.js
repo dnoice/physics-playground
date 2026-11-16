@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: World Engine (digiSpace Edition - v2.1)
+    - Title: World Engine (digiSpace Edition - v2.15)
     - File Name: engine.js
     - Relative Path: js/render/world/engine.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A change
+      of tier reaches the material shop, and studioOf(labId) hands a scene's
+      studio to the tests. Rebuilding the post chain frees its passes' targets
+      too: the bloom's eleven had leaked at every change of tier and every
+      resize.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: one renderer and post stack shared by every lab.
     Earlier entries: see CHANGELOG.md
@@ -75,7 +80,7 @@ export function createEngine(tier) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 
-  const E = { renderer, tier, mats: createMaterials(renderer), canvas: renderer.domElement, lost: false, time: 0 };
+  const E = { renderer, tier, mats: createMaterials(renderer, tier), canvas: renderer.domElement, lost: false, time: 0 };
   const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 500), portraitCam = new THREE.PerspectiveCamera(22, 1, 0.05, 500);
   const factories = new Map(), scenes = new Map();
   let composer = null, bloom = null, grade = null, render0 = null, size = { w: 0, h: 0, dpr: 0, pr: 0 };
@@ -85,7 +90,8 @@ export function createEngine(tier) {
   renderer.domElement.addEventListener('webglcontextrestored', () => { E.lost = false; size.w = 0; if (onRestored) onRestored(); });
 
   function buildPost(w, h, pr) {
-    if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer.dispose(); composer = null; bloom = grade = render0 = null; }
+    // Its passes hold targets of their own (the bloom's eleven), which the composer's dispose() leaves behind.
+    if (composer) { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer.dispose(); composer = null; bloom = grade = render0 = null; }
     const t = E.tier;
     if (!t.bloom && !t.grade && !t.msaa) return;
     const target = new THREE.WebGLRenderTarget(w * pr, h * pr, { type: THREE.HalfFloatType, samples: t.msaa });
@@ -145,10 +151,12 @@ export function createEngine(tier) {
       return Promise.all([load(), faces]).then(([m]) => { factories.set(id, m.createScene); return true; });
     },
     ready: id => factories.has(id),
+    /* A lab's studio, once its scene is built: for the tests, which read its lights, contact shadows and budgets. */
+    studioOf: id => { const s = scenes.get(id); return (s && s.studio) || null; },
     canPortrait(lab) { const s = scenes.get(lab.id); return !!(s && s.portrait); },
     onContext(lost, restored) { onLost = lost; onRestored = restored; },
     setTier(t) {
-      E.tier = t;
+      E.tier = t; E.mats.setTier(t);
       const w = size.w, h = size.h;
       size.w = 0;
       if (w) resize(w, h, size.dpr);
@@ -178,6 +186,6 @@ export function createEngine(tier) {
       return true;
     },
     info() { const i = renderer.info; return { calls: i.render.calls, triangles: i.render.triangles, textures: i.memory.textures, geometries: i.memory.geometries, programs: i.programs ? i.programs.length : 0 }; },
-    dispose() { for (const s of scenes.values()) if (s.dispose) s.dispose(); scenes.clear(); E.mats.dispose(); if (composer) composer.dispose(); renderer.dispose(); },
+    dispose() { for (const s of scenes.values()) if (s.dispose) s.dispose(); scenes.clear(); E.mats.dispose(); if (composer) { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } renderer.dispose(); },
   });
 }

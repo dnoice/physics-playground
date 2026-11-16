@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.5)
+    - Title: Capture Test (digiSpace Edition - v2.15)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The CSV
+      download is pressed by its stable key (data-fk), as the restructured
+      Library names it by its format.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rewind
       determinism check waits until eight history snapshots exist instead of a
       fixed three seconds, which a renderer without a GPU could need more
@@ -130,7 +133,7 @@ with sync_playwright() as p:
     pg.screenshot(path=shot("library.png"), full_page=False)
     run = pg.locator(".lib-item[data-kind=run]").first
     with pg.expect_download() as dl:
-        run.locator("button", has_text="Save CSV").first.click()
+        run.locator("[data-fk=save-0]").click()
     d = dl.value
     ok("download_name", re.fullmatch(r"physics-gravity-figure8-[\d-]+\.csv", d.suggested_filename) is not None, d.suggested_filename)
     run.locator(".lib-title").click(); pg.keyboard.press("Control+A"); pg.keyboard.type("Wild three-body figure-eight"); pg.keyboard.press("Enter"); pg.wait_for_timeout(300)

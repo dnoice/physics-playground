@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.14)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.15)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.14.0
+    - Version: 2.15.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.15.0: the camera goes all the way round finished apparatus; the
+      photographer's studio; worlds lit from behind; the tiers' textures and
+      studio light; Auto weighing GPU, CPU, memory and limits; Pluto's orbit
+      as its system's; the release badge. The Library page's Capture bar and
+      Saved list described.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.14.0: Mouse and touch says the workspace's words never highlight on a
       click or drag, while text fields still select; the release badge.
@@ -128,8 +134,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.14.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.14.0">
+    <img src="https://img.shields.io/badge/release-v2.15.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.15.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -293,7 +299,9 @@ To explore it:
   and name. Each orbit is brightest at its body and fades back round, so it
   shows which way the body goes. The orbits stay smooth even when the 3D
   camera sits inside them. They are drawn in depth, so a planet hides the
-  far side of its moons' orbits.
+  far side of its moons' orbits. A planet's orbit is its whole system's,
+  the planet and its moons together, as the published elements are. So
+  Pluto's holds still while Charon swings Pluto round their barycentre.
 - **The clock** reads the date the run has reached. A year takes 4.4
   simulated seconds.
 - **Zoom anywhere.** The wheel zooms toward the cursor, and each notch goes
@@ -404,9 +412,10 @@ workspace. Your choice is remembered.
 
 - **2D** is the flat view of each lab: clear, fast and exact.
 - **3D** stands each lab in a studio as a physical apparatus, lit with real
-  shadows and reflections. The simulation is the same in both, so a run
-  carries on when you switch, and every tool, rewind, recording and saved
-  state works in either.
+  shadows and reflections. You can orbit all the way round each one, and
+  every apparatus is finished at the back as well as the front. The
+  simulation is the same in both, so a run carries on when you switch, and
+  every tool, rewind, recording and saved state works in either.
 
 If 3D cannot run, because the browser lacks WebGL 2 or three.js could not
 load, the workspace stays in 2D and says why.
@@ -421,24 +430,48 @@ load, the workspace stays in 2D and says why.
 | Cloth | Woven fabric on a gantry, hammock posts, a flagpole or a net rail |
 | Fields | A black glass bench with the potential as a relief of light |
 
-No model or texture is downloaded: the lighting, wood, stone, brushed metal
-and planets are all generated in the browser.
+No model or texture is downloaded: the lighting, wood, stone, concrete,
+brushed metal, enamel and planets are all generated in the browser.
+
+The studio works like a photographer's:
+
+- the backdrop's glow follows your camera, so it stays behind the apparatus
+  from any side;
+- a soft fill light follows the camera too, so the side facing you is never
+  lost in shadow;
+- a soft contact shadow grounds every apparatus on its floor, even on Lite;
+- a faint beam of haze crosses the air on High and Ultra.
+
+In space, a world seen against its star shows a thin ring of light round
+its night side, scattered forward through its air.
 
 ### Graphics tiers
 
 The **Graphics** button beside the switch sets how much the 3D mode asks of
 your machine.
 
-| Tier | Resolution | Antialiasing | Shadows | Reflections | Meant for |
-| --- | --- | --- | --- | --- | --- |
-| Ultra | up to 2× | 4× | 4096 | sharp | Strong dedicated GPUs |
-| High | up to 1.5× | 4× | 2048 | soft | Dedicated GPUs, recent Apple silicon |
-| Medium | up to 1.25× | 2× | 1536 | softer | Recent integrated graphics |
-| Low | 1× | none | 1024 | none | Older laptops and phones |
-| Lite | 0.75× | none | none | none | Software rendering |
+| Tier | Resolution | Antialiasing | Shadows | Reflections | Textures | Studio light | Meant for |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ultra | up to 2× | 4× | 4096 | sharp | 2048, 16× filtering | fill and haze | Strong dedicated GPUs |
+| High | up to 1.5× | 4× | 2048 | soft | 1024, 8× filtering | fill and haze | Dedicated GPUs, recent Apple silicon |
+| Medium | up to 1.25× | 2× | 1536 | softer | 1024, 4× filtering | fill | Recent integrated graphics |
+| Low | 1× | none | 1024 | none | 512, 2× filtering | key only | Older laptops and phones |
+| Lite | 0.75× | none | none | none | 256 | key only | Software rendering |
 
-**Auto**, the default, starts from your GPU and adjusts to the frame rate. It
-steps down when frames run long and back up when there is room. If a step
+Shadows are equally soft on every tier: a larger map only sharpens their
+edge. No tier asks more than your GPU reports it can do. Ultra paints its
+2048 textures in idle moments, so a lab never waits for them.
+
+**Auto**, the default, starts from what your machine can carry: the
+cheapest of four verdicts on
+
+- the GPU, by name;
+- the CPU, by its threads and a short speed test;
+- the memory the browser reports;
+- the largest texture the GPU takes.
+
+The Graphics menu names the part that set it. Auto then adjusts to the frame
+rate. It steps down when frames run long and back up when there is room. If a step
 down buys nothing, it undoes it and stops adapting, because the limit is then
 the solver or the display rather than the GPU. The Insights pane says when
 Auto changes tier, and offers a cheaper tier when a fixed one runs slowly.
@@ -509,9 +542,9 @@ full-height Inspector beside them.
     formula's prediction beside what the simulation measures, and, where it
     helps, a plot: the speed distribution against Maxwell–Boltzmann, the
     double slit's fringes against λL/d, the pendulums' separation.
-  - **Library**: one press records a clip or a dataset or saves the state,
-    each card saying what it will keep for this lab; everything saved is
-    listed below.
+  - **Library**: a Capture bar of three buttons records a clip or a
+    dataset, or saves the state, in one press each; everything saved is
+    listed under it, with what to do with each item.
 - **Selecting things**: click a body in Gravity, a ball in Collisions (with
   Grab), a particle in Fields (with Move), a post in Fluid (with any tool but
   Obstacle), a source in Waves, or a pendulum or a dot on the map in Chaos.
@@ -594,9 +627,28 @@ that matter. The layout reflows to one column below 1180 px.
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
 
-Each can also be started from the cards at the top of the **Library** page,
-where everything saved is listed. The Library tab shows how many items are
-saved and marks new ones. When the
+The **Library** page gathers all of this in two sections.
+
+- **Capture** is a bar of three buttons.
+  - **Record clip** and **Record data** wear the familiar red record dot.
+    While recording, the dot turns into a stop square on a pulsing red disc,
+    and the button shows the time, size or rows so far.
+  - **Save state** saves at once, and says so.
+  - Each button shows its key.
+  - **Settings**, beside the heading, folds out the video quality, labels,
+    sample rate and tracks.
+  - A fold under the bar lists what a dataset will hold.
+- **Saved** lists everything kept, for this lab or all of them, with where
+  it is stored.
+  - Each item's kind (video, dataset or saved state) shows in its colour
+    and tag.
+  - Its main action leads: **Preview**, **Details** or **Load**.
+  - Its downloads are named by format: **WEBM**, **CSV**, **Tracks CSV**,
+    **JSON**.
+  - The trash button in its corner deletes it, after asking.
+  - Press an item's name to rename it.
+
+The Library tab shows how many items are saved and marks new ones. When the
 page runs as a published artifact, the library syncs with the artifact;
 otherwise it lives in this browser.
 
@@ -762,7 +814,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.14.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.15.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

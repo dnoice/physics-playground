@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Test Runner (digiSpace Edition - v2.9)
+    - Title: Test Runner (digiSpace Edition - v2.15)
     - File Name: run_all.py
     - Relative Path: tests/run_all.py
     - Artifact Type: test
-    - Version: 2.9.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — World gets
+      a ceiling of its own, 900 s: it renders every lab and every graphics
+      tier in 3D on software GL, and with this release's studio and tier
+      checks it outgrew the shared 600 s.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
       planet classes suite, tests/planets.py.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Runs the
@@ -61,13 +65,15 @@ from harness import NOISE, URL
 HERE = os.path.dirname(os.path.abspath(__file__))
 SUITES = ['boot', 'nav', 'check', 'capture', 'interact', 'labs3', 'shell', 'world', 'workspace', 'notebook', 'placement', 'hud', 'solar', 'planets']
 TIMEOUT_S = 600
+# World renders every lab and every graphics tier in 3D on software GL: the longest suite by far.
+TIMEOUT_OF = {'world': 900}
 
 
 def run(name):
     try:
-        r = subprocess.run([sys.executable, os.path.join(HERE, name + '.py'), URL], capture_output=True, text=True, timeout=TIMEOUT_S)
+        r = subprocess.run([sys.executable, os.path.join(HERE, name + '.py'), URL], capture_output=True, text=True, timeout=TIMEOUT_OF.get(name, TIMEOUT_S))
     except subprocess.TimeoutExpired:
-        print(f'FAIL  {name:<9} timed out after {TIMEOUT_S} s')
+        print(f'FAIL  {name:<9} timed out after {TIMEOUT_OF.get(name, TIMEOUT_S)} s')
         return False
     out = r.stdout
     # A mark is a JSON value, so a quote escaped inside a reading cannot match.

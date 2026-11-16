@@ -1,24 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Icon Glyphs (digiSpace Edition - v2.5)
+    - Title: Icon Glyphs (digiSpace Edition - v2.15)
     - File Name: icons.js
     - Relative Path: js/core/icons.js
     - Artifact Type: javascript
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
+      the Library's actions: download, rename, preview, details and load.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
       dice glyph for random placement.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
       the view modes: pendulum, phase map, both, height and intensity.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0: Dennis asked for Google icons so the playground has one
-      cohesive look; replaces the hand-drawn SVG icon set.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -51,6 +50,7 @@ export const ICON = {
   plus: 'add_circle', minus: 'do_not_disturb_on', move: 'open_with', launch: 'rocket_launch', probe: 'point_scan',
   clip: 'movie', data: 'monitoring', state: 'bookmark', follow: 'my_location', cube: 'deployed_code', dice: 'casino',
   crit: 'error', warn: 'warning', info: 'info',
+  download: 'download', rename: 'edit', preview: 'play_arrow', details: 'visibility', load: 'history',
 };
 /* Lab glyph and the CSS animation it plays on the selected tab. */
 export const LAB_ICON = {

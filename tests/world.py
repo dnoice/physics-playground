@@ -1,17 +1,24 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.8)
+    - Title: 3D Mode Test (digiSpace Edition - v2.15)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fluid seen
+      from behind with the backdrop's glow behind it; each tier's budgets
+      reaching the studio and the texture shop; Ultra's finer environment; the
+      GPU, CPU, memory and texture-limit verdicts and the suggestion as their
+      cheapest; the speed test; and the Graphics menu reading the whole
+      machine. A change of tier frees what the last one made. Fluid is seen
+      from behind in the Chaos page, with no second start-up.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The scene
       menu check expects Gravity's eight scenes, now that Our Solar System is
       one of them. The frame key check waits for the camera to arrive home, up
@@ -290,6 +297,16 @@ with sync_playwright() as p:
     pg.evaluate(f"{P}.view.snap('y')"); pg.wait_for_timeout(900)
     yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))
     ok("chaos_seen_from_behind", abs(yaw - 3.1416) < 0.3 and pg.evaluate(LIT) > 0.02, round(yaw, 2))
+    # The Fluid tank too, now that its yaw is free: its back is finished, and the backdrop's glow follows the camera
+    # round, so it stays behind the apparatus (+z) when seen from the back (-z). Same page, so no second start-up.
+    pg.evaluate(f"{P}.select('fluid')")
+    settle(pg, f"{P}.active.id === 'fluid' && " + IS3D, 30000); pg.wait_for_timeout(400)
+    # The camera eases round; the heavier tank draws fewer frames a second on software GL, so wait for it to arrive.
+    pg.evaluate(f"{P}.view.snap('y')"); settle(pg, f"Math.abs(Math.abs({P}.view.get().yaw) - Math.PI) < 0.05", 10000); pg.wait_for_timeout(300)
+    yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))
+    glow = pg.evaluate(f"{P}.mode.world.engine.studioOf('fluid').dome.material.uniforms.uDir.value.z")
+    ok("fluid_seen_from_behind", abs(yaw - 3.1416) < 0.3 and pg.evaluate(LIT) > 0.02, round(yaw, 2))
+    ok("backdrop_glow_follows_the_camera", glow > 0.8, round(glow, 3))
     ctx.close()
 
     # Graphics tiers.
@@ -297,17 +314,54 @@ with sync_playwright() as p:
     pg = page(ctx, tier="auto")
     settle(pg, IS3D, 30000)
     ok("auto_finds_lite_on_software_gl", pg.evaluate(f"{P}.mode.world.engine.tier.id") == "lite")
+    BUDGET = f"""(() => {{ const E = {P}.mode.world.engine, t = E.tier, st = E.studioOf('chaos'), d = {P}.mode.world.device, b = E.mats.budget();
+      return {{ radius: st.key.shadow.radius, want: t.shadow ? Math.max(1, t.soft * t.shadow / 2048) : null, fill: st.fill.intensity > 0, haze: !!(st.haze && st.haze.visible),
+        contact: st.contacts.length > 0 && st.contacts.every(c => c.visible), aniso: b.aniso, maxAniso: d.maxAniso, env: st.env.userData.size,
+        maps: b.maps.every(m => m.at <= Math.max(t.tex, 1)) }}; }})()"""
+    env = {}
     for tier in ["ultra", "high", "medium", "low", "lite"]:
         pg.evaluate(f"{P}.mode.tier('{tier}')"); pg.wait_for_timeout(600)
         ok(f"tier_{tier}_applies", pg.evaluate(f"{P}.mode.world.engine.tier.id") == tier and pg.evaluate(LIT) > 0.02)
+        g = pg.evaluate(BUDGET); env[tier] = g["env"]
+        spec = {"ultra": (True, True, 16), "high": (True, True, 8), "medium": (True, False, 4), "low": (False, False, 2), "lite": (False, False, 1)}[tier]
+        ok(f"tier_{tier}_budgets_reach_the_studio", (g["want"] is None or abs(g["radius"] - g["want"]) < 1e-9) and g["fill"] == spec[0] and g["haze"] == spec[1]
+           and g["contact"] and g["aniso"] == min(spec[2], g["maxAniso"]) and g["maps"], g)
+    ok("ultra_bakes_a_finer_environment", env["ultra"] > env["high"] == env["lite"], env)
+    # A change of tier frees what the last one made: the bloom's eleven targets, and the environment's render target with
+    # its texture. Both had leaked at every change, and at every resize.
+    counts = []
+    for _ in range(2):
+        for tier in ["ultra", "lite"]:
+            pg.evaluate(f"{P}.mode.tier('{tier}')"); pg.wait_for_timeout(600)
+        counts.append(pg.evaluate(f"{P}.mode.info().textures"))
+    ok("tier_changes_free_their_targets", counts[0] == counts[1], counts)
     pg.click("#btn-gfx")
     ok("menu_opens", not pg.evaluate("document.getElementById('gfx-sheet').hidden"))
+    dev = pg.inner_text("#gfx-device")
+    ok("menu_reads_the_whole_machine", "threads at" in dev and ("GB memory" in dev or "memory not reported" in dev) and "suggests Lite, set by the GPU" in dev, dev)
     ok("menu_lists_all_tiers", pg.evaluate("document.querySelectorAll('#gfx-list [role=radio]').length") == 6)
     pg.keyboard.press("Escape")
     ok("escape_closes_menu", pg.evaluate("document.getElementById('gfx-sheet').hidden") and pg.evaluate("document.activeElement.id") == "btn-gfx")
     pg.evaluate(f"{P}.mode.tier('auto')")
     pg.evaluate(f"{P}.mode.world.autoTier = 'ultra'; {P}.mode.world.engine.setTier({{ ...{P}.mode.world.engine.tier, id: 'ultra', scale: 2, msaa: 4, shadow: 4096, reflect: 0.75, bloom: true, grade: true, detail: 1 }})")
     ok("auto_steps_down_when_slow", settle(pg, f"{P}.mode.world.autoTier !== 'ultra'", 30000), pg.evaluate(f"{P}.mode.world.autoTier"))
+    # The suggested tier is the cheapest of four verdicts: the GPU by name, the CPU by threads and measured speed, the
+    # memory the browser reports, and the GPU's texture limit.
+    v = pg.evaluate("""import(new URL('js/core/tiers.js', location.href).href).then(m => ({
+      gpu: ['ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)', 'NVIDIA GeForce RTX 4070', 'Apple M1 Pro', 'AMD Radeon RX 580',
+        'Intel(R) Iris(R) Xe Graphics', 'Intel(R) UHD Graphics 620', 'Intel HD Graphics 4000', 'Mystery GPU'].map(name => m.gpuVerdict({ name }).tier),
+      mobile: [m.gpuVerdict({ name: 'Adreno (TM) 740', mobile: true }).tier, m.gpuVerdict({ name: 'Mali-G52', mobile: true }).tier],
+      cpu: [m.cpuVerdict({ cores: 2, cpu: 1 }).tier, m.cpuVerdict({ cores: 4, cpu: 1 }).tier, m.cpuVerdict({ cores: 16, cpu: 1.2 }).tier, m.cpuVerdict({ cores: 16, cpu: 0.6 }).tier, m.cpuVerdict({ cores: 16, cpu: 0.2 }).tier],
+      mem: [m.memoryVerdict({ memory: null }), m.memoryVerdict({ memory: 2 }).tier, m.memoryVerdict({ memory: 4 }).tier, m.memoryVerdict({ memory: 8 }).tier],
+      limits: [m.limitsVerdict({ maxTexture: 2048 }).tier, m.limitsVerdict({ maxTexture: 4096 }).tier, m.limitsVerdict({ maxTexture: 16384 }).tier],
+      pick: m.suggestTier({ name: 'NVIDIA GeForce RTX 4070', cores: 16, cpu: 1.1, memory: 4, maxTexture: 16384 }),
+      top: m.suggestTier({ name: 'NVIDIA GeForce RTX 4070', cores: 16, cpu: 1.1, memory: 8, maxTexture: 16384 }),
+      bench: m.benchCPU() }))""")
+    ok("gpu_verdicts", v["gpu"] == ["lite", "ultra", "high", "high", "medium", "low", "low", "medium"] and v["mobile"] == ["medium", "low"], v["gpu"] + v["mobile"])
+    ok("cpu_verdicts", v["cpu"] == ["low", "high", "ultra", "high", "low"], v["cpu"])
+    ok("memory_and_limit_verdicts", v["mem"][0] == {"tier": "ultra", "unknown": True} and v["mem"][1:] == ["low", "medium", "ultra"] and v["limits"] == ["low", "high", "ultra"], (v["mem"], v["limits"]))
+    ok("suggestion_is_the_cheapest_verdict", v["pick"]["tier"] == "medium" and v["pick"]["by"] == "Memory" and v["top"]["tier"] == "ultra" and v["top"]["by"] is None, (v["pick"]["tier"], v["pick"]["by"], v["top"]["tier"]))
+    ok("cpu_bench_measures", 0.05 < v["bench"] < 20, v["bench"])
     ctx.close()
 
     # Every way 3D can fail ends in a working 2D stage that says why.
