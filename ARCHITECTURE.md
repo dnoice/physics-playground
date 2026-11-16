@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.17)
+    - Title: Architecture Guide (digiSpace Edition - v2.18)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the narrate() and
+      storyHint hooks, the Story under Instruments (moments, folding, one
+      story per lab, Gravity's frames and caps), the loop's story tick, and
+      narrators in the Add a lab recipe.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       dataContext() returns facts and tables, rendered in the README and kept
       in the data package.
@@ -158,13 +163,14 @@ flowchart TB
 | Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems |
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
-| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the experiments curriculum, the registry |
+| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the labs' narrators (`story/`), the experiments curriculum, the registry |
 | Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
 `updateDock`, `updateNav`, and the camera readers `camOf`, `camXf` and
-`toScreen`.
+`toScreen`. A narrator's Show me may also frame the view (`navFrame`) or pick
+a view (`selectView`).
 They never build shell UI themselves.
 
 ## Boot order
@@ -173,7 +179,8 @@ They never build shell UI themselves.
 before anything else reads it. Then `boot()` runs:
 
 1. `layout.init` restores focus mode, the bay and the notebook tab.
-2. `diagnostics.init`, `transport.init` (buttons and every keyboard
+2. `diagnostics.init` (with the Story's views), `transport.init` (buttons
+   and every keyboard
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
    `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
@@ -202,7 +209,7 @@ lab:
 - **Rates**: the status chips (time, rate, frame rate) and gizmo every 0.1 s;
   readouts, chart, capture chips, the head-up display's tape and callout, and
   the experiment check every 0.25 s; diagnostics and the caution lights every
-  0.5 s.
+  0.5 s; the lab's narrator every 0.25 s (see Instruments).
 
 ## The lab contract
 
@@ -244,6 +251,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
 | `zoomPace()`, `zoomLimits3()` | How strongly the user's zoom controls act (the wheel, the rail's buttons and drag, the keys raise their factor to this power; Gravity's Solar System, eight decades of scale, returns 2), and Gravity's 3D zoom limits as multiples of the framing distance. Pinch and scripted zooms keep their exact factor |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
+| `narrate(N)`, `storyHint` | The lab's narrator, mixed in by the registry from `js/labs/story/<id>.js`: called four times a second while the run moves, it adds moments to the Story with `N.add({ kind, title, body, tone, group, key, show, fixes })`; `N.fresh` says the story just began (rebuild the watch), `N.said(key)` whether a once-only moment was told. `storyHint` is the empty Story's text |
 | `snapshot()`, `restore(s)`, `histBudget`, `histInterval` | Rewind history |
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
@@ -430,7 +438,7 @@ rather than building interface.
 | Player bar | Time: play, step, reset, speed, rewind, capture | `snapshot`, `restore`, datasets |
 | Deck: Telemetry | Readings over time | `readouts`, `chart`, `primary` |
 | Deck: Inspect | The selected object, read-only, plus actions on that object | `inspect`, `deselect`, `inspectHint` |
-| Deck: Insights | Diagnosis grounded in the run, with fixes | `diagnose`, `perfFixes`, `drawFixes` |
+| Deck: Insights | Now: diagnosis grounded in the run, with fixes; Story: the run's moments, narrated | `diagnose`, `perfFixes`, `drawFixes`, `narrate`, `storyHint` |
 | Inspector: Controls | Every setting; the only place parameters change | `controls`, `groups`, `actions` |
 
 The shared state stays small: the active lab, its `p` (parameters, including
@@ -463,8 +471,48 @@ one figure over time: the one the lab's `focus` names, else the first that
 changes, until the user clicks another. A figure's plot button adds it to the
 Telemetry scope as that object's own series, keyed by its `short` name; those
 series are sampled at panel rate like the readings but are not remembered
-across visits. Insights (`js/shell/diagnostics.js`) lists the lab's and the
-workspace's insights with their fixes beside the frame-timing strip.
+across visits. Insights has two views, a tablist beside the deck's tabs. Now
+(`js/shell/diagnostics.js`) lists the lab's and the workspace's insights with
+their fixes beside the frame-timing strip. Story (`js/shell/story.js`) is the
+narrator's timeline.
+
+### The Story
+
+Each lab's narrator lives in `js/labs/story/<id>.js` and is mixed into the lab
+by the registry as `narrate(N)` and `storyHint`, so it reads the lab's state
+and helpers without crowding the lab's own file. The frame loop calls
+`tickStory` four times a second; the narrator runs only when simulated time
+has moved, so a pause holds the story still. It keeps its own records between
+looks in module scope, rebuilds them when `N.fresh` says the story began, and
+allocates nothing per frame. Gravity's caps its work at any body count: it
+follows at most 40 bodies (named ones and those placed by hand first) and tests
+the 12 heaviest as hosts and perturbers.
+
+A moment is `{ kind, title, body, tone, group, key, show, fixes, t }`:
+
+- `kind` picks its glyph from `STORY_ICON` in `js/core/icons.js`; `tone` is
+  `event`, `key` (announced) or `warn` (announced, amber edge).
+- `group`, a plural noun, folds a repeat into the newest entry of its kind
+  when that entry is among the newest three or came within 5 s of simulated
+  time; the entry keeps up to twelve earlier ones in a disclosure.
+- `key` makes a moment once-only for this story; `t` stamps it with the time
+  it happened when that is not now.
+- `show` is `{ label, run, can }`: Show me follows, selects or frames what the
+  moment is about, and hides once `can()` is false (the body merged away).
+
+`js/shell/story.js` keeps one story per lab, newest first and at most 60
+entries. `rebuild()` resets it, a rewind trims what came after the new time,
+and an unread count rides on the Insights tab until the Story is on screen.
+Important moments go to `announce()`, at most one every four seconds.
+`PhysicsPlayground.story` lists the story, its unread count and its view, and
+`story.tick()` lets a test look after `advance()`.
+
+Gravity's narrator measures every orbit as the lab does, about what holds it:
+a body's primary is its planet while it stays bound inside that planet's Hill
+sphere, else the heaviest body, or a bound binary's barycentre for whatever
+circles both. A distant body's orbit is taken about the heaviest body and the
+planets well inside it together (Jacobi's coordinates), so the star's own
+wobble does not read as a perturbation.
 
 `js/shell/instruments.js` is the Telemetry pane: a lab's readings. It reads the
 formatted rows from `lab.readouts()`, so a lab gets stat tiles, sparklines and
@@ -866,7 +914,7 @@ The stylesheets load in this order, each building on the last:
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
 | `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and the HUD menu |
-| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), Live Math panels, Guide cards, tabs |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, the Now and Story views and the Story's moments, grip), Live Math panels, Guide cards, tabs |
 | `library.css` | Library page |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 
@@ -932,7 +980,9 @@ otherwise see every file twice.
    (sorted).
 4. Declare its zoom range on the lab object, `zoomRange: [lo, hi]`, unless
    the default of 0.5× to 8× suits it.
-5. Add its experiments under its id in `js/labs/experiments.js`.
+5. Add its experiments under its id in `js/labs/experiments.js`, and its
+   narrator as `js/labs/story/<id>.js`, registered in `js/labs/story/index.js`,
+   with a glyph in `STORY_ICON` for each new kind of moment.
 6. Run `npm run verify` and `npm test`.
 7. Add it to the README: a row in the labs table and a gallery picture
    (see "Refresh the README pictures").

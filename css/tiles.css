@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.14)
+    - Title: Tile Content Styles (digiSpace Edition - v2.18)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.14.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Now and Story views
+      beside the deck's tabs, the Story's moments with their time, actions and
+      folded repeats, the amber unread counts, and a fade-in for new moments
+      that reduced motion leaves out.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The deck
       resize drag's own user-select is gone: the workspace's one selection
       rule in tokens.css covers it.
@@ -19,13 +24,6 @@
       page's parameter dials sit as the Controls page's do, in equal cells
       side by side, each its symbol over its wheel, in place of full-width
       rows of uneven wheels.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
-      the Math page's live panels, the Guide's tool, view and scene cards, the
-      Inspect figures' sparklines and focus chart, and the sheen on gauges and
-      the deck tabs. The Guide's Random card reads On or Off and is dashed
-      while off; the Math page's parameters are compact dials in an
-      auto-filling grid. Gauges and Inspect rows draw their top light in one
-      gradient of plain rgba stops, since they repaint with every reading.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -151,7 +149,8 @@ body.resizing { cursor: ns-resize; }
 .tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
 .tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }
 .deck-inspect { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
-.deck-insights { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.deck-insights { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
+.ins-now { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .deck-insights .insights { align-content: start; }
 .deck-insights .insights:empty { display: grid; }
 @container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(110px, 1fr); } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } .details-focus { grid-column: 1; grid-row: 3; padding-right: 0; } }
@@ -231,6 +230,56 @@ body.resizing { cursor: ns-resize; }
 .diag-ok { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
 .diag-ok .ms { color: var(--ok); }
 @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
+
+/* ---------- insights: the Now and Story views ---------- */
+/* The two views sit beside the deck's tabs while Insights shows, as a smaller segmented control of the same make. */
+.ins-views { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in oklab, var(--well) 80%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.tile-deck:not([data-pane="insights"]) .ins-views { display: none; }
+.ins-view { appearance: none; height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: 500 12px/1 var(--font-body); white-space: nowrap; cursor: pointer; }
+.ins-view:hover { color: var(--text); }
+.ins-view[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--text) 9%, var(--bench)); box-shadow: inset 0 0 0 1px var(--hair); }
+.ins-view:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.iv-n { font: 500 10.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.iv-n:empty, .iv-n[hidden] { display: none; }
+.iv-n[data-level="warn"] { color: var(--warn); }
+.iv-n[data-level="crit"] { color: var(--crit); }
+/* Unread moments: an amber count on the Insights tab and on the Story view. */
+.story-new, .iv-n[data-new] { padding: 2px 5px; border-radius: 8px; font: 600 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--amber); }
+.story-new[hidden] { display: none; }
+.ins-now[hidden], .ins-story[hidden] { display: none; }
+.ins-story { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.story-empty { margin: 0; display: flex; align-items: flex-start; gap: 10px; max-width: 640px; padding: 4px 2px; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.story-empty .ms { flex: none; font-size: 20px; color: var(--amber); }
+.story-empty[hidden] { display: none; }
+.story { list-style: none; margin: 0; padding: 0 4px 0 0; display: grid; align-content: start; gap: 8px; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: 10px; }
+.story:empty { display: none; }
+.story:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.moment { --c: var(--cyan); position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; padding: 8px 12px 9px 10px; border-radius: 10px; background: var(--well); border: 1px solid var(--rule); }
+.moment[data-tone="key"] { --c: var(--amber); }
+.moment[data-tone="warn"] { --c: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, var(--rule)); }
+.moment-ico { font-size: 18px; line-height: 1.2; color: var(--c); }
+.moment-main { display: grid; gap: 2px; min-width: 0; }
+/* The title and its time share a line; the time drops below a title too long to share it. */
+.moment-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; }
+.moment-time { margin: 0; font: 400 10.5px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.moment-title { margin: 0; font-size: 13px; line-height: 1.35; font-weight: 600; color: var(--text); }
+.moment-body { margin: 0; max-width: 120ch; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.moment-body b { color: var(--text); font-weight: 500; }
+.moment-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.moment-acts:empty { display: none; }
+.moment-acts .btn { color: var(--c); border-color: color-mix(in oklab, var(--c) 40%, var(--rule)); }
+.moment-acts .btn .ms { font-size: 15px; }
+.moment-acts .btn[hidden] { display: none; }
+.moment-more { margin-top: 3px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.moment-more[hidden] { display: none; }
+.moment-more summary { width: fit-content; cursor: pointer; border-radius: 4px; }
+.moment-more summary:hover { color: var(--text); }
+.moment-more ul { margin: 3px 0 0; padding-left: 16px; }
+@media (prefers-reduced-motion: no-preference) {
+  .moment.fresh { animation: moment-in 0.9s var(--ease); }
+}
+@keyframes moment-in { from { border-color: var(--c); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent); } }
+@container tile (max-width: 720px) { .ins-now { grid-template-columns: minmax(0, 1fr); } .ins-view { padding: 0 7px; } }
 
 /* ---------- notebook tile: experiments, guide, math, library ---------- */
 .tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 10px; box-shadow: inset 0 -1px 0 var(--hair); }

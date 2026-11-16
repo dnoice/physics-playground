@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.7)
+    - Title: Frame Loop (digiSpace Edition - v2.18)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the lab's narrator
+      looks at the run four times a second (tickStory).
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Each frame,
       after drawing, the head-up display places its target box on the selected
       object; at panel rate it refreshes the callout.
@@ -19,9 +22,6 @@
       rate, the live formulas, the Guide's marks and the Library's capture
       cards refresh with the readings. The rail's Random dice is kept current
       at the same rate.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
-      clock adds the lab's own time note, so Gravity shows its simulated days
-      or years.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -57,6 +57,7 @@ import { tickWorld } from './mode.js';
 import { drawChart, updateReadouts } from './panel.js';
 import { drawStage } from './stage.js';
 import { hudInspect, trackHud } from './headsup.js';
+import { tickStory } from './story.js';
 import { BUDGET_MS, active, measure, perf, stageEl, state } from './state.js';
 
 /* ---------- loop ---------- */
@@ -75,6 +76,8 @@ export function advance(lab, simDt, budget = BUDGET_MS) {
   return n;
 }
 export let last = performance.now(), uiClock = 0, hudClock = 0, diagClock = 0;
+// The lab's narrator looks at the run four times a second of real time.
+let storyClock = 0;
 export function setLast(t) { last = t; }
 export function frame(now) {
   // `raw` is the true frame gap for the meters; `real` is capped so a stall cannot fast-forward the run.
@@ -108,6 +111,7 @@ export function frame(now) {
     }
     if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); hudInspect(active); updateLiveMath(active); syncGuide(); syncDice(); syncLibraryCapture(); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
     if ((diagClock += real) >= 0.5) { diagClock = 0; evaluateDiagnostics(); }
+    if ((storyClock += real) >= 0.25) { storyClock = 0; tickStory(active); }
   }
   requestAnimationFrame(frame);
 }

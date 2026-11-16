@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.17)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Story under What
+      you can do and in the Instruments, the narrator in the labs' summary,
+      and The story of a run, what each lab's narrator tells.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0: what each lab tracks and what its README records of the scene.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -199,6 +203,10 @@ capture what happens.
 - **Measure and inspect the run.** Plot readings, select objects to see
   their live figures, and use insights to understand unusual settings and
   apply suggested fixes.
+- **Follow the story of the run.** Each lab narrates what happens as it
+  happens, in plain physics with real numbers: a giant pulling the star off
+  centre, a close pass and its slingshot, a gas relaxing to
+  Maxwell–Boltzmann, fringes forming, copies of a pendulum parting.
 - **See key information on the stage.** The head-up display shows readings,
   warnings and details for the selected object without covering the
   simulation controls.
@@ -277,8 +285,9 @@ pictured below; each image is a 3D capture from the playground.
 | 6 | Cloth | Verlet cloth that stretches, tears and can be cut | Curtain, Hammock, Flag in wind, Fragile net |
 | 7 | Fields | Point charges, electric potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
 
-Every lab includes live readings, diagnostics with suggested fixes, and a
-Math page that connects its formulas to the simulation. Each also has
+Every lab includes live readings, a narrator that tells the story of the
+run, diagnostics with suggested fixes, and a Math page that connects its
+formulas to the simulation. Each also has
 guided experiments with live progress checks. All labs except Cloth have
 a running chart.
 
@@ -544,9 +553,15 @@ full-height Inspector beside them.
     figure's chart button plots it under Telemetry beside the readings.
     Settings stay in Controls; the card offers only actions on the object
     itself, such as remove or follow.
-  - **Insights**: what the run is doing and why a setting misbehaves, each
-    with its fix, beside the frame-timing strip. Its tab shows the count, and
-    the top alert and its fix stay in the header whichever pane is open.
+  - **Insights**: two views, side by side in the header. **Story** is the
+    lab's narrator: the moments it has noticed, newest first and stamped with
+    simulated time, each saying what happened and why, with the numbers, and
+    a **Show me** that follows, selects or frames what it is about (see The
+    story of a run below). **Now** is what the run is doing and why a setting
+    misbehaves, each with its fix, beside the frame-timing strip. The tab
+    shows the count of insights and, in amber, how many moments are new; the
+    top alert and its fix stay in the header whichever pane is open, and the
+    HUD's alert opens Now.
 
   The button at the right of the header steps the deck through compact,
   standard and tall, and the grip on its top edge drags it to any height
@@ -578,6 +593,27 @@ full-height Inspector beside them.
   Inspect opens on its own and returns to where you were when you clear the
   selection. Gravity shows a rendered portrait of the body and its orbit:
   distance, period, eccentricity and inclination.
+
+### The story of a run
+
+Each lab has a narrator. Four times a second it looks at the run, compares it
+with its last look and, when something happens, adds a moment to the Story:
+what happened, why, and the numbers that show it, set beside the law it
+follows. The story begins again when a scene loads or restarts, waits while
+the run is paused, is kept for each lab when you switch, and drops whatever a
+rewind undid. A repeat folds into the entry before it ("3 more close
+passes"), the newest sixty entries are kept, and an important moment, such as
+a capture or a warning, is also announced to screen readers.
+
+| Lab | What its narrator tells |
+| --- | --- |
+| Gravity | Each throw or drop and the orbit it starts, measured against the escape speed; a giant pulling the barycentre out of the star, the star's wobble speed and period, and how little that tide disturbs the planets close in; orbits that drift, naming the likely perturber by its tide; passes through a Hill sphere with their slingshot, flybys and their bending angle; captured and lost moons, binaries forming; mergers and what they formed, falls into the star, ejections; mean-motion resonances, crossing orbits and pairs packed closer than 2√3 mutual Hill radii; ellipses turning; first orbits timed against Kepler's law; a disk clearing; energy holding; and, once a scene, why the drawn sizes are larger than life |
+| Collisions | The gas relaxing to Maxwell–Boltzmann; kinetic energy halving and falling to a tenth, against Haff's law; a pile forming and how tightly it packs; the wall pressure against Henderson's hard-disc equation; the break; the tracer's random walk |
+| Fluid | The dam-break front against Ritter's 2√(gh₀), and its run-up against v²/2g; the bottom layers squashing; a drop's free fall and its spray; surges meeting in a jet; zero-g blobs meeting and coming to rest; the flow round a post; the liquid settling |
+| Waves | The wavelength measured crest to crest against c/f; double-slit fringes against the slit law; the phased array's beam angle; standing waves off reflecting edges; what the absorbing edges let back; the Doppler squeeze and the Mach cone; the lens's focus |
+| Chaos | The Lyapunov time and the forecast it makes; the copies parting; flips over the top against the energy they need; energy holding; regular motion; the two normal modes; damping |
+| Cloth | The first tear and where it starts; a rip running; the cloth coming to rest; its lean in the wind against tan θ = wind/g; its sway against the gusts; a free fall when the last pin lets go |
+| Fields | Each gyration timed against 2πm/\|q\|B, and the same time round at every speed; the E × B and grad-B drifts measured against theory; particles trapped by a charge or falling into one; the beam pulled into a plate |
 
 ### Units
 

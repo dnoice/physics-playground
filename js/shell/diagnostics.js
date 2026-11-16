@@ -1,36 +1,39 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.7)
+    - Title: Diagnostics (digiSpace Edition - v2.18)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the insights fill the
+      pane's Now view, which counts them in the colour of the worst; the HUD's
+      alert opens Now, and init() wires the Story's views.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       warnings and critical notices also light the head-up display's caution
       lights.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Insights
       render in the deck's Insights pane; the HUD alert opens that pane, and
       the summary on its tab is short: a count, or how many need checking.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Recovery
-      from a blown-up run restarts the scene clean through restart().
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Evaluates each lab's diagnose() and the frame budget, and shows insights
-    with one-click fixes in the Diagnostics tile and a HUD alert chip.
+    with one-click fixes in the Insights pane's Now view and a HUD alert
+    chip. The pane's other view, the Story, is js/shell/story.js.
 
 ✒ Key Features:
     - Severity levels with glyphs; insights appear and leave without
       flicker.
     - Frame-time strip and solver, drawing and real-time numbers.
-    - The HUD alert reveals and flashes the Diagnostics tile.
+    - The HUD alert opens the Insights pane on its Now view.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -53,6 +56,7 @@ import { showPane } from './deck.js';
 import { showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
 import { hudCautions } from './headsup.js';
+import { initStory, showView } from './story.js';
 
 /* ---------- diagnostics ---------- */
 export const insightsEl = $('#insights'), insightCards = new Map();
@@ -98,6 +102,8 @@ export function evaluateDiagnostics() {
   sum.textContent = worst === 'crit' ? `${alerts.length} critical` : worst === 'warn' ? `${alerts.length} to check` : list.length ? String(list.length) : '';
   sum.title = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable, no insights';
   $('#dt-insights').setAttribute('aria-description', sum.title);
+  // The Now view counts what it holds, in the colour of the worst.
+  const nowN = $('#iv-now-n'); nowN.textContent = list.length ? String(list.length) : ''; nowN.dataset.level = worst || 'ok';
   const ids = new Set(alerts.map(a => a.id));
   for (const a of alerts) if (!lastAlertIds.has(a.id)) { announce(`${LEVEL_TAG[a.level]}: ${a.title}`); break; }
   lastAlertIds = ids;
@@ -165,5 +171,7 @@ export function updatePerfNums() {
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
-  $('#hud-alert').addEventListener('click', () => showPane('insights', { reveal: true }));
+  // The alert chip is about the run's state now, so it opens the Now view.
+  $('#hud-alert').addEventListener('click', () => { showView('now'); showPane('insights', { reveal: true }); });
+  initStory();
 }
