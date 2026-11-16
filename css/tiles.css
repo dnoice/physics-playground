@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.11)
+    - Title: Tile Content Styles (digiSpace Edition - v2.14)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.14.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The deck
+      resize drag's own user-select is gone: the workspace's one selection
+      rule in tokens.css covers it.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Math
       page's parameter dials sit as the Controls page's do, in equal cells
       side by side, each its symbol over its wheel, in place of full-width
@@ -23,11 +26,6 @@
       while off; the Math page's parameters are compact dials in an
       auto-filling grid. Gauges and Inspect rows draw their top light in one
       gradient of plain rgba stops, since they repaint with every reading.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
-      the deck's panes, segmented tabs, resize grip and short mode, the
-      Inspect card with plottable figures, primary and derived gauges, and
-      units in a smaller face; the floating diagnostics sheet's styles are
-      gone.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -148,7 +146,7 @@
 .deck-grip::before { content: ""; position: absolute; left: 50%; top: 3px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--rule); opacity: 0.7; transition: background 0.15s, opacity 0.15s; }
 .deck-grip:hover::before, .deck-grip:focus-visible::before, body.resizing .deck-grip::before { background: var(--amber); opacity: 1; }
 .deck-grip:focus-visible { outline: none; }
-body.resizing { cursor: ns-resize; user-select: none; }
+body.resizing { cursor: ns-resize; }
 /* Too short for a plot: the readings stay, the plot and the timing strip go. */
 .tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
 .tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }

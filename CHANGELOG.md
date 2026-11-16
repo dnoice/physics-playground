@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.13)
+    - Title: Changelog (digiSpace Edition - v2.14)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.13.0
+    - Version: 2.14.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.14.0 release. With the Star system's moon fix.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.13.0 release. With the community documents.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -69,6 +71,83 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.14.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's call: no more accidental highlighting of words and sentences
+across the interface, done as one standard rule rather than one-off fixes,
+and covering short labels too, such as "Collisions · Ideal gas". And a fix
+for the Star system, whose moons were occasionally lost, found by this
+release's full test run.
+
+### Selection
+
+- **The whole workspace is unselectable.**
+  - A click, drag or double-click never paints a highlight anywhere:
+    - the top bar and lab tabs;
+    - the stage header, status chips and rail;
+    - dial names, section headers and gauges;
+    - the Guide's prose, the Math page, the Experiments and the Library;
+    - the Inspect and Insights panes;
+    - the keyboard, units, graphics and HUD sheets, and the scene menu.
+  - A long press on a touch screen opens no copy menu.
+  - Select-all selects nothing.
+- **One rule, in `css/tokens.css`.**
+  - The document is unselectable, and text fields select again, as typing
+    needs. WebKit would otherwise refuse their input.
+  - A block meant to be copied opts in with `.selectable`. Inside it,
+    buttons, tabs and icons still never select, since an icon's ligature
+    name would copy as a stray word.
+  - Images and video never drag out as a ghost picture.
+- **The one-off rules are gone.** The dial wheel, the deck's resize drag and
+  the icon glyphs each set `user-select: none` of their own. The one rule now
+  covers them all, so no element sets its own.
+- **Text fields work as before.** A dial's typed value and a Library item's
+  name both select a word and take new text.
+
+### Gravity: the Star system's moons hold
+
+- **The failure.** The full test run lost one of the Star system's three
+  moons in its 30 s run. Over 150 runs, about one in forty lost a moon, always
+  into its own planet.
+- **The cause: the comet.** It weighed a third as much as a moon, and its
+  orbit crosses theirs. A close pass knocked a moon onto an eccentric orbit
+  that ended in its planet: one moon's distance swung out to 10.5 px and in
+  to the merge distance.
+- **The fix.** The comet is massless, as Halley's is in the Solar System. It
+  feels every pull and pulls on nothing. Tilted orbits' polar comet is
+  massless too. Over 150 runs after the fix, no moon was lost, and each
+  stayed within a fraction of a pixel of its usual range.
+- **A moon hit by a comet stays a moon.** When a small world (a moon, dwarf
+  planet, asteroid, icy body or comet) takes in another small world, it now
+  keeps its class. Before, the class rules ranked it lowest and "promoted" a
+  moon that took in a comet to a terrestrial planet.
+
+### Tests
+
+- **`tests/shell.py`, four new checks, each failing without the rule:**
+  - `nothing_in_the_workspace_selects`: select-all on every notebook page,
+    deck pane, sheet and menu, with a saved item and a selected body, in 2D
+    and 3D, selects no text;
+  - `gestures_select_nothing`: real gestures select nothing, on the Guide's
+    prose, a dial's name, a gauge and the stage header's two-word label;
+  - `text_fields_still_select`: the dial's value field and the Library
+    rename field still select and edit;
+  - `selectable_opts_in`: `.selectable` content can be selected.
+
+### Docs
+
+- **README:** Mouse and touch says the workspace's words never highlight,
+  and text fields still select.
+- **ARCHITECTURE:** Conventions describes the selection rule.
+- **CONTRIBUTING:** the house style says how to opt content in.
+- **ARCHITECTURE:** the massless comet, and `mergedKind`'s rule for small
+  worlds.
+- **`tests/planets.py`:** `mergers_keep_their_composition` adds a moon that
+  takes in a comet (still a moon) and one that takes in a planet (classed by
+  mass).
 
 ## 2.13.0 (11/16/2026)
 

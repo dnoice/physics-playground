@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.6)
+    - Title: Shell Regression Test (digiSpace Edition - v2.14)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.14.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Nothing in
+      the workspace selects, on any page, pane, sheet or menu in 2D or 3D;
+      real drags and double-clicks select nothing, short labels included; text
+      fields still select and edit; .selectable opts in.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       fps_recovers counts a hundred frames after the load stops, however long
       a renderer without a GPU takes to draw them, and holds the meter to the
@@ -447,6 +451,64 @@ with sync_playwright() as p:
     ok("fps_recovers", fps > slow * 1.2 and abs(fps - true_after) / true_after < 0.3, (round(slow, 1), round(fps, 1), round(true_after, 1)))
     pg.wait_for_timeout(200)
     ok("hud_fps_shows_meter", abs(float(pg.inner_text("#hud-fps").split()[0]) - state("perf.fps")) < 8, pg.inner_text("#hud-fps"))
+    pg.context.close()
+
+    # ---- Selection: the workspace is an instrument, not a document. A click, drag or double-click never paints a
+    # highlight over its words, on any page, pane, sheet or menu, in 2D or 3D; text fields still select, as typing
+    # needs; and .selectable is the one way to let a block be copied.
+    pg = fresh("gravity")
+    selected = "(() => { const s = getSelection(); s.removeAllRanges(); s.selectAllChildren(document.body); const t = s.toString().replace(/\\s+/g, ' ').trim(); s.removeAllRanges(); return t; })()"
+    leaks = {}
+    def sweep(where):
+        t = pg.evaluate(selected)
+        if t: leaks[where] = t[:120]
+    pg.evaluate("PhysicsPlayground.pause()")
+    sweep("controls")
+    for tab in ["experiments", "guide", "math", "library"]:
+        pg.click("#nt-" + tab); pg.wait_for_timeout(400); sweep(tab)
+    pg.evaluate("PhysicsPlayground.capture.saveState()"); pg.wait_for_timeout(600); sweep("library_with_an_item")
+    pg.click("#nt-controls"); pg.wait_for_timeout(200)
+    pg.evaluate("(() => { const L = PhysicsPlayground.active; L.track = L.bodies[1].id; })()"); pg.wait_for_timeout(600)
+    for pane in ["inspect", "insights", "telemetry"]:
+        pg.click("#dt-" + pane); pg.wait_for_timeout(300); sweep("deck_" + pane)
+    for btn, where in [("#btn-keys", "keyboard_sheet"), ("#btn-units", "units_menu"), ("#btn-hud", "hud_sheet"), ("#btn-gfx", "graphics_menu"), ("#scene-btn", "scene_menu")]:
+        pg.click(btn); pg.wait_for_timeout(300); sweep(where); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
+    pg.click("#mode-3d"); settle(pg, "PhysicsPlayground.mode.is3D()", 30000); pg.wait_for_timeout(800); sweep("3d")
+    ok("nothing_in_the_workspace_selects", not leaks, leaks)
+    # Real gestures: a drag across the Guide's prose, a double-click on a dial's name, a triple-click on a gauge.
+    pg.click("#nt-guide"); pg.wait_for_timeout(300)
+    g = pg.locator("#guide p").first.bounding_box()
+    pg.mouse.move(g["x"] + 2, g["y"] + 6); pg.mouse.down(); pg.mouse.move(g["x"] + g["width"] - 2, g["y"] + g["height"] - 4, steps=6); pg.mouse.up()
+    drag = pg.evaluate("getSelection().toString()")
+    pg.click("#nt-controls"); pg.wait_for_timeout(300)
+    pg.dblclick("#params-body .dial-name >> nth=0")
+    dbl = pg.evaluate("getSelection().toString()")
+    pg.click(".gauge >> nth=0", click_count=3)
+    tri = pg.evaluate("getSelection().toString()")
+    # Short labels too: the stage header's lab name, and a drag from it across its scene name ("Collisions · Ideal gas").
+    pg.click("#tab-collisions"); pg.wait_for_timeout(500); pg.evaluate("PhysicsPlayground.preset('gas')"); pg.wait_for_timeout(300)
+    pg.dblclick("#stage-lab")
+    head = pg.evaluate("getSelection().toString()")
+    h1, h2 = pg.locator("#stage-lab").bounding_box(), pg.locator("#stage-scene").bounding_box()
+    pg.mouse.move(h1["x"] + 2, h1["y"] + h1["height"] / 2); pg.mouse.down(); pg.mouse.move(h2["x"] + h2["width"] - 2, h2["y"] + h2["height"] / 2, steps=6); pg.mouse.up()
+    head += pg.evaluate("getSelection().toString()")
+    pg.click("#tab-gravity"); pg.wait_for_timeout(500)
+    ok("gestures_select_nothing", drag == "" and dbl == "" and tri == "" and head == "", (drag[:40], dbl[:40], tri[:40], head[:40]))
+    # A dial's value, opened for typing, selects and edits as any text field does.
+    pg.click("#params-body .dial-val >> nth=0"); pg.wait_for_timeout(150)
+    pg.dblclick("#params-body .ctl-edit")
+    sel = pg.evaluate("(() => { const e = document.querySelector('#params-body .ctl-edit'); return e ? [e.selectionStart, e.selectionEnd] : null; })()")
+    pg.keyboard.press("Escape")
+    # And the Library's rename field: it opens on the item's title, selects a word, and takes a new name.
+    pg.click("#nt-library"); pg.wait_for_timeout(300)
+    pg.click("#lib-list .lib-title >> nth=0"); pg.wait_for_timeout(200)
+    pg.dblclick("#lib-list .lib-rename")
+    ren = pg.evaluate("(() => { const e = document.querySelector('#lib-list .lib-rename'); return e ? [e.selectionStart, e.selectionEnd] : null; })()")
+    pg.keyboard.press("Control+A"); pg.keyboard.type("Renamed orbit"); pg.keyboard.press("Enter"); pg.wait_for_timeout(400)
+    named = pg.inner_text("#lib-list .lib-title >> nth=0")
+    ok("text_fields_still_select", sel is not None and sel[1] > sel[0] and ren is not None and ren[1] > ren[0] and named == "Renamed orbit", (sel, ren, named))
+    opt = pg.evaluate("(() => { const d = document.createElement('div'); d.className = 'selectable'; d.textContent = 'Copy this line'; document.body.append(d); const s = getSelection(); s.selectAllChildren(document.body); const t = s.toString().trim(); s.removeAllRanges(); d.remove(); return t; })()")
+    ok("selectable_opts_in", opt == "Copy this line", opt)
     pg.context.close()
 
     b.close()

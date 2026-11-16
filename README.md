@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.13)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.14)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.13.0
+    - Version: 2.14.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.14.0: Mouse and touch says the workspace's words never highlight on a
+      click or drag, while text fields still select; the release badge.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.13.0: Mouse and touch explains throwing and dropping in Gravity; the
       release badge. A drag begun on a planet launches from its surface. On
@@ -125,8 +128,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.13.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.13.0">
+    <img src="https://img.shields.io/badge/release-v2.14.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.14.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -548,6 +551,9 @@ that matter. The layout reflows to one column below 1180 px.
 - Zooming in follows the cursor and zooming back out returns to the home
   view, so you can always find your way back.
 - On touch screens, pinch zooms and two fingers pan.
+- **No stray highlights.** A click, drag or double-click never highlights the
+  workspace's words, and a long press opens no copy menu. Text fields, such
+  as a dial's typed value or a Library item's name, still select as usual.
 - **Throwing and dropping in Gravity.**
   - A click on empty sky drops a body into a circular orbit about what holds
     that point: the star, or a planet when you click close beside it (zoom in
@@ -756,7 +762,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.13.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.14.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

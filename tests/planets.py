@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Planet Classes Tests (digiSpace Edition - v2.12)
+    - Title: Planet Classes Tests (digiSpace Edition - v2.14)
     - File Name: planets.py
     - Relative Path: tests/planets.py
     - Artifact Type: test
-    - Version: 2.12.0
+    - Version: 2.14.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      mergers_keep_their_composition adds a moon that takes in a comet, which
+      stays a moon, and one that takes in a planet, classed by mass.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
       system has every class, seven colours, every surface, rings on the pale
       giant only and a moon on each giant; random giants take several hues and
@@ -154,8 +157,10 @@ with sync_playwright() as p:
     ok("iau_mass_ratio_flag", iau[0][0] == "gas" and iau[0][1] == "no: 4.8 % of its star's mass" and iau[1][1] is None, iau)
     mg = pg.evaluate(f"""(() => {{ const L = {G}, E = L.EARTH, m = (k1, m1, k2, m2) => {{ const a = {{ kind: k1, m: m1 * E }}, b = {{ kind: k2, m: m2 * E }}, [big, small] = a.m >= b.m ? [a, b] : [b, a]; return L.mergedKind(big, small, a.m + b.m); }};
       return [m('superEarth', 7, 'superEarth', 6), m('terrestrial', 1, 'terrestrial', 0.8), m('terrestrial', 1, 'subNeptune', 5), m('subNeptune', 8, 'subNeptune', 7), m('ice', 30, 'ice', 25),
-        m('gas', 4000, 'gas', 1000), m('brown', 25000, 'brown', 4000), m('gas', 300, 'terrestrial', 1)]; }})()""")
-    ok("mergers_keep_their_composition", mg == ["superEarth", "superEarth", "subNeptune", "ice", "gas", "brown", "star", "gas"], mg)
+        m('gas', 4000, 'gas', 1000), m('brown', 25000, 'brown', 4000), m('gas', 300, 'terrestrial', 1), m('moon', 0.1, 'comet', 0), m('moon', 0.1, 'terrestrial', 0.05)]; }})()""")
+    # A small world keeps its class when it takes in another small world (a moon hit by a comet stays a moon), and is
+    # classed by mass as before when it takes in a planet.
+    ok("mergers_keep_their_composition", mg == ["superEarth", "superEarth", "subNeptune", "ice", "gas", "brown", "star", "gas", "moon", "terrestrial"], mg)
 
     # ---- The controls: seven types, a dial down to terrestrial masses, type and mass kept consistent
     pg.click("#tab-gravity"); pg.wait_for_timeout(200)

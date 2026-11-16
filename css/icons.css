@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Icon Styles (digiSpace Edition - v2.6)
+    - Title: Icon Styles (digiSpace Edition - v2.14)
     - File Name: icons.css
     - Relative Path: css/icons.css
     - Artifact Type: stylesheet
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.14.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The icon
+      glyphs' own user-select is gone: the workspace's one selection rule in
+      tokens.css covers them, inside .selectable too.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
       small and large glyph sizes, which nothing uses.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -39,7 +42,7 @@
 .ms {
   font-family: "Material Symbols Rounded"; font-weight: normal; font-style: normal; font-size: 20px; line-height: 1;
   letter-spacing: normal; text-transform: none; white-space: nowrap; word-wrap: normal; direction: ltr;
-  display: inline-block; width: 1em; height: 1em; overflow: hidden; flex: none; user-select: none; vertical-align: middle;
+  display: inline-block; width: 1em; height: 1em; overflow: hidden; flex: none; vertical-align: middle;
   -webkit-font-feature-settings: "liga"; font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
 }
