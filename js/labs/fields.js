@@ -231,13 +231,15 @@ export const fields = {
   },
   deselect() { this.picked = false; },
   /* The director's areas of interest (js/shell/director.js), in stage pixels: the tracked particle, framed round the
-     circle a magnetic field bends it into, then the swarm of test particles and the charges that drive them. */
+     circle a magnetic field bends it into (centred on its guiding centre, which drifts slowly while the particle
+     whirls), then the swarm of test particles and the charges that drive them. */
   interest() {
     const out = [], n = this.n, i = this.indexOf(this.track), C = this.charges;
     const spread = (len, at) => { let x = 0, y = 0, r = 0; for (let k = 0; k < len; k++) { const p = at(k); x += p[0] / len; y += p[1] / len; } for (let k = 0; k < len; k++) { const p = at(k); r = Math.max(r, Math.hypot(p[0] - x, p[1] - y)); } return { x, y, r }; };
     if (i >= 0) {
-      const v = Math.hypot(this.vx[i], this.vy[i]), qB = Math.abs(this.qm[i] * this.Bz(this.y[i]));
-      out.push({ x: this.x[i], y: this.y[i], r: Math.max(40, qB > 1e-9 ? Math.min(v / qB * 1.4, v) : v * 0.8), w: 0.7, key: `p:${this.track}`, label: 'The tracked particle' });
+      // The Boris step turns v by qm·B·(vy, −vx), so the centre of the circle lies (vy, −vx) / (qm·B) away.
+      const vx = this.vx[i], vy = this.vy[i], v = Math.hypot(vx, vy), qB = this.qm[i] * this.Bz(this.y[i]), turns = Math.abs(qB) > 1e-9 && v / Math.abs(qB) < Math.max(this.w, this.h);
+      out.push({ x: clamp(this.x[i] + (turns ? vy / qB : 0), 0, this.w), y: clamp(this.y[i] - (turns ? vx / qB : 0), 0, this.h), r: Math.max(40, turns ? v / Math.abs(qB) * 1.6 : v * 0.8), w: 0.7, key: `p:${this.track}`, label: 'The tracked particle' });
     }
     if (n > 2) { const c = spread(n, k => [this.x[k], this.y[k]]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.2, 60), w: 0.35, key: 'swarm', label: 'The particles' }); }
     if (C.length) { const c = spread(C.length, k => [C[k].x, C[k].y]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.3, 80), w: 0.3, key: 'charges', label: C.length > 1 ? 'The charges' : 'The charge' }); }

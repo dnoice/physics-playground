@@ -889,16 +889,29 @@ while Fluid's liquid surface renders for the stage's own camera and size.
   points from `interest()` by weight, discounting the last three keys shown,
   with a wide shot after two subjects or when nothing scores above 0.3.
   Within a shot the frame dollies in a few per cent, a wide 2D shot drifts
-  a little sideways, and in 3D the camera orbits at 0.07 rad/s. A subject
-  still weighing 0.7 or more is held up to four seconds past its length, a
-  lost one ends the shot after a second, and a weight of 0.85 or more takes
-  over a routine shot that has held three seconds.
+  a little sideways, and in 3D the camera orbits at 0.07 rad/s. A shot's
+  clock starts once the camera has arrived. A subject still weighing 0.7 or
+  more is held up to four seconds past its length, a lost one ends the shot
+  after a second, and a weight of 0.85 or more takes over a routine shot
+  that has held three seconds.
+- **Framing.** `look` turns a point into the camera's terms (in 3D through
+  the lab's `aim3`, then `clampTarget`) and smooths successive looks at one
+  subject by Holt's linear method: the level over 0.7 s, the trend over
+  1.2 s, the width over 1.5 s. A steady mover is followed without lag, while
+  a swinging pendulum tip or a hopping densest patch barely moves the
+  camera. A new subject takes its speed from the previous look. The frame
+  widens until the subject crosses less than 0.45 of the pan limit a
+  second, and a push in stops 2.2 e-folds past the wide framing (more in a
+  lab that spans decades).
 - **Moves.** Between shots, `plan` lays van Wijk and Nuij's smooth zoom and
-  pan path from the camera to the shot's opening frame and times it with a
-  quintic ease, long enough that the path's steepest pan and zoom stay
-  under 70 % of the limits. Within a shot, `hold` runs a critically damped
-  spring on each number, solved exactly for a goal moving at a constant
-  speed, with the goal's speed estimated from the last two looks.
+  pan path from the camera to the subject as last seen, carried on at its
+  speed. A quintic ease times it, and the camera's own speed at the start
+  dies away over the move, so no move starts or ends with a jolt. `plan`
+  rehearses the move in 48 samples and lengthens it until its fastest
+  moment stays under 70 % of the limits. If the subject has strayed a fifth
+  of a view by the end, up to two shorter moves catch up. Within a shot,
+  `hold` runs a critically damped spring on each number, solved exactly
+  for a goal moving at constant speed.
 - **Limits.** `cap` holds every frame to `DIRECTOR_CAP` per second: 0.55 of
   a view of pan, 0.6 e-folds of zoom (times the square of `zoomPace()`, for
   the Solar System's decades), 0.4 rad of yaw and 0.25 rad of pitch. The

@@ -676,7 +676,8 @@ view the way a camera crew would:
   nothing stands out.
 - **It never cuts.** Between shots the camera pulls out, travels and pushes
   in along one smooth, eased path. Within a shot it follows the subject on
-  a critically damped spring. Pan, zoom and turn speeds have fixed limits
+  a critically damped spring, and a fast subject gets a wider frame, so the
+  camera never has to race. Pan, zoom and turn speeds have fixed limits
   that hold in every frame.
 - **With reduced motion**, every limit is halved and every shot is longer.
 

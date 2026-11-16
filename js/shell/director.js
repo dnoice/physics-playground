@@ -32,9 +32,10 @@
       and whenever nothing stands out; a strong moment (a merger, a close
       encounter) is held, or cut to once the current shot has settled.
     - Moves between shots follow van Wijk and Nuij's smooth zoom and pan,
-      which pulls out, travels and pushes in, eased at both ends; within a
-      shot a critically damped spring follows the moving subject while the
-      camera dollies in and, in 3D, orbits slowly.
+      which pulls out, travels and pushes in, eased at both ends and timed
+      by rehearsing them against the limits; within a shot a critically
+      damped spring follows the subject, smoothed by Holt's method, while
+      the camera dollies in and, in 3D, orbits slowly.
     - Hard limits on pan, zoom, yaw and pitch per second hold every frame;
       reduced motion halves them and lengthens the shots.
     - Touching the camera hands it to the user: the director waits until
@@ -73,15 +74,15 @@ const CAP = DIRECTOR_CAP;
 
 export const director = {
   on: !!store.get('director', false), rec: false, why: null, lab: null, kind: null, saved: null, held: null,
-  yieldT: 0, clock: 0, now: 0, ui: 0, shots: 0, subjects: 0, pace: 1, d0: 0, ww: 1, wh: 1, zlo: 0.5, zhi: 8, fitZ: 1, yawMax: Infinity,
-  pts: [], recent: [],
-  shot: { kind: 'wide', key: '', label: '', t0: 0, len: 1, w: 0, lost: 0, dir: 1, yaw: 0, pitch: 0, push: 0, dx: 0, dy: 0 },
+  yieldT: 0, clock: 0, now: 0, ui: 0, shots: 0, subjects: 0, pace: 1, d0: 0, ww: 1, wh: 1, zlo: 0.5, zhi: 8, fitZ: 1, yawMax: Infinity, wideLw: 0,
+  pts: [], prev: [], prevT: 0, lastT: 0, recent: [], warned: new Set(),
+  shot: { kind: 'wide', key: '', label: '', t0: 0, held: 0, len: 1, w: 0, lost: 0, dir: 1, yaw: 0, pitch: 0, push: 0, dx: 0, dy: 0, again: 0 },
   sub: { key: null, x: 0, y: 0, z: 0, lw: 0, vx: 0, vy: 0, vz: 0, t: 0 },
 };
 const D = director;
-const C = new Float64Array(6), V = new Float64Array(6), G = new Float64Array(6), GV = new Float64Array(6), G1 = new Float64Array(6), PC = new Float64Array(6), W = new Float64Array(6);
+const C = new Float64Array(6), V = new Float64Array(6), G = new Float64Array(6), GV = new Float64Array(6), G1 = new Float64Array(6), PC = new Float64Array(6), W = new Float64Array(6), X = new Float64Array(6), X0 = new Float64Array(6);
 // A move between shots: from a to b along the smooth zoom-and-pan path, timed by a quintic ease.
-const T = { on: false, t: 0, len: 1, S: 0, d1: 0, r0: 0, w0: 1, pure: true, a: new Float64Array(6), b: new Float64Array(6) };
+const T = { on: false, t: 0, len: 1, S: 0, d1: 0, r0: 0, w0: 1, pure: true, a: new Float64Array(6), b: new Float64Array(6), v0: new Float64Array(6), sub: { key: null, x: 0, y: 0, z: 0, lw: 0, vx: 0, vy: 0, vz: 0, t: 0 } };
 const AIM = { txT: 0, tyT: 0, tzT: 0 };
 let PU = 0, PLW = 0;
 
@@ -134,7 +135,9 @@ function touched(lab, strict) {
 /* ---------- what to film: the lab's areas of interest ---------- */
 function query(lab) {
   let pts = null;
-  try { pts = lab.interest ? lab.interest(D.shot.kind === 'subject' ? D.shot.key : null) : null; } catch (_) { pts = null; }
+  // A lab whose hook throws is filmed in wide shots, and says so once.
+  try { pts = lab.interest ? lab.interest(D.shot.kind === 'subject' ? D.shot.key : null) : null; } catch (err) { if (!D.warned.has(lab.id)) { D.warned.add(lab.id); console.warn('Areas of interest failed', err); } pts = null; }
+  D.prev = D.pts; D.prevT = D.lastT; D.lastT = D.now;
   D.pts = Array.isArray(pts) ? pts.filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.y) && p.r > 0 && Number.isFinite(p.r) && typeof p.key === 'string') : [];
   if (D.kind === '2d') {
     const R = worldOf(lab), [lo, hi] = zoomRange(lab);
@@ -146,12 +149,14 @@ function query(lab) {
     if (p) { look(lab, p); S.lost = 0; S.w = clamp(+p.w || 0, 0, 1); } else S.lost += QUERY;
   } else look(lab, null);
 }
-/* Frame a point of interest, or the whole scene for a wide shot, in the camera's own terms, and estimate how fast it
-   moves from the last look, so the camera can keep pace without lagging. A jump (a new densest patch) moves the
-   subject but not its speed. */
+/* Frame a point of interest, or the whole scene for a wide shot, in the camera's own terms. Successive looks at one
+   subject are smoothed by Holt's linear method: a level that follows the subject over 0.7 s and a trend, its speed,
+   over 1.2 s. A subject moving steadily is followed without lag; one that swings back and forth (a pendulum's tip) or
+   hops (the densest patch moving cell) moves the camera much less than it moves itself. A hop clears the trend. The
+   framing's width follows over 1.5 s, so a pair closing in is a slow push, not a lunge. */
 function look(lab, p) {
   const s = D.sub, key = p ? p.key : '', t = D.now, same = s.key === key && t > s.t;
-  let x, y, z = 0, lw;
+  let x, y, z = 0, lw, top;
   if (D.kind === '3d') {
     const H = lab.home3(), [lo, hi] = lab.zoomLimits3 ? lab.zoomLimits3() : [0.2, 3.2];
     if (p) {
@@ -161,24 +166,46 @@ function look(lab, p) {
       x = AIM.txT; y = AIM.tyT; z = AIM.tzT;
       lw = Math.log(2 * p.r * a.k / (FILL * Math.min(1, view.w / Math.max(1, view.h))));
     } else { x = H.tx; y = H.ty; z = H.tz; lw = Math.log(2 * H.dist * TAN); }
-    lw = clamp(lw, Math.log(2 * H.dist * lo * TAN), Math.log(2 * H.dist * hi * TAN));
+    top = Math.log(2 * H.dist * hi * TAN);
+    lw = clamp(lw, Math.log(2 * H.dist * lo * TAN), top);
   } else {
+    const zMin = lab.selfCam ? D.zlo : D.fitZ;
+    top = Math.log(short() / zMin);
     if (p) {
       x = p.x; y = p.y;
-      const zMin = lab.selfCam ? D.zlo : D.fitZ, zMax = lab.selfCam ? D.zhi : Math.min(D.zhi, D.fitZ * 5);
+      const zMax = lab.selfCam ? D.zhi : Math.min(D.zhi, D.fitZ * 5);
       lw = Math.log(short() / clamp(FILL * short() / (2 * p.r), zMin, Math.max(zMin, zMax)));
     } else { const f = lab.frameView ? lab.frameView() : fitCam(lab); x = f.x; y = f.y; lw = Math.log(short() / clamp(f.z, D.zlo, D.zhi)); }
   }
+  // A push in goes no further than 2.2 e-folds (nine times) past the wide framing, more in a lab that spans decades.
+  if (p) lw = Math.max(lw, D.wideLw - 2.2 * D.pace); else D.wideLw = lw;
   if (same) {
-    const dt = t - s.t, jump = Math.hypot(x - s.x, y - s.y, z - s.z) > 0.6 * Math.exp(s.lw), k = 0.5;
-    s.vx = jump ? 0 : s.vx * (1 - k) + (x - s.x) / dt * k; s.vy = jump ? 0 : s.vy * (1 - k) + (y - s.y) / dt * k; s.vz = jump ? 0 : s.vz * (1 - k) + (z - s.z) / dt * k;
-  } else { s.vx = s.vy = s.vz = 0; }
-  s.key = key; s.x = x; s.y = y; s.z = z; s.lw = lw; s.t = t;
+    const dt = t - s.t, a = 1 - Math.exp(-dt / 0.7), b = 1 - Math.exp(-dt / 1.2), px = s.x + s.vx * dt, py = s.y + s.vy * dt, pz = s.z + s.vz * dt;
+    const hop = Math.hypot(x - px, y - py, z - pz) > 0.6 * Math.exp(s.lw), nx = px + a * (x - px), ny = py + a * (y - py), nz = pz + a * (z - pz);
+    if (hop) { s.vx = s.vy = s.vz = 0; }
+    else { s.vx += b * ((nx - s.x) / dt - s.vx); s.vy += b * ((ny - s.y) / dt - s.vy); s.vz += b * ((nz - s.z) / dt - s.vz); }
+    s.x = nx; s.y = ny; s.z = nz; s.lw += (1 - Math.exp(-dt / 1.5)) * (Math.max(lw, fast(s)) - s.lw);
+  } else {
+    // A new subject starts at the speed it had between the last two looks, if the last one saw it too.
+    const q = p && D.prev.find(o => o.key === key), dt = t - D.prevT;
+    s.vx = s.vy = s.vz = 0;
+    if (q && dt > 0) {
+      if (D.kind === '3d') { const a = lab.aim3(q.x, q.y, q.z || 0); s.vx = (x - a.x) / dt; s.vy = (y - a.y) / dt; s.vz = (z - a.z) / dt; }
+      else { s.vx = (x - q.x) / dt; s.vy = (y - q.y) / dt; }
+      if (Math.hypot(s.vx, s.vy, s.vz) * dt > 0.6 * Math.exp(lw)) s.vx = s.vy = s.vz = 0;
+    }
+    s.x = x; s.y = y; s.z = z; s.lw = Math.max(lw, fast(s));
+  }
+  s.lw = Math.min(s.lw, Math.max(top, lw));
+  s.key = key; s.t = t;
 }
-/* The camera this shot wants at time t: the subject carried on at its speed, a slow dolly in, and in 3D a slow orbit.
-   A wide 2D shot also drifts a little sideways. The point stays where the world fills the frame. */
-function goalAt(lab, t, out) {
-  const s = D.sub, S = D.shot, p = clamp((t - S.t0) / S.len, 0, 1.6), q = t - s.t;
+/* Fast action takes a wider frame: wide enough that the subject crosses less than 0.45 of the pan limit a second, so
+   the camera can keep it in frame without racing. */
+const fast = s => Math.log(Math.hypot(s.vx, s.vy, s.vz) / (0.45 * CAP.pan) + 1e-12);
+/* The camera this shot wants at time t: the subject s carried on at its speed, a slow dolly in, and in 3D a slow
+   orbit. A wide 2D shot also drifts a little sideways. The point stays where the world fills the frame. */
+function goalAt(lab, t, out, s = D.sub) {
+  const S = D.shot, p = clamp((t - S.t0) / S.len, 0, 1.6), q = t - s.t;
   out[0] = s.x + s.vx * q; out[1] = s.y + s.vy * q; out[2] = s.z + s.vz * q;
   out[3] = s.lw - Math.log(1 + S.push * p);
   if (D.kind === '3d') { out[4] = clamp(S.yaw + S.dir * ORBIT * (t - S.t0), -D.yawMax, D.yawMax); out[5] = S.pitch; return; }
@@ -210,7 +237,7 @@ function nextShot(lab) {
     Object.assign(S, { kind: 'wide', key: '', label: D.shots === 1 ? 'Establishing shot' : 'Wide shot', w: 0, len: (D.shots === 1 ? 5 : 6.5) * LONG, push: 0.07 });
     D.subjects = 0;
   }
-  S.t0 = D.now; S.lost = 0; S.dx = S.dy = 0;
+  S.t0 = S.held = D.now; S.lost = 0; S.dx = S.dy = 0; S.again = 0;
   if (D.kind === '3d') {
     const H = lab.home3(), R = lab.rig3, lo = R ? (R.pitchMin ?? (R.plane === 'wall' ? -0.25 : 0.08)) + 0.04 : 0.2, hi = R ? Math.min(R.pitchMax ?? 1.553, 1.35) - 0.04 : 1.1;
     S.pitch = clamp(H.pitch + (S.kind === 'wide' ? rand(0, 0.12) : rand(-0.06, 0.16)), lo, Math.max(lo, hi));
@@ -219,22 +246,27 @@ function nextShot(lab) {
   look(lab, best);
   plan(lab);
 }
-/* Has the shot run its course? It has once its time is up, unless a strong subject is still strong (hold on it for up
-   to four seconds more), or once its subject has been gone a second. A routine shot also gives way to a moment not
-   to miss elsewhere, once it has held for three seconds; a moment not to miss is never cut short by another. */
+/* Has the shot run its course? Never while the camera is still moving into it; after that, once it has held for its
+   length, unless a strong subject is still strong (hold on it for up to four seconds more), or once its subject has
+   been gone a second. A routine shot also gives way to a moment not to miss elsewhere, once it has held for three
+   seconds; a moment not to miss is never cut short by another. */
 function shotOver() {
-  const S = D.shot, age = D.now - S.t0;
+  const S = D.shot, age = D.now - S.held;
+  if (T.on) return false;
   if (S.lost >= 1) return true;
   if (age >= S.len) return !(S.kind === 'subject' && S.w >= 0.7 && age < S.len + 4 * LONG);
-  return !T.on && S.w < 0.7 && age >= 3 * LONG && D.pts.some(p => p.w >= 0.85 && p.key !== S.key && !D.recent.includes(p.key));
+  return S.w < 0.7 && age >= 3 * LONG && D.pts.some(p => p.w >= 0.85 && p.key !== S.key && !D.recent.includes(p.key));
 }
 
 /* ---------- moving the camera ---------- */
 /* van Wijk and Nuij's optimal path from the camera now to the shot's opening frame: for a long way it pulls out,
-   travels and pushes in, as an eye would want. Its length is set so the eased move keeps inside the limits, measured
-   on the path itself, and never shorter than TMIN. */
+   travels and pushes in, as an eye would want. The move aims at the subject as seen now, carried on at its speed, so
+   it can be rehearsed: it is sampled and lengthened until its fastest moment keeps under 70 % of the limits, never
+   shorter than TMIN nor longer than TMAX. Where the subject strays from that course, the spring that holds the
+   shot makes up the difference after. */
 function plan(lab) {
-  goalAt(lab, D.now, G);
+  Object.assign(T.sub, D.sub); T.v0.set(V);
+  goalAt(lab, D.now, G, T.sub);
   T.a.set(C); T.b.set(G);
   const d1 = Math.hypot(G[0] - C[0], G[1] - C[1], G[2] - C[2]), w0 = Math.exp(C[3]), w1 = Math.exp(G[3]);
   T.d1 = d1; T.w0 = w0;
@@ -243,14 +275,21 @@ function plan(lab) {
     const r2 = RHO * RHO, b0 = (w1 * w1 - w0 * w0 + r2 * r2 * d1 * d1) / (2 * w0 * r2 * d1), b1 = (w1 * w1 - w0 * w0 - r2 * r2 * d1 * d1) / (2 * w1 * r2 * d1);
     T.r0 = -Math.asinh(b0); T.S = (-Math.asinh(b1) - T.r0) / RHO; T.pure = false;
   }
-  let pan = 0, zoom = 0, lu = 0, llw = C[3];
-  for (let k = 1; k <= 32; k++) {
-    path(k / 32);
-    pan = Math.max(pan, Math.abs(PU - lu) * d1 / Math.exp(Math.min(PLW, llw)) * 32); zoom = Math.max(zoom, Math.abs(PLW - llw) * 32);
-    lu = PU; llw = PLW;
+  T.len = TMIN;
+  for (let pass = 0; pass < 6; pass++) {
+    let worst = 0;
+    const dt = T.len / 48;
+    X0.set(C);
+    for (let k = 1; k <= 48; k++) {
+      const tau = k / 48;
+      goalAt(lab, D.now + tau * T.len, G1, T.sub); along(tau, G1, X);
+      worst = Math.max(worst, Math.hypot(X[0] - X0[0], X[1] - X0[1], X[2] - X0[2]) / Math.exp(X0[3]) / (CAP.pan * dt), Math.abs(X[3] - X0[3]) / (CAP.zoom * D.pace * dt),
+        Math.abs(X[4] - X0[4]) / (CAP.yaw * dt), Math.abs(X[5] - X0[5]) / (CAP.pitch * dt));
+      X0.set(X);
+    }
+    if (worst <= PLAN || T.len >= TMAX) break;
+    T.len = Math.min(TMAX, T.len * worst / PLAN * 1.05);
   }
-  const ease = 1.875 / PLAN;
-  T.len = clamp(Math.max(TMIN, ease * pan / CAP.pan, ease * zoom / (CAP.zoom * D.pace), ease * Math.abs(G[4] - C[4]) / CAP.yaw, ease * Math.abs(G[5] - C[5]) / CAP.pitch), TMIN, TMAX);
   T.t = 0; T.on = true;
 }
 /* A point on the path, as the share u of the way across and ln of the width there. */
@@ -260,18 +299,32 @@ function path(e) {
   PU = T.w0 / (RHO * RHO * T.d1) * (c0 * Math.tanh(RHO * s + T.r0) - Math.sinh(T.r0));
   PLW = Math.log(T.w0 * c0 / Math.cosh(RHO * s + T.r0));
 }
-/* Between shots: along the path, plus whatever the shot's own frame has done since the move began, both eased in. */
+/* Between shots: along the path, plus whatever the shot's own frame has done since the move began, both eased in
+   by a quintic, so the move starts and ends at the speeds of what it joins. */
+function along(tau, g, out) {
+  const e = tau * tau * tau * (tau * (tau * 6 - 15) + 10), a = T.a, b = T.b, h = T.len * tau * (1 - tau) ** 3;
+  path(e);
+  for (let i = 0; i < 3; i++) out[i] = a[i] + PU * (b[i] - a[i]) + e * (g[i] - b[i]);
+  out[3] = PLW + e * (g[3] - b[3]);
+  out[4] = a[4] + e * (g[4] - a[4]); out[5] = a[5] + e * (g[5] - a[5]);
+  // The camera's speed when the move began carries on and dies away, so a new shot never starts with a jolt.
+  for (let i = 0; i < 6; i++) out[i] += T.v0[i] * h;
+}
+/* At the end of a move the camera is where the subject was expected to be. If the subject has strayed from that by a
+   fifth of a view or more, up to twice a shot a second, shorter move catches up, starting at the camera's speed;
+   otherwise the spring takes over. */
 function transit(lab, dt) {
   T.t += dt;
-  const tau = Math.min(1, T.t / T.len), e = tau * tau * tau * (tau * (tau * 6 - 15) + 10), a = T.a, b = T.b;
-  path(e); goalAt(lab, D.now, G);
-  for (let i = 0; i < 3; i++) C[i] = a[i] + PU * (b[i] - a[i]) + e * (G[i] - b[i]);
-  C[3] = PLW + e * (G[3] - b[3]);
-  C[4] = a[4] + e * (G[4] - a[4]); C[5] = a[5] + e * (G[5] - a[5]);
-  if (tau >= 1) { T.on = false; goalVelocity(lab); V.set(GV); }
+  const tau = Math.min(1, T.t / T.len), S = D.shot;
+  goalAt(lab, D.now, G, T.sub); along(tau, G, C);
+  if (tau < 1) return;
+  T.on = false; goalVelocity(lab, T.sub); V.set(GV);
+  goalAt(lab, D.now, G);
+  const off = Math.max(Math.hypot(G[0] - C[0], G[1] - C[1], G[2] - C[2]) / Math.exp(C[3]), Math.abs(G[3] - C[3]));
+  if (off > 0.2 && S.again < 2) { S.again++; plan(lab); } else S.held = D.now;
 }
-function goalVelocity(lab) {
-  goalAt(lab, D.now, G); goalAt(lab, D.now + 0.05, G1);
+function goalVelocity(lab, s = D.sub) {
+  goalAt(lab, D.now, G, s); goalAt(lab, D.now + 0.05, G1, s);
   for (let i = 0; i < 6; i++) GV[i] = (G1[i] - G[i]) / 0.05;
 }
 /* Within a shot: a critically damped spring on each number, solved exactly for a goal moving at constant speed over
@@ -305,8 +358,8 @@ function take(lab) {
   D.held = lab.releaseCam ? lab.releaseCam() : null;
   D.pace = (lab.zoomPace ? lab.zoomPace() : 1) ** 2;
   D.yawMax = lab.rig3 && lab.rig3.yawMax != null ? lab.rig3.yawMax : Infinity;
-  Object.assign(D, { yieldT: 0, clock: 0, now: 0, ui: 1, shots: 0, subjects: 0 });
-  D.recent.length = 0; D.sub.key = null; D.shot.kind = 'wide'; D.shot.key = ''; D.shot.dir = Math.random() < 0.5 ? 1 : -1;
+  Object.assign(D, { yieldT: 0, clock: 0, now: 0, ui: 1, shots: 0, subjects: 0, lastT: 0 });
+  D.recent.length = 0; D.pts = []; D.sub.key = null; D.shot.kind = 'wide'; D.shot.key = ''; D.shot.dir = Math.random() < 0.5 ? 1 : -1;
   T.on = false; V.fill(0);
   query(lab); read(lab); write(lab); nextShot(lab);
 }
@@ -366,8 +419,12 @@ export function directorState() {
 }
 
 /* ---------- each frame, from the loop, before the camera's own easing ---------- */
+/* A fault in the director must never stop the frame loop: it gives the camera back instead, and says why once. */
 export function tickDirector(real) {
   if (!D.why || !active) return;
+  try { direct(real); } catch (err) { console.warn('The director stopped', err); try { stopDirector(); } catch (_) { D.why = null; syncDirectorUI(); } }
+}
+function direct(real) {
   const lab = active;
   if (lab !== D.lab || kindOf(lab) !== D.kind) { give(D.lab, D.kind, true); take(lab); }
   if (!(real > 0)) return;
