@@ -244,7 +244,7 @@ The playground's promise is that what you see is real physics.
 
 - **Plain and specific.** Say what something does, in everyday words.
 - **British spelling**, to match the interface and docs: colour, centre,
-  metre.
+  metre. (It's not a big deal, honestly! Geez, Claude, you're gonna scare all of our future maintainers away... 🤖)
 - **Dates as MM/DD/YYYY**, as in the file headers.
 - **Markdown prose wraps at 80 characters**, as `.markdownlint.jsonc` sets
   out. Tables and code blocks may run longer.
