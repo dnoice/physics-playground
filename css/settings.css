@@ -57,8 +57,6 @@
 @keyframes set-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
 .settings::backdrop { background: rgba(3, 5, 9, 0.5); }
 .settings:focus { outline: none; }
-/* The workspace behind stays where it was. */
-body:has(#settings[open]) { overflow: hidden; }
 
 .settings-head { grid-area: head; display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 0 12px 0 20px; border-bottom: 1px solid var(--hair); }
 .settings-ico { color: var(--amber); font-size: 21px; }
