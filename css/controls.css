@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Control Styles (digiSpace Edition - v2.11)
+    - Title: Control Styles (digiSpace Edition - v2.14)
     - File Name: controls.css
     - Relative Path: css/controls.css
     - Artifact Type: stylesheet
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.14.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dial
+      wheel's own user-select is gone: the workspace's one selection rule in
+      tokens.css covers it.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials
       refined on Dennis's call: open cells in place of cards, the wheel the
       only box, faint ridges that part round an unframed value and come up
@@ -22,12 +25,6 @@
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
       leftover row styles of the old sliders (.ctl-head, .ctl-tools,
       output.ctl-val), which no markup uses since the dials.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Control
-      sections take the glass card treatment: a faint top light and edge
-      highlight. On Dennis's call to retire the long sliders, numbers are
-      thumbwheel dials: compact cards in an auto-filling grid, a ridged wheel
-      with the value set in its middle, step chevrons, a range hairline with
-      the scene's mark, and a note held to two lines.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -161,7 +158,7 @@
 .dial-wheel {
   --ridge: color-mix(in oklab, var(--text) 11%, transparent);
   position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr) 20px; align-items: center; height: 30px;
-  border-radius: 8px; overflow: hidden; touch-action: pan-y; cursor: ew-resize; user-select: none; -webkit-user-select: none;
+  border-radius: 8px; overflow: hidden; touch-action: pan-y; cursor: ew-resize;
   background: linear-gradient(180deg, color-mix(in oklab, white 3%, transparent), transparent 40%, color-mix(in oklab, black 16%, transparent)), var(--well);
   box-shadow: inset 0 0 0 1px var(--hair);
   transition: box-shadow 0.2s, opacity 0.2s;

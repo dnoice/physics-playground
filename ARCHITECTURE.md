@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.13)
+    - Title: Architecture Guide (digiSpace Edition - v2.14)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.13.0
+    - Version: 2.14.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
+      Conventions: selection is one rule in tokens.css, with .selectable to
+      opt in.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — hostAt,
       dropOrbit, throwVel and throwText: how Gravity places bodies relative to
       what holds the point. throwFrom. Conventions points contributors to
@@ -880,6 +883,12 @@ up, the checks, the house style and the header rules in full.
   Browser-delivered files keep at most three changelog entries in 40
   lines; the full history is in [CHANGELOG.md](CHANGELOG.md).
 - Dates are written MM/DD/YYYY.
+- **Selection is one rule.** `css/tokens.css` makes the whole document
+  unselectable, so no drag or double-click paints a highlight. Text fields
+  select again, and a block meant to be copied opts in with `.selectable`,
+  inside which buttons, tabs and icons still do not select. No element sets
+  `user-select` of its own. `tests/shell.py` sweeps every page, pane, sheet
+  and menu in 2D and 3D to hold it.
 - `npm run verify` (lint, check, site) and `npm test` pass before a
   release; the Pages workflow runs the same verify gate on every push.
 - Tiles, and anything inside them that repaints as the readings change

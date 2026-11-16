@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Contributing Guide (digiSpace Edition - v2.13)
+    - Title: Contributing Guide (digiSpace Edition - v2.14)
     - File Name: CONTRIBUTING.md
     - Relative Path: CONTRIBUTING.md
     - Artifact Type: docs
-    - Version: 2.13.0
+    - Version: 2.14.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — House
+      style: nothing selects by accident, and .selectable is how content opts
+      in.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call, as the repository began to draw stars and forks, for
       a welcoming, intuitive guide to contributing.
@@ -218,6 +221,10 @@ lab and the app's controls for exploring in the console.
 - **Cheap to paint.** Tiles that repaint as readings change keep one
   gradient layer and no backdrop blur. The
   [conventions](ARCHITECTURE.md#conventions) explain why.
+- **Nothing selects by accident.** One rule in `css/tokens.css` keeps the
+  workspace's text from highlighting on a click or drag. Text fields select
+  as usual. If new content is meant to be copied, give it the `.selectable`
+  class, and never set `user-select` on an element of its own.
 - **ESLint has the final word on formatting.** If `npm run lint` is happy,
   so are we.
 
