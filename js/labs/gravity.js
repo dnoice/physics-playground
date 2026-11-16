@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.13)
+    - Title: Gravity Lab (digiSpace Edition - v2.14)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.13.0
+    - Version: 2.14.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
+      system's and Tilted orbits' comets are massless, as Halley's is: at a
+      third of a moon's mass, the Star system's comet knocked a moon into its
+      planet in about one run in forty. mergedKind keeps a small world's class
+      when it takes in another small world, so a moon hit by a comet stays a
+      moon.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's report of placed bodies sailing out of the system: throwVel
       measures a throw against the circular speed about what holds its start
@@ -29,13 +35,6 @@
       and a comet that is a comet; Tilted orbits' comet too. Each class has a
       few hues a world picks by its id; sub-Neptunes and ice giants are calm
       (surface 3); ringed() gives rings in 2D and 3D alike.
-    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits as
-      smooth curves (orbitFrame, orbitCurve): any span that would draw long is
-      halved again, so an orbit the camera sits inside no longer crosses the
-      stage in straight chords, and each fades back round from its body. Names
-      carry a dark halo. Our Solar System zooms twice as far a step (zoomPace)
-      and no longer follows its centre of mass, so the wheel zooms toward the
-      cursor.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -169,6 +168,9 @@ export const kindOf = m => (m > STAR_LIMIT ? 'star' : m >= 13 * JUP ? 'brown' : 
 /* A merger keeps what its bodies were made of: rock stays rock, and a body with a gas envelope keeps one. The class
    then follows the new mass within that family, never down; brown dwarfs and stars follow mass outright. */
 export function mergedKind(big, small, m) {
+  // A small world (a moon, a dwarf planet, an asteroid, an icy body or a comet) that takes in another stays what it
+  // was: its class is its place in the system, not its mass, so a moon hit by a comet is still a moon.
+  if (!KINDS[big.kind].rank && !KINDS[small.kind].rank) return big.kind;
   const byMass = kindOf(m), up = k => (KINDS[k].rank > KINDS[big.kind].rank ? k : big.kind);
   if (byMass === 'star' || byMass === 'brown') return up(byMass);
   const gas = KINDS[big.kind].family === 'gas' || KINDS[small.kind].family === 'gas';
@@ -392,11 +394,12 @@ export const gravity = {
       moon(ringer, 6.2, [204, 160, 90]);
       const ice = world(470, 16, 'ice', [92, 146, 228], 3, 0.02);
       moon(ice, 4.4, [206, 214, 220]);
-      // A comet, light enough to pull nothing that matters, on a long ellipse through the inner system. It starts at
-      // aphelion, between the ringed giant and the ice giant, so its first dive past the inner worlds comes a few
-      // seconds in rather than among them at the start.
+      // A comet on a long ellipse through the inner system, massless as Halley's is in the Solar System: it feels
+      // every pull and pulls on nothing. At a third of a moon's mass, a close pass used to knock a moon off its orbit
+      // and into its planet, in about one run in forty. It starts at aphelion, between the ringed giant and the ice
+      // giant, so its first dive past the inner worlds comes a few seconds in rather than among them at the start.
       const a = 240, e = 0.82, w = rand(0, TAU), G = G0 * this.p.G, ra = a * (1 + e), va = Math.sqrt(G * 1000 * (1 - e) / ra);
-      B.push(this.body(ra * Math.cos(w), ra * Math.sin(w), -va * Math.sin(w), va * Math.cos(w), 1e-4, 0, 0, 'comet'));
+      B.push(this.body(ra * Math.cos(w), ra * Math.sin(w), -va * Math.sin(w), va * Math.cos(w), 0, 0, 0, 'comet'));
     } else if (preset === 'kepler') {
       const star = this.body(0, 0, 0, 0, 1000); B.push(star);
       const a = 210, G = G0 * this.p.G;
@@ -418,8 +421,8 @@ export const gravity = {
       const star = this.body(0, 0, 0, 0, 1000); B.push(star);
       [[80, 0, 0.5], [130, 10, 1], [190, 25, 1.5], [260, 45, 0.8], [340, 70, 2]].forEach(([d, inc, m]) => this.orbitTilted(star, d, rand(0, TAU), m, inc * Math.PI / 180, rand(0, TAU)));
       const a = 230, e = 0.7, rp = a * (1 - e), vp = Math.sqrt(G0 * this.p.G * 1000 * (1 + e) / rp), ci = Math.cos(1.2), si = Math.sin(1.2);
-      // The polar comet, light and classed as a comet (at 0.01 it weighed three Earths and counted as a super-Earth).
-      B.push(this.body(rp, 0, 0, vp * ci, 1e-4, 0, vp * si, 'comet'));
+      // The polar comet, massless and classed as a comet (at 0.01 it weighed three Earths and counted as a super-Earth).
+      B.push(this.body(rp, 0, 0, vp * ci, 0, 0, vp * si, 'comet'));
     } else if (preset === 'disk') {
       const core = this.body(0, 0, 0, 0, 600); B.push(core);
       for (let i = 0; i < 140; i++) {

@@ -14,7 +14,8 @@
 ✒ Changelog:
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Conventions: selection is one rule in tokens.css, with .selectable to
-      opt in.
+      opt in. The Star system's massless comet, and mergedKind's rule for
+      small worlds.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — hostAt,
       dropOrbit, throwVel and throwText: how Gravity places bodies relative to
       what holds the point. throwFrom. Conventions points contributors to
@@ -683,7 +684,9 @@ give Jupiter and Earth in those units, from the IAU mass ratios.
 - **`mergedKind(big, small, m)`** keeps a merger's family. Rock stays rock and
   an envelope stays, then the class follows the new mass, never down. Brown
   dwarfs and stars follow mass outright, and the Solar System's named worlds
-  keep their class.
+  keep their class. A small world (moon, dwarf, asteroid, icy body or comet)
+  that takes in another small world keeps its class: a moon hit by a comet is
+  still a moon.
 - **`storedKind`** reads a class from a snapshot or a saved state. A state
   from before 2.9 (rocky or ocean worlds) is classed again: a moon as a moon,
   and anything else by mass.
@@ -732,7 +735,9 @@ give Jupiter and Earth in those units, from the IAU mass ratios.
   Hill sphere. Neighbouring giants sit at least four mutual Hill radii apart
   at closest approach. Its softening is 1 px: at 4 px the giants' moons, a
   few pixels out, felt half their planet's pull, and the star's tides pulled
-  them loose. The comet starts at aphelion, between the outer giants.
+  them loose. The comet starts at aphelion, between the outer giants, and is
+  massless, as Halley's is in the Solar System: at a third of a moon's mass
+  its close passes knocked a moon into its planet in about one run in forty.
 
 ## Guided experiments
 

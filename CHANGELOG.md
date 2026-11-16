@@ -13,7 +13,7 @@
 
 ✒ Changelog:
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      2.14.0 release.
+      2.14.0 release. With the Star system's moon fix.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.13.0 release. With the community documents.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -78,7 +78,9 @@ here in full, newest first.
 
 On Dennis's call: no more accidental highlighting of words and sentences
 across the interface, done as one standard rule rather than one-off fixes,
-and covering short labels too, such as "Collisions · Ideal gas".
+and covering short labels too, such as "Collisions · Ideal gas". And a fix
+for the Star system, whose moons were occasionally lost, found by this
+release's full test run.
 
 ### Selection
 
@@ -105,6 +107,24 @@ and covering short labels too, such as "Collisions · Ideal gas".
 - **Text fields work as before.** A dial's typed value and a Library item's
   name both select a word and take new text.
 
+### Gravity: the Star system's moons hold
+
+- **The failure.** The full test run lost one of the Star system's three
+  moons in its 30 s run. Over 150 runs, about one in forty lost a moon, always
+  into its own planet.
+- **The cause: the comet.** It weighed a third as much as a moon, and its
+  orbit crosses theirs. A close pass knocked a moon onto an eccentric orbit
+  that ended in its planet: one moon's distance swung out to 10.5 px and in
+  to the merge distance.
+- **The fix.** The comet is massless, as Halley's is in the Solar System. It
+  feels every pull and pulls on nothing. Tilted orbits' polar comet is
+  massless too. Over 150 runs after the fix, no moon was lost, and each
+  stayed within a fraction of a pixel of its usual range.
+- **A moon hit by a comet stays a moon.** When a small world (a moon, dwarf
+  planet, asteroid, icy body or comet) takes in another small world, it now
+  keeps its class. Before, the class rules ranked it lowest and "promoted" a
+  moon that took in a comet to a terrestrial planet.
+
 ### Tests
 
 - **`tests/shell.py`, four new checks, each failing without the rule:**
@@ -123,6 +143,11 @@ and covering short labels too, such as "Collisions · Ideal gas".
   and text fields still select.
 - **ARCHITECTURE:** Conventions describes the selection rule.
 - **CONTRIBUTING:** the house style says how to opt content in.
+- **ARCHITECTURE:** the massless comet, and `mergedKind`'s rule for small
+  worlds.
+- **`tests/planets.py`:** `mergers_keep_their_composition` adds a moon that
+  takes in a comet (still a moon) and one that takes in a planet (classed by
+  mass).
 
 ## 2.13.0 (11/16/2026)
 
