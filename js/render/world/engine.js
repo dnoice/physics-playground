@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: World Engine (digiSpace Edition - v2.15)
+    - Title: World Engine (digiSpace Edition - v2.18)
     - File Name: engine.js
     - Relative Path: js/render/world/engine.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — For the
+      climate checks: sceneOf(labId) hands the tests a lab's scene, so they
+      can read what it gives its materials.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A change
       of tier reaches the material shop, and studioOf(labId) hands a scene's
       studio to the tests. Rebuilding the post chain frees its passes' targets
@@ -153,6 +156,8 @@ export function createEngine(tier) {
     ready: id => factories.has(id),
     /* A lab's studio, once its scene is built: for the tests, which read its lights, contact shadows and budgets. */
     studioOf: id => { const s = scenes.get(id); return (s && s.studio) || null; },
+    /* A lab's scene itself, once built: for the tests, which read what a scene hands its materials. */
+    sceneOf: id => scenes.get(id) || null,
     canPortrait(lab) { const s = scenes.get(lab.id); return !!(s && s.portrait); },
     onContext(lost, restored) { onLost = lost; onRestored = restored; },
     setTier(t) {

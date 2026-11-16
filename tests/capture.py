@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.17)
+    - Title: Capture Test (digiSpace Edition - v2.18)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      track header now ends with temperature_K and instellation_earth, after
+      the columns it had.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
       lab's dataset stands alone: tracks with unique ids that hold from first
       sample to last, a scene section, and every column described.
@@ -117,8 +120,9 @@ with sync_playwright() as p:
     e = r["summary0"]
     ok("dataset_summary_column", e["column"] == "total_energy" and e["min"] <= e["mean"] <= e["max"], e["column"])
     ok("dataset_energy_conserved", abs((e["max"] - e["min"]) / e["mean"]) < 1e-4, abs((e["max"] - e["min"]) / e["mean"]))
-    # Gravity's files carry their own context: physical time in both, and who each tracked body is and what it orbits.
-    ok("dataset_gravity_context_columns", columns[-1] == "t_years" and r["trackHeader"].endswith("t_years,name,kind,orbits_id"), (columns[-1], r["trackHeader"]))
+    # Gravity's files carry their own context: physical time in both, who each tracked body is and what it orbits, and
+    # since 2.18 its temperature and the starlight it receives.
+    ok("dataset_gravity_context_columns", columns[-1] == "t_years" and r["trackHeader"].endswith("t_years,name,kind,orbits_id,temperature_K,instellation_earth"), (columns[-1], r["trackHeader"]))
     # Every column of every lab is in its dictionary, so no README ever says "not described".
     gaps = pg.evaluate("""Object.values(PhysicsPlayground.labs).flatMap(L => [...(L.dataColumns || []), ...(L.trackColumns || [])]
       .filter(c => !(L.dataInfo && L.dataInfo[c] && L.dataInfo[c][0] && L.dataInfo[c][1])).map(c => `${L.id}.${c}`))""")

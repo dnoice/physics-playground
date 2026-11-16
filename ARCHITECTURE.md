@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.17)
+    - Title: Architecture Guide (digiSpace Edition - v2.18)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      climate: climate.js and each world's b.clim, when it updates, starlight,
+      air, temperature, ice, spin and classes, the look in 2D and 3D, what
+      rewind, saved states and tracks keep, and the Solar System's real airs;
+      engine.sceneOf for the tests.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       dataContext() returns facts and tables, rendered in the README and kept
       in the data package.
@@ -158,7 +163,7 @@ flowchart TB
 | Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems |
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
-| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the experiments curriculum, the registry |
+| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the planets' climate (`climate.js`), the experiments curriculum, the registry |
 | Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
@@ -337,7 +342,8 @@ Every apparatus can be walked all the way round, so backs are finished:
 A shader that draws what lies past an apparatus, as the Fluid tank's water
 does, shows the room there (`room()`), never the softboxes. They light the
 studio but stand nowhere in it. `engine.studioOf(labId)` hands a scene's
-studio to the tests.
+studio to the tests, and `engine.sceneOf(labId)` the scene itself, so a
+test can read what the scene hands its materials.
 
 A scene can reuse the lab's own 2D drawing instead of rebuilding it in
 three.js. The Chaos phase view paints `drawPhase` onto a screen whose face
@@ -824,6 +830,69 @@ give Jupiter and Earth in those units, from the IAU mass ratios.
   them loose. The comet starts at aphelion, between the outer giants, and is
   massless, as Halley's is in the Solar System: at a third of a moon's mass
   its close passes knocked a moon into its planet in about one run in forty.
+
+## Gravity's climate
+
+`js/labs/climate.js` holds the physics as plain functions and tables;
+`js/labs/gravity.js` keeps each world's climate (`b.clim`) up to date, and
+the 2D view and the 3D scene only read it.
+
+- **When.** `after()` calls `climate(simDt)`, which runs `climateAll` every
+  frame, every second frame past 40 bodies and every fourth past 120, with
+  all the simulated time since. `build`, `restore` and `deserialize` snap
+  every world to its target; `climateOf(b)` works out a world seen for the
+  first time (just thrown, dropped or merged into being). Once a body has its
+  climate, an update allocates nothing.
+- **Starlight.** `climStars` and `climLum` list the stars and their
+  luminosities (`luminosity(M)`, the piecewise main-sequence relation). A
+  world's `S` sums L/d² in AU over every star, so binaries and added or
+  deleted stars just work. `Sbar` follows `S` over about a year (`AU_YR`).
+- **Air** (`AIRS`): a giant's or brown dwarf's `envelope`; a real world's
+  own (`meta.air`); else, from `atmosphere(vesc, Sbar, planet)`, `none` past
+  the cosmic shoreline (25 times Earth's starlight at Earth's escape speed,
+  scaling as v_esc⁴), `thin` within four times it, `thick` for a rocky
+  planet past the runaway limit (1.06), else `air`. Each kind carries its
+  greenhouse depth τ, its rocky Bond albedo, its ε for spinning and locked
+  worlds, its freezing point, its latitude gradient and its lag.
+- **Temperature.** `Teq` = 278.6 K × S^¼ × (1 − A)^¼, with A from
+  `meta.albedo`, `KIND_ALBEDO` or the air. The target is
+  ((T_eq⁴ + T_int⁴)(1 + ¾τ))^¼, with `internalTemp` for giants (Jupiter about
+  100 K) and brown dwarfs; `T` relaxes toward it with the air's lag, from a
+  week to half a year. Day and night: T⁴ ∝ ε + 4(1 − ε)μ by day and ε by
+  night, so `Tss`, `Tday` and `Tn` conserve the absorbed light.
+- **Ice.** `iceLine(T, freeze, k)` is where a one-dimensional energy-balance
+  profile, T (1 − 0.482 k P₂(x))^¼, crosses freezing: the sine of a latitude,
+  1.3 for no ice, 0 for a snowball. A world locked to its star has no ice
+  line; its ice lies wherever its local temperature is below freezing.
+- **Spin.** The tidal partner is a moon's planet, else the star whose tides
+  (m/d³) are strongest. `lockYears` is Gladman et al. (1996) in its
+  simplified form on `abar`, the orbit's semi-major axis over about a year,
+  so a world moved inward locks as it settles: under 460 million years it is
+  `locked` (or `resonant`, 3:2, on an orbit with e ≥ 0.1), under 4.6 billion
+  `slowed`, else `free`.
+- **Class.** `classify` reads the temperatures and air: `molten` (day side
+  above 1000 K), `hothouse`, `hot`, `bare`, `frigid`, `dry`, `eyeball`,
+  `temperate`, `cold` and `frozen` for rocky and small worlds; for giants,
+  after Sudarsky et al. (2000), `hotGiant`, `warmGiant`, `waterGiant`,
+  `coldGiant` or `iceGiant`, and `brown`. `CLIMATES` names each for Inspect.
+- **Look.** `b.clim` carries what drawing needs: `type` (a rocky planet with
+  liquid water renders as an ocean world, one that lost it as rock), `haze`
+  (a runaway greenhouse), `rim`, and `rgb` and `css` for the flat view,
+  rebuilt only when the colour changes. In 2D, `draw` shades the climate's
+  colour and `drawHeat` adds a night side's glow past the Draper point and
+  a molten day side's lava. In 3D, `climateInto` fills two instanced
+  attributes, `aK` (T, ε, ice line, locked to its star) and `aH` (freezing
+  point, haze, rim, and the turn that keeps a locked world's +x toward what
+  it is locked to, about its orbit's pole). The planet shader computes the
+  local temperature from them and blends frost, ice caps, lava, haze, the
+  giants' cloud decks and thermal glow into the existing looks.
+- **Records.** Rewind snapshots and saved states carry each world's `T`,
+  `Sbar` and `abar` (`warmth`), so a world part-way to its target carries
+  on; per-body tracks carry `temperature_K` and `instellation_earth`.
+- **The Solar System.** `CLIMATE` in `solarsystem.js` gives the real Bond
+  albedos and the airs size alone would not (Venus thick, Earth's air,
+  Mars thin, the Galilean moons bare, Titan's air). Inspect's rows are
+  `climRows(b)`.
 
 ## Guided experiments
 
