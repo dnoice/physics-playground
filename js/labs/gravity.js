@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.14)
+    - Title: Gravity Lab (digiSpace Edition - v2.15)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.14.0
+    - Version: 2.15.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's report of Pluto's orbit hula-hooping: a planet's orbit is its
+      whole system's (system(), relative()), the planet and its moons
+      together, in the drawn orbits, Inspect, the orbit tilts and the live
+      Math, and the line is carried with the planet so it still passes through
+      it.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
       system's and Tilted orbits' comets are massless, as Halley's is: at a
       third of a moon's mass, the Star system's comet knocked a moon into its
@@ -27,14 +33,6 @@
       it a moon; throwText reads the throw out beside the arrow. throwFrom
       starts a throw begun on a body just outside it, so the new body launches
       from the surface instead of merging into it at once.
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call for variety: the Star system shows every class (a grey
-      rock, a rust super-Earth, an ocean world at 1 AU, a lavender
-      sub-Neptune, a banded giant, a ringed pale giant, a blue ice giant), a
-      moon on each giant, softening of 1 px so the moons keep their planets,
-      and a comet that is a comet; Tilted orbits' comet too. Each class has a
-      few hues a world picks by its id; sub-Neptunes and ice giants are calm
-      (surface 3); ringed() gives rings in 2D and 3D alike.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

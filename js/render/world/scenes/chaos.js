@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Chaos Scene (digiSpace Edition - v2.4)
+    - Title: Chaos Scene (digiSpace Edition - v2.15)
     - File Name: chaos.js
     - Relative Path: js/render/world/scenes/chaos.js
     - Artifact Type: javascript
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      maker's plaque comes from the material shop, shared with the other labs,
+      and the phase screen's texture is filtered at the tier's anisotropy.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Follows the
       lab's three views: the dial alone, the dial beside the screen, or the
       screen beside the torus, which now stands on its own turned column with
@@ -23,8 +26,6 @@
       over the map's world rectangle, so clicks and the hover preview land as
       in 2D. The torus rests on the frame, with its paths turning slowly. The
       stand is shared by dial and screen.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for the 3D mode: the double pendulums as a brass and slate instrument.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -118,12 +119,7 @@ export function createScene(E, lab) {
   }
   const housing = shadow(new THREE.Mesh(turned([[0.2, 0], [0.19, 0.03], [0.12, 0.05], [0.11, 0.12], [0.07, 0.15], [0.03, 0.17], [0, 0.175]], 48), M.brass()));
   housing.rotation.x = -Math.PI / 2; rear.add(housing);
-  const plateCanvas2 = document.createElement('canvas'); plateCanvas2.width = 512; plateCanvas2.height = 160;
-  const pg = plateCanvas2.getContext('2d');
-  pg.fillStyle = '#7a5a2a'; pg.fillRect(0, 0, 512, 160); pg.strokeStyle = 'rgba(40,26,8,0.8)'; pg.lineWidth = 5; pg.strokeRect(12, 12, 488, 136);
-  pg.fillStyle = 'rgba(30,18,4,0.92)'; pg.textAlign = 'center'; pg.font = '600 46px "Raleway", sans-serif'; pg.fillText('Double Pendulum', 256, 82); pg.font = '500 24px "JetBrains Mono", monospace'; pg.fillText('DETERMINISTIC · UNPREDICTABLE', 256, 124);
-  const plateTex2 = canvasTexture(plateCanvas2, { renderer: E.renderer, srgb: true });
-  const maker = shadow(new THREE.Mesh(roundedBox(0.44, 0.14, 0.012, 0.005, 2), new THREE.MeshStandardMaterial({ map: plateTex2, emissive: 0xffffff, emissiveMap: plateTex2, emissiveIntensity: 0.55, metalness: 0.5, roughness: 0.42 })));
+  const maker = shadow(new THREE.Mesh(roundedBox(0.44, 0.14, 0.012, 0.005, 2), M.plaque('Double Pendulum', 'DETERMINISTIC · UNPREDICTABLE')));
   maker.rotation.y = Math.PI; maker.position.set(0, -0.46, -0.03); rear.add(maker);
   // Cradle: an arc under the dial, on a walnut base with brass feet.
   const cradle = shadow(new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.038, 24, 90, Math.PI * 0.62), M.gunmetal()));
@@ -165,7 +161,7 @@ export function createScene(E, lab) {
   /* The phase screen: the lab's own map painted onto a face that lies exactly over the map's world rectangle (axes
      included), so a click or hover on it lands on the same angles as in 2D. Brass frame, dark back, its own stand. */
   const plateCanvas = document.createElement('canvas'); plateCanvas.width = plateCanvas.height = PLATE_PX;
-  const plateTex = new THREE.CanvasTexture(plateCanvas); plateTex.colorSpace = THREE.SRGBColorSpace; plateTex.anisotropy = 4;
+  const plateTex = canvasTexture(plateCanvas, { srgb: true }); plateTex.wrapS = plateTex.wrapT = THREE.ClampToEdgeWrapping;
   const phaseFrame = shadow(new THREE.Mesh(roundedBox(1, 1, 0.05, 0.02, 4), M.brass()));
   const phaseBack = shadow(new THREE.Mesh(roundedBox(1, 1, 0.06, 0.016, 3), M.gunmetal()));
   const phaseFace = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: plateTex, toneMapped: false }));
@@ -317,7 +313,7 @@ export function createScene(E, lab) {
     dispose() {
       studio.dispose(); trails.dispose(); tube.dispose(); armGeo.dispose(); bobGeo.dispose(); plateTex.dispose(); lightMat.dispose();
       postGeo.dispose(); footGeo.dispose(); plinthGeo.dispose(); plateGeo.dispose(); rimGeo.dispose(); glassGeo.dispose(); puckGeo.dispose();
-      face.map.dispose(); face.lines.dispose(); dialMat.dispose(); plateTex2.dispose(); ribGeo.dispose(); screwGeo.dispose(); glassMat.dispose();
+      face.map.dispose(); face.lines.dispose(); dialMat.dispose(); ribGeo.dispose(); screwGeo.dispose(); glassMat.dispose();
     },
   };
 }

@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: View Mode and Graphics Tiers (digiSpace Edition - v2.1)
+    - Title: View Mode and Graphics Tiers (digiSpace Edition - v2.15)
     - File Name: mode.js
     - Relative Path: js/shell/mode.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The engine
+      gets the tier's budget capped at what the GPU reports (MSAA samples,
+      anisotropy, texture size), and the Graphics sheet reads the whole
+      machine: threads, the CPU's measured speed, memory, the suggestion and
+      the part that set it.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created:
       one global 2D or 3D mode and a graphics tier ladder, on Dennis's call
       for two modes and a tier system.
@@ -57,6 +62,10 @@ export const world = {
   engine: null, loading: null, fail: null, lost: false, broken: new Set(),
 };
 const tierNow = () => tierById(world.pick) || tierById(world.autoTier) || tierById(world.device.suggest) || TIERS[TIERS.length - 1];
+/* The tier as the engine spends it: never more antialiasing samples or texture filtering than this GPU offers, and
+   never a texture larger than it takes. */
+const budget = () => { const t = tierNow(), d = world.device;
+  return { ...t, msaa: Math.min(t.msaa, d.maxSamples || 0), aniso: Math.max(1, Math.min(t.aniso, d.maxAniso || 1)), tex: d.maxTexture ? Math.min(t.tex, d.maxTexture) : t.tex }; };
 export const in3D = lab => world.mode === '3d' && !!world.engine && !world.lost && !world.broken.has(lab.id) && world.engine.ready(lab.id);
 
 /* ---------- engine ---------- */
@@ -70,7 +79,7 @@ export function ensureEngine() {
   if (world.engine || world.loading || world.fail) return;
   if (!world.device.webgl2) { failWorld('This browser did not provide WebGL 2, so the playground stays in 2D.'); return; }
   world.loading = import('../render/world/engine.js').then(m => {
-    world.engine = m.createEngine(tierNow());
+    world.engine = m.createEngine(budget());
     world.engine.onContext(contextLost, contextRestored);
     world.loading = null;
     if (active) prepareLab(active);
@@ -119,7 +128,7 @@ const auto = { ms: 16, clock: 0, frames: 0, fast: 0, from: null, before: 0, ceil
 function resetAuto() { Object.assign(auto, { clock: 0, frames: 0, fast: 0, from: null, before: 0, settled: false }); }
 function setAutoTier(id, why) {
   world.autoTier = id;
-  if (world.engine) world.engine.setTier(tierNow());
+  if (world.engine) world.engine.setTier(budget());
   renderGfx();
   announce(why);
   if (active) sticky({ id: 'gfx-auto', level: 'info', title: `Graphics tier is now ${tierById(id).label}`, body: `${why} Pick a fixed tier in the Graphics menu to stop this.` }, 8);
@@ -174,7 +183,7 @@ export function pickTier(id) {
   world.pick = id; store.set('tier', id);
   world.autoTier = null; auto.ceil = null;
   resetAuto();
-  if (world.engine) world.engine.setTier(tierNow());
+  if (world.engine) world.engine.setTier(budget());
   renderGfx();
   announce(`Graphics: ${gfxLabel()}`);
 }
@@ -198,7 +207,8 @@ function renderGfx() {
   for (const b of document.querySelectorAll('#gfx-list [role="radio"]')) { const on = b.dataset.tier === world.pick; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }
   const t = tierNow(), d = world.device, sum = [`${t.label}: resolution up to ${t.scale}×`, t.msaa ? `${t.msaa}× antialiasing` : 'no antialiasing', t.shadow ? `${t.shadow} shadows` : 'no shadows', t.reflect ? 'floor reflections' : 'no reflections'];
   $('#gfx-now').textContent = `${sum.join(', ')}.`;
-  $('#gfx-device').textContent = `${d.name} · ${d.cores} threads · suggests ${tierById(d.suggest).label}`;
+  const v = d.verdict, mem = d.memory == null ? 'memory not reported' : `${d.memory} GB memory`;
+  $('#gfx-device').textContent = `${d.name} · ${d.cores} threads at ${d.cpu.toFixed(1)}× a laptop core · ${mem} · suggests ${tierById(d.suggest).label}${v && v.by ? `, set by the ${v.by}` : ''}`;
 }
 const gfxOpen = () => !$('#gfx-sheet').hidden;
 export function setGfx(open) {

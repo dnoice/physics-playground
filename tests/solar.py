@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Solar System Tests (digiSpace Edition - v2.10)
+    - Title: Solar System Tests (digiSpace Edition - v2.15)
     - File Name: solar.py
     - Relative Path: tests/solar.py
     - Artifact Type: test
-    - Version: 2.10.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Pluto's
+      orbit holds through a turn of Charon: size to 1e-5 and shape to 2e-5
+      where Pluto alone swings by 1.6 %, one Inspect size throughout, and the
+      line through Pluto.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits
       stay smooth with the 3D camera inside them and in 2D; the zoom's limits,
       pace toward the cursor, reach to all of Sedna's orbit and short-form

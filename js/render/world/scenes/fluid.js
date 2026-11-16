@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Fluid Scene (digiSpace Edition - v2.1)
+    - Title: Fluid Scene (digiSpace Edition - v2.15)
     - File Name: fluid.js
     - Relative Path: js/render/world/scenes/fluid.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — With the
+      camera free to go round: a finished back of stove enamel, steel
+      stiffeners and a maker's plaque; rays leaving the tank see the room, not
+      the softboxes, so the tank no longer glows end-on; and the glass's
+      reflection is held down toward grazing, keeping the home view's glints.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: the particle fluid as a thick bead of water standing
       between the plates of a glass aquarium.
@@ -99,6 +104,10 @@ const RESOLVE_FRAG = `
    water and glass reflect like mirrors. */
 const STUDIO = `
   float rect(vec2 q, vec2 h, float e){ vec2 d = abs(q) - h; return (1.0 - smoothstep(-e, e, d.x)) * (1.0 - smoothstep(-e, e, d.y)); }
+  /* The room itself, as seen straight through the glass: the dark backdrop, never the softboxes, which light the
+     studio but stand nowhere in it, so a tank seen end on no longer shows a blazing panel the room around it lacks. */
+  vec3 room(vec3 d){ return mix(vec3(0.006, 0.008, 0.012), vec3(0.016, 0.022, 0.032), smoothstep(-0.3, 0.8, d.y)); }
+  /* What the softboxes add in a reflection, as the shared environment light holds them. */
   vec3 studio(vec3 d){
     vec3 c = mix(vec3(0.008, 0.011, 0.016), vec3(0.03, 0.037, 0.05), smoothstep(-0.3, 0.8, d.y));
     if (d.y > 0.02) { vec2 q = d.xz / d.y; c += vec3(1.0, 0.95, 0.88) * 4.6 * rect(q - vec2(0.0, 0.25), vec2(1.25, 0.72), 0.05); }
@@ -127,7 +136,7 @@ const PANEL = `
     float tx = (sign(d.x) * uBox.x - o.x) / (abs(d.x) < 1e-4 ? 1e-4 : d.x);
     if (tz < min(tx, ty)) { vec3 p = o + d * tz; return panelAt(p.xy / (2.0 * uBox.xy) + 0.5); }
     if (ty < tx) return floorAt(o + d * ty);
-    return studio(d) * 0.7;
+    return room(d);
   }`;
 
 const POST_HIT = `
@@ -287,7 +296,10 @@ const GLASS_FRAG = `
     float nv = clamp(dot(N, V), 0.0, 1.0), F = min(0.075 + 0.925 * pow(1.0 - nv, 5.0), uGraze);
     // Panes seen from inside the tank mirror the panel; from outside, the softboxes.
     bool within = abs(p.x) < uBox.x + 0.2 && abs(p.y) < uBox.y + 0.2 && abs(p.z) < uBox.z + 0.2 && dot(N, p) < 0.0;
-    vec3 c = min((within && R.z < 0.0 ? behind(p, R) : studio(R)) * F, vec3(0.9));
+    // Seen face on, as from the home view, a pane keeps its full glints. Toward grazing the reflection is held down, so
+    // with the camera free to go round, a pane seen nearly edge on never turns into a sheet of softbox light that
+    // hides the water.
+    vec3 c = min((within && R.z < 0.0 ? behind(p, R) : studio(R)) * F, vec3(mix(0.9, 0.3, smoothstep(0.1, 0.3, F))));
     float a = clamp(0.012 + F * 0.8, 0.0, 1.0);
     gl_FragColor = vec4(c + vec3(0.07, 0.17, 0.16) * pow(1.0 - nv, 4.0) * 0.2, a);
     #include <tonemapping_fragment>
@@ -437,7 +449,11 @@ export function createScene(E, lab) {
     batches.length = 0;
     const W = 2 * hw, H = 2 * hh, B = Y0 - hh, D = DEPTH, zF = D / 2 + PANE / 2, zB = -D / 2 - 0.06;
     add(new THREE.PlaneGeometry(W, H), panelMat, 0, Y0, -D / 2, false);
-    add(roundedBox(W + 2 * RAIL, H + 2 * RAIL, 0.08, 0.02, 2), M.gunmetal(), 0, Y0, zB - 0.02);
+    add(roundedBox(W + 2 * RAIL, H + 2 * RAIL, 0.08, 0.02, 2), M.enamel(), 0, Y0, zB - 0.02);
+    // The back, seen once the camera goes round: two steel stiffeners across the enamel, and the maker's plaque.
+    for (const f of [1 / 3, 2 / 3]) add(roundedBox(W - 0.3, 0.09, 0.05, 0.018, 3), frameSteel, 0, B + H * f, zB - 0.085);
+    const plaque = add(roundedBox(1.32, 0.42, 0.016, 0.008, 2), M.plaque('Water Flume', 'SPH · DOUBLE-DENSITY RELAXATION'), 0, B + H / 2, zB - 0.07, false);
+    plaque.rotation.y = Math.PI;
     const inner = add(new THREE.PlaneGeometry(W, D), floorMat, 0, B + 0.004, 0, false); inner.rotation.x = -Math.PI / 2;
     // Frame: a machined front and rear ring, joined by rails along the depth.
     add(ringFrame(W, H, RAIL, 0.14, 0.02, 0.055), frameSteel, 0, Y0, zF);
@@ -497,7 +513,7 @@ export function createScene(E, lab) {
   const keep = new THREE.Color();
   return {
     scene, studio, exposure: 1, bloom: { strength: 0.12, radius: 0.45, threshold: 1 },
-    onTier(t) { tier = t; shared.uDirect.value = t.bloom || t.grade || t.msaa ? 0 : 1; shared.uGraze.value = t.msaa ? 1 : 0.22; if (seal) seal.visible = t.msaa > 0; frameSteel.roughness = t.msaa ? steelGloss : 0.8; },
+    onTier(t) { tier = t; shared.uDirect.value = t.bloom || t.grade || t.msaa ? 0 : 1; shared.uGraze.value = t.msaa ? 0.34 : 0.22; if (seal) seal.visible = t.msaa > 0; frameSteel.roughness = t.msaa ? steelGloss : 0.8; },
     sync(l, view) {
       layout();
       const n = Math.min(lab.n, FL_CAP), X = lab.x, Y = lab.y, VX = lab.vx, VY = lab.vy, R = lab.rho, D = packed, sp = lab.U / lab.TICK / 520, r0 = lab.rho0;

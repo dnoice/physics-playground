@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.7)
+    - Title: Fluid Lab (digiSpace Edition - v2.15)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The camera
+      orbits all the way round the tank, as in every other lab: its back is
+      now finished.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: particles, mean and peak density and top speed on its tape, and
       the selected post as its target, on the tank's mid-plane in 3D.
@@ -23,12 +26,6 @@
       against ρ₀ and passed only on a wide tolerance; the pressure check says
       when nothing is squeezed or the liquid foams instead of giving a
       negative excess, and both checks wait for liquid in an empty tank.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      densities plotted around rest, k and k-near as dials with the pressure
-      they give, viscosity, and the share of particles at the speed cap;
-      Inspect follows a post's contact. A New posts section: the radius of new
-      posts, and Random posts for a random size each time, previewed by the
-      ring under the pointer.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -84,7 +81,7 @@ export function latticeDensity(s) {
 }
 export const fluid = {
   id: 'fluid', name: 'Fluid', title: 'Particle fluid',
-  rig3: { plane: 'wall', yaw: 0.5, pitch: 0.15, fit: 1.88, height: 0.7, depth: 1.5, yawMax: 1.05, pitchMin: -0.08, pitchMax: 0.95, target: [0, -0.42, 0] },
+  rig3: { plane: 'wall', yaw: 0.5, pitch: 0.15, fit: 1.88, height: 0.7, depth: 1.5, pitchMin: -0.08, pitchMax: 0.95, target: [0, -0.42, 0] },
   eq: 'P = k(ρ − ρ<sub>0</sub>)',
   eqTex: 'P = k\\,(\\rho - \\rho_0)',
   aria: 'Fluid simulation: particles behaving as a liquid in a tank',

@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: World Engine (digiSpace Edition - v2.1)
+    - Title: World Engine (digiSpace Edition - v2.15)
     - File Name: engine.js
     - Relative Path: js/render/world/engine.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.15.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A change
+      of tier reaches the material shop, and studioOf(labId) hands a scene's
+      studio to the tests.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: one renderer and post stack shared by every lab.
     Earlier entries: see CHANGELOG.md
@@ -75,7 +78,7 @@ export function createEngine(tier) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 
-  const E = { renderer, tier, mats: createMaterials(renderer), canvas: renderer.domElement, lost: false, time: 0 };
+  const E = { renderer, tier, mats: createMaterials(renderer, tier), canvas: renderer.domElement, lost: false, time: 0 };
   const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 500), portraitCam = new THREE.PerspectiveCamera(22, 1, 0.05, 500);
   const factories = new Map(), scenes = new Map();
   let composer = null, bloom = null, grade = null, render0 = null, size = { w: 0, h: 0, dpr: 0, pr: 0 };
@@ -145,10 +148,12 @@ export function createEngine(tier) {
       return Promise.all([load(), faces]).then(([m]) => { factories.set(id, m.createScene); return true; });
     },
     ready: id => factories.has(id),
+    /* A lab's studio, once its scene is built: for the tests, which read its lights, contact shadows and budgets. */
+    studioOf: id => { const s = scenes.get(id); return (s && s.studio) || null; },
     canPortrait(lab) { const s = scenes.get(lab.id); return !!(s && s.portrait); },
     onContext(lost, restored) { onLost = lost; onRestored = restored; },
     setTier(t) {
-      E.tier = t;
+      E.tier = t; E.mats.setTier(t);
       const w = size.w, h = size.h;
       size.w = 0;
       if (w) resize(w, h, size.dpr);

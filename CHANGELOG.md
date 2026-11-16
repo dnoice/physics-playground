@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.14)
+    - Title: Changelog (digiSpace Edition - v2.15)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.14.0
+    - Version: 2.15.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.15.0: the world pass, the whole-machine graphics tiers and Pluto's
+      orbit.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.14.0 release. With the Star system's moon fix.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -71,6 +74,109 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.15.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's call to go over every simulation's world: the room around
+each apparatus, its textures, lighting and realism, a camera that goes all
+the way round, and the finish of every apparatus. Also on his call: a
+graphics tier system that weighs the whole machine, the CPU and memory as
+well as the GPU. And a fix for the Pluto orbit line he caught hula-hooping.
+
+### Gravity: Pluto's orbit holds still
+
+- **The bug.** Charon swings Pluto round their barycentre at about 24 m/s,
+  against Pluto's 4.7 km/s round the Sun. An orbit taken from Pluto's own
+  motion swung with it, 1.6 % in size every 6.4 days. At the Solar System's
+  pace that was a tight, fast hula-hoop while every other orbit held still.
+- **The fix.** A planet's orbit is now its whole system's, the planet and
+  its moons together, as the published elements are. The drawn line is
+  carried with the planet's own small swing, so it still passes through
+  the planet. This holds for:
+  - the drawn orbits, in 2D and 3D;
+  - Inspect's orbit size, period, shape, tilt and status;
+  - the orbit tilts readout;
+  - the live Math.
+- **It reaches the Star system too.** Its planets that keep moons hold
+  still the same way.
+- **The check.** It steps a turn of Charon. The orbit's size holds to 1e-5
+  and its shape to 2e-5, where Pluto alone swings by 1.6 %. Inspect reads
+  39.4 AU throughout, and the line passes through Pluto.
+
+### The studio, round every apparatus
+
+- **The camera goes all the way round.** Fluid was held within 60° of its
+  front. It now orbits freely, like every other lab.
+- **Every apparatus is finished at the back.**
+  - The Fluid tank's back is stove enamel with two steel stiffeners and a
+    maker's plaque, "Water Flume".
+  - The ripple tank's screen has the same: enamel, stiffeners and a
+    "Ripple Tank" plaque.
+  - Bare gunmetal had read as a featureless black slab from behind,
+    because metal mirrors only the dark room behind the camera.
+- **The Fluid tank seen end-on.** A ray leaving the tank showed the
+  softboxes, which light the studio but stand nowhere in it, so the tank
+  glowed with a panel the room around it lacked. It now shows the room. At
+  a grazing angle the glass mirrored a sheet of softbox light over the
+  water. Its reflection is now held down toward grazing, while the home
+  view keeps its full glints.
+- **The backdrop's glow follows the camera.** It stays behind the
+  apparatus from any side, so a silhouette always has something to stand
+  against.
+- **A fill light follows the camera.** It is soft and shadowless, so the
+  side facing you is modelled, the back as much as the front. It is
+  light-linked away from the floor, so the key's shadows stay under the
+  apparatus. A warm bounce lights the undersides.
+- **The floor.**
+  - It is polished concrete, with quiet clouding and a fine sand of
+    aggregate.
+  - The key's hard point glint on it, which bloomed into a white blob from
+    many angles, is kept faint. A softbox reflects as broad shapes.
+- **Contact shadows.** A soft pool grounds every apparatus on its floor, on
+  every tier, so even Lite, which has no shadows, stands on it.
+- **Haze.** A faint beam crosses the studio air from the key, on High and
+  Ultra.
+- **Gravity's worlds seen against their star.** A thin ring of light now
+  shows round the night side, scattered forward through the air, as
+  Earth's does seen from the Moon in an eclipse. Planets between you and
+  the star read as spheres, not holes. Night sides are a touch less black.
+
+### Graphics tiers that weigh the whole machine
+
+- **The suggested tier is the cheapest of four verdicts:**
+  - the GPU, by name;
+  - the CPU, by its threads and a 16 ms speed test;
+  - the memory the browser reports;
+  - the largest texture the GPU takes.
+- **The Graphics menu reads the machine.** It shows the threads, the CPU's
+  measured speed, the memory, the suggestion and the part that set it.
+- **Each tier is a fuller budget:**
+  - texture size, from 256 on Lite to 2048 on Ultra;
+  - texture filtering, from 1× to 16×;
+  - the environment light's resolution;
+  - the shadow's penumbra;
+  - whether the fill, the haze and the contact shadows are on.
+- **No tier asks more than the GPU offers.** MSAA samples, anisotropy and
+  texture size are capped at what the GPU reports.
+- **Large textures never stall a lab.** Ultra's 2048 textures are painted
+  in idle moments after a first copy at 1024. A change of tier repaints
+  them the same way.
+- **Shadows are equally soft on every tier.** A larger map only sharpens
+  their edge. Before, Ultra's shadows were harder than High's.
+
+### Checks
+
+- `tests/solar.py`: Pluto's orbit holds through a turn of Charon.
+- `tests/world.py`:
+  - Fluid seen from behind, and the backdrop's glow behind it;
+  - each tier's budgets reaching the studio and the texture shop;
+  - Ultra's finer environment;
+  - the GPU, CPU, memory and texture-limit verdicts, and the suggestion
+    as the cheapest of them;
+  - the speed test;
+  - the Graphics menu reading the whole machine.
 
 ## 2.14.0 (11/16/2026)
 
