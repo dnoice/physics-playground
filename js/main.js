@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Boot Sequence (digiSpace Edition - v2.16)
+    - Title: Boot Sequence (digiSpace Edition - v2.18)
     - File Name: main.js
     - Relative Path: js/main.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,13 +12,14 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: settings.init joins the boot
+      order after the head-up display.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fills the
       ENGINE tag beside the name from js/core/version.js, with its link to the
       changelog.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Boot wires
       the head-up display's menu and remembered settings.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts the
-      deck workspace and the Units menu.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -70,6 +71,7 @@ import { init as initDeck } from './shell/deck.js';
 import { init as initUnits } from './shell/unitmenu.js';
 import { init as initMode } from './shell/mode.js';
 import { init as initHud } from './shell/headsup.js';
+import { init as initSettings } from './shell/settings.js';
 import { selectLab } from './shell/workspace.js';
 
 /* ---------- boot ---------- */
@@ -98,7 +100,7 @@ export const hot = window.claude && window.claude.hot;
 
 /* Boot: wire every shell module, then start the selected lab. */
 function boot() {
-  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initUnits(); initHud(); initAutomation();
+  initLayout(); initDiagnostics(); initTransport(); initStage(); initNavigator(); initLoop(); initCapture(); initWorkspace(); initMode(); initInstruments(); initDeck(); initDetails(); initUnits(); initHud(); initSettings(); initAutomation();
   if (hot && typeof hot.snapshot === 'function') {
     hot.snapshot(() => ({
       lab: active && active.id, running: state.running, speed: state.speed,

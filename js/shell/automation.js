@@ -15,7 +15,9 @@
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: PhysicsPlayground.story
       lists the Story's moments, its unread count and its view, and ticks the
-      narrator after advance() for tests.
+      narrator after advance() for tests. On Dennis's call for one settings
+      dialog: settings opens, closes and reads the dialog, and gfx reads and
+      sets the graphics settings of one's own and the budget the engine gets.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       PhysicsPlayground.hud reads and sets the head-up display (on, opacity,
       parts) for tests.
@@ -33,6 +35,8 @@
     - view.get/zoomBy/toWorld expose the camera.
     - capture exposes the vault and recorders.
     - story lists the Insights pane's Story and ticks the narrator.
+    - settings opens and reads the Settings dialog; gfx reads and sets the
+      graphics settings of one's own and the budget the engine gets.
 
 ✒ Usage Instructions:
     In the browser console: PhysicsPlayground.select('fields');
@@ -62,6 +66,8 @@ import { vault } from './vault.js';
 import { selectLab } from './workspace.js';
 import { configureHud, hudState } from './headsup.js';
 import { showView, storyOf, storyUnread, tickStory } from './story.js';
+import { gfxBudget, resetOverride, resetOverrides, setOverride } from './mode.js';
+import { closeSettings, openSettings, settingsOpen, settingsSection } from './settings.js';
 
 /* ---------- automation surface ---------- */
 
@@ -78,6 +84,9 @@ export function init() {
     viewMode: id => selectView(id),
     units: { get: () => unitSystem(), set: id => setUnitSystem(id) },
     hud: { get: () => hudState(), set: o => configureHud(o || {}) },
+    settings: { open: id => openSettings(id), close: () => closeSettings(), isOpen: () => settingsOpen(), section: () => settingsSection() },
+    // The person's own graphics settings over the tier: what is set, the budget the engine gets, and the resets.
+    gfx: { own: () => ({ ...world.over }), budget: () => gfxBudget(), set: (key, value) => setOverride(key, value), reset: key => (key ? resetOverride(key) : resetOverrides()) },
     diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
     // The Story: its moments as data, the unread count, the view, and one look by the narrator now (after advance()).
     story: { list: () => storyOf(active), unread: () => storyUnread(active), view: id => showView(id), tick: () => tickStory(active) },

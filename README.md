@@ -18,6 +18,9 @@
       per-body tracks. On Dennis's call for Insights that narrate the run: the
       Story under What you can do and in the Instruments, the narrator in the
       labs' summary, and The story of a run, what each lab's narrator tells.
+      On Dennis's call for one settings dialog: Settings and its openers under
+      Using the workspace, Shift+S in the keyboard table, and graphics
+      settings of one's own under Graphics tiers.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0: what each lab tracks and what its README records of the scene.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -534,8 +537,8 @@ its night side, scattered forward through its air.
 
 ### Graphics tiers
 
-The **Graphics** button beside the switch sets how much the 3D mode asks of
-your machine.
+The **Graphics** button beside the switch opens Settings at its Graphics
+section, which sets how much the 3D mode asks of your machine.
 
 | Tier | Resolution | Antialiasing | Shadows | Reflections | Textures | Studio light | Meant for |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -557,11 +560,26 @@ cheapest of four verdicts on
 - the memory the browser reports;
 - the largest texture the GPU takes.
 
-The Graphics menu names the part that set it. Auto then adjusts to the frame
-rate. It steps down when frames run long and back up when there is room. If a step
-down buys nothing, it undoes it and stops adapting, because the limit is then
-the solver or the display rather than the GPU. The Insights pane says when
+The Graphics section shows each verdict and names the part that set it. Auto
+then adjusts to the frame rate. It steps down when frames run long and back up
+when there is room. If a step down buys nothing, it undoes it and stops
+adapting, because the limit is then the solver or the display rather than the
+GPU. The Insights pane says when
 Auto changes tier, and offers a cheaper tier when a fixed one runs slowly.
+
+**Settings of your own.** Under the tiers, any part of the budget can be set
+apart from the tier: resolution, antialiasing, mesh detail, bloom, film
+grade, the shadow map and its softness, fill and bounce light, haze, contact
+shadows, environment light, texture size and filtering, and floor
+reflections.
+
+- Each card shows the tier's own value beside your choice.
+- A setting of your own is marked **Yours** and has its own reset;
+  **Reset to tier** clears them all.
+- Your settings hold whichever tier is in use, Auto's included, and apply at
+  once.
+- They are kept in this browser.
+- Nothing above what your GPU reports is offered.
 
 ## Using the workspace
 
@@ -584,11 +602,18 @@ full-height Inspector beside them.
   lines over the simulation. A tape down the left edge carries the lab's key
   readings, each with its trend and a short trace; caution lights near the
   top carry the warnings; and selecting an object puts a target box on it,
-  following it in 2D and 3D, with a callout of its figures. The **HUD** menu
-  in the top bar sets its opacity (40 %, 60 %, 80 % or 100 %) and turns each
-  part on or off; **Shift+H** shows or hides it. Your choice is remembered.
+  following it in 2D and 3D, with a callout of its figures. The **HUD**
+  button in the top bar opens its section of Settings, which sets its opacity
+  (40 %, 60 %, 80 % or 100 %) and turns each part on or off; **Shift+H**
+  shows or hides it. Your choice is remembered.
   The display never takes a click, and screen readers get the same figures
   from Telemetry, Insights and Inspect.
+- **Settings**: the gear at the right of the top bar, or **Shift+S**, opens
+  one dialog with four sections: Graphics, Units, Head-up display and
+  Keyboard. The Graphics, Units, HUD and keyboard buttons beside it open it
+  at their own section. Tab stays inside it, Esc closes it and puts you back
+  where you were, and on a phone it fills the screen. Everything in it is
+  kept in this browser.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
   data and save buttons.
 - **Instruments**: three panes over one header.
@@ -668,8 +693,9 @@ a capture or a warning, is also announced to screen readers.
 
 ### Units
 
-The **Units** button in the top bar, or **U**, picks what every reading,
-control, inspected figure and scale bar is shown in. The simulations always
+The **Units** button in the top bar, or **U**, opens the Units section of
+Settings, which picks what every reading, control, inspected figure and scale
+bar is shown in. The simulations always
 compute in their own units, so switching never changes a run; typed values
 are read in the units shown.
 
@@ -679,7 +705,7 @@ are read in the units shown.
 | US customary | feet, ft/s, ft/s², ft²/s² | The same scales, in feet and inches (miles per second in Gravity). |
 | Simulation | px, px/s, cells | The labs' own units, exactly as computed. |
 
-The menu states the current lab's scale. Datasets keep the lab's own units
+The section states the current lab's scale. Datasets keep the lab's own units
 and record that scale beside them. Masses, energies and charges in
 Collisions and Fields stay in simulation units, since those labs define them
 for the computation rather than from real materials.
@@ -723,14 +749,16 @@ that matter. The layout reflows to one column below 1180 px.
 | Z | Switch between 2D and 3D |
 | Letters | Pick a tool (shown on each tool button) |
 | V | Next view, in Chaos and Waves |
-| U | Units menu |
+| U | Units, in Settings |
 | + − 0 | Zoom in, zoom out, frame the view |
 | Arrow keys | Pan, or orbit in 3D mode |
 | [ and ] | Halve or double the speed |
 | M and D | Record a video clip, record a dataset |
 | F and Shift+B | Focus the stage, hide the Instruments |
 | Shift+H | Show or hide the head-up display |
-| ? | Keyboard reference |
+| Shift+S | Settings |
+| ? | Keyboard reference, in Settings |
+| Esc | Close a menu or Settings |
 
 ## Capturing runs
 

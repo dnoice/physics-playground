@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Graphics Tiers (digiSpace Edition - v2.15)
+    - Title: Graphics Tiers (digiSpace Edition - v2.18)
     - File Name: tiers.js
     - Relative Path: js/core/tiers.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog with granular graphics: KNOBS
+      lists each part of the budget a person can set apart from the tier, with
+      the values it offers, the GPU limit that caps it and its section.
+      cleanOverrides keeps only known settings and offered values, and layered
+      lays them over a tier, giving a shadow switched on where the tier has
+      none the usual penumbra.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for tiers that weigh the whole machine: the suggestion is
       the cheapest of four verdicts, on the GPU by name, the CPU by threads
@@ -40,6 +47,9 @@
       name the tier their part can carry; suggestTier() takes the cheapest,
       with the part that set it. Software renderers always land on Lite.
     - tierStep() walks up or down the ladder for the automatic mode.
+    - KNOBS names each part of the budget a person can set apart from the
+      tier; cleanOverrides() and layered() check those settings and lay
+      them over a tier.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -85,6 +95,46 @@ export const cheaperOf = (a, b) => (rank(a) >= rank(b) ? a : b);
 export function tierStep(id, dir) {
   const i = TIERS.findIndex(t => t.id === id), next = TIERS[i + dir];
   return i < 0 || !next ? null : next.id;
+}
+
+/* ---------- settings of one's own, laid over a tier ---------- */
+/* Each part of the budget a person can set apart from the tier: the values it offers, how it reads, and its section in
+   the Settings dialog. cap names the GPU limit that bounds it (nothing above the limit is offered, and the engine never
+   gets more), and needs names the setting it means nothing without. */
+const times = v => (v ? `${v}×` : 'Off');
+const SHARE = { 0: 'Off', 0.33: '⅓', 0.5: '½', 0.75: '¾', 1: 'Full' };
+export const KNOBS = [
+  { key: 'scale', group: 'image', label: 'Resolution', options: [0.75, 1, 1.25, 1.5, 2], fmt: v => `${v}×`, note: 'Pixels drawn for each screen point, never more than the display has.' },
+  { key: 'msaa', group: 'image', label: 'Antialiasing', options: [0, 2, 4, 8], fmt: times, cap: 'maxSamples', note: 'Samples for each pixel of the scene, which smooth its edges.' },
+  { key: 'detail', group: 'image', label: 'Mesh detail', options: [0.35, 0.5, 0.65, 0.85, 1], fmt: v => `${Math.round(v * 100)}%`, note: 'How finely each scene builds its meshes, trails and fields.' },
+  { key: 'bloom', group: 'image', label: 'Bloom', bool: true, note: 'The glow round bright light.' },
+  { key: 'grade', group: 'image', label: 'Film grade', bool: true, note: 'A lens vignette and fine grain over the frame.' },
+  { key: 'shadow', group: 'light', label: 'Shadow map', options: [0, 1024, 1536, 2048, 4096], fmt: v => (v ? String(v) : 'Off'), note: 'The key light\'s shadow map, in texels a side.' },
+  { key: 'soft', group: 'light', label: 'Shadow softness', options: [2, 3, 4, 5, 6, 8], fmt: String, needs: 'shadow', note: 'The penumbra in texels of a 2048 map, so a shadow is as soft at every map size.' },
+  { key: 'fill', group: 'light', label: 'Fill and bounce', bool: true, note: 'A soft light that follows the camera, and warm light up from the floor.' },
+  { key: 'haze', group: 'light', label: 'Haze', bool: true, note: 'The key light\'s beam through the studio air.' },
+  { key: 'contact', group: 'light', label: 'Contact shadows', bool: true, note: 'The soft pool of shadow under each apparatus.' },
+  { key: 'env', group: 'light', label: 'Environment light', options: [256, 512, 1024], fmt: String, note: 'The cube the studio\'s softboxes are baked into, for light and reflections.' },
+  { key: 'tex', group: 'surface', label: 'Texture size', options: [256, 512, 1024, 2048], fmt: String, cap: 'maxTexture', note: 'The largest edge of the painted textures, repainted in idle moments.' },
+  { key: 'aniso', group: 'surface', label: 'Texture filtering', options: [1, 2, 4, 8, 16], fmt: v => (v > 1 ? `${v}×` : 'Off'), cap: 'maxAniso', note: 'Anisotropic filtering, which keeps a surface seen at a slant sharp.' },
+  { key: 'reflect', group: 'surface', label: 'Floor reflections', options: [0, 0.33, 0.5, 0.75, 1], fmt: v => SHARE[v], note: 'The floor\'s mirror pass, as a share of the resolution.' },
+];
+export const KNOB_GROUPS = [['image', 'Image'], ['light', 'Light and shadow'], ['surface', 'Surfaces']];
+export const knobByKey = key => KNOBS.find(k => k.key === key) || null;
+/* How a value reads, for any setting. */
+export const knobText = (k, v) => (k.bool ? (v ? 'On' : 'Off') : k.fmt(v));
+/* Only known settings, each with a value it offers: a stored choice is only ever data. */
+export function cleanOverrides(o) {
+  const out = {};
+  if (!o || typeof o !== 'object') return out;
+  for (const k of KNOBS) if (Object.hasOwn(o, k.key) && (k.bool ? typeof o[k.key] === 'boolean' : k.options.includes(o[k.key]))) out[k.key] = o[k.key];
+  return out;
+}
+/* A tier with settings laid over it. A shadow switched on where the tier has none takes the usual penumbra. */
+export function layered(tier, over) {
+  const t = { ...tier, ...over };
+  if (t.shadow > 0 && !(t.soft > 0)) t.soft = 5;
+  return t;
 }
 
 /* ---------- what each part of the machine can carry ---------- */

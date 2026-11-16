@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Design Tokens (digiSpace Edition - v2.14)
+    - Title: Design Tokens (digiSpace Edition - v2.18)
     - File Name: tokens.css
     - Relative Path: css/tokens.css
     - Artifact Type: stylesheet
-    - Version: 2.14.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the selection rule names :modal
+      beside the root, since the browser's own sheet gives a modal dialog
+      selectable text.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call against accidental highlighting: the selection rule for
       the whole workspace. Nothing selects on a click, drag or double-click,
@@ -25,8 +29,6 @@
       are opaque, in one gradient with plain hex stops and the sheen as an
       inset shadow: blur, translucency, extra layers and color-mix() stops
       were each measured to slow the page where it is drawn without a GPU.
-    - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — The page
-      grid gains a third row for the colophon.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -117,8 +119,9 @@ body {
    and a long press on a touch screen opens no copy menu. This one rule is the whole policy; no element sets its own.
    Text fields take selection back, as typing needs it (WebKit would otherwise refuse their input), and a block meant to
    be copied opts in with .selectable, inside which buttons, tabs and icons still never select (an icon's ligature name
-   would copy as a stray word). Images and video never drag out as a ghost picture. */
-html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+   would copy as a stray word). Images and video never drag out as a ghost picture. The browser's own sheet gives a
+   modal dialog (Settings) selectable text of its own, so the rule names :modal beside the root. */
+html, :modal { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 input, textarea, [contenteditable]:not([contenteditable="false"]), .selectable { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 .selectable :is(button, [role="button"], [role="tab"], .ms) { -webkit-user-select: none; user-select: none; }
 img, video { -webkit-user-drag: none; }
