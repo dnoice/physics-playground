@@ -163,6 +163,26 @@ with sync_playwright() as p:
     ok("sol_year_trojans_at_L4_L5", yr["L4"] == 16 and yr["L5"] == 14 and 25 < yr["lo4"] and yr["hi4"] < 95 and -95 < yr["lo5"] and yr["hi5"] < -25,
        {k: yr[k] for k in ("L4", "L5", "lo4", "hi4", "lo5", "hi5")})
 
+    # ---- Pluto's orbit holds still through a turn of Charon. Charon swings Pluto round their barycentre at about 24 m/s,
+    # and an orbit taken from Pluto alone swung with it, 0.4 AU each 6.4 days: the drawn line, Inspect's figures and
+    # the live Math all read the Pluto–Charon system instead, and the line still passes through Pluto.
+    hoop = pg.evaluate(f"""(() => {{ {HELP} const pl = by('Pluto'), sun = by('Sun'), yr = 2 * Math.PI * Math.sqrt(135 ** 3 / (5000 * 1000)), t0 = L.t;
+      const lone = () => {{ const mu = 5000 * L.p.G * (sun.m + pl.m), rx = pl.x - sun.x, ry = pl.y - sun.y, rz = pl.z - sun.z, v2 = (pl.vx - sun.vx) ** 2 + (pl.vy - sun.vy) ** 2 + (pl.vz - sun.vz) ** 2;
+        return 1 / (2 / Math.hypot(rx, ry, rz) - v2 / mu); }};
+      const A = [], E = [], B = [], S = [], miss = [];
+      L.track = pl.id;
+      while (L.t - t0 < yr * 7 / 365.25) {{
+        L.step(L.dt()); L.t += L.dt();
+        const f = L.orbitFrame(pl, sun), c = f.a * (Math.cos(f.E0) - f.e), s = f.bb * Math.sin(f.E0);
+        A.push(f.a); E.push(f.e); B.push(lone()); S.push(L.inspect().rows.find(q => q[0] === 'Orbit size')[1]);
+        miss.push(Math.hypot(f.cx + f.Px * c + f.Qx * s - pl.x, f.cy + f.Py * c + f.Qy * s - pl.y, f.cz + f.Pz * c + f.Qz * s - pl.z) / f.a);
+      }}
+      L.track = null; L.after();
+      const spread = v => (Math.max(...v) - Math.min(...v)) / Math.min(...v);
+      return {{ a: spread(A), e: Math.max(...E) - Math.min(...E), alone: spread(B), sizes: [...new Set(S)], miss: Math.max(...miss), n: A.length }}; }})()""")
+    ok("sol_pluto_orbit_holds_through_charon_turn", hoop["n"] > 20 and hoop["a"] < 1e-4 and hoop["e"] < 1e-4 and hoop["alone"] > 3e-3
+       and len(hoop["sizes"]) == 1 and hoop["miss"] < 1e-9, hoop)
+
     # ---- Rewind and saved states keep names, moons, radii and floors
     keep = pg.evaluate(f"""(() => {{ {HELP}
       const sig = () => L.bodies.map(q => [q.id, q.name || '', q.desc || '', q.host ? q.host.id : 0, q.r, q.px || 0, q.real, q.label, q.ring, q.noTrail, q.m].join('|')).join(';');
