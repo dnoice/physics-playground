@@ -504,9 +504,15 @@ with sync_playwright() as p:
     pg.wait_for_timeout(200)
     ok("settings_holds_the_workspace_keys", st()["open"] and state("active.id") == "fluid" and state("active.t") >= t0 and running() == run0 and state("mode.get()") == mode0
        and not in_focus() and not state("capture.vrec.mr"), (state("active.t"), t0, running(), state("mode.get()")))
-    # Its own keys: U and ? move between sections, Shift+S closes and hands focus back to the Settings button.
-    pg.keyboard.press("u"); s1 = st(); pg.keyboard.press("?"); s2 = st(); pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s3 = st()
-    ok("settings_own_keys", s1["section"] == "units" and s1["onChoice"] and s2["section"] == "keys" and s2["focus"] == "st-keys" and not s3["open"] and s3["focus"] == "btn-settings", (s1, s2, s3))
+    # Its own keys: U and ? move to their section, and a second press there closes the dialog, as the sheets they
+    # opened used to; from the workspace they open it again. Shift+S closes, and each close hands focus back to the
+    # Settings button, which opened it.
+    pg.keyboard.press("u"); s1 = st(); pg.keyboard.press("?"); s2 = st(); pg.keyboard.press("?"); pg.wait_for_timeout(150); s3 = st()
+    pg.keyboard.press("u"); pg.wait_for_timeout(150); s4 = st(); pg.keyboard.press("u"); pg.wait_for_timeout(150); s5 = st()
+    pg.keyboard.press("?"); pg.wait_for_timeout(150); s6 = st(); pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s7 = st()
+    ok("settings_own_keys", s1["open"] and s1["section"] == "units" and s1["onChoice"] and s2["open"] and s2["section"] == "keys" and s2["focus"] == "st-keys"
+       and not s3["open"] and s3["focus"] == "btn-settings" and s4["open"] and s4["section"] == "units" and s4["onChoice"] and not s5["open"] and s5["focus"] == "btn-settings"
+       and s6["open"] and s6["section"] == "keys" and s6["focus"] == "st-keys" and not s7["open"] and s7["focus"] == "btn-settings", (s1, s2, s3, s4, s5, s6, s7))
     # Shift+S opens it from anywhere and leaves Fluid's S tool (Stir) on the plain key; U and ? open their own sections.
     pg.evaluate(P + ".tool('push')"); blur()
     pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s = st()
@@ -522,8 +528,11 @@ with sync_playwright() as p:
     geo = pg.evaluate("(() => { const r = document.getElementById('settings').getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height, vw: innerWidth, vh: innerHeight }; })()")
     pg.click("#settings-close"); pg.wait_for_timeout(150); s1 = st()
     pg.click("#btn-units"); pg.wait_for_timeout(150)
+    # A press that begins inside the panel and is let go over the backdrop is a drag off, not a click outside.
+    pg.mouse.move(geo["l"] + geo["w"] / 2, geo["t"] + 20); pg.mouse.down(); pg.mouse.move(geo["l"] / 2, geo["vh"] / 2, steps=4); pg.mouse.up(); pg.wait_for_timeout(150); s0 = st()
     pg.mouse.click(geo["l"] / 2, geo["vh"] / 2); pg.wait_for_timeout(150); s2 = st()
     ok("settings_close_and_backdrop", not s1["open"] and s1["focus"] == "btn-hud" and not s2["open"] and s2["focus"] == "btn-units", (s1, s2))
+    ok("settings_drag_off_stays_open", s0["open"] and s0["section"] == "units", s0)
     ok("settings_centred_on_desktop", geo["w"] < geo["vw"] - 40 and geo["h"] < geo["vh"] - 40 and abs(geo["l"] - (geo["vw"] - geo["w"]) / 2) < 2 and abs(geo["t"] - (geo["vh"] - geo["h"]) / 2) < 2, geo)
     pg.context.close()
 

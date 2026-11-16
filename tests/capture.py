@@ -294,6 +294,14 @@ with sync_playwright() as p:
     ok("director_moves_smoothly", max(pans) <= caps["pan"] * 0.05 * 1.02 and max(zooms) <= caps["zoom"] * 0.05 * 1.02, (round(max(pans), 4), round(max(zooms), 4)))
     ok("director_chip_while_filming", chip.startswith("DIRECTOR · ") and any(r[5] for r in rows) and pg.evaluate("document.getElementById('hud-dir').hidden"), chip)
     ok("director_gives_the_view_back", back and not pg.evaluate(D + ".state().driving"), (v0, pg.evaluate("PhysicsPlayground.view.get()")))
+    # Taken back while the view is still easing home, the camera is saved where that ease was going: a preview stopped
+    # and at once started again gives back the view from before the first, fitted as it was, not one half-way home.
+    pg.evaluate(D + ".preview()"); settle(pg, D + ".state().t > 2", 60000)
+    retake = pg.evaluate(f"(() => {{ {D}.preview(); const moving = PhysicsPlayground.view.get().moving; {D}.preview(); return {{ moving, saved: {D}.state().saved }}; }})()")
+    settle(pg, D + ".state().t > 1", 60000); pg.evaluate(D + ".preview()")
+    back = settle(pg, f"(() => {{ const v = PhysicsPlayground.view.get(); return v.fit === {str(v0['fit']).lower()} && Math.abs(v.x - {v0['x']}) * v.z < 0.5 && Math.abs(v.y - {v0['y']}) * v.z < 0.5 && Math.abs(Math.log(v.z / {v0['z']})) < 1e-3; }})()", 20000)
+    ok("director_retake_saves_where_the_view_was_going", retake["moving"] and retake["saved"]["fit"] == v0["fit"] and back and not pg.evaluate(D + ".state().driving"),
+       (v0, retake, pg.evaluate("PhysicsPlayground.view.get()")))
     # A hand on the camera pauses the director, which then carries on once the camera has been left alone.
     pg.evaluate("PhysicsPlayground.capture.toggleVideo()")
     settle(pg, D + ".state().t > 1.5", 60000)
@@ -326,6 +334,17 @@ with sync_playwright() as p:
       const labels = D.interest().map(p => p.label);
       return { merge: merge && merge.w, pass: pass && pass.w, labels }; })()""")
     ok("gravity_interest_moments", (g["merge"] or 0) >= 0.85 and (g["pass"] or 0) > 0.3 and "An ejection" in g["labels"] and "The heaviest body and its system" in g["labels"], g)
+    # A merger is only reported once it has happened: with a state from before it loaded, it is gone, and when it
+    # happens again it is found again.
+    g = pg.evaluate("""async () => { const P = PhysicsPlayground, C = P.capture, g = P.labs.gravity, D = P.director, merging = () => D.interest().some(p => p.key.startsWith('merge:'));
+      P.select('gravity'); P.pause(); P.preset('empty'); g.addBody(g.body(-12, 0, 0, 0, 300)); g.addBody(g.body(12, 0, 0, 0, 300));
+      await C.saveState(); const item = C.vault.list().find(i => i.kind === 'state'), before = merging();
+      P.advance(0.5); const flagged = merging(), t1 = g.t;
+      await C.loadState(item); const loaded = { t: g.t, bodies: g.bodies.length, merging: merging() };
+      P.advance(0.5); const again = merging();
+      await C.vault.remove(item);
+      return { before, flagged, t1, loaded, again }; }""")
+    ok("gravity_merger_not_before_it_happens", not g["before"] and g["flagged"] and g["loaded"]["t"] < g["t1"] and g["loaded"]["bodies"] == 2 and not g["loaded"]["merging"] and g["again"], g)
     # On a page in 3D, the director orbits and dollies the plane camera inside the limits, then gives it back.
     p3 = open_page(b, mode="3d", viewport={"width": 960, "height": 600})
     p3.goto(URL + "#chaos"); p3.wait_for_timeout(1500)

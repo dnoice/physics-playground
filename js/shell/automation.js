@@ -64,14 +64,13 @@ import { setUnitSystem, unitSystem } from '../core/units.js';
 import { applyPreset, setParam } from './lifecycle.js';
 import { advance } from './loop.js';
 import { ptr } from './stage.js';
-import { pickTier, setMode, world } from './mode.js';
+import { gfxBudget, pickTier, resetOverride, resetOverrides, setMode, setOverride, world } from './mode.js';
 import { active, perf, state } from './state.js';
 import { pause, play, resetActive, setSpeed, stepOnce } from './transport.js';
 import { vault } from './vault.js';
 import { selectLab } from './workspace.js';
 import { configureHud, hudState } from './headsup.js';
 import { showView, storyOf, storyUnread, tickStory } from './story.js';
-import { gfxBudget, resetOverride, resetOverrides, setOverride } from './mode.js';
 import { closeSettings, openSettings, settingsOpen, settingsSection } from './settings.js';
 
 /* ---------- automation surface ---------- */

@@ -37,8 +37,9 @@
     - Quick openers: Graphics, Units, HUD and the keyboard button open it at
       their section and focus its current choice; U and ? do the same, and
       Shift+S opens it at the section last shown.
-    - Inside, the workspace's shortcuts wait: U and ? move between sections,
-      Shift+H still turns the head-up display on or off, and Shift+S closes.
+    - Inside, the workspace's shortcuts wait: U and ? move to their section,
+      or close the dialog when it is already there, Shift+H still turns the
+      head-up display on or off, and Shift+S closes.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -111,15 +112,16 @@ function trap(e) {
   if (e.shiftKey ? i <= 0 : i < 0 || i === last) { e.preventDefault(); f[e.shiftKey ? last : 0].focus(); }
 }
 /* The dialog's own keys: from inside it, or from the page when focus has dropped there (a focused switch the head-up
-   display disabled), through transport.js. U and ? move between sections, Shift+H still works, Shift+S closes. */
+   display disabled), through transport.js. U and ? move to their section, or close the dialog when it is already
+   there, as they closed their sheets before; Shift+H still works, Shift+S closes. */
 export function settingsKey(e) {
   if (e.key === 'Tab') { trap(e); return; }
   if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
   if (e.key === 'Escape') { e.preventDefault(); closeSettings(); }
   else if (e.code === 'KeyS' && e.shiftKey) { e.preventDefault(); closeSettings(); }
   else if (e.code === 'KeyH' && e.shiftKey) toggleHud();
-  else if (e.key === 'u' || e.key === 'U') showSection('units', true);
-  else if (e.key === '?') showSection('keys', 'tab');
+  else if (e.key === 'u' || e.key === 'U') { if (current === 'units') closeSettings(); else showSection('units', true); }
+  else if (e.key === '?') { if (current === 'keys') closeSettings(); else showSection('keys', 'tab'); }
 }
 
 /* Wiring: run once from main.js after every module has evaluated. */
@@ -143,12 +145,16 @@ export function init() {
   dlg.addEventListener('keydown', e => { e.stopPropagation(); settingsKey(e); });
   // Escape with nothing inside focused reaches the dialog as a cancel.
   dlg.addEventListener('cancel', e => { e.preventDefault(); closeSettings(); });
-  // A click on the backdrop, outside the dialog's own box, closes it.
-  dlg.addEventListener('click', e => {
-    if (e.target !== dlg) return;
+  // A click on the backdrop, outside the dialog's own box, closes it, when the press began there too: one that began
+  // inside and was let go over the backdrop (a drag off a control) leaves it open.
+  const outside = e => {
+    if (e.target !== dlg) return false;
     const r = dlg.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX >= r.right || e.clientY < r.top || e.clientY >= r.bottom) closeSettings();
-  });
+    return e.clientX < r.left || e.clientX >= r.right || e.clientY < r.top || e.clientY >= r.bottom;
+  };
+  let pressedOut = false;
+  dlg.addEventListener('pointerdown', e => { pressedOut = outside(e); });
+  dlg.addEventListener('click', e => { if (pressedOut && outside(e)) closeSettings(); pressedOut = false; });
   dlg.addEventListener('close', closed);
   // The nav stands down the left on a wide screen and across the top on a phone.
   const narrow = window.matchMedia('(max-width: 640px)'), orient = () => $('#settings-tabs').setAttribute('aria-orientation', narrow.matches ? 'horizontal' : 'vertical');

@@ -142,8 +142,9 @@ h4.set-sub { margin: 26px 0 10px; }
 .gfx-btn.has-own::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 2px var(--bench); }
 
 /* ---------- phones and short screens: the whole screen ---------- */
+/* Sized by its containing block, the viewport less any scrollbar, where 100vw would run a scrollbar's width past it. */
 @media (max-width: 640px), (max-height: 500px) {
-  .settings { width: 100vw; height: 100vh; height: 100dvh; border: 0; border-radius: 0; }
+  .settings { width: 100%; height: 100%; border: 0; border-radius: 0; }
   .settings-kept { display: none; }
 }
 @media (max-width: 640px) {

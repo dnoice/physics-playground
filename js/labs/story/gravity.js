@@ -82,7 +82,7 @@ const shape = e => (e < 0.05 ? 'a near circle' : e < 0.5 ? 'an oval' : 'a long e
 /* What to call a body (or a dead body's record): its name, "the star" when there is only one, else its number. */
 function ref(b) {
   if (b === S.pair) return 'the binary';
-  if (b === S.inner) return ref(S.C);
+  if (b === S.inner) return ref(S.inner.of);
   if (b.name) return b.name === 'Sun' || b.name === 'Moon' ? `the ${b.name}` : b.name;
   if (b.kind === 'star' && S.stars === 1) return 'the star';
   return `Body ${b.id}`;
@@ -156,11 +156,17 @@ function trueR(L, b) {
   if (b.kind === 'brown') return R_JUP_PX;
   const ph = L.physique(b); return ph ? ph.R / M_PX : NaN;
 }
-/* The Hill radius of a heavy body about the core: the reach inside which its pull beats the core's tide. */
+/* What a heavy body's Hill sphere is measured against: the star of a binary that it circles, else the core. */
+function hillHost(P) {
+  const pr = S.pair, rp = pr && S.recs.get(P.id);
+  return rp && rp.prim === pr.a.id ? pr.a : rp && rp.prim === pr.b.id ? pr.b : S.core;
+}
+const hillAbout = (P, H) => dist(P, H) * Math.cbrt(P.m / (3 * (H.m + P.m)));
+/* The Hill radius of a heavy body about what holds it: the reach inside which its pull beats that body's tide. */
 function hillOf(P) {
   const i = S.majors.indexOf(P);
   if (i >= 0) return S.hill[i];
-  const c = S.core; return P === S.C || !c ? 0 : dist(P, c) * Math.cbrt(P.m / (3 * (c.m + P.m)));
+  const H = S.core && hillHost(P); return P === S.C || !H ? 0 : hillAbout(P, H);
 }
 /* What holds a body: its own planet while it stays bound inside that planet's Hill sphere, else the smallest Hill
    sphere of a heavy body it is bound inside, else the core: the heaviest body, or a bound binary's barycentre (a
@@ -182,12 +188,13 @@ function primaryOf(L, b) {
   if (pr) { const da = dist(b, pr.a), db = dist(b, pr.b); return Math.min(da, db) < 0.35 * pr.sep ? (da < db ? pr.a : pr.b) : pr; }
   return C;
 }
-const keyOf = P => (P === S.pair ? -1 : P === S.inner ? S.C.id : P.id);
-/* What a body's orbit about the heaviest body is really about: that body together with the planets circling well
-   inside its closest approach (half of it), as their barycentre, so a distant world's orbit is not shaken by the
-   star's own wobble round them (Jacobi's coordinates). The core alone when nothing lies that far inside. */
-function interior(b, r) {
-  const C = S.C, q = r.q, I = S.inner;
+const keyOf = P => (P === S.pair ? -1 : P === S.inner ? S.inner.of.id : P.id);
+/* What a body's orbit about a star C (the heaviest body, or either star of a binary) is really about: that star
+   together with the planets circling it well inside the body's closest approach (half of it), as their barycentre,
+   so a distant world's orbit is not shaken by the star's own wobble round them (Jacobi's coordinates). The star
+   alone when nothing lies that far inside. */
+function interior(b, r, C) {
+  const q = r.q, I = S.inner;
   if (!(q > 0)) return C;
   let m = C.m, x = C.m * C.x, y = C.m * C.y, z = C.m * C.z, vx = C.m * C.vx, vy = C.m * C.vy, vz = C.m * C.vz, k = 0;
   for (const P of S.majors) {
@@ -197,7 +204,7 @@ function interior(b, r) {
     m += P.m; x += P.m * P.x; y += P.m * P.y; z += P.m * P.z; vx += P.m * P.vx; vy += P.m * P.vy; vz += P.m * P.vz; k++;
   }
   if (!k) return C;
-  I.m = m; I.x = x / m; I.y = y / m; I.z = z / m; I.vx = vx / m; I.vy = vy / m; I.vz = vz / m; I.r = C.r;
+  I.of = C; I.m = m; I.x = x / m; I.y = y / m; I.z = z / m; I.vx = vx / m; I.vy = vy / m; I.vz = vz / m; I.r = C.r;
   return I;
 }
 
@@ -207,7 +214,7 @@ function mkRec(b, isNew, t) {
     id: b.id, name: b.name || null, kind: b.kind, m: b.m, r: b.r, x: b.x, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz,
     tick: 0, isNew, told: !isNew, gain: 0,
     prim: 0, cand: 0, candN: 0, bound: false, flipN: 0, regime: false,
-    a: NaN, e: NaN, q: NaN, Q: NaN, T: NaN, rv: 0, hx: 0, hy: 0, hz: 0,
+    a: NaN, e: NaN, q: NaN, Q: NaN, T: NaN, rv: 0, hx: 0, hy: 0, hz: 0, ex: 0, ey: 0, ez: 0,
     a0: NaN, e0: NaN, T0: NaN, pm0: 0, drift: 0, quiet: -Infinity, pertK: 0, pertWho: '',
     pass: null, passer: '', passT: -Infinity, plunged: false, v0: NaN, free: false,
     turn: NaN, tx: 0, ty: 0, tz: 0, turnT0: 0, turnD: 0, timed: false,
@@ -229,7 +236,7 @@ function start(L, t) {
     tick: 0, t, dt: 0, recs: new Map(), majors: [], hill: [], tracked: [], births: [], deaths: [], arch: [], cands: new Map(),
     sigN: -1, sigU: -1, sigM: -1, sigE: -1, C: null, Cid: 0, pair: null, core: null, stars: 0,
     pairObj: { id: -1, kind: 'pair', name: null, m: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, r: 0, a: null, b: null, sep: 0 },
-    inner: { id: -2, kind: 'star', name: null, m: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, r: 0 }, crowd: false, n0: 0, cleared: 1,
+    inner: { id: -2, kind: 'star', name: null, of: null, m: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, r: 0 }, crowd: false, n0: 0, cleared: 1,
     cm: { M: 0, vx: 0, vy: 0, vz: 0, x: 0, y: 0, z: 0 },
     merged: L.merged, escaped: L.escaped, base: true, bary: 0, moving: false, E0: L.E0, eT: t, had: L.bodies.length, lastBy: new Map(),
   };
@@ -264,10 +271,10 @@ function setCore(L) {
     }
   }
   S.core = S.pair || C;
-  const ck = S.core ? keyOf(S.core) : 0;
+  // A planet close to one star of a binary has its Hill sphere about that star; anything held by another body is a moon.
   for (let i = 0; i < S.majors.length; i++) {
-    const P = S.majors[i], rp = S.recs.get(P.id), moon = !!P.host || (rp && rp.prim !== 0 && rp.prim !== ck);
-    S.hill[i] = P === C || (S.pair && P === S.pair.b) || !S.core || moon ? 0 : dist(P, S.core) * Math.cbrt(P.m / (3 * (S.core.m + P.m)));
+    const P = S.majors[i], H = S.core && hillHost(P), rp = S.recs.get(P.id), moon = !!P.host || (rp && rp.prim !== 0 && rp.prim !== keyOf(H));
+    S.hill[i] = !H || P === C || (S.pair && P === S.pair.b) || moon ? 0 : hillAbout(P, H);
   }
   S.hill.length = S.majors.length;
 }
@@ -295,14 +302,18 @@ function census(L, N, t) {
   }
   return gone;
 }
-/* The body that swallowed a dead one: a survivor that gained exactly its mass, nearest to where it was heading. */
+/* The body that swallowed a dead one. A survivor's growth since the last look is a budget: two bodies can fall into
+   one survivor in a look, or one into another that then falls into a third, so a survivor qualifies while what it
+   gained, less the mass already put down to it, still covers this body's. One whose remainder fits exactly comes
+   first, then the one nearest to where the dead body was heading. */
 function eater(L, d) {
-  let best = null, bd = Infinity;
+  let best = null, bd = Infinity, exact = false;
   for (const s of L.bodies) {
     const rs = S.recs.get(s.id); if (!rs || (rs.isNew && !rs.told)) continue;
-    if (Math.abs(s.m - rs.m - rs.gain - d.m) > 1e-9 * (s.m + d.m) + 1e-15) continue;
-    const k = Math.hypot(d.x + d.vx * S.dt - s.x, d.y + d.vy * S.dt - s.y, d.z + d.vz * S.dt - s.z) / (s.r + d.r);
-    if (k < bd) { bd = k; best = s; }
+    const tol = 1e-9 * (s.m + d.m) + 1e-15, room = s.m - rs.m - rs.gain;
+    if (room < d.m - tol) continue;
+    const fit = room - d.m <= tol, k = Math.hypot(d.x + d.vx * S.dt - s.x, d.y + d.vy * S.dt - s.y, d.z + d.vz * S.dt - s.z) / (s.r + d.r);
+    if ((fit && !exact) || (fit === exact && k < bd)) { bd = k; best = s; exact = fit; }
   }
   if (best) S.recs.get(best.id).gain += d.m;
   return best;
@@ -354,11 +365,13 @@ function arrival(L, N, b, r, P) {
 function watch(L, N, b, r, t) {
   const P0 = primaryOf(L, b);
   if (!r.told) { arrival(L, N, b, r, P0); }
-  const P = P0 === S.C && !S.pair ? interior(b, r) : P0;
+  // About a star (the heaviest body, or either star of a binary) the orbit is taken about it and the planets inside.
+  const star = !!P0 && (S.pair ? P0 === S.pair.a || P0 === S.pair.b : P0 === S.C), P = star ? interior(b, r, P0) : P0;
   if (!P || !about(L, b, P)) { r.prim = 0; return; }
   const pk = keyOf(P), bound = O.E < 0;
   r.regime = b.m < 0.1 * P.m;
-  if (r.prim === 0) { r.prim = pk; rebase(r, P, t); return note(r); }
+  // A first primary (or a new one after the heaviest body changed) that hosts the body's pass ends the pass.
+  if (r.prim === 0) { if (r.pass && r.pass.P === P) r.pass = null; r.prim = pk; rebase(r, P, t); return note(r); }
   // The interior barycentre gains or loses a planet as the orbit changes: a new frame, so a new baseline.
   if (r.pm0 !== P.m && pk === r.prim) { rebase(r, P, t); return note(r); }
   if (pk !== r.prim) {
@@ -369,21 +382,25 @@ function watch(L, N, b, r, t) {
   }
   r.cand = 0; r.candN = 0;
   if (bound !== r.bound) { if (++r.flipN >= 2) { flipped(L, N, b, r, P, t); rebase(r, P, t); return note(r); } } else r.flipN = 0;
-  if (bound && r.regime && (P === S.core || P === S.inner) && !S.crowd) drift(L, N, b, r, P, t);
+  if (bound && r.regime && (star || P === S.core) && !S.crowd) drift(L, N, b, r, P, t);
   if (bound && r.isNew && !r.timed) clock(L, N, b, r, P, t);
   if (bound && r.regime && !S.crowd) precess(L, N, b, r, P, t);
   if (!bound && !r.pass) { flyby(L, N, b, r, P); climb(L, N, b, r, P); }
   plunge(L, N, b, r, P);
   note(r);
 }
-function note(r) { r.a = O.a; r.e = O.e; r.q = O.q; r.Q = O.Q; r.T = O.T; r.rv = O.rv; const h = Math.hypot(O.hx, O.hy, O.hz) || 1; r.hx = O.hx / h; r.hy = O.hy / h; r.hz = O.hz / h; }
+function note(r) { r.a = O.a; r.e = O.e; r.q = O.q; r.Q = O.Q; r.T = O.T; r.rv = O.rv; const h = Math.hypot(O.hx, O.hy, O.hz) || 1; r.hx = O.hx / h; r.hy = O.hy / h; r.hz = O.hz / h; r.ex = O.ex; r.ey = O.ey; r.ez = O.ez; }
 /* The body changed hands: a planet captured it, or it slipped out of its planet's Hill sphere. */
 function handover(L, N, b, r, P, t) {
+  // A pass through P's Hill sphere ends when P takes the body.
+  if (r.pass && r.pass.P === P) r.pass = null;
   if (S.crowd) return;
-  const was = r.prim > 0 && S.C && r.prim !== S.C.id ? L.bodies.find(q => q.id === r.prim) : null, core = P === S.core || P === S.pair || P === S.inner;
+  // A binary's stars count as the core: a body moving between a star and the pair is neither captured nor lost.
+  const pr = S.pair, core = P === S.core || P === S.inner || (!!pr && (P === pr.a || P === pr.b));
+  const was = r.prim > 0 && S.C && r.prim !== S.C.id && !(pr && r.prim === pr.b.id) ? L.bodies.find(q => q.id === r.prim) : null;
   if (!core && O.E < 0) {
     N.add({ kind: 'capture', group: 'captures', tone: 'key', show: follow(L, b), title: `${cap(ref(P))} captured ${ref(b)}`,
-      body: `${subjOf(b)} fell inside ${ref(P)}'s Hill sphere (${len(L, hillOf(P))}), where ${ref(P)}'s pull beats ${ref(S.core)}'s tide, slowly enough to be held: it now circles ${ref(P)} every <b>${dur(L, O.T)}</b> (a = ${len(L, O.a)}, e = ${O.e.toFixed(2)}). With nothing to carry off the extra energy, a capture like this is usually temporary: the path that brought it in can take it out.` });
+      body: `${subjOf(b)} fell inside ${ref(P)}'s Hill sphere (${len(L, hillOf(P))}), where ${ref(P)}'s pull beats ${ref(hillHost(P))}'s tide, slowly enough to be held: it now circles ${ref(P)} every <b>${dur(L, O.T)}</b> (a = ${len(L, O.a)}, e = ${O.e.toFixed(2)}). With nothing to carry off the extra energy, a capture like this is usually temporary: the path that brought it in can take it out.` });
   } else if (was && core) {
     const by = S.lastBy.get(was.id), after = by && t - by.t < 10 ? `, after ${by.who} swept close by` : '';
     N.add({ kind: 'loss', group: 'moons lost', tone: 'key', show: follow(L, b), title: `${cap(ref(was))} lost ${ref(b)}`,
@@ -392,6 +409,7 @@ function handover(L, N, b, r, P, t) {
 }
 /* Bound to its primary, or not: a binary forms, a capture, or an ejection measured against the escape speed. */
 function flipped(L, N, b, r, P, t) {
+  if (O.E < 0 && r.pass && r.pass.P === P) r.pass = null;
   const vesc = Math.sqrt(2 * O.mu / O.r), by = t - r.passT < 10 ? r.passer : '', pairs = b.m >= 0.1 * P.m;
   if (O.E < 0) {
     if (S.crowd) return;
@@ -411,10 +429,13 @@ function flipped(L, N, b, r, P, t) {
 /* An orbit that has changed size or shape since its baseline, and the likely cause: the heavy body whose tide on it
    was strongest relative to the primary's pull. */
 function drift(L, N, b, r, P, t) {
+  // The star the orbit is about (both, for an orbit about a binary) and the planets inside it are its frame, not its
+  // perturbers; for a planet close to one star of a binary, the other star is.
+  const star = P === S.inner ? S.inner.of : P, pr = S.pair;
   for (const Q of S.majors) {
-    if (Q === b || Q === P || Q === S.C || (S.pair && (Q === S.pair.a || Q === S.pair.b))) continue;
+    if (Q === b || Q === P || Q === star || (P === pr && (Q === pr.a || Q === pr.b))) continue;
     const rq = P === S.inner ? S.recs.get(Q.id) : null;
-    if (rq && rq.prim === S.C.id && rq.a < 0.5 * r.q) continue;
+    if (rq && rq.prim === star.id && rq.a < 0.5 * r.q) continue;
     const k = pullRatio(b, P, Q); if (k > r.pertK) { r.pertK = k; r.pertWho = who(Q); }
   }
   if (r.pass || t < r.quiet || !(r.a0 > 0)) return;
@@ -493,8 +514,8 @@ function plunge(L, N, b, r, P) {
 function encounters(L, N, t) {
   if (S.crowd) return;
   const G = G0 * L.p.G;
-  // A pass whose host no longer has a Hill sphere about the core (it became a moon, or merged) is dropped.
-  for (const b of S.tracked) { const r = S.recs.get(b.id); if (r && r.pass && (r.pass.P.dead || !(hillOf(r.pass.P) > 0))) r.pass = null; }
+  // A pass whose host is gone (merged, deleted or escaped) or no longer has a Hill sphere (it became a moon) is dropped.
+  for (const b of S.tracked) { const r = S.recs.get(b.id), H = r && r.pass && r.pass.P; if (H && (H.dead || !S.recs.has(H.id) || !(hillOf(H) > 0))) r.pass = null; }
   for (let i = 0; i < S.majors.length; i++) {
     const P = S.majors[i], rH = S.hill[i];
     if (!(rH > 0)) continue;
@@ -514,9 +535,10 @@ function encounters(L, N, t) {
   }
 }
 function passed(L, N, b, r, t) {
-  const p = r.pass, P = p.P, c = S.core;
+  const p = r.pass, P = p.P;
   r.pass = null;
-  if (!c || P.dead) return;
+  if (!S.core || P.dead) return;
+  const c = hillHost(P);
   // The velocity relative to P, in against out: the turn the pass gave it, set beside the two-body hyperbola's.
   const ox = b.vx - P.vx, oy = b.vy - P.vy, oz = b.vz - P.vz, dv = Math.hypot(ox - p.ux, oy - p.uy, oz - p.uz), u = Math.hypot(p.ux, p.uy, p.uz) || 1;
   const turned = Math.acos(Math.max(-1, Math.min(1, (ox * p.ux + oy * p.uy + oz * p.uz) / (u * (Math.hypot(ox, oy, oz) || 1))))), bend = 2 * Math.asin(Math.min(1, 1 / p.e)), dvT = 2 * p.vinf / p.e;
@@ -606,11 +628,16 @@ function energy(L, N, t) {
   if (d < 5e-4) N.add({ kind: 'energy', key: 'energy', title: 'Energy is holding',
     body: `Over the last ${dur(L, t - S.eT)} the total energy has stayed within <b>${pcSmall(d)}</b> of where it started. The kick–drift–kick leapfrog is symplectic: its small error swings back and forth along each orbit instead of piling up, so orbits neither spiral in nor drift out.` });
 }
-/* The planets about the core, in order of size: resonances, crossings and pairs packed too tight. */
-function architecture(L, N, t) {
-  const A = S.arch, c = S.core;
-  if (!c || S.crowd) return;
-  const ck = keyOf(c);
+/* The planets about the core, and those close to either star of a binary about that star: resonances, crossings and
+   pairs packed too tight. */
+function architecture(L, N) {
+  if (!S.core || S.crowd) return;
+  orbitsAbout(L, N, S.core);
+  if (S.pair) { orbitsAbout(L, N, S.pair.a); orbitsAbout(L, N, S.pair.b); }
+}
+/* The planets about c, in order of size. */
+function orbitsAbout(L, N, c) {
+  const A = S.arch, ck = keyOf(c);
   A.length = 0;
   for (const b of S.tracked) { const r = S.recs.get(b.id); if (r && r.prim === ck && r.bound && r.regime && b.m > 0 && r.a > 0) A.push(r); }
   A.sort((x, y) => x.a - y.a);
@@ -626,7 +653,7 @@ function architecture(L, N, t) {
         body: `${subjOf(p)} goes round ${TIMES[m] || `${m} times`} for every ${TURNS[n] || `${n} turns`} of ${who(q)}: their periods, ${dur(L, p.T)} and ${dur(L, q.T)}, stand in the ratio <b>${ratio.toFixed(3)}</b>. So they line up again at the same points of their orbits and each tug repeats instead of averaging out. A resonance can lock orbits in step, as Neptune's keeps Pluto safe, or pump them more eccentric until they cross.` });
     }
     const dot = p.hx * q.hx + p.hy * q.hy + p.hz * q.hz, tilt = Math.acos(Math.max(-1, Math.min(1, dot)));
-    if (p.Q > q.q && tilt < 10 * Math.PI / 180 && hold(pairKey('cross', p, q), 2)) {
+    if (p.Q > q.q && tilt < 10 * Math.PI / 180 && crosses(p, q) && hold(pairKey('cross', p, q), 2)) {
       const co = Math.abs(ratio - 1) < 0.01, safe = co || (!!res && res[1] === res[0] - 1);
       N.add({ kind: 'cross', group: 'orbit crossings', key: pairKey('cross', p, q), tone: safe ? 'event' : 'warn', show: frameAll, title: `The orbits of ${ref(p)} and ${ref(q)} cross`,
         body: `${cap(ref(q))} dips to ${len(L, q.q)} at its closest to ${ref(c)}, inside ${ref(p)}'s farthest point, ${len(L, p.Q)}, and their orbits are tilted only ${deg(tilt)} to each other. ${co ? `They share one period (${dur(L, p.T)}), so whatever spacing they keep along their orbits repeats every turn: they cross each other's paths at different times and have not met.` : safe ? `Their ${res[0]}:${res[1]} resonance keeps them from meeting: when one crosses the other's path, the other is always far away.` : 'Crossing orbits must meet sooner or later unless a resonance keeps them apart: expect a close pass, a merger or an ejection.'}` });
@@ -637,6 +664,29 @@ function architecture(L, N, t) {
         body: `Their orbits (a = ${len(L, p.a)} and ${len(L, q.a)}) lie only <b>${sig(gap, 2)} mutual Hill radii</b> apart, a mutual Hill radius here being ${len(L, rh)}. Two planets on near-circular orbits can stay clear of each other for good only beyond 2√3 ≈ 3.5 of them, and a system of several needs about 10, so expect close passes, swaps or an ejection soon.` });
     }
   }
+}
+/* Whether two orbits about one focus truly cross. Overlapping distances (the inner one's farthest point beyond the
+   outer one's closest) are needed but not enough: two ovals can nest with their long axes turned apart. Each is
+   r = ℓ/(1 + e cos(φ − ϖ)), ℓ = a(1 − e²), and they cross where the difference changes sign round the focus.
+   Like the rest of the narrator, which tells a crossing only for orbits tilted less than 10° to each other, this
+   treats them as coplanar: both are laid in the inner orbit's plane, each periapsis direction projected into it. */
+const CROSS_SAMPLES = 64;
+function crosses(p, q) {
+  // Axes in p's plane: x̂ less its part along the normal (ŷ if the normal is near x̂), and the normal × that.
+  let ux = 1 - p.hx * p.hx, uy = -p.hx * p.hy, uz = -p.hx * p.hz;
+  if (Math.hypot(ux, uy, uz) < 0.1) { ux = -p.hy * p.hx; uy = 1 - p.hy * p.hy; uz = -p.hy * p.hz; }
+  const u = Math.hypot(ux, uy, uz); ux /= u; uy /= u; uz /= u;
+  const wx = p.hy * uz - p.hz * uy, wy = p.hz * ux - p.hx * uz, wz = p.hx * uy - p.hy * ux;
+  const wp = Math.atan2(p.ex * wx + p.ey * wy + p.ez * wz, p.ex * ux + p.ey * uy + p.ez * uz);
+  const wq = Math.atan2(q.ex * wx + q.ey * wy + q.ez * wz, q.ex * ux + q.ey * uy + q.ez * uz);
+  const lp = p.a * (1 - p.e * p.e), lq = q.a * (1 - q.e * q.e);
+  let was = 0;
+  for (let k = 0; k < CROSS_SAMPLES; k++) {
+    const f = k * TAU / CROSS_SAMPLES, sgn = Math.sign(lp / (1 + p.e * Math.cos(f - wp)) - lq / (1 + q.e * Math.cos(f - wq)));
+    if (sgn && was && sgn !== was) return true;
+    if (sgn) was = sgn;
+  }
+  return false;
 }
 /* A condition seen on n looks in a row. */
 function hold(key, n) {
@@ -697,7 +747,7 @@ export const gravityStory = {
     for (const b of S.tracked) { const r = S.recs.get(b.id); if (r && !b.dead) watch(L, N, b, r, t); }
     // A body placed beyond the followed few still gets its arrival told.
     for (const b of S.births) { const r = S.recs.get(b.id); if (r && !r.told) arrival(L, N, b, r, primaryOf(L, b)); }
-    if (C) { encounters(L, N, t); dominance(L, N, t); architecture(L, N, t); }
+    if (C) { encounters(L, N, t); dominance(L, N, t); architecture(L, N); }
     if (S.crowd) clearing(L, N, t);
     momentum(L, N); energy(L, N, t);
     if (S.base && !S.crowd) {

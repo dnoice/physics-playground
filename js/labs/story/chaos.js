@@ -135,7 +135,7 @@ export const chaosStory = {
       if (above0 > 0 && above < 0.5 * above0) {
         S.Ehalf = true;
         N.add({ kind: 'damped', key: 'damped', title: 'Damping has taken half the energy',
-          body: `In ${secs(t - S.t0)} the swing lost half its energy above hanging still. Damping of ${L.p.damp}/s brakes each arm in proportion to its spin, so for small swings the energy falls as e^(−2bt), halving every ln 2 / 2b = ${secs(Math.LN2 / (2 * L.p.damp))}. The chaos is transient: every copy ends hanging straight down, together again.` });
+          body: `In ${secs(t - S.t0)} the swing lost half its energy above hanging still. Damping of ${L.p.damp}/s brakes each arm in proportion to its spin, so for small swings the energy falls as e^(−bt), halving every ln 2 / b = ${secs(Math.LN2 / L.p.damp)}. The chaos is transient: every copy ends hanging straight down, together again.` });
       }
     }
   },

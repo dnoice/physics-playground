@@ -15,7 +15,8 @@
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the insights fill the
       pane's Now view, which counts them in the colour of the worst; the HUD's
-      alert opens Now, and init() wires the Story's views.
+      alert, or opening the pane while a warning stands, shows Now, and
+      init() wires the Story's views.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       warnings and critical notices also light the head-up display's caution
       lights.
@@ -33,7 +34,8 @@
     - Severity levels with glyphs; insights appear and leave without
       flicker.
     - Frame-time strip and solver, drawing and real-time numbers.
-    - The HUD alert opens the Insights pane on its Now view.
+    - The HUD alert opens the Insights pane on its Now view, as opening the
+      pane does while a warning or critical notice stands.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -56,12 +58,14 @@ import { showPane } from './deck.js';
 import { showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
 import { hudCautions } from './headsup.js';
-import { initStory, showView } from './story.js';
+import { initStory, openInsights, showView } from './story.js';
 
 /* ---------- diagnostics ---------- */
 export const insightsEl = $('#insights'), insightCards = new Map();
 export const LEVEL_RANK = { crit: 0, warn: 1, info: 2 }, LEVEL_TAG = { crit: 'Critical', warn: 'Warning', info: 'Insight' };
 export let lastAlertIds = new Set();
+// Whether a warning or critical notice stands, as the Insights tab's summary says ("2 critical", "3 to check").
+let alerting = false;
 export function sticky(ins, seconds = 10) { stickies.push({ ...ins, until: performance.now() + seconds * 1000, lab: active && active.id }); }
 export function globalInsights() {
   const out = [];
@@ -92,6 +96,7 @@ export function evaluateDiagnostics() {
   list.sort((a, b) => LEVEL_RANK[a.level] - LEVEL_RANK[b.level]);
   renderInsights(list);
   const alerts = list.filter(i => i.level !== 'info'), worst = alerts.length ? alerts[0].level : null;
+  alerting = alerts.length > 0;
   const btn = $('#hud-alert'), sum = $('#diag-sum');
   btn.hidden = !alerts.length;
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
@@ -172,6 +177,12 @@ export function updatePerfNums() {
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
   // The alert chip is about the run's state now, so it opens the Now view.
-  $('#hud-alert').addEventListener('click', () => { showView('now'); showPane('insights', { reveal: true }); });
+  $('#hud-alert').addEventListener('click', () => { showView('now', { remember: false }); showPane('insights', { reveal: true }); });
+  // So does opening Insights by its tab, the keys or any other way while a warning stands: Now is where it is. That is
+  // not remembered as the view to open on, so with nothing to check Insights opens on the Story (or the view chosen).
+  const deck = $('#tile-deck');
+  new MutationObserver(recs => {
+    if (deck.dataset.pane === 'insights' && recs.some(r => r.oldValue !== 'insights')) openInsights(alerting);
+  }).observe(deck, { attributes: true, attributeFilter: ['data-pane'], attributeOldValue: true });
   initStory();
 }

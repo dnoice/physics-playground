@@ -529,7 +529,7 @@ and helpers without crowding the lab's own file. The frame loop calls
 `tickStory` four times a second; the narrator runs only when simulated time
 has moved, so a pause holds the story still. It keeps its own records between
 looks in module scope, rebuilds them when `N.fresh` says the story began, and
-allocates nothing per frame. Gravity's caps its work at any body count: it
+allocates nothing per frame. Gravity's narrator caps its work at any body count: it
 follows at most 40 bodies (named ones and those placed by hand first) and tests
 the 12 heaviest as hosts and perturbers.
 
@@ -557,7 +557,12 @@ a body's primary is its planet while it stays bound inside that planet's Hill
 sphere, else the heaviest body, or a bound binary's barycentre for whatever
 circles both. A distant body's orbit is taken about the heaviest body and the
 planets well inside it together (Jacobi's coordinates), so the star's own
-wobble does not read as a perturbation.
+wobble does not read as a perturbation. Once a companion forms a bound pair
+with the star, a planet well inside 0.35 of their separation is measured about
+the star it circles: its drift, resonances, crossings, packing and Hill sphere
+are taken in that star's frame, with the other star ranked as a perturber.
+Orbits are said to cross only when the ellipses, laid in one plane, really
+intersect, not merely when their distance ranges overlap.
 
 `js/shell/instruments.js` is the Telemetry pane: a lab's readings. It reads the
 formatted rows from `lab.readouts()`, so a lab gets stat tiles, sparklines and
@@ -613,8 +618,9 @@ list is markup in `index.html`.
 - **Inside.** The workspace behind is inert. Tab and Shift+Tab go round the
   dialog's own controls. The nav is a tablist with the full keyboard
   contract. `settingsKey` takes the dialog's keys: Escape and Shift+S close
-  it, U and ? move between sections, and Shift+H still turns the display on
-  or off. Every other key stops at the dialog, and `transport.js` leaves the
+  it, U and ? move to their own section (or close the dialog when it is
+  already there, as a second press closed the old sheets), and Shift+H still
+  turns the display on or off. Every other key stops at the dialog, and `transport.js` leaves the
   workspace's shortcuts alone while it is open, and hands it keys that reach
   the page because focus dropped there.
 - **Closing.** Escape, the close button, Shift+S or a click on the backdrop

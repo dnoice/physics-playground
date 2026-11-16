@@ -38,7 +38,9 @@
     - An unread count on the Insights tab and the Story view; important
       moments are announced politely, at most one every four seconds.
     - Now and Story views as a tablist with arrows, Home and End; the
-      choice is remembered; new moments fade in unless motion is reduced.
+      choice is remembered, though Insights opens on Now while a warning
+      stands; new moments fade in unless motion is reduced; a moment's
+      buttons keep keyboard focus when a repeat folds in.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -47,7 +49,7 @@
       16.4+)
 ---------
 */
-import { $, el, reduceMotion, store } from '../core/util.js';
+import { $, el, keepFocus, reduceMotion, store } from '../core/util.js';
 import { STORY_ICON, msEl } from '../core/icons.js';
 import { syncPanel } from './panel.js';
 import { active, announce } from './state.js';
@@ -146,13 +148,16 @@ export const storyUnread = lab => book(lab).unread;
 
 /* ---------- the Now and Story views ---------- */
 const VIEWS = ['now', 'story'], VIEW_NAME = { now: 'Now', story: 'Story' };
-let shown = VIEWS.includes(store.get('insightsView', 'story')) ? store.get('insightsView', 'story') : 'story';
+// The view chosen last with the Now and Story tabs, which Insights opens on when no warning stands.
+const chosen = () => { const v = store.get('insightsView', 'story'); return VIEWS.includes(v) ? v : 'story'; };
+let shown = chosen();
 const deck = $('#tile-deck'), listEl = $('#story'), emptyEl = $('#story-empty'), howEl = $('#story-how'), tabNew = $('#dt-story-n'), ivNew = $('#iv-story-n');
 /* Whether the story is on screen to be read now: the Story view of the Insights pane, in a deck that shows. */
 function viewing() { return shown === 'story' && deck.dataset.pane === 'insights' && document.visibilityState === 'visible' && deck.getClientRects().length > 0; }
-export function showView(id, { focus = false } = {}) {
+/* remember: false shows a view without making it the one Insights opens on next time (the Now view a warning brings). */
+export function showView(id, { focus = false, remember = true } = {}) {
   if (!VIEWS.includes(id)) return;
-  shown = id; store.set('insightsView', id);
+  shown = id; if (remember) store.set('insightsView', id);
   for (const v of VIEWS) {
     const t = $(`#iv-${v}`), on = v === id;
     t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
@@ -161,6 +166,8 @@ export function showView(id, { focus = false } = {}) {
   }
   if (active) refresh(active);
 }
+/* Insights just opened: on Now while a warning stands, without taking that for the choice, else on the view chosen. */
+export function openInsights(warned) { showView(warned ? 'now' : chosen(), { remember: false }); }
 
 /* ---------- the timeline ---------- */
 const nodes = new Map();
@@ -168,21 +175,27 @@ let shownLab = null, shownVer = -1, badgeK = -1, badgeN = -1;
 const stamp = (lab, t) => `t = ${t.toFixed(2)} s${lab.timeNote ? lab.timeNote(t) : ''}`;
 function makeNode() {
   const ico = msEl('info', 'moment-ico'), time = el('p', { class: 'moment-time' }), h = el('h4', { class: 'moment-title' }), body = el('p', { class: 'moment-body' });
-  const acts = el('div', { class: 'moment-acts' }), sum = el('summary'), ul = el('ul'), more = el('details', { class: 'moment-more' }, sum, ul);
-  return { li: el('li', { class: 'moment' }, ico, el('div', { class: 'moment-main' }, el('div', { class: 'moment-head' }, h, time), body, acts, more)), ico, time, h, body, acts, sum, ul, more, rev: 0, show: null, showBtn: null };
+  const acts = el('div', { class: 'moment-acts' }), sum = el('summary', { 'data-fk': 'more' }), ul = el('ul'), more = el('details', { class: 'moment-more' }, sum, ul);
+  return { li: el('li', { class: 'moment' }, ico, el('div', { class: 'moment-main' }, el('div', { class: 'moment-head' }, h, time), body, acts, more)), ico, time, h, body, acts, sum, ul, more, rev: 0, show: null, fixes: [], showBtn: null, actsKey: null };
 }
 function applyFix(f) { f.run(); announce(`Applied: ${f.label}`); syncPanel(); }
 function fill(n, e, lab) {
   const v = e.now;
-  n.rev = e.rev; n.show = v.show;
+  n.rev = e.rev; n.show = v.show; n.fixes = v.fixes || [];
   n.li.dataset.tone = v.tone; n.li.dataset.kind = e.kind;
   n.ico.textContent = STORY_ICON[e.kind] || 'info';
   n.time.textContent = stamp(lab, v.t);
   n.h.textContent = v.title;
   n.body.innerHTML = v.body;
-  n.acts.replaceChildren(); n.showBtn = null;
-  if (v.show) { n.showBtn = el('button', { type: 'button', class: 'btn btn-fix btn-show', onclick: () => v.show.run() }, msEl('my_location'), v.show.label); n.acts.append(n.showBtn); }
-  for (const f of v.fixes || []) n.acts.append(el('button', { type: 'button', class: 'btn btn-fix', text: f.label, onclick: () => applyFix(f) }));
+  // The buttons act on whatever the entry shows now and are rebuilt only when their labels change, under stable keys,
+  // so a repeat folding in keeps keyboard focus where it was.
+  const key = JSON.stringify([v.show && v.show.label, ...n.fixes.map(f => f.label)]);
+  if (key !== n.actsKey) {
+    n.actsKey = key;
+    n.showBtn = v.show ? el('button', { type: 'button', class: 'btn btn-fix btn-show', 'data-fk': 'show', onclick: () => n.show && n.show.run() }, msEl('my_location'), v.show.label) : null;
+    const kids = n.fixes.map((f, i) => el('button', { type: 'button', class: 'btn btn-fix', 'data-fk': `fix-${i}`, text: f.label, onclick: () => n.fixes[i] && applyFix(n.fixes[i]) }));
+    keepFocus(n.li, () => n.acts.replaceChildren(...(n.showBtn ? [n.showBtn] : []), ...kids), listEl);
+  }
   n.more.hidden = e.n < 2;
   if (e.n > 1) {
     n.sum.textContent = e.n === 2 ? '1 more like this' : `${e.n - 1} more ${e.group}`;
@@ -204,7 +217,8 @@ function render(lab, b) {
     let n = nodes.get(e.id);
     if (!n) { n = makeNode(); nodes.set(e.id, n); }
     if (n.rev !== e.rev) fill(n, e, lab);
-    if (n.li === ref) ref = ref.nextSibling; else listEl.insertBefore(n.li, ref);
+    // Moving an entry blurs whatever inside it held focus; keepFocus gives it back.
+    if (n.li === ref) ref = ref.nextSibling; else keepFocus(n.li, () => listEl.insertBefore(n.li, ref), document.activeElement);
   }
   for (const [id, n] of nodes) if (!keep.has(id)) { n.li.remove(); nodes.delete(id); }
   emptyEl.hidden = b.list.length > 0;

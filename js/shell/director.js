@@ -363,9 +363,15 @@ function capOne(i, rate, dt) {
 /* ---------- taking the camera and giving it back ---------- */
 function take(lab) {
   D.lab = lab; D.kind = kindOf(lab);
-  if (navAnim.lab === lab) navAnim.lab = null;
+  // A 2D zoom or move still easing in stops here, and is saved where it was going, not half-way there. The eases that
+  // end in a re-fit (Frame's, and the view the last take gave back) are the ones with a done, so they are saved fitted.
+  const A = navAnim, easing = A.lab === lab;
+  if (easing) A.lab = null;
   if (D.kind === '3d') { const c = lab.c3(); D.saved = { yaw: c.yawT, pitch: c.pitchT, dist: c.distT, tx: c.txT, ty: c.tyT, tz: c.tzT }; }
-  else { const c = camOf(lab); if (c.fit && !lab.selfCam) Object.assign(c, fitCam(lab)); D.saved = { x: c.x, y: c.y, z: c.z, fit: !lab.selfCam && !!c.fit }; }
+  else if (easing) {
+    const c = camOf(lab), ax = A.anchor ? A.wx - (A.anchor.x - view.w / 2) / A.z : c.x, ay = A.anchor ? A.wy - (A.anchor.y - view.h / 2) / A.z : c.y;
+    D.saved = { x: A.cx ?? ax, y: A.cy ?? ay, z: A.z, fit: !lab.selfCam && !!A.done };
+  } else { const c = camOf(lab); if (c.fit && !lab.selfCam) Object.assign(c, fitCam(lab)); D.saved = { x: c.x, y: c.y, z: c.z, fit: !lab.selfCam && !!c.fit }; }
   D.held = lab.releaseCam ? lab.releaseCam() : null;
   D.pace = (lab.zoomPace ? lab.zoomPace() : 1) ** 2;
   D.yawMax = lab.rig3 && lab.rig3.yawMax != null ? lab.rig3.yawMax : Infinity;

@@ -14,7 +14,8 @@
 ✒ Changelog:
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the glyphs in
-      STORY_ICON count toward the font subset.
+      STORY_ICON count toward the font subset. The .claude directory, where
+      agents keep their working copies, is skipped like node_modules.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       release a dataset names (js/core/version.js) must match package.json.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exempts
@@ -68,7 +69,7 @@ const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const SIGNATURE = '︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!';
 // vendor/katex holds third-party files kept exactly as published; vendor/VENDOR.md is ours.
 // _site is the staged Pages copy from tools/site.mjs: every file in it is a duplicate.
-const SKIP_DIRS = new Set(['node_modules', 'katex', '.git', 'shots', '__pycache__', '_site']);
+const SKIP_DIRS = new Set(['node_modules', 'katex', '.git', '.claude', 'shots', '__pycache__', '_site']);
 const OWN_EXT = new Set(['.js', '.mjs', '.css', '.html', '.md', '.py', '.jsonc', '.yml']);
 const DOTFILES = ['.gitignore', '.gitattributes', '.nojekyll'];
 // GitHub copies the pull request template into every new pull request's description, where a header would be noise.

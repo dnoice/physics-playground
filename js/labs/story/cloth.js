@@ -15,7 +15,7 @@
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for Insights that narrate the run: the first tear and
       where it starts, a rip running, the cloth settling, its lean in the
-      wind against tan θ = wind/g, its flutter against the gusts, and a
+      wind against tan θ = 0.62·wind/g, its flutter against the gusts, and a
       free fall when the last pin lets go.
     Earlier entries: see CHANGELOG.md
 
@@ -107,14 +107,14 @@ export const clothStory = {
         body: `${secs(t - S.t0)} in, its points move at <b>${spd(L, sh.v)}</b> on average, down from ${spd(L, S.vMax)} at the height of the swing. The damping (${(L.p.damping * 100).toFixed(1)} % of each point's velocity, every step) bled the motion away, and the fabric now hangs where gravity's pull on each point is balanced by the tension in the threads above it.${sh.pins < L.cols / 2 ? ' Between its pins the top edge sags in the curve of a hanging chain, the catenary.' : ''}` });
     }
 
-    // 4. In the wind: the sheet leans along the combined pull, tan θ = (mean wind) / g, and swings with the gusts.
+    // 4. In the wind: the sheet leans along the combined pull, tan θ = 0.62·wind/g (the gusts' mean push), and swings with them.
     if (w && g > 0 && sh.pins && Number.isFinite(sh.fx)) {
       const dx = sh.fx - sh.px, dy = sh.fy - sh.py, ang = Math.atan2(dx, dy);
       if (t - S.t0 > 3) { S.sum += ang; S.cnt++; }
       if (S.cnt >= 16 && !N.said('lean')) {
         const m = S.sum / S.cnt, th = Math.atan2(0.62 * w, g);
         if (Math.abs(m - th) < 0.17) N.add({ kind: 'lean', key: 'lean', title: `The ${L.presetId === 'flag' ? 'flag' : 'cloth'} leans ${deg(Math.abs(m))} in the wind`,
-          body: `Averaged over the gusts, the cloth hangs <b>${deg(Math.abs(m))}</b> from vertical. The wind pushes every point on average with 0.62 × ${acc(L, Math.abs(w))} while gravity pulls with ${acc(L, g)}, and a sheet hanging from its pins settles along the sum of the two, at tan θ = wind / g, which is <b>${deg(Math.abs(th))}</b>. A plumb line in a steadily accelerating car leans the same way.` });
+          body: `Averaged over the gusts, the cloth hangs <b>${deg(Math.abs(m))}</b> from vertical. The wind pushes every point on average with 0.62 × ${acc(L, Math.abs(w))} while gravity pulls with ${acc(L, g)}, and a sheet hanging from its pins settles along the sum of the two, at tan θ = 0.62·wind/g, which is <b>${deg(Math.abs(th))}</b>. A plumb line in a steadily accelerating car leans the same way.` });
       }
       // The swing of its centre about the average, timed from upward crossings.
       if (!Number.isFinite(S.mean)) S.mean = sh.fx; else S.mean += (sh.fx - S.mean) * 0.05;

@@ -895,13 +895,19 @@ export const gravity = {
     if (h.track != null && this.bodies.some(b => b.id === h.track)) { this.track = h.track; this.trackEase = 0; }
     updateNav();
   },
-  dirMass: null, dirMerged: -1, dirMergeId: -1, dirMergeT: -Infinity,
+  // The director's own memory between looks, never part of a snapshot or a saved state.
+  dirMass: null, dirMerged: -1, dirMergeId: -1, dirMergeT: -Infinity, dirT: -Infinity,
   /* Where the action is, in simulation pixels: a close pass between two bodies not bound to each other (or about to
      touch), a merger for three simulated seconds after it, a body leaving the system, the fastest body, the heaviest
      body with what circles it, and in the Solar System each world with its moons. keep is the subject being filmed,
      reported while it lasts even once it no longer stands out. Massless bodies count only as the fastest. */
   interest(keep) {
     const B = this.bodies, out = [], G = G0 * this.p.G;
+    // A look after time went back (a rewind, a loaded state, a restart) or after a long gap (a new take; a director's
+    // looks are at most 1.2 simulated seconds apart, at four times speed) has nothing of this run to compare with: it
+    // forgets the last merger and only takes the masses as they are now.
+    if (this.t < this.dirT || this.t - this.dirT > 2) { this.dirMass = null; this.dirMergeT = -Infinity; }
+    this.dirT = this.t;
     if (!B.length) return out;
     let M = 0, cx = 0, cy = 0, cz = 0, vx = 0, vy = 0, vz = 0, top = B[0];
     for (const b of B) { M += b.m; cx += b.m * b.x; cy += b.m * b.y; cz += b.m * b.z; vx += b.m * b.vx; vy += b.m * b.vy; vz += b.m * b.vz; if (b.m > top.m) top = b; }
@@ -916,7 +922,7 @@ export const gravity = {
       if (best) { this.dirMergeId = best.id; this.dirMergeT = this.t; }
     }
     this.dirMerged = this.merged; this.dirMass = new Map(B.map(b => [b.id, b.m]));
-    const mb = this.t - this.dirMergeT < 3 ? B.find(b => b.id === this.dirMergeId) : null, mk = byKey(keep, 'merge:');
+    const age = this.t - this.dirMergeT, mb = age >= 0 && age < 3 ? B.find(b => b.id === this.dirMergeId) : null, mk = byKey(keep, 'merge:');
     if (mb) at(mb, Math.max(mb.r * 10, 24), 0.95, `merge:${mb.id}`, 'A merger');
     else if (mk) at(mk, Math.max(mk.r * 10, 24), 0.4, keep, 'A merger');
     // A close encounter: the pair closest for their size, among the heaviest 150, unless they are bound to each other

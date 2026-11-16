@@ -130,18 +130,21 @@ export const fieldsStory = {
       }
     }
 
-    // 4. Falling into a charge, or leaving the bench: the particles that are gone. One erased by hand, or cleared,
-    //    goes without a word, and its record with it, so the next particles are timed in its place.
-    const absorbed = L.absorbed - S.absorbed, escaped = L.escaped - S.escaped;
+    // 4. Falling into a charge, or leaving the bench: the particles that are gone. Each one told uses up one of the
+    //    lab's new absorbed or escaped counts, so one erased by hand, or cleared, which raised neither, goes without
+    //    a word, and its record with it, so the next particles are timed in its place.
+    let absorbed = L.absorbed - S.absorbed, escaped = L.escaped - S.escaped;
     for (const [pid, r] of S.recs) {
       if (r.look === S.look) continue;
       S.recs.delete(pid);
       if (absorbed > 0 || escaped > 0) {
         let best = null, bd = Infinity; for (const c of L.charges) { const dd = Math.hypot(c.x - r.lx, c.y - r.ly); if (c.q * r.q < 0 && dd < bd) { bd = dd; best = c; } }
-        if (absorbed > 0 && best && bd < L.chargeR(best) * 3 && L.presetId === 'plates' && L.p.beam) { if (S.hits.length < 3) S.hits.push(r.lx); }
-        else if (absorbed > 0 && best && bd < L.chargeR(best) * 3) N.add({ kind: 'absorbed', group: 'particles absorbed', title: `Particle ${pid} fell into a charge`,
+        const fell = absorbed > 0 && best && bd < L.chargeR(best) * 3;
+        if (fell) absorbed--; else if (escaped > 0) escaped--; else continue;
+        if (fell && L.presetId === 'plates' && L.p.beam) { if (S.hits.length < 3) S.hits.push(r.lx); }
+        else if (fell) N.add({ kind: 'absorbed', group: 'particles absorbed', title: `Particle ${pid} fell into a charge`,
           body: `It was ${r.q > 0 ? 'positive' : 'negative'}, and the ${best.q > 0 ? '+' : '−'}${Math.abs(best.q)} charge pulled it in: opposite charges attract, with a force growing as 1/r² as they close. A particle aimed slightly to one side would have swung round it instead.` });
-        else if (escaped > 0) N.add({ kind: 'escape', group: 'particles gone', title: `Particle ${pid} left the bench`,
+        else N.add({ kind: 'escape', group: 'particles gone', title: `Particle ${pid} left the bench`,
           body: `It crossed the edge of the bench and was taken out of the run.${B0 !== 0 ? ' A magnetic field can bend a path into a circle but never stop it, so a particle whose circle is wider than the bench runs off it.' : ' With nothing to turn it back, it simply kept going.'}` });
       }
     }

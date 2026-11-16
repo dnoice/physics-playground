@@ -258,8 +258,12 @@ export function renderMode() {
   if (active) { refreshEnabled(); updateDock(); updateNav(); canvas.style.cursor = 'crosshair'; }
 }
 const ownText = n => `${n} setting${n === 1 ? '' : 's'} of your own`;
+/* A setting means nothing while the one it needs is off (Shadow softness with no shadow map): kept for when that is on
+   again, it is not one of the person's own meanwhile. */
+const idle = (k, b) => !!k.needs && !b[k.needs];
+const ownCount = b => Object.keys(world.over).filter(key => !idle(knobByKey(key), b)).length;
 function renderGfx() {
-  const b = budget(), t = tierNow(), n = Object.keys(world.over).length, btn = $('#btn-gfx');
+  const b = budget(), t = tierNow(), n = ownCount(b), btn = $('#btn-gfx');
   $('#btn-gfx-label').textContent = gfxLabel();
   btn.title = `Graphics: ${gfxLabel()}${n ? `, ${ownText(n)}` : ''}`;
   btn.classList.toggle('has-own', n > 0);
@@ -297,7 +301,7 @@ function buildKnob(k) {
       el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-thumb' })), el('span', { class: 'switch-text' }, el('span', { class: 'knob-name', text: k.label })));
     ctl.addEventListener('click', () => setOverride(k.key, !shown[k.key]));
     u.sync = () => ctl.setAttribute('aria-checked', String(!!shown[k.key]));
-    u.focus = () => ctl.focus();
+    u.focus = () => { ctl.focus(); return true; };
     u.row = el('div', { class: 'knob', 'data-key': k.key }, el('div', { class: 'knob-head' }, ctl, tag, own, reset), note);
   } else {
     const opts = k.options.filter(v => v <= limit(k.key)).map(v => [v, knobText(k, v)]), name = el('span', { class: 'knob-name', id: `${id}-name`, text: k.label });
@@ -310,10 +314,15 @@ function buildKnob(k) {
       // A value between the offered steps (a GPU limit) still leaves the group one tab stop.
       if (!buttons.some(b => b.tabIndex === 0)) buttons[0].tabIndex = 0;
     };
-    u.focus = () => (buttons.find(b => b.tabIndex === 0) || buttons[0]).focus();
+    // Choices that are off cannot take focus, and say so.
+    u.focus = () => { const b = buttons.find(x => x.tabIndex === 0) || buttons[0]; if (b.disabled) return false; b.focus(); return true; };
     u.row = el('div', { class: 'knob', 'data-key': k.key }, el('div', { class: 'knob-head' }, name, tag, own, reset), group, note);
   }
-  reset.addEventListener('click', () => { resetOverride(k.key); u.focus(); });
+  // Focus stays on the card, or, where its choices are off, goes to Reset to tier, or to the tier when that is gone too.
+  reset.addEventListener('click', () => {
+    resetOverride(k.key);
+    if (!u.focus()) { const all = $('#gfx-reset'); (all.hidden ? $('#gfx-list [aria-checked="true"]') : all).focus(); }
+  });
   knobs.set(k.key, u);
   return u.row;
 }
@@ -329,11 +338,13 @@ function renderKnobs(b, n) {
   const own = tierOwn(), label = tierNow().label;
   shown = { ...b, soft: b.soft || own.soft };
   for (const [key, u] of knobs) {
-    const k = u.k, mine = Object.hasOwn(world.over, key), off = !!k.needs && !b[k.needs], top = limit(key);
+    const k = u.k, off = idle(k, b), mine = Object.hasOwn(world.over, key) && !off, top = limit(key);
     u.row.dataset.own = String(mine); u.tag.hidden = !mine; u.reset.hidden = !mine;
     u.own.textContent = `${label}: ${knobText(k, own[key])}`;
     u.sync(off);
-    const more = off ? ' Switch the shadow map on to soften it.' : key === 'scale' ? ` This display has ${+view.dpr.toFixed(2)}×.` : k.options && top < Math.max(...k.options) ? ` This GPU takes up to ${knobText(k, top)}.` : '';
+    // A GPU that takes no more than a setting's least (no texture filtering at all) does not offer it.
+    const more = off ? ' Switch the shadow map on to soften it.' : key === 'scale' ? ` This display has ${+view.dpr.toFixed(2)}×.` : !k.options || top >= Math.max(...k.options) ? ''
+      : top <= Math.min(...k.options) ? ' This GPU does not offer it.' : ` This GPU takes up to ${knobText(k, top)}.`;
     u.note.textContent = k.note + more;
   }
   const own1 = ownText(n);

@@ -142,8 +142,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.17.0-0e7490?style=flat-square&labelColor=0c1118"
-      alt="Release 2.17.0">
+    <img src="https://img.shields.io/badge/release-v2.18.0-0e7490?style=flat-square&labelColor=0c1118"
+      alt="Release 2.18.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -616,7 +616,8 @@ full-height Inspector beside them.
 - **Settings**: the gear at the right of the top bar, or **Shift+S**, opens
   one dialog with four sections: Graphics, Units, Head-up display and
   Keyboard. The Graphics, Units, HUD and keyboard buttons beside it open it
-  at their own section. Tab stays inside it, Esc closes it and puts you back
+  at their own section, as do **U** and **?**, which close it when pressed
+  again. Tab stays inside it, Esc closes it and puts you back
   where you were, and on a phone it fills the screen. Everything in it is
   kept in this browser.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
@@ -693,7 +694,7 @@ a capture or a warning, is also announced to screen readers.
 | Fluid | The dam-break front against Ritter's 2√(gh₀), and its run-up against v²/2g; the bottom layers squashing; a drop's free fall and its spray; surges meeting in a jet; zero-g blobs meeting and coming to rest; the flow round a post; the liquid settling |
 | Waves | The wavelength measured crest to crest against c/f; double-slit fringes against the slit law; the phased array's beam angle; standing waves off reflecting edges; what the absorbing edges let back; the Doppler squeeze and the Mach cone; the lens's focus |
 | Chaos | The Lyapunov time and the forecast it makes; the copies parting; flips over the top against the energy they need; energy holding; regular motion; the two normal modes; damping |
-| Cloth | The first tear and where it starts; a rip running; the cloth coming to rest; its lean in the wind against tan θ = wind/g; its sway against the gusts; a free fall when the last pin lets go |
+| Cloth | The first tear and where it starts; a rip running; the cloth coming to rest; its lean in the wind against tan θ = 0.62·wind/g; its sway against the gusts; a free fall when the last pin lets go |
 | Fields | Each gyration timed against 2πm/\|q\|B, and the same time round at every speed; the E × B and grad-B drifts measured against theory; particles trapped by a charge or falling into one; the beam pulled into a plate |
 
 ### Units
@@ -1055,7 +1056,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-b45309?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&color=15803d&labelColor=0c1118&logo=githubactions&logoColor=6fcf97
-[badge-release]: https://img.shields.io/badge/release-v2.17.0-0e7490?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.18.0-0e7490?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

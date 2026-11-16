@@ -443,6 +443,11 @@ with sync_playwright() as p:
     pg.add_init_script("const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, o) { return t === 'webgl2' ? null : g.call(this, t, o); };")
     pg.goto(URL + "#chaos"); pg.wait_for_timeout(1200)
     ok("no_webgl2_stays_2d", pg.evaluate(f"{P}.mode.get()") == "2d" and pg.evaluate("document.getElementById('mode-3d').disabled"))
+    # With no 3D there is nothing to set under Graphics: its section leaves Settings, which opens at the next one.
+    hid = pg.evaluate("document.getElementById('st-graphics').hidden")
+    pg.click("#btn-settings"); pg.wait_for_timeout(200)
+    r = pg.evaluate(f"({{ open: document.getElementById('settings').open, section: {P}.settings.section(), pane: document.getElementById('sp-graphics').hidden }})")
+    ok("no_webgl2_no_graphics_section", hid and r["open"] and r["section"] == "units" and r["pane"], (hid, r))
     ctx.close()
 
     ctx = b.new_context(viewport=VIEW)
