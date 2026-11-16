@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.17)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
+      from starlight under Planet classes, with its table of climates; the
+      climate in Our Solar System, in the 3D table's Gravity row and in the
+      per-body tracks.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0: what each lab tracks and what its README records of the scene.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -212,7 +216,8 @@ Gravity also includes **Our Solar System**, a scene with real planetary
 masses, sizes and orbits, plus moons, dwarf planets, Halley’s comet and
 samples from the asteroid and Kuiper belts. The run begins at noon on
 1 January 2000. Every world in Gravity belongs to one of the five
-[planet classes](#planet-classes) of its research reference.
+[planet classes](#planet-classes) of its research reference, and takes its
+[climate](#climate-from-starlight) from the starlight it receives.
 
 ## The labs
 
@@ -319,9 +324,10 @@ To explore it:
 - **Click a planet** to follow it, then zoom in. Its moons appear as soon
   as the zoom draws them clear of the planet. Inspect gives the planet's
   distance from the Sun, its period and its tilt from the ecliptic, and its
-  real radius, density, gravity, escape speed and Hill sphere. Click a moon
-  to see its orbit about its planet, and the Roche limit it must keep clear
-  of: Phobos is already inside Mars's.
+  real radius, density, gravity, escape speed and Hill sphere, then its
+  climate: the sunlight it gets, its temperatures, its air and its spin.
+  Click a moon to see its orbit about its planet, and the Roche limit it
+  must keep clear of: Phobos is already inside Mars's.
 - **Orbits** and **Names**, under Display, draw each named body's ellipse
   and name. Each orbit is brightest at its body and fades back round, so it
   shows which way the body goes. The orbits stay smooth even when the 3D
@@ -414,6 +420,53 @@ The stage still draws every world larger than life, so it can be seen;
 Inspect gives the size it would really have. `tests/planets.py` checks
 each class and figure against the reference's own data.
 
+### Climate from starlight
+
+A world's climate comes from where it stands. Every star shines by its mass,
+as the main-sequence mass–luminosity relation gives it (the Sun is 1), and
+each world receives the sum of every star's light over the square of its
+distance: binaries and crowded skies work. From that:
+
+- **Equilibrium temperature**, 278.6 K × S^¼ × (1 − A)^¼, with S the
+  starlight in Earth's units and A the share it reflects. Our Solar System
+  lands on the textbook values: Mercury 440 K, Venus 230, Earth 255, Mars
+  210, Jupiter 110 and Neptune 47 at their mean distances.
+- **Air.** A rocky world keeps its air while its starlight stays inside the
+  cosmic shoreline for its escape speed, so Mercury and the Moon are bare
+  and Mars barely clothed. Past 1.06 times Earth's starlight, oceans boil
+  into a runaway greenhouse.
+- **Surface temperature.** Air traps heat as a grey greenhouse: Earth sits
+  at 288 K and Venus at 737 K. Giants add the heat they still give off, so
+  Jupiter's cloud tops are at about 124 K. A surface follows a change of
+  starlight over a week (bare rock) to half a year (Venus), so an eccentric
+  orbit has seasons and a world pushed toward its star warms over time.
+- **Day and night.** Air and spin carry heat round to the night side. A
+  world with neither, like the Moon, swings from 380 K at noon to 100 K at
+  night.
+- **Spin.** Tides lock a world when they would stop its spin within a tenth
+  of the Solar System's age (Gladman et al. 1996): the Moon to Earth, a
+  close-in planet to its star. Mercury, on its eccentric orbit, keeps a
+  3:2 resonance instead.
+
+The climates it adds up to, in 2D and 3D alike:
+
+| Climate | Where | What you see |
+| --- | --- | --- |
+| Molten | Day side above 1000 K | A dark crust, lava glowing in its cracks |
+| Hothouse | Inside the runaway limit, with air | A pale, Venus-like deck of cloud |
+| Temperate | Liquid water, about 260 to 330 K | Oceans, clouds and small ice caps |
+| Cold, then frozen | Ice line spreading toward the equator | Ice caps that grow until the world is a snowball |
+| Eyeball | One face locked to its star | Open water under the star, ice across the night side |
+| Hot, bare or dry | Too hot, too small or too thin-aired for water | Bare rock, or polar frost under thin air like Mars's |
+| Giants | Cold to hot | Ammonia bands, white water clouds, a clear blue sky, then a dark envelope with a glowing night side |
+
+Follow any world to read its starlight (in Earth's units and W/m²), its
+equilibrium and surface temperatures (in K, with °C or °F), its air, its
+climate and its spin in Inspect, each with a line on why. The per-body
+tracks of a dataset carry its temperature and starlight. `tests/planets.py`
+and `tests/solar.py` check the climates, the lag and the Solar System's
+temperatures.
+
 ## Quick start
 
 The fastest way in is the **[live lab][demo]**, served by GitHub Pages.
@@ -449,7 +502,7 @@ load, the workspace stays in 2D and says why.
 
 | Lab | In 3D |
 | --- | --- |
-| Gravity | Open space: a nebula, plasma stars, and worlds that vary within their planet class: rocky terrestrials and super-Earths, ocean worlds, calm hazy sub-Neptunes and ice giants, banded gas giants in several hues, some ringed, some stormy |
+| Gravity | Open space: a nebula, plasma stars, and worlds that vary within their planet class: rocky terrestrials and super-Earths, ocean worlds, calm hazy sub-Neptunes and ice giants, banded gas giants in several hues, some ringed, some stormy; each dressed by its climate, from glowing lava and pale hothouse skies to oceans, ice caps, snowballs and eyeball worlds locked to their stars |
 | Collisions | A slate air table in walnut and brass, which tilts when gravity is on |
 | Fluid | A glass aquarium of real-looking liquid, with refraction and caustics |
 | Waves | A walnut ripple tank with projected caustics and a screen graphing the fringes |
@@ -676,7 +729,7 @@ Some points about the files:
   - Both files carry `t_years`, the time in years. `t_s` is the engine's
     clock, and at G = 1× a year is 4.41 of its seconds.
   - Each track row also names its body, its class and the body it orbits
-    at that moment.
+    at that moment, its temperature and the starlight it receives.
 - **Tracks always span the whole run.** On a long run with many bodies
   they thin evenly, keeping every other sample each time they fill.
   Before, they stopped without a word. The README says how far they were
@@ -690,7 +743,7 @@ What each lab tracks, every object with a stable number:
 
 | Lab | Tracks | The scene in the README |
 | --- | --- | --- |
-| Gravity | Every body: position, velocity, mass, name, class and what it orbits | The bodies at the start, G, softening |
+| Gravity | Every body: position, velocity, mass, name, class, what it orbits, temperature and starlight | The bodies at the start, G, softening |
 | Collisions | Every ball: position, velocity, radius, mass, spin, and whether it is the tracer | The box, the radii, gravity, e and μ |
 | Fluid | One particle in eight, chosen by number: position, velocity, density | The tank, the spacing, gravity and tilt, every post |
 | Waves | The detector line's intensity profile | The grid, the detector line, the slits, every source |

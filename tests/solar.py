@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Solar System Tests (digiSpace Edition - v2.15)
+    - Title: Solar System Tests (digiSpace Edition - v2.18)
     - File Name: solar.py
     - Relative Path: tests/solar.py
     - Artifact Type: test
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      planets' equilibrium temperatures within 10 % of the textbook values at
+      their mean distances; Venus's, Earth's and Mars's surfaces and the
+      giants' cloud tops; each planet's climate and spin, the Moon locked to
+      Earth; the climate rows in Inspect.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Pluto's
       orbit holds through a turn of Charon: size to 1e-5 and shape to 2e-5
       where Pluto alone swings by 1.6 %, one Inspect size throughout, and the
@@ -41,6 +46,9 @@
       turns so eccentric orbits count true; Phobos's orbit unchanged;
       Jupiter's Trojans still at L4 and L5; energy within 2e-7 all year;
       nothing merged or lost.
+    - Climate: equilibrium temperatures within 10 % of the textbook values,
+      Venus's, Earth's and Mars's surfaces, the giants' cloud tops, each
+      planet's climate and spin, and the climate rows in Inspect.
     - Rewind and saved states keep every name, moon link, radius and floor;
       a tampered state's self-host, cycle, chain or massless host is cut.
     - Display: the date beside the clock, the softening in significant
@@ -124,6 +132,35 @@ with sync_playwright() as p:
        and rows["r"].get("Time for one orbit") == "1.00 yr" and rows["r"].get("Radius") == "6371 km" and rows["r"].get("Orbit tilt") == "0.0°", rows)
     io = pg.evaluate(f"""(() => {{ {HELP} L.track = by('Io').id; const i = L.inspect(); L.track = null; return {{ title: i.title, focus: i.focus }}; }})()""")
     ok("sol_moon_inspects_about_its_planet", io == {"title": "Moon of Jupiter", "focus": "Distance from Jupiter"}, io)
+
+    # ---- Climate from sunlight: each planet's equilibrium temperature at its mean distance against the textbook value,
+    # its surface or cloud tops, its look and its spin. Temperatures here go as r^-½ while internal heat is small, so
+    # each is carried from where the planet stands at J2000 to its semi-major axis.
+    REAL = {"Mercury": (0.387098, 440), "Venus": (0.723336, 230), "Earth": (1.000003, 255), "Mars": (1.523710, 210), "Jupiter": (5.202887, 110),
+            "Saturn": (9.536676, 81), "Uranus": (19.189165, 58), "Neptune": (30.069923, 47)}
+    # The climate is read again first, with no time passing, so the starlight is the planets' where they stand now.
+    clim = pg.evaluate(f"""(real) => {{ {HELP} const sun = by('Sun'), out = {{}}; L.climateAll(0, false);
+      for (const [n, [a]] of Object.entries(real)) {{ const b = by(n), c = L.climateOf(b), r = Math.hypot(b.x - sun.x, b.y - sun.y, b.z - sun.z) / 135, k = Math.sqrt(r / a);
+        out[n] = {{ eq: c.Teq * k, T: c.T * k, top: c.T, law: 278.6 * Math.pow((1 - c.A) / (r * r), 0.25) / c.Teq, cls: c.cls, spin: c.spin, type: c.type, haze: c.haze, xIce: c.xIce }}; }}
+      for (const n of ['Moon', 'Io', 'Titan']) {{ const c = L.climateOf(by(n)); out[n] = {{ cls: c.cls, spin: c.spin, lock: c.lock && c.lock.name, T: c.T }}; }}
+      L.track = by('Earth').id; out.rows = Object.fromEntries(L.inspect().rows.map(q => [q[0], q[1]])); L.track = null;
+      return out; }}""", REAL)
+    ok("sol_climate_equilibrium_near_reality", all(abs(clim[n]["eq"] / t - 1) < 0.1 and abs(clim[n]["law"] - 1) < 1e-6 for n, (_, t) in REAL.items()),
+       {n: round(clim[n]["eq"], 1) for n in REAL})
+    # Venus's runaway greenhouse, Earth's mild one and Mars's thin air; the giants' cloud tops near their measured effective
+    # temperatures, their own heat included.
+    ok("sol_climate_surfaces_and_cloud_tops", abs(clim["Venus"]["T"] / 737 - 1) < 0.03 and abs(clim["Earth"]["T"] / 288 - 1) < 0.02 and abs(clim["Mars"]["T"] / 210 - 1) < 0.05
+       and all(abs(clim[n]["top"] / t - 1) < 0.1 for n, t in (("Jupiter", 124.4), ("Saturn", 95.0), ("Uranus", 59.1), ("Neptune", 59.3))),
+       {n: round(clim[n]["T"] if n in ("Venus", "Earth", "Mars") else clim[n]["top"], 1) for n in REAL})
+    ident = {n: (clim[n]["cls"], clim[n]["spin"]) for n in REAL}
+    ok("sol_climate_keeps_each_identity", ident == {"Mercury": ("hot", "resonant"), "Venus": ("hothouse", "slowed"), "Earth": ("temperate", "free"), "Mars": ("dry", "free"),
+                                                    "Jupiter": ("coldGiant", "free"), "Saturn": ("coldGiant", "free"), "Uranus": ("iceGiant", "free"), "Neptune": ("iceGiant", "free")}
+       and clim["Earth"]["type"] == 1 and clim["Venus"]["haze"] == 1 and clim["Mercury"]["type"] == 0 and clim["Mars"]["type"] == 0 and 0.8 < clim["Mars"]["xIce"] < 1
+       and (clim["Moon"]["cls"], clim["Moon"]["lock"]) == ("bare", "Earth") and clim["Io"]["lock"] == "Jupiter" and (clim["Titan"]["cls"], clim["Titan"]["lock"]) == ("frozen", "Saturn")
+       and 90 < clim["Titan"]["T"] < 100, (ident, {n: clim[n] for n in ("Moon", "Io", "Titan")}))
+    ok("sol_climate_in_inspect", re.fullmatch(r"\d+ K \(\d+ °C\)", clim["rows"].get("Surface temperature", "")) is not None and clim["rows"].get("Climate") == "Temperate"
+       and clim["rows"].get("Air") == "Earth-like" and clim["rows"].get("Rotation") == "Spins freely" and clim["rows"].get("Starlight received", "").startswith("1.03 × Earth's"),
+       {k: clim["rows"].get(k) for k in ("Starlight received", "Surface temperature", "Air", "Climate", "Rotation")})
     # Pluto's own orbit wobbles as it swings round Charon; the elements are the pair's, so its barycentre is measured.
     t = pg.evaluate(f"""(() => {{ {HELP} const pl = by('Pluto'), ch = by('Charon'), M = pl.m + ch.m, w = (k) => (pl[k] * pl.m + ch[k] * ch.m) / M;
       const pc = {{ x: w('x'), y: w('y'), z: w('z'), vx: w('vx'), vy: w('vy'), vz: w('vz'), m: M }};
