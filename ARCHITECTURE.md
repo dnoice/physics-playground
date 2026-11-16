@@ -905,13 +905,15 @@ while Fluid's liquid surface renders for the stage's own camera and size.
   lab that spans decades).
 - **Moves.** Between shots, `plan` lays van Wijk and Nuij's smooth zoom and
   pan path from the camera to the subject as last seen, carried on at its
-  speed. A quintic ease times it, and the camera's own speed at the start
-  dies away over the move, so no move starts or ends with a jolt. `plan`
-  rehearses the move in 48 samples and lengthens it until its fastest
-  moment stays under 70 % of the limits. If the subject has strayed a fifth
-  of a view by the end, up to two shorter moves catch up. Within a shot,
-  `hold` runs a critically damped spring on each number, solved exactly
-  for a goal moving at constant speed.
+  speed for about two seconds ahead (a damped trend). A quintic ease times
+  it, and the camera's own speed at the start dies away over the move, so
+  no move starts or ends with a jolt. `plan` rehearses the move in 48
+  samples and lengthens it until its fastest moment stays under 70 % of
+  the limits. While it runs, how far the subject strays from that course
+  is followed by a spring and eased in, so a wandering subject stays in
+  frame. If it has strayed a fifth of a view by the end, up to two shorter
+  moves catch up. Within a shot, `hold` runs a critically damped spring on
+  each number, solved exactly for a goal moving at constant speed.
 - **Limits.** `cap` holds every frame to `DIRECTOR_CAP` per second: 0.55 of
   a view of pan, 0.6 e-folds of zoom (times the square of `zoomPace()`, for
   the Solar System's decades), 0.4 rad of yaw and 0.25 rad of pitch. The

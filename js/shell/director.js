@@ -82,7 +82,7 @@ export const director = {
 const D = director;
 const C = new Float64Array(6), V = new Float64Array(6), G = new Float64Array(6), GV = new Float64Array(6), G1 = new Float64Array(6), PC = new Float64Array(6), W = new Float64Array(6), X = new Float64Array(6), X0 = new Float64Array(6);
 // A move between shots: from a to b along the smooth zoom-and-pan path, timed by a quintic ease.
-const T = { on: false, t: 0, len: 1, S: 0, d1: 0, r0: 0, w0: 1, pure: true, a: new Float64Array(6), b: new Float64Array(6), v0: new Float64Array(6), sub: { key: null, x: 0, y: 0, z: 0, lw: 0, vx: 0, vy: 0, vz: 0, t: 0 } };
+const T = { on: false, t: 0, len: 1, S: 0, d1: 0, r0: 0, w0: 1, pure: true, a: new Float64Array(6), b: new Float64Array(6), v0: new Float64Array(6), k: new Float64Array(6), kv: new Float64Array(6), sub: { key: null, x: 0, y: 0, z: 0, lw: 0, vx: 0, vy: 0, vz: 0, t: 0 } };
 const AIM = { txT: 0, tyT: 0, tzT: 0 };
 let PU = 0, PLW = 0;
 
@@ -203,9 +203,11 @@ function look(lab, p) {
    the camera can keep it in frame without racing. */
 const fast = s => Math.log(Math.hypot(s.vx, s.vy, s.vz) / (0.45 * CAP.pan) + 1e-12);
 /* The camera this shot wants at time t: the subject s carried on at its speed, a slow dolly in, and in 3D a slow
-   orbit. A wide 2D shot also drifts a little sideways. The point stays where the world fills the frame. */
+   orbit. A wide 2D shot also drifts a little sideways. The point stays where the world fills the frame. The subject's
+   speed is trusted for about two seconds ahead (a damped trend): over a long move, a wandering or curving subject is
+   not sent off along a straight line. */
 function goalAt(lab, t, out, s = D.sub) {
-  const S = D.shot, p = clamp((t - S.t0) / S.len, 0, 1.6), q = t - s.t;
+  const S = D.shot, p = clamp((t - S.t0) / S.len, 0, 1.6), q = 2 * (1 - Math.exp(-(t - s.t) / 2));
   out[0] = s.x + s.vx * q; out[1] = s.y + s.vy * q; out[2] = s.z + s.vz * q;
   out[3] = s.lw - Math.log(1 + S.push * p);
   if (D.kind === '3d') { out[4] = clamp(S.yaw + S.dir * ORBIT * (t - S.t0), -D.yawMax, D.yawMax); out[5] = S.pitch; return; }
@@ -265,7 +267,7 @@ function shotOver() {
    shorter than TMIN nor longer than TMAX. Where the subject strays from that course, the spring that holds the
    shot makes up the difference after. */
 function plan(lab) {
-  Object.assign(T.sub, D.sub); T.v0.set(V);
+  Object.assign(T.sub, D.sub); T.v0.set(V); T.k.fill(0); T.kv.fill(0);
   goalAt(lab, D.now, G, T.sub);
   T.a.set(C); T.b.set(G);
   const d1 = Math.hypot(G[0] - C[0], G[1] - C[1], G[2] - C[2]), w0 = Math.exp(C[3]), w1 = Math.exp(G[3]);
@@ -309,16 +311,25 @@ function along(tau, g, out) {
   out[4] = a[4] + e * (g[4] - a[4]); out[5] = a[5] + e * (g[5] - a[5]);
   // The camera's speed when the move began carries on and dies away, so a new shot never starts with a jolt.
   for (let i = 0; i < 6; i++) out[i] += T.v0[i] * h;
+  return e;
 }
-/* At the end of a move the camera is where the subject was expected to be. If the subject has strayed from that by a
-   fifth of a view or more, up to twice a shot a second, shorter move catches up, starting at the camera's speed;
-   otherwise the spring takes over. */
+/* The move follows the subject as it really goes, too: how far it has strayed from the course the move was planned
+   on is followed by the same spring that holds a shot, and eased in with the move. If it has still strayed a fifth of
+   a view or more at the end, up to twice a shot a shorter move catches up, starting at the camera's speed; otherwise
+   the spring takes over. */
 function transit(lab, dt) {
   T.t += dt;
-  const tau = Math.min(1, T.t / T.len), S = D.shot;
-  goalAt(lab, D.now, G, T.sub); along(tau, G, C);
+  const tau = Math.min(1, T.t / T.len), S = D.shot, k = Math.exp(-SPRING * dt);
+  goalAt(lab, D.now, G, T.sub); goalAt(lab, D.now, G1);
+  for (let i = 0; i < 6; i++) {
+    const d = T.k[i] - (G1[i] - G[i]), q = (T.kv[i] + SPRING * d) * dt;
+    T.k[i] = G1[i] - G[i] + (d + q) * k; T.kv[i] = (T.kv[i] - SPRING * q) * k;
+  }
+  const e = along(tau, G, C);
+  for (let i = 0; i < 6; i++) C[i] += e * T.k[i];
   if (tau < 1) return;
-  T.on = false; goalVelocity(lab, T.sub); V.set(GV);
+  T.on = false; goalVelocity(lab, T.sub);
+  for (let i = 0; i < 6; i++) V[i] = GV[i] + T.kv[i];
   goalAt(lab, D.now, G);
   const off = Math.max(Math.hypot(G[0] - C[0], G[1] - C[1], G[2] - C[2]) / Math.exp(C[3]), Math.abs(G[3] - C[3]));
   if (off > 0.2 && S.again < 2) { S.again++; plan(lab); } else S.held = D.now;
