@@ -90,6 +90,9 @@ function closed() {
   const o = opener;
   opener = null;
   if (o && o !== document.body && o.isConnected) o.focus();
+  // Opened from nowhere in particular, focus leaves the closed dialog now: the browser would only drop it from the
+  // hidden control at its next render, and a key pressed meanwhile would land on a control no one can see.
+  else if (dlg.contains(document.activeElement)) document.activeElement.blur();
 }
 export function closeSettings() { if (!dlg.open) return false; dlg.close(); closed(); return true; }
 /* A section the workspace cannot offer (Graphics, when 3D cannot run) leaves the nav. An open dialog moves off it; a
