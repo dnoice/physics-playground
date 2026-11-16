@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Dials and Placement Tests (digiSpace Edition - v2.11)
+    - Title: Dials and Placement Tests (digiSpace Edition - v2.12)
     - File Name: placement.py
     - Relative Path: tests/placement.py
     - Artifact Type: test
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      throws follow the orbit, not the zoom, and stay in the system; a drop
+      beside a giant makes a moon.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
       new look: value without a box and unit set back, the degree sign, the
       ridges parted round the value, wheels level past a two-line name and
@@ -49,6 +52,9 @@
       charges and charge-to-mass ratios within their ranges.
     - New parameters: Fluid's post radius, Fields' charge size, Cloth's
       gustiness and ball size.
+    - Gravity's throws and drops: a short drag throws at the same share of
+      the circular speed at any zoom and stays in the system, and a drop
+      beside a giant becomes its moon.
 
 ✒ Usage Instructions:
     $ python tests/placement.py
@@ -191,6 +197,33 @@ with sync_playwright() as p:
     pg.click("#btn-deck-size"); pg.wait_for_timeout(300)
     settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
     ok("inspector_names_the_type", "Ice giant" in pg.inner_text("#tile-deck"))
+    pg.context.close()
+
+    # ---- Gravity (2.12.0): a throw is measured against the orbit it goes into, so a short drag stays in the system at
+    # any zoom (it used to leave at several times escape speed zoomed out), and a drop beside a giant becomes its moon
+    pg = fresh("gravity")
+    pg.evaluate("PhysicsPlayground.preset('solar')"); pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(300)
+    # Speed against the body that holds the throw's start, over the circular speed there, and over the escape speed.
+    ratio = """(id) => { const L = PhysicsPlayground.active, b = L.bodies.find(q => q.id === id), H = L.hostAt(b.x, b.y, b.z) === b ? L.heaviest() : L.hostAt(b.x, b.y, b.z);
+      const d = Math.hypot(b.x - H.x, b.y - H.y), v = Math.hypot(b.vx - H.vx, b.vy - H.vy), vc = L.vCirc(H.m + b.m, d); return [v / vc, v / (vc * Math.SQRT2)]; }"""
+    throws = []
+    for zoom in (1, 0.25):
+        if zoom != 1:
+            pg.evaluate(f"PhysicsPlayground.view.zoomBy({zoom})"); pg.wait_for_timeout(1500)
+        box = pg.locator("#stage-canvas").bounding_box(); x0, y0 = box["x"] + box["width"] * 0.62, box["y"] + box["height"] * 0.5
+        before = pg.evaluate("PhysicsPlayground.active.uid")
+        pg.mouse.move(x0, y0); pg.mouse.down(); pg.mouse.move(x0, y0 - 30, steps=3); pg.mouse.move(x0, y0 - 60, steps=3); pg.mouse.up(); pg.wait_for_timeout(150)
+        new = pg.evaluate(f"PhysicsPlayground.active.bodies.filter(b => b.id > {before}).map(b => b.id)")
+        throws.append(pg.evaluate(ratio, new[0]) if new else None)
+    ok("throw_speed_follows_the_orbit_not_the_zoom", all(t and abs(t[0] - 60 / 90) < 0.04 and t[1] < 1 for t in throws), throws)
+    pg.evaluate("PhysicsPlayground.advance(10)")
+    ok("thrown_bodies_stay_in_the_system", pg.evaluate("PhysicsPlayground.active.escaped") == 0)
+    moon = pg.evaluate("""(() => { const L = PhysicsPlayground.active; L.build('solar'); const J = L.bodies.find(b => b.kind === 'gas' && b.m > 0.5), n = L.bodies.length;
+      L.p.launchMass = 0.001; L.p.kind = 'auto'; const host = L.hostAt(J.x + 6, J.y); L.dropOrbit(J.x + 6, J.y); if (L.bodies.length === n) return null;
+      const m = L.bodies.at(-1), h = L.dt(); let lo = Infinity, hi = 0;
+      for (let i = 0; i < 480 * 8; i++) { L.step(h); L.t += h; const d = Math.hypot(m.x - J.x, m.y - J.y); lo = Math.min(lo, d); hi = Math.max(hi, d); }
+      return [host === J, L.bodies.includes(m), +lo.toFixed(2), +hi.toFixed(2)]; })()""")
+    ok("drop_beside_a_giant_makes_a_moon", moon and moon[0] and moon[1] and 4 < moon[2] and moon[3] < 8.5, moon)
     pg.context.close()
 
     # ---- Collisions, Fluid, Waves, Fields: random sizes, frequencies, phases and charges

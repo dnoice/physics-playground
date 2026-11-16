@@ -14,7 +14,8 @@
 ✒ Changelog:
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.12.0: no two worlds alike and the new Star system in Planet classes,
-      the 3D table's Gravity row, and the release badge.
+      the 3D table's Gravity row, and the release badge. Mouse and touch
+      explains throwing and dropping in Gravity.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.11.0: the release badge.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -537,6 +538,15 @@ that matter. The layout reflows to one column below 1180 px.
 - Zooming in follows the cursor and zooming back out returns to the home
   view, so you can always find your way back.
 - On touch screens, pinch zooms and two fingers pan.
+- **Throwing and dropping in Gravity.**
+  - A click on empty sky drops a body into a circular orbit about what holds
+    that point: the star, or a planet when you click close beside it (zoom in
+    on a giant and click near it to give it a moon).
+  - A drag throws one. About 90 px of drag throws at the circular speed of the
+    orbit it goes into, and about 127 px escapes. That holds at every zoom
+    and in either view.
+  - The reading beside the arrow gives the speed as a multiple of the
+    circular speed, and says when the throw will escape.
 
 ### Keyboard
 

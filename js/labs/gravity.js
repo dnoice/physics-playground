@@ -19,7 +19,12 @@
       moon on each giant, softening of 1 px so the moons keep their planets,
       and a comet that is a comet; Tilted orbits' comet too. Each class has a
       few hues a world picks by its id; sub-Neptunes and ice giants are calm
-      (surface 3); ringed() gives rings in 2D and 3D alike.
+      (surface 3); ringed() gives rings in 2D and 3D alike. On Dennis's report
+      of thrown bodies sailing out of the system: throwVel measures a throw
+      against the circular speed about what holds its start (hostAt), so a
+      drag means the same at any zoom (the old rule threw short drags at up to
+      13 times escape speed zoomed out); drops orbit hostAt, so a click beside
+      a giant makes a moon; throwText reads the throw out.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits as
       smooth curves (orbitFrame, orbitCurve): any span that would draw long is
       halved again, so an orbit the camera sits inside no longer crosses the
@@ -66,6 +71,9 @@
     - Physical models in Inspect: radius from the reference's mass-radius
       relation (or the real one), density, gravity, escape speed, Hill sphere,
       Roche limit and the IAU mass ratio.
+    - Throws and drops that stay in the system: a drag throws at a share of
+      the circular speed about what holds the point (90 px is a circular
+      orbit's), at any zoom, and a click beside a giant gives it a moon.
     - New bodies: their mass, a chosen class that keeps the mass in its range,
       the drop speed in times the circular speed, and the tilt of new orbits;
       Random new bodies draws each class and mass instead, and the throw
@@ -105,6 +113,9 @@ import { active, announce } from '../shell/state.js';
 /* ================================================================== */
 export const G0 = 5000;
 export const LAUNCH_K = 1.6;
+/* Pixels of drag that throw a body at the circular speed of the orbit it is thrown into: about 1.41 times as far
+   escapes. Measured on the screen, so a throw means the same at every zoom, in every scene and in either view. */
+export const THROW_PX = 90;
 export const TRAIL_CAP = 1200;
 export const BODY_CAP = 300;
 export const STAR_MASS = 150;
@@ -633,13 +644,44 @@ export const gravity = {
     if (this.bodies.length >= BODY_CAP) { announce(`Body limit reached (${BODY_CAP}). Delete some or reset the scene.`); return false; }
     this.bodies.push(b); this.accDirty = true; this.E0 = this.energy(); return true;
   },
+  /* The body that holds a point: a world whose Hill sphere it lies well inside (half its radius, where a prograde
+     orbit lasts), the smallest such, else the heaviest body. A body dropped or thrown there orbits it. */
+  hostAt(x, y, z = 0) {
+    const H = this.heaviest();
+    if (!H) return null;
+    let host = H, best = Infinity;
+    for (const P of this.bodies) {
+      if (P === H || !(P.m > 0)) continue;
+      const rH = Math.hypot(P.x - H.x, P.y - H.y, P.z - H.z) * Math.cbrt(P.m / (3 * (H.m + P.m)));
+      if (rH < best && Math.hypot(x - P.x, y - P.y, z - P.z) < rH * 0.5) { host = P; best = rH; }
+    }
+    return host;
+  },
+  /* A throw from (x, y, z) along the drag's direction in the world (dx, dy, dz), px screen pixels long. Its speed is
+     px / THROW_PX times the circular speed about the body that holds the point, on top of that body's own motion, so
+     a short drag is a short, bound throw whatever the zoom; the old rule (the drag's length in the world, 1.6 times
+     a second) flung a 40-pixel drag out at several times escape speed in a zoomed-out view. With nothing to orbit,
+     that old rule stands. Returns the velocity and how it compares with the circular speed there. */
+  throwVel(x, y, z, dx, dy, dz, px, m) {
+    const H = this.hostAt(x, y, z), len = Math.hypot(dx, dy, dz);
+    if (!H || !len) return { vx: dx * LAUNCH_K, vy: dy * LAUNCH_K, vz: 0, rel: Math.hypot(dx, dy) * LAUNCH_K, k: NaN };
+    const d = Math.max(Math.hypot(x - H.x, y - H.y, z - H.z), H.r), k = px / THROW_PX, s = this.vCirc(H.m + m, d) * k;
+    return { vx: H.vx + dx / len * s, vy: H.vy + dy / len * s, vz: 0, rel: s, k };
+  },
+  /* The throw's reading beside the aim: its speed against what it orbits, as a multiple of the circular speed. */
+  throwText(t) {
+    const v = fmtQ(this, 'speed', t.rel);
+    return Number.isFinite(t.k) ? `${v} · ${t.k.toFixed(2)}× circular${t.k >= Math.SQRT2 ? ' · escapes' : ''}` : v;
+  },
   dropOrbit(wx, wy, wz = 0, nb = this.drawNew()) {
-    const m = nb.m, H = this.heaviest();
+    const m = nb.m, top = this.heaviest(), H = this.hostAt(wx, wy, wz);
     if (!H) { this.addBody(this.body(wx, wy, 0, 0, m, wz, 0, nb.kind)); return; }
     const dx = wx - H.x, dy = wy - H.y, d = Math.hypot(dx, dy);
-    if (d < H.r + 4) return;
+    // Not inside what it would orbit: beyond the distance at which the two would merge, with a pixel to spare.
+    if (d < 0.7 * (H.r + bodyRadius(m)) + 1) return;
+    // The sense of the system's orbits about its heaviest body, so a drop goes round with the rest (a moon too).
     let L = 0;
-    for (const b of this.bodies) if (b !== H) L += b.m * ((b.x - H.x) * (b.vy - H.vy) - (b.y - H.y) * (b.vx - H.vx));
+    for (const b of this.bodies) if (b !== top) L += b.m * ((b.x - top.x) * (b.vy - top.vy) - (b.y - top.y) * (b.vx - top.vx));
     const dir = L < 0 ? -1 : 1, v = this.vCirc(H.m + m, d) * this.p.orbitK;
     if (this.p.incl > 0) {
       // Tilt the orbit about the line from the host to the drop point, so the body starts where it was dropped.
@@ -851,8 +893,8 @@ export const gravity = {
       if (hit) this.followBody(hit); else this.dropOrbit(w.x, w.y, 0, nb);
       return;
     }
-    const z = this.viewXf.z;
-    this.addBody(this.body(w.x, w.y, (a.x - a.sx) / z * LAUNCH_K, (a.y - a.sy) / z * LAUNCH_K, nb.m, 0, 0, nb.kind));
+    const z = this.viewXf.z, t = this.throwVel(w.x, w.y, 0, (a.x - a.sx) / z, (a.y - a.sy) / z, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
+    this.addBody(this.body(w.x, w.y, t.vx, t.vy, nb.m, 0, 0, nb.kind));
   },
   predict(x0, y0, vx0, vy0, z0 = 0, heights = null) {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
@@ -1132,7 +1174,7 @@ export const gravity = {
     if (this.p.tool === 'erase' && this.hover) brushRing(g, this.hover, 12, THEME.crit);
     if (this.aim && this.aim.moved) {
       const a = this.aim, wS = this.toWorld({ x: a.sx, y: a.sy });
-      const vx = (a.x - a.sx) / z * LAUNCH_K, vy = (a.y - a.sy) / z * LAUNCH_K, path = this.predict(wS.x, wS.y, vx, vy);
+      const t = this.throwVel(wS.x, wS.y, 0, (a.x - a.sx) / z, (a.y - a.sy) / z, 0, Math.hypot(a.x - a.sx, a.y - a.sy), (this.next || this.drawNew()).m), path = this.predict(wS.x, wS.y, t.vx, t.vy);
       g.setLineDash([4, 5]); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3;
       g.beginPath();
       for (let i = 0; i < path.length; i += 2) { const X = path[i] * z + ox, Y = path[i + 1] * z + oy; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
@@ -1145,7 +1187,7 @@ export const gravity = {
       const look = this.nextLook();
       g.fillStyle = look.css; g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, look.r * z), 0, TAU); g.fill();
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
-      g.fillText(fmtQ(this, 'speed', Math.hypot(vx, vy)), a.x + 10, a.y - 6);
+      g.fillText(this.throwText(t), a.x + 10, a.y - 6);
     }
   },
   // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
@@ -1364,4 +1406,4 @@ Object.assign(gravity, {
 });
 
 /* ---------- 3D mode: the lab's own camera, picking and overlays (gravity3d.js) ---------- */
-Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, KINDS, JUP, EARTH, STAR_LIMIT, kindOf, mergedKind, planetRadius, bodyRadius, massColor, bodyCss, bodyRgb });
+Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, THROW_PX, BODY_CAP, STAR_MASS, KINDS, JUP, EARTH, STAR_LIMIT, kindOf, mergedKind, planetRadius, bodyRadius, massColor, bodyCss, bodyRgb });

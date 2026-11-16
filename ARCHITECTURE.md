@@ -14,7 +14,7 @@
 ✒ Changelog:
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Class
       hues, the calm surface, ringed(), the Star system's design, and the
-      Collisions solver's passes.
+      Collisions solver's passes. hostAt, dropOrbit, throwVel and throwText.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
       anatomy (text(), the parted ridges, the keyboard-only ring, the wheel as
       the field) and their grid of equal cells on a subgrid; the Math page's
@@ -522,6 +522,24 @@ phase, and Fields a charge's size and a launched particle's charge-to-mass
 ratio and sign. Where a preview shows the next object (Gravity's throw,
 Fluid's post ring, Fields' 3D charge ring), the lab draws the next object
 ahead and the click places that one.
+
+Gravity places bodies relative to what holds the point:
+
+- **`hostAt(x, y, z)`** is that body: the world whose Hill sphere the point lies
+  inside, at half its radius (where a prograde orbit lasts), the smallest
+  such, else the heaviest body.
+- **`dropOrbit`** puts a click into a circular orbit about `hostAt`, going
+  round with the rest of the system, so a click beside a giant gives it a
+  moon. It refuses only a point inside the merge distance.
+- **`throwVel`** turns a drag into a velocity. Its speed is the drag's screen
+  length over `THROW_PX` (90) times the circular speed about `hostAt`, on top
+  of that body's own motion, so a drag means the same at every zoom and in
+  both views. The old rule, the drag's length in the world times 1.6 a
+  second, threw a 40-pixel drag out at several times escape speed in a
+  zoomed-out view; it stands only with nothing to orbit.
+- **The previews.** The 2D and 3D throw previews use the same `throwVel` and
+  read it out with `throwText`: the speed against the host, the multiple of
+  the circular speed, and "escapes" from √2 up.
 
 The dice in the rail, the switch in Controls and the Guide's card are three
 views of one parameter: each changes it through `setParam`, and
