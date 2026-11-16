@@ -422,7 +422,8 @@ reference adds brown dwarfs and stars above them:
   are calm and hazy like Uranus and Neptune. Gas giants are banded, some
   carry a storm in their own colours, and about two in five wear rings.
 - **The Star system** shows every class at once: a grey rock on an eccentric
-  orbit, a rust super-Earth, an ocean world at 1 AU, a lavender sub-Neptune,
+  orbit, a super-Earth inside the runaway limit whose oceans have boiled into
+  a pale, Venus-like sky, an ocean world at 1 AU, a lavender sub-Neptune,
   a banded giant, a ringed pale giant and a deep blue ice giant. Each giant
   has a moon, and a comet dives through the inner system.
 

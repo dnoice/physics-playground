@@ -74,7 +74,7 @@ export function globalInsights() {
   if (perf.fps < 40 && perf.draw > 12) out.push({ id: 'perf-draw', level: 'info', title: 'Drawing is the bottleneck', body: `Each frame spends <b>${perf.draw.toFixed(1)} ms</b> drawing, so the display rather than the physics limits the frame rate. Large windows and dense scenes cost the most.`, fixes: active.drawFixes ? active.drawFixes() : [] });
   if (in3D(active) && perf.fps < 30 && cheaperTier()) {
     const next = cheaperTier();
-    out.push({ id: 'gfx-slow', level: 'info', title: 'This graphics tier is heavy here', body: `The 3D view is running at about <b>${Math.round(perf.fps)} fps</b>. A cheaper tier, or Auto in the Graphics menu, keeps it smooth.`, fixes: [{ label: `Use ${next[0].toUpperCase()}${next.slice(1)}`, run() { pickTier(next); } }, { label: 'Use Auto', run() { pickTier('auto'); } }] });
+    out.push({ id: 'gfx-slow', level: 'info', title: 'This graphics tier is heavy here', body: `The 3D view is running at about <b>${Math.round(perf.fps)} fps</b>. A cheaper tier, or Auto in the Graphics section of Settings, keeps it smooth.`, fixes: [{ label: `Use ${next[0].toUpperCase()}${next.slice(1)}`, run() { pickTier(next); } }, { label: 'Use Auto', run() { pickTier('auto'); } }] });
   }
   const now = performance.now();
   for (let i = stickies.length - 1; i >= 0; i--) if (stickies[i].until < now) stickies.splice(i, 1);

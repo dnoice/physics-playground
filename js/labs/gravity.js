@@ -372,7 +372,8 @@ export const gravity = {
     this.merged = 0; this.escaped = 0; this.aim = null; this.pan = null; this.lastSample = -1;
     for (const s of Object.values(this.series)) s.clear();
     if (preset === 'solar') {
-      // A system of every class, each world its own: a hot grey rock on an eccentric orbit, a rust super-Earth, an
+      // A system of every class, each world its own: a hot grey rock on an eccentric orbit, a super-Earth inside the runaway limit (a
+      // Venus-like hothouse once its climate settles), an
       // ocean world at 1 AU (whose year is the metric year), a lavender sub-Neptune, a banded giant, a pale ringed
       // giant and a deep blue ice giant, each giant with a moon about a third of the way out to the edge of its Hill
       // sphere. Neighbouring giants sit at least four of their mutual Hill radii apart even at closest approach, so
@@ -1549,10 +1550,19 @@ Object.assign(gravity, {
     // strongest (m / d³). Inside a star's drawn disc the distance holds at its edge.
     let S = 0, top = null, best = 0, tide = null, most = 0;
     for (let i = 0; i < St.length; i++) {
-      const s = St[i], d2 = Math.max((s.x - b.x) ** 2 + (s.y - b.y) ** 2 + (s.z - b.z) ** 2, s.r * s.r), f = Lm[i] * AU2 / d2, k = s.m / (d2 * Math.sqrt(d2));
+      const s = St[i], d2 = Math.max((s.x - b.x) ** 2 + (s.y - b.y) ** 2 + (s.z - b.z) ** 2, s.r * s.r), f = Lm[i] * AU2 / d2;
       S += f;
       if (f > best) { best = f; top = s; }
-      if (k > most) { most = k; tide = s; }
+    }
+    // The tide that matters is the strongest m / d³ of any heavier body, so a moon of the Star system, or one dropped
+    // or thrown beside a giant, answers to its planet as the Solar System's linked moons do; a planet, to its star.
+    if (!b.host) {
+      if (this.accDirty) this.prepare();
+      for (const q of this.srcs.length ? this.srcs : this.bodies) {
+        if (q === b || q.m <= b.m) continue;
+        const d2 = Math.max((q.x - b.x) ** 2 + (q.y - b.y) ** 2 + (q.z - b.z) ** 2, q.r * q.r), k = q.m / (d2 * Math.sqrt(d2));
+        if (k > most) { most = k; tide = q; }
+      }
     }
     c.S = S; c.star = top;
     // The starlight it has grown used to, over about a year: what decides whether its oceans boil or its air escapes.
@@ -1592,7 +1602,12 @@ Object.assign(gravity, {
     c.T = snap ? goal : c.T + (goal - c.T) * (1 - Math.exp(-dt / (A.life * AU_YR)));
     // Day and night: ε of the absorbed light reaches the night side. A hot giant carries less round (its air radiates
     // before it gets there); a world that turns slowly or not at all, less than one that spins.
-    const h = clamp((c.T - 700) / 700, 0, 1), eps = gas ? 0.95 - 0.65 * h * h * (3 - 2 * h) : A.spin[c.spin === 'free' ? 0 : 1];
+    // Only starlight is carried round; a body's own heat leaves evenly from both sides. Folding that in gives one ε
+    // that the day, noon and night formulas (and the 3D shader) use unchanged: ε' = 1 − s(1 − ε), with s the share of
+    // the heat that is starlight. A giant's ε follows the temperature starlight alone would give it.
+    const g = 1 + 0.75 * A.tau, Tirr = Math.sqrt(Math.sqrt(c.Teq ** 4 * g)), h = clamp((Tirr - 700) / 700, 0, 1);
+    const eps0 = gas ? 0.95 - 0.65 * h * h * (3 - 2 * h) : A.spin[c.spin === 'free' ? 0 : 1], share = c.Teq ** 4 / (c.Teq ** 4 + c.Tint ** 4 || 1);
+    const eps = 1 - share * (1 - eps0);
     c.eps = eps; c.Tn = c.T * eps ** 0.25; c.Tss = c.T * (4 - 3 * eps) ** 0.25; c.Tday = c.T * (2 - eps) ** 0.25;
     c.freeze = A.freeze; c.xIce = c.toStar ? 1.3 : iceLine(c.T, A.freeze, A.k);
     c.cls = classify(c, b.kind, gas, air);
