@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Planet Classes Tests (digiSpace Edition - v2.9)
+    - Title: Planet Classes Tests (digiSpace Edition - v2.12)
     - File Name: planets.py
     - Relative Path: tests/planets.py
     - Artifact Type: test
-    - Version: 2.9.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
+      system has every class, seven colours, every surface, rings on the pale
+      giant only and a moon on each giant; random giants take several hues and
+      some wear rings.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for release 2.9.0: Gravity's planet classes from the research
       reference.
@@ -131,8 +135,19 @@ with sync_playwright() as p:
 
     # ---- The sandbox: the Star system by mass, the IAU ratio, mergers
     pg.evaluate(P + ".preset('solar')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(200)
-    star = pg.evaluate(f"{G}.bodies.filter(b => b.m >= 0.3 && b.kind !== 'star').map(b => b.kind)")
-    ok("star_system_planets_are_gas_giants", star == ["gas"] * 6, star)
+    # Every class, each world its own: by distance, two rocky worlds either side of a super-Earth, a sub-Neptune, two
+    # gas giants and an ice giant; seven colours, every surface (rock, ocean, banded, calm), rings on the pale giant
+    # only, and a moon for each giant.
+    star = pg.evaluate(f"""(() => {{ const L = {G}, S = L.bodies[0], d = b => Math.hypot(b.x - S.x, b.y - S.y), P = L.bodies.filter(b => !['star', 'moon', 'comet'].includes(b.kind)).sort((a, b) => d(a) - d(b));
+      return {{ kinds: P.map(b => b.kind), colours: new Set(P.map(b => L.bodyColor3(b))).size, surfaces: [...new Set(P.map(b => L.surfaceOf(b)))].sort(), ringed: P.map(b => L.ringed(b)),
+        moons: L.bodies.filter(b => b.kind === 'moon').map(m => P.reduce((a, b) => (Math.hypot(m.x - b.x, m.y - b.y) < Math.hypot(m.x - a.x, m.y - a.y) ? b : a)).kind), soft: L.p.soft }}; }})()""")
+    ok("star_system_has_every_class", star["kinds"] == ["terrestrial", "superEarth", "terrestrial", "subNeptune", "gas", "gas", "ice"], star["kinds"])
+    ok("star_system_worlds_look_different", star["colours"] == 7 and star["surfaces"] == [0, 1, 2, 3] and star["ringed"] == [False] * 5 + [True, False], star)
+    ok("star_system_giants_have_moons", sorted(star["moons"]) == ["gas", "gas", "ice"] and star["soft"] == 1, star["moons"])
+    # Random worlds vary too: the accretion disk's giants take several hues, and some wear rings.
+    var = pg.evaluate(f"""(() => {{ const L = {G}, B = Array.from({{ length: 60 }}, () => L.body(0, 0, 0, 0, 1)), hues = new Set(B.map(b => L.KINDS.gas.hues.findIndex(h => {{ const c = L.bodyRgb(b), k = c[0] / h[0]; return Math.abs(c[1] / h[1] - k) < 0.02 && Math.abs(c[2] / h[2] - k) < 0.02; }})));
+      return {{ hues: hues.size, unknown: hues.has(-1), ringed: B.filter(L.ringed).length }}; }})()""")
+    ok("random_giants_vary", var["hues"] >= 4 and not var["unknown"] and 8 <= var["ringed"] <= 40, var)
     iau = pg.evaluate(f"""(() => {{ const L = {G}, flag = M => {{ const s = L.body(5000, 0, 0, 0, M); L.bodies.push(s); const g = L.orbit(s, 120, 0, 12); L.track = g.id;
       const r = L.inspect().rows.find(x => x[0] === 'Planet by IAU rules'); L.bodies = L.bodies.filter(q => q !== s && q !== g); L.track = null; L.accDirty = true; return [g.kind, r ? r[1] : null]; }};
       return [flag(250), flag(1000)]; }})()""")

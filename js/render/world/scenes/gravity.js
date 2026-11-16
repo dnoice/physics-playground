@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.10)
+    - Title: Gravity Scene (digiSpace Edition - v2.12)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.10.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Calm
+      worlds (surface 3): faint bands under a cool haze for sub-Neptunes and
+      ice giants, Uranus and Neptune among them. A storm on about half the
+      banded giants and a third of the calm ones, in the planet's own colours.
+      Rings from the lab's ringed(), for gas giants of any mass.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits
       from the lab's orbitCurve: smooth however near the camera passes, faded
       where nearest it and back round from each body. In the Solar System
@@ -24,10 +29,6 @@
       as depth-tested ribbons, and a portrait near plane small enough for a
       moon. A depth mark taller than most of the stage, its foot out of sight,
       is left out.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A planet's
-      surface and colour come from its type, read from the lab, instead of
-      from its mass and id; stars are the bodies typed as stars, and only gas
-      giants carry rings.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -41,13 +42,14 @@
       drawn as a crisp point field, both centred on the camera.
     - Stars: flowing plasma surface, limb darkening, HDR colour by mass, an
       animated corona and a lens glare that a passing body can hide.
-    - Planets: rocky, oceanic and banded surfaces in one material and one
-      instanced mesh, chosen by each body's type (ice giants and brown dwarfs
-      are banded in their own colours); close bodies move to a finer sphere in
-      a second batch.
+    - Planets: rocky, oceanic, banded and calm surfaces in one material and
+      one instanced mesh, chosen by each body's type (gas giants and brown
+      dwarfs banded, sub-Neptunes and ice giants calm under a cool haze), in
+      each body's own colour; a storm on some giants only, in the planet's own
+      colours; close bodies move to a finer sphere in a second batch.
     - Up to three star lights, a soft terminator, a real night side, an
-      atmospheric rim, a shell of air on close worlds and rings on gas giants
-      (on Saturn alone in the Solar System).
+      atmospheric rim, a shell of air on close worlds and rings where the
+      lab's ringed() gives them (on Saturn alone in the Solar System).
     - Real-sized worlds above a pixel floor; a moon is hidden while inside its
       planet's disc, its orbit with it.
     - Trails, drop lines, velocity arrows and orbits as ribbons, thinned by
@@ -68,7 +70,7 @@ import { clamp, reduceMotion } from '../../../core/util.js';
 import { createRibbons } from '../ribbons.js';
 
 const TAU = Math.PI * 2, MAX_LIGHTS = 3, MIN_STAR_PX = 4, MIN_BODY_PX = 2.6, HERO_PX = 22, HERO_CAP = 24, RING_CAP = 48, FLASH_CAP = 16;
-const TRAIL_POINTS = 56000, MARK_POINTS = 12000, ORBIT_POINTS = 32768, SKY_STARS = 24000, RING_MASS = 1.5, FALL = 300, BLOOM = 0.3;
+const TRAIL_POINTS = 56000, MARK_POINTS = 12000, ORBIT_POINTS = 32768, SKY_STARS = 24000, FALL = 300, BLOOM = 0.3;
 const RING_IN = 1.46, RING_OUT = 2.02;
 /* The band crosses the home view diagonally, behind the system, with its bulge just off centre. */
 const POLE = new THREE.Vector3(-0.62, 0.73, -0.26).normalize(), BAND_U = new THREE.Vector3().crossVectors(POLE, new THREE.Vector3(0.2, 0.1, 1)).normalize(), BAND_W = new THREE.Vector3().crossVectors(POLE, BAND_U);
@@ -297,7 +299,10 @@ const SURFACES = `
     float belts = 0.5 + 0.5 * sin(p.y * 11.0 + seed * 31.0 + 2.4 * noise(p * 1.7 + seed));
     cloud = smoothstep(0.1, 0.42, wisps + 0.16 * belts - 0.1);
   }
-  void giant(vec3 p, float seed, vec3 tint, float oct, float clock, inout vec3 alb, inout float spec, inout float gloss) {
+  /* A banded world. calm = 1 for an ice giant or sub-Neptune: its methane haze leaves belts faint and few, as on
+     Uranus and Neptune. A storm comes to about half the giants and a third of the calm worlds, in the planet's own
+     colours (rust on a warm giant, a dark spot on a calm one), never the same red spot on every giant. */
+  void giant(vec3 p, float seed, vec3 tint, float oct, float clock, float calm, inout vec3 alb, inout float spec, inout float gloss) {
     float k = 8.0 + 10.0 * fract(seed * 13.0), t = clock * 0.35;
     // Each latitude drifts at its own rate, so belts shear past each other as the sim runs.
     float shear = t * sin(p.y * 7.0 + seed * 9.0), c = cos(shear), s = sin(shear);
@@ -305,14 +310,17 @@ const SURFACES = `
     float warp = fbm(vec3(q.x * 2.6, q.y * 8.0, q.z * 2.6) + seed * 41.0, oct), curl = fbm(vec3(q.x * 7.0, q.y * 21.0, q.z * 7.0) + 2.0 * warp + seed, oct);
     float y = q.y + 0.05 * warp + 0.016 * curl;
     float wide = sin(y * k + 3.0 * noise(vec3(y * 2.4, seed * 17.0, 0.0))), fine = fbm(vec3(q.x * 1.2, y * 26.0, q.z * 1.2) + seed * 3.0, oct);
-    float b = clamp(0.5 + 0.42 * wide + 0.5 * fine + 0.3 * curl, 0.0, 1.0);
-    vec3 pale = mix(tint, vec3(0.8, 0.84, 0.8), 0.42) * 0.82, belt = mix(tint * vec3(0.44, 0.5, 0.6), vec3(0.26, 0.17, 0.12), 0.24), zone = tint * 0.82 + 0.015;
+    float b = clamp(0.5 + mix(0.42 * wide + 0.5 * fine + 0.3 * curl, 0.14 * wide + 0.12 * fine + 0.06 * curl, calm), 0.0, 1.0);
+    vec3 pale = mix(tint, vec3(0.8, 0.84, 0.8), 0.42) * 0.82, belt = mix(tint * vec3(0.44, 0.5, 0.6), vec3(0.26, 0.17, 0.12), 0.24 * (1.0 - calm)), zone = tint * 0.82 + 0.015;
+    belt = mix(belt, tint * 0.7, calm);
     alb = mix(belt, zone, smoothstep(0.1, 0.55, b));
     alb = mix(alb, pale, smoothstep(0.55, 0.92, b));
-    // One long-lived storm at a seeded latitude.
+    // A long-lived storm at a seeded latitude, on some worlds only.
     vec3 sc = normalize(vec3(cos(seed * 40.0), sin(seed * 11.0) * 0.5, sin(seed * 40.0))), d = q - sc;
-    float e = length(vec3(d.x, d.y * 2.3, d.z)), storm = smoothstep(0.26, 0.15, e + 0.05 * warp);
-    alb = mix(alb, mix(vec3(0.74, 0.38, 0.12), pale, smoothstep(0.17, 0.0, e)), storm * 0.85);
+    float e = length(vec3(d.x, d.y * 2.3, d.z)), has = step(mix(0.5, 0.68, calm), fract(seed * 17.0));
+    float storm = smoothstep(0.26, 0.15, e + 0.05 * warp) * has;
+    vec3 eye = mix(tint * vec3(1.05, 0.6, 0.38) + vec3(0.06, 0.02, 0.0), tint * 0.32, calm);
+    alb = mix(alb, mix(eye, pale, smoothstep(0.17, 0.0, e) * (1.0 - calm)), storm * 0.85);
     alb *= 1.0 - 0.3 * pow(abs(p.y), 3.0);
     spec = 0.02; gloss = 12.0;
   }`;
@@ -331,7 +339,7 @@ const PLANET_FS = `
     if (px > 2.5) {
       if (type < 0.5) { rocky(p, seed, tint, oct, px, alb, G, spec, gloss); atm = 0.06; }
       else if (type < 1.5) { ocean(p, seed, tint, oct, px, uSpin, alb, G, spec, gloss, land, cloud); atm = 0.8; atmC = mix(vec3(0.3, 0.62, 1.0), tint, 0.3); }
-      else { giant(p, seed, tint, oct, uSpin, alb, spec, gloss); atm = 0.5; atmC = mix(tint, vec3(0.95, 0.82, 0.62), 0.4); }
+      else { float calm = step(2.5, type); giant(p, seed, tint, oct, uSpin, calm, alb, spec, gloss); atm = mix(0.5, 0.7, calm); atmC = mix(mix(tint, vec3(0.95, 0.82, 0.62), 0.4), mix(tint, vec3(0.7, 0.86, 1.0), 0.35), calm); }
       alb = mix(tint * 0.75, alb, smoothstep(2.5, 7.0, px));
     }
     vec3 No = normalize(p - 0.9 * (G - dot(G, p) * p)), N = normalize(vX * No.x + vY * No.y + vZ * No.z);
@@ -390,7 +398,7 @@ const ATMO_FS = `
     vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
     float mu = abs(dot(N, V)), h = K * sqrt(max(1.0 - mu * mu, 0.0)), t = clamp((h - 1.0) / (K - 1.0), 0.0, 1.0);
     float dens = exp(-t * 4.2) * (1.0 - t) * (1.0 - t);
-    vec3 atmC = type < 1.5 ? mix(vec3(0.3, 0.62, 1.0), vTint, 0.3) : mix(vTint, vec3(0.95, 0.82, 0.62), 0.4), col = vec3(0.0);
+    vec3 atmC = type < 1.5 ? mix(vec3(0.3, 0.62, 1.0), vTint, 0.3) : type < 2.5 ? mix(vTint, vec3(0.95, 0.82, 0.62), 0.4) : mix(vTint, vec3(0.7, 0.86, 1.0), 0.35), col = vec3(0.0);
     for (int i = 0; i < uLN; i++) {
       vec3 Lv = uL[i].xyz - vW; float dist = length(Lv); vec3 L = Lv / dist, lc = uLC[i].rgb * uL[i].w / (1.0 + dist / uFall);
       float ng = dot(N, L), lit = smoothstep(-0.32, 0.3, ng), edge = exp(-ng * ng * 12.0), fwd = pow(max(dot(V, -L), 0.0), 7.0);
@@ -638,7 +646,7 @@ export function createScene(E, lab) {
       solo.star.A.array[i * 4] = f.seed; solo.star.A.array[i * 4 + 3] = RPX; solo.star.C.array.set(c.slice(0, 3), i * 3);
     } else {
       const type = l.surfaceOf(b), c = tintOf(l.bodyColor3(b)), i = put(solo.planet, X, Y, Z, r), P = solo.planet;
-      ringed = b.real ? b.ring : b.kind === 'gas' && b.m >= RING_MASS && f.ring;
+      ringed = l.ringed(b);
       P.A.array[0] = f.seed; P.A.array[1] = type; P.A.array[2] = ringed ? 1 : 0; P.A.array[3] = f.rate;
       P.B.array[0] = f.ax; P.B.array[1] = f.ay; P.B.array[2] = f.az; P.B.array[3] = RPX;
       P.C.array[i * 3] = c[0]; P.C.array[i * 3 + 1] = c[1]; P.C.array[i * 3 + 2] = c[2];
@@ -675,7 +683,7 @@ export function createScene(E, lab) {
     if (!f) {
       if (ids.size > 4096) ids.clear();
       const s = hash01(id), u = hash01(id + 7001), a = hash01(id + 8111) * TAU, tilt = 0.08 + 0.55 * u * u, st = Math.sin(tilt);
-      f = { seed: s, rate: 0.14 + 0.26 * hash01(id + 4111), ax: st * Math.cos(a), ay: Math.cos(tilt), az: st * Math.sin(a), ring: id % 4 !== 3 };
+      f = { seed: s, rate: 0.14 + 0.26 * hash01(id + 4111), ax: st * Math.cos(a), ay: Math.cos(tilt), az: st * Math.sin(a) };
       ids.set(id, f);
     }
     return f;
@@ -770,7 +778,7 @@ export function createScene(E, lab) {
         }
         for (let k = 0; k < MAX_LIGHTS; k++) if (!lit[k].b || b.m > lit[k].b.m) { for (let j = MAX_LIGHTS - 1; j > k; j--) { lit[j].b = lit[j - 1].b; lit[j].c[0] = lit[j - 1].c[0]; lit[j].c[1] = lit[j - 1].c[1]; lit[j].c[2] = lit[j - 1].c[2]; } lit[k].b = b; lit[k].c[0] = c[0]; lit[k].c[1] = c[1]; lit[k].c[2] = c[2]; break; }
       } else {
-        const type = lab.surfaceOf(b), c = tintOf(lab.bodyColor3(b)), ring = (b.real ? b.ring : b.kind === 'gas' && b.m >= RING_MASS && f.ring) && rings.n < RING_CAP ? 1 : 0;
+        const type = lab.surfaceOf(b), c = tintOf(lab.bodyColor3(b)), ring = lab.ringed(b) && rings.n < RING_CAP ? 1 : 0;
         const close = rPx >= HERO_PX && nearPlanets.n < HERO_CAP, batch = close ? nearPlanets : farPlanets;
         if (close) heroes[nearPlanets.n] = b;
         const i = put(batch, X, Y, Z, s), A = batch.A.array, Bx = batch.B.array, C = batch.C.array;

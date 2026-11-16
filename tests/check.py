@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Physics Check (digiSpace Edition - v2.1)
+    - Title: Physics Check (digiSpace Edition - v2.12)
     - File Name: check.py
     - Relative Path: tests/check.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
+      system's 30 s run accounts for twelve bodies, and its star, seven
+      planets and three moons survive.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
       physical reading is now checked against what it should be instead of
       printed, the page starts in flat 2D mode and the marks come from the
@@ -87,11 +90,13 @@ with sync_playwright() as p:
     ok("fig8_stays_bounded", r["maxR"] < 200, round(r["maxR"], 1))
     run("solar", "gravity", "solar", 30)
     r = pg.evaluate("""() => { const g = PhysicsPlayground.labs.gravity; const E = g.energy();
-      return { n: g.bodies.length, majors: g.bodies.filter(b => b.m >= 0.3).length, merged: g.merged, escaped: g.escaped, drift_pct: (E - g.E0) / Math.abs(g.E0) * 100 } }""")
-    # Phases are random and the comet's orbit crosses the planets, so a run can rightly lose the comet
-    # or the moon to a merge. The star and six planets must survive, and every body must be accounted for.
-    ok("solar_bodies_accounted_for", r["n"] + r["merged"] + r["escaped"] == 9, (r["n"], r["merged"], r["escaped"]))
-    ok("solar_star_and_planets_survive", r["majors"] == 7, r["majors"])
+      return { n: g.bodies.length, majors: g.bodies.filter(b => b.kind !== 'moon' && b.kind !== 'comet').length, moons: g.bodies.filter(b => b.kind === 'moon').length,
+        merged: g.merged, escaped: g.escaped, drift_pct: (E - g.E0) / Math.abs(g.E0) * 100 } }""")
+    # Phases are random and the comet's orbit crosses the planets, so a run can rightly lose the comet to a merge.
+    # The star, its seven planets and the giants' three moons must survive, and every body must be accounted for.
+    ok("solar_bodies_accounted_for", r["n"] + r["merged"] + r["escaped"] == 12, (r["n"], r["merged"], r["escaped"]))
+    ok("solar_star_and_planets_survive", r["majors"] == 8, r["majors"])
+    ok("solar_moons_keep_their_planets", r["moons"] == 3, r["moons"])
     ok("solar_nothing_escapes", r["escaped"] == 0, r["escaped"])
     ok("solar_energy_conserved", abs(r["drift_pct"]) < 0.01, r["drift_pct"])
     # One Kepler period brings every planet back to its start, so the phase error is the period error.

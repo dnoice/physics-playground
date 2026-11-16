@@ -1,17 +1,20 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.11)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.12)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.12.0: no two worlds alike and the new Star system in Planet classes,
+      the 3D table's Gravity row, and the release badge.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.11.0: the release badge.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -115,8 +118,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.11.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.11.0">
+    <img src="https://img.shields.io/badge/release-v2.12.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.12.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -349,6 +352,14 @@ reference adds brown dwarfs and stars above them:
   its star, which makes it a binary companion under the IAU's definition.
 - **Mergers keep their composition**: rocky worlds stay rocky, a world with
   an envelope keeps it, and the class follows the new mass.
+- **No two worlds alike.** Each class has several colours, and every world
+  takes one of them, a shade lighter or darker. Sub-Neptunes and ice giants
+  are calm and hazy like Uranus and Neptune. Gas giants are banded, some
+  carry a storm in their own colours, and about two in five wear rings.
+- **The Star system** shows every class at once: a grey rock on an eccentric
+  orbit, a rust super-Earth, an ocean world at 1 AU, a lavender sub-Neptune,
+  a banded giant, a ringed pale giant and a deep blue ice giant. Each giant
+  has a moon, and a comet dives through the inner system.
 
 The stage still draws every world larger than life, so it can be seen;
 Inspect gives the size it would really have. `tests/planets.py` checks
@@ -388,7 +399,7 @@ load, the workspace stays in 2D and says why.
 
 | Lab | In 3D |
 | --- | --- |
-| Gravity | Open space: a nebula, plasma stars, and worlds in their planet class's colours: rocky terrestrials and super-Earths, hazy sub-Neptunes, banded ice and gas giants, some ringed |
+| Gravity | Open space: a nebula, plasma stars, and worlds that vary within their planet class: rocky terrestrials and super-Earths, ocean worlds, calm hazy sub-Neptunes and ice giants, banded gas giants in several hues, some ringed, some stormy |
 | Collisions | A slate air table in walnut and brass, which tilts when gravity is on |
 | Fluid | A glass aquarium of real-looking liquid, with refraction and caustics |
 | Waves | A walnut ripple tank with projected caustics and a screen graphing the fringes |
@@ -703,7 +714,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.11.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.12.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
