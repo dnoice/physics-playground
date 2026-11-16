@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.17)
+    - Title: Waves Lab (digiSpace Edition - v2.18)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,16 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      sources, the interference pattern, the detector line and the brightest
+      spot for the director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
       records the grid, the detector line, the slits, the edges, c, f and
       every source.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and the detector profile: each column's unit,
       meaning and SI factor, and a note on the grid and the profile rows.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: wavelength, sources, Courant number and beam angle on its tape,
-      and the selected source as its target, a line source at its middle.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -405,6 +406,32 @@ export const waves = {
       actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
   },
   deselect() { this.selSrc = null; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the point sources (a moving one most of
+     all), the interference pattern beyond the slits or ahead of two or more sources, the detector line where a line
+     source's fringes land, and the brightest spot of the time-averaged intensity (a lens's focus, a bright fringe). */
+  interest() {
+    const out = [], cs = this.cs, Nx = this.Nx, Ny = this.Ny, Ls = this.Ls, I = this.inten, lam = this.p.c / this.p.f, P = this.sources.filter(s => s.type === 'point');
+    if (P.length) {
+      let x = 0, y = 0, r = 0;
+      for (const s of P) { x += s.x / P.length; y += s.y / P.length; }
+      for (const s of P) r = Math.max(r, Math.hypot(s.x - x, s.y - y));
+      const moving = this.p.srcSpeed > 0;
+      out.push({ x: x * cs, y: y * cs, r: (r + lam * (moving ? 3 : 2)) * cs, w: moving ? 0.7 : 0.45, key: 'sources', label: moving ? 'The moving source' : P.length > 1 ? 'The sources' : 'The source' });
+      const x0 = x + lam, x1 = Nx - Ls;
+      if (P.length > 1 && x1 > x0) out.push({ x: (x0 + x1) / 2 * cs, y: Ny / 2 * cs, r: (x1 - x0) / 2 * cs, w: 0.5, key: 'pattern', label: 'The interference pattern' });
+    }
+    if (this.slits && !out.some(p => p.key === 'pattern')) { const x0 = this.slits.x, x1 = this.detectorX(); out.push({ x: (x0 + x1) / 2 * cs, y: Ny / 2 * cs, r: (x1 - x0) * 0.55 * cs, w: 0.55, key: 'pattern', label: 'The interference pattern' }); }
+    if (this.sources.some(s => s.type === 'line')) {
+      const xd = this.detectorX();
+      let py = Ny >> 1, pv = 0;
+      for (let y = Ls; y < Ny - Ls; y++) { const v = I[y * Nx + xd]; if (v > pv) { pv = v; py = y; } }
+      if (pv > 0) out.push({ x: xd * cs, y: py * cs, r: Ny * 0.2 * cs, w: 0.5, key: 'detector', label: 'The detector' });
+    }
+    let bi = -1, bv = 0;
+    for (let y = Ls; y < Ny - Ls; y += 2) for (let x = Ls; x < Nx - Ls; x += 2) { const v = I[y * Nx + x]; if (v > bv) { bv = v; bi = y * Nx + x; } }
+    if (bi >= 0) out.push({ x: (bi % Nx) * cs, y: Math.floor(bi / Nx) * cs, r: lam * 3 * cs, w: 0.4, key: 'bright', label: 'The brightest spot' });
+    return out;
+  },
   /* The head-up display: its readings, and the selected source in stage pixels; a line source at its middle. */
   hud: [['Wavelength λ = c/f', 'WAVELENGTH λ'], ['Sources', 'SOURCES'], ['Courant number cΔt/Δx', 'COURANT'], ['Beam steering angle', 'BEAM θ']],
   hudTarget(three) {

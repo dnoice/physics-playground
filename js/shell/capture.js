@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Capture (digiSpace Edition - v2.16)
+    - Title: Capture (digiSpace Edition - v2.18)
     - File Name: capture.js
     - Relative Path: js/shell/capture.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: a clip that starts hands
+      the view to the director when its switch is on, and one that stops has
+      it give the view back; init also wires the director's stage chip.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call after his tracks stopped at under half a run: tracks thin
       evenly when they fill, doubling their stride so they always reach the
@@ -23,8 +27,6 @@
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Saved
       datasets record the lab's native unit and its scale in metres, since
       their columns stay in the lab's own units.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Loading a
-      saved state rebuilds fresh before the state is restored.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -48,6 +50,7 @@ import { APP } from '../core/version.js';
 import { $, clamp, store } from '../core/util.js';
 import { view } from '../core/view.js';
 import { labsById } from '../labs/index.js';
+import { directorRec, init as initDirector } from './director.js';
 import { updateDock } from './dock.js';
 import { rebuild } from './lifecycle.js';
 
@@ -167,6 +170,8 @@ export function startVideo() {
   };
   vrec.mr.onstop = finishVideo;
   vrec.mr.start(1000);
+  // With the Director on, the clip is filmed from this frame on.
+  directorRec(true);
   updateCaptureUI(); announce('Recording video');
 }
 export function stopVideo() { if (vrec.mr && vrec.mr.state !== 'inactive') vrec.mr.stop(); }
@@ -190,6 +195,8 @@ export async function finishVideo() {
   const lab = vrec.lab, dur = (performance.now() - vrec.t0) / 1000, blob = new Blob(vrec.chunks, { type: vrec.mime }), size = vrec.rc ? [vrec.rc.width, vrec.rc.height] : [canvas.width, canvas.height];
   try { vrec.stream.getTracks().forEach(t => t.stop()); } catch (_) { /* already stopped */ }
   vrec.mr = null; vrec.chunks = []; vrec.rc = vrec.rctx = null; updateCaptureUI();
+  // The director hands the camera back as it was before the clip.
+  directorRec(false);
   if (!blob.size) { announce('The recording came out empty.'); return; }
   const ext = vrec.mime.includes('mp4') ? 'mp4' : 'webm', saved = vrec.preset;
   const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab, saved)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: size[0], height: size[1] },
@@ -327,4 +334,5 @@ export function init() {
   btnState.addEventListener('click', saveState);
   hudRec.addEventListener('click', stopVideo);
   hudData.addEventListener('click', () => stopData());
+  initDirector();
 }

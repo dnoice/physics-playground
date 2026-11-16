@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.17)
+    - Title: Fluid Lab (digiSpace Edition - v2.18)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      splash front and the fastest flow for the director, weighted by their
+      speed.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Particles
       carry stable numbers through removal, rewind and saved states; tracks
       follow one particle in eight, chosen by number (position, velocity,
@@ -20,9 +24,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets: each column's unit, meaning and SI factor, and
       a note on coordinates and scale.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The camera
-      orbits all the way round the tank, as in every other lab: its back is
-      now finished.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -49,6 +50,7 @@ import { chartFrame, chartMessage, drawSeries, seriesRange, velocityTracker } fr
 import { genericState } from '../core/codec.js';
 import { RAMP_DENS, RAMP_HEAT, THEME } from '../core/color.js';
 import { brushRing, drawSphere } from '../core/draw.js';
+import { fastGroup, fastestCell } from '../core/interest.js';
 
 import { Series } from '../core/series.js';
 import { TAU, clamp, fmtSI, pct, rand } from '../core/util.js';
@@ -399,6 +401,18 @@ export const fluid = {
     ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selAt = null; } }] };
   },
   deselect() { this.selAt = null; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the splash front, where the particles
+     moving faster than twice the mean are (a breaking dam, a landing drop, two blobs meeting), and the fastest patch
+     of the tank, each weighted by its speed in px/s, so water at rest offers nothing. */
+  interest() {
+    const out = [], n = this.n, U = this.U, k = U / this.TICK;
+    if (!n) return out;
+    const f = fastGroup(this.x, this.y, this.vx, this.vy, n, 2, U);
+    if (f.count >= 6) out.push({ x: f.x, y: f.y, r: Math.max(f.r, U * 3), w: clamp((f.speed * k - 60) / 400, 0.05, 0.85), key: 'splash', label: 'The splash front' });
+    const c = fastestCell(this.x, this.y, this.vx, this.vy, n, this.Wu * U, this.Hu * U, U);
+    if (c.count) out.push({ x: c.x, y: c.y, r: c.r, w: clamp((c.speed * k - 80) / 500, 0.05, 0.7), key: 'flow', label: 'The fastest flow' });
+    return out;
+  },
   /* The head-up display: its readings, and the selected post in stage pixels, on the tank's mid-plane in 3D. */
   hud: [['Particles', 'PARTICLES'], ['Mean density ρ / ρ₀', 'MEAN ρ/ρ₀'], ['Peak compression', 'PEAK ρ/ρ₀'], ['Fastest particle speed', 'TOP SPEED']],
   hudTarget(three) {

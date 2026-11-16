@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.17)
+    - Title: Architecture Guide (digiSpace Edition - v2.18)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the director in Capture
+      and storage, its place in the frame loop and boot order, the interest(),
+      releaseCam() and retakeCam() hooks, aim3() and home3(), and the
+      measurements in js/core/interest.js.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       dataContext() returns facts and tables, rendered in the README and kept
       in the data package.
@@ -155,11 +160,11 @@ flowchart TB
 
 | Layer | Folder | Depends on | Holds |
 | --- | --- | --- | --- |
-| Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems |
+| Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems, the measurements behind areas of interest |
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
 | Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture and its director, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
@@ -175,7 +180,8 @@ before anything else reads it. Then `boot()` runs:
 1. `layout.init` restores focus mode, the bay and the notebook tab.
 2. `diagnostics.init`, `transport.init` (buttons and every keyboard
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
-   `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
+   `loop.init` (resize observer), `capture.init` (which also wires the
+   director's stage chip), `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
    (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
    card), `unitmenu.init` (Units menu), `headsup.init` (the head-up
@@ -194,6 +200,9 @@ lab:
 - **Simulation**: an accumulator feeds `lab.step(lab.dt())` in fixed steps,
   capped by `lab.maxSteps` and by a frame-time budget, then calls
   `lab.after(simulatedSeconds)`.
+- **Direction**: while the director films (see Capture and storage),
+  `tickDirector` sets the camera's values and targets alike, just before
+  the camera's own easing, which then has nothing left to do.
 - **Drawing**: in 2D, `drawStage` applies the camera and calls `lab.draw`.
   In 3D, `drawWorld` renders the lab's scene and composites it into the
   stage canvas, then calls `lab.overlay3`, so video capture and pointer input
@@ -249,6 +258,8 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
 | `dataInfo`, `dataNote`, `dataContext()` | What a dataset means to someone who never saw the run. `dataInfo` maps every data and track column to `[unit, meaning, SI unit, factor]`, and the capture suite fails if any column lacks one. `dataNote` explains the coordinates and scale. `dataContext()` returns what the rows cannot say: `facts` (label and value pairs) and `tables` (title, note, head, rows), such as Gravity's bodies or Fields' charges at the start, which the README renders and the data package keeps. `js/shell/dataset.js` builds each dataset's README and Frictionless data package from them |
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
+| `interest(keep)` | The director's areas of interest: points `{ x, y, z?, r, w, key, label }` in the lab's world coordinates (`z` in Gravity only), with `r` the extent to frame, `w` a weight from 0 (routine) to 1 (do not miss; 0.85 and up may take over a routine shot), `key` a stable name so a moving subject can be followed, and `label` for the stage chip. `keep` is the key being filmed, which a lab whose subjects come and go (Gravity's bodies, a Collisions ball) still reports while it exists. Called four times a second while the director runs, never per frame; `js/core/interest.js` holds the shared measurements (the densest cell, the fastest group, the fastest cell) |
+| `releaseCam()`, `retakeCam(held)` | A lab that drives its own camera lets go while the director films and takes back what it let go when it stops: Gravity's Follow and followed body |
 | `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
 | `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
@@ -282,7 +293,10 @@ A lab that simulates on a plane declares where the plane stands with `rig3`,
 and `js/labs/stage3d.js` is mixed in by the registry to give it the camera
 hooks the shell calls: `c3()`, `basis3()`, `pick3(screenPoint)`,
 `orbit3(dx, dy)`, `pan3(dx, dy)`, `zoom3(f, screenPoint, instant)`, `frame3()`,
-`actual3()`, `zoomPct3()`, `snap3(axisId)` and `tick3(realSeconds)`.
+`actual3()`, `zoomPct3()`, `snap3(axisId)` and `tick3(realSeconds)`. For
+the director it adds `aim3(x, y)`, which turns a world point into an orbit
+target in the scene with the scene units per world unit there, and it
+offers `home3()`, the framing that `frame3()` goes to.
 
 The long side of every world is 10 scene units, so lights and materials read
 the same in every lab at every window size. `plane3()` maps world (x, y) into
@@ -292,7 +306,7 @@ and pointer tools need no 3D code. `project3` goes the other way for
 overlays.
 
 Gravity is really three-dimensional, so it keeps its own camera in
-`js/labs/gravity3d.js` with the same hooks.
+`js/labs/gravity3d.js` with the same hooks, `aim3` and `home3` among them.
 
 ### A scene
 
@@ -626,7 +640,8 @@ The Library page has two sections in `index.html`, each headed by an
   - `syncLibraryCapture` keeps each button's two lines current: what it
     will keep, or how far it has got.
   - `#btn-cap-settings` folds out `#capture-settings`, and the fold is
-    remembered.
+    remembered. The director's switch and Preview direction come from
+    `directorSettings()` in `director.js`.
   - A `<details>` lists the dataset's columns.
 - **Saved** has the count, the filter and the storage line, then the items
   from `renderItem`.
@@ -853,6 +868,52 @@ the stage canvas, samples datasets at a fixed rate, and saves states.
 `js/shell/vault.js` stores them: artifact storage when the page runs as a
 published artifact, IndexedDB in a plain browser, memory as a last resort.
 `js/shell/library.js` lists them in the notebook.
+
+### The director
+
+`js/shell/director.js` films a clip when the Director switch is on
+(`psp:director`). `startVideo` calls `directorRec(true)` and `finishVideo`
+calls `directorRec(false)`; Preview direction runs the same director with
+no clip. It drives the user's own view, which is the Live mode the request
+named. A Background mode, a second camera drawn into the recording canvas
+while the view stays put, was left out: it would draw every recorded frame
+twice, and Gravity's flat `draw` moves its camera and notes what it drew,
+while Fluid's liquid surface renders for the stage's own camera and size.
+
+- **One camera vector in both modes.** Six numbers: the point looked at, ln
+  of the view's width there, and in 3D yaw and pitch. In 2D the width is
+  the stage's short side in world units, and `write` keeps `clampCam`'s
+  limits itself. In 3D it is the frame's height at the orbit target. Value
+  and target are set alike, so `tick3` and `navStep` have nothing to do.
+- **Shots.** `nextShot` opens on an establishing wide shot, then picks
+  points from `interest()` by weight, discounting the last three keys shown,
+  with a wide shot after two subjects or when nothing scores above 0.3.
+  Within a shot the frame dollies in a few per cent, a wide 2D shot drifts
+  a little sideways, and in 3D the camera orbits at 0.07 rad/s. A subject
+  still weighing 0.7 or more is held up to four seconds past its length, a
+  lost one ends the shot after a second, and a weight of 0.85 or more takes
+  over a routine shot that has held three seconds.
+- **Moves.** Between shots, `plan` lays van Wijk and Nuij's smooth zoom and
+  pan path from the camera to the shot's opening frame and times it with a
+  quintic ease, long enough that the path's steepest pan and zoom stay
+  under 70 % of the limits. Within a shot, `hold` runs a critically damped
+  spring on each number, solved exactly for a goal moving at a constant
+  speed, with the goal's speed estimated from the last two looks.
+- **Limits.** `cap` holds every frame to `DIRECTOR_CAP` per second: 0.55 of
+  a view of pan, 0.6 e-folds of zoom (times the square of `zoomPace()`, for
+  the Solar System's decades), 0.4 rad of yaw and 0.25 rad of pitch. The
+  loop's frame is at most 0.05 s, so no frame moves more than a twentieth
+  of these. Reduced motion halves them and makes shots 1.4 times longer.
+- **The user's hand.** `touched` compares the camera with what the director
+  last set. Any difference (a drag, the wheel, a key, Frame, a scene that
+  re-fits) hands the camera over until it has been still for four seconds,
+  six with reduced motion. A 3D resize that only rescales the distance does
+  not count.
+- **Giving it back.** The camera's targets as they were when the director
+  took it are restored, eased by the camera's own easing. A lab switched
+  away from mid-take gets its camera back at once, and the director starts
+  afresh on the new lab or mode. The stage chip `#hud-dir` names the shot
+  and gives the camera back when pressed.
 
 ## Styles
 

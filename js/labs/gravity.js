@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.17)
+    - Title: Gravity Lab (digiSpace Edition - v2.18)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names close
+      encounters, mergers, ejections, the fastest body, the heaviest body and
+      its system, and each Solar System world with its moons; releaseCam() and
+      retakeCam() set Follow and the followed body aside while the director
+      films and hand them back after.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
       dataset's scene facts (G, softening, merging) and its bodies as a table,
       through the shared scene section.
@@ -21,12 +27,6 @@
       coordinates and G, the bodies at the start as dataContext(), and t_years
       in both files with each track's name, kind and orbits_id appended after
       the earlier columns.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's report of Pluto's orbit hula-hooping: a planet's orbit is its
-      whole system's (system(), relative()), the planet and its moons
-      together, in the drawn orbits, Inspect, the orbit tilts and the live
-      Math, and the line is carried with the planet so it still passes through
-      it.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -862,6 +862,88 @@ export const gravity = {
     const E = this.extent(); this.track = null;
     if (!E) return { x: 0, y: 0, z: 1 };
     return { x: (E.x0 + E.x1) / 2, y: (E.y0 + E.y1) / 2, z: Math.min(view.w / (E.x1 - E.x0 + 80), view.h / (E.y1 - E.y0 + 80)) };
+  },
+  /* ---------- the director's camera (js/shell/director.js) ---------- */
+  /* While the director films, Gravity's own camera lets go: Follow and the followed body are put aside, and handed
+     back when it stops. */
+  releaseCam() {
+    const held = { follow: !!this.p.follow, track: this.track };
+    if (this.p.follow) { this.p.follow = false; syncControl('follow'); }
+    this.track = null; updateNav();
+    return held;
+  },
+  retakeCam(h) {
+    if (h.follow !== !!this.p.follow) { this.p.follow = h.follow; syncControl('follow'); }
+    if (h.track != null && this.bodies.some(b => b.id === h.track)) { this.track = h.track; this.trackEase = 0; }
+    updateNav();
+  },
+  dirMass: null, dirMerged: -1, dirMergeId: -1, dirMergeT: -Infinity,
+  /* Where the action is, in simulation pixels: a close pass between two bodies not bound to each other (or about to
+     touch), a merger for three simulated seconds after it, a body leaving the system, the fastest body, the heaviest
+     body with what circles it, and in the Solar System each world with its moons. keep is the subject being filmed,
+     reported while it lasts even once it no longer stands out. Massless bodies count only as the fastest. */
+  interest(keep) {
+    const B = this.bodies, out = [], G = G0 * this.p.G;
+    if (!B.length) return out;
+    let M = 0, cx = 0, cy = 0, cz = 0, vx = 0, vy = 0, vz = 0, top = B[0];
+    for (const b of B) { M += b.m; cx += b.m * b.x; cy += b.m * b.y; cz += b.m * b.z; vx += b.m * b.vx; vy += b.m * b.vy; vz += b.m * b.vz; if (b.m > top.m) top = b; }
+    if (!(M > 0)) return out;
+    cx /= M; cy /= M; cz /= M; vx /= M; vy /= M; vz /= M;
+    const has = key => out.some(p => p.key === key), at = (b, r, w, key, label) => { if (!has(key)) out.push({ x: b.x, y: b.y, z: b.z, r, w, key, label }); };
+    const byKey = (key, pre) => (key && key.startsWith(pre) ? B.find(b => b.id === +key.slice(pre.length)) : null);
+    // A merger: the merger count went up, and the body that gained most mass since the last look is where it happened.
+    if (this.merged > this.dirMerged && this.dirMass) {
+      let best = null, gain = 0;
+      for (const b of B) { const m0 = this.dirMass.get(b.id); if (m0 != null && b.m - m0 > gain) { gain = b.m - m0; best = b; } }
+      if (best) { this.dirMergeId = best.id; this.dirMergeT = this.t; }
+    }
+    this.dirMerged = this.merged; this.dirMass = new Map(B.map(b => [b.id, b.m]));
+    const mb = this.t - this.dirMergeT < 3 ? B.find(b => b.id === this.dirMergeId) : null, mk = byKey(keep, 'merge:');
+    if (mb) at(mb, Math.max(mb.r * 10, 24), 0.95, `merge:${mb.id}`, 'A merger');
+    else if (mk) at(mk, Math.max(mk.r * 10, 24), 0.4, keep, 'A merger');
+    // A close encounter: the pair closest for their size, among the heaviest 150, unless they are bound to each other
+    // and not yet touching (a moon, a binary).
+    const S = B.filter(b => b.m > 0);
+    if (S.length > 150) { S.sort((a, b) => b.m - a.m); S.length = 150; }
+    let pa = null, pb = null, pq = 0.12;
+    for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
+      const a = S[i], b = S[j], d = Math.max(1e-9, Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z)), q = (a.r + b.r) / d;
+      if (q <= pq || a.host === b || b.host === a) continue;
+      if (q < 0.4 && ((b.vx - a.vx) ** 2 + (b.vy - a.vy) ** 2 + (b.vz - a.vz) ** 2) / 2 < G * (a.m + b.m) / d) continue;
+      pq = q; pa = a; pb = b;
+    }
+    const pk = keep && keep.startsWith('pair:') ? keep.slice(5).split('-').map(Number) : null, pair = (a, b, w) => {
+      const d = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+      out.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2, r: d / 2 + 4 * Math.max(a.r, b.r), w, key: `pair:${Math.min(a.id, b.id)}-${Math.max(a.id, b.id)}`, label: 'A close encounter' });
+    };
+    if (pa) pair(pa, pb, clamp(0.35 + 0.8 * pq, 0.35, 0.9));
+    if (pk && !has(keep)) { const a = B.find(b => b.id === pk[0]), b = B.find(q => q.id === pk[1]); if (a && b) pair(a, b, 0.3); }
+    // A body on its way out: clearly unbound from the rest, moving outwards and beyond twice the system's median radius.
+    // A moon goes with its world, whose own speed it adds to and takes from.
+    const ds = S.map(b => Math.hypot(b.x - cx, b.y - cy, b.z - cz)).sort((a, b) => a - b), Rm = ds.length ? ds[ds.length >> 1] : 0;
+    let ej = null, ed = 0;
+    for (const b of B) {
+      const rx = b.x - cx, ry = b.y - cy, rz = b.z - cz, r = Math.hypot(rx, ry, rz), ux = b.vx - vx, uy = b.vy - vy, uz = b.vz - vz;
+      if (b.host || r <= 2 * Rm || r <= ed || rx * ux + ry * uy + rz * uz <= 0 || (ux * ux + uy * uy + uz * uz) / 2 <= 1.2 * G * (M - b.m) / r) continue;
+      ed = r; ej = b;
+    }
+    if (ej) at(ej, Math.max(ej.r * 8, Math.hypot(ej.vx - vx, ej.vy - vy, ej.vz - vz) * 1.5), 0.8, `body:${ej.id}`, 'An ejection');
+    // The fastest body against the system's drift, weighted by how far it outruns the mean.
+    let fb = null, fv = 0, sv = 0;
+    for (const b of B) { const v = Math.hypot(b.vx - vx, b.vy - vy, b.vz - vz); sv += v; if (v > fv) { fv = v; fb = b; } }
+    const mean = sv / B.length;
+    if (fb && B.length > 1 && mean > 0) at(fb, Math.max(fb.r * 8, fv * 0.8), clamp(0.2 + 0.15 * (fv / mean - 1), 0.2, 0.6), `body:${fb.id}`, 'The fastest body');
+    // In the Solar System, each world with its moons; everywhere, the heaviest body with the nearer half of the rest,
+    // worth a shot of its own when it outweighs the next heaviest twice over.
+    const sys = new Map(), moons = new Map();
+    for (const b of B) if (b.host) { const d = Math.hypot(b.x - b.host.x, b.y - b.host.y, b.z - b.host.z); if (d > (sys.get(b.host) || 0)) sys.set(b.host, d); moons.set(b.host, (moons.get(b.host) || 0) + 1); }
+    for (const [h, d] of sys) out.push({ x: h.x, y: h.y, z: h.z, r: d * 1.4 + h.r, w: 0.5, key: `sys:${h.id}`, label: `${h.name || 'A world'} and its moon${moons.get(h) > 1 ? 's' : ''}` });
+    const dt = S.filter(b => b !== top).map(b => Math.hypot(b.x - top.x, b.y - top.y, b.z - top.z)).sort((a, b) => a - b);
+    const second = S.reduce((m, b) => (b !== top && b.m > m ? b.m : m), 0);
+    at(top, Math.max(top.r * 8, dt.length ? dt[dt.length >> 1] * 1.2 : 0), top.m > 2 * second ? 0.35 : 0.2, `body:${top.id}`, 'The heaviest body and its system');
+    const kb = byKey(keep, 'body:');
+    if (kb) at(kb, Math.max(kb.r * 8, Math.hypot(kb.vx - vx, kb.vy - vy, kb.vz - vz) * 0.8), 0.3, keep, kb.name || 'A body');
+    return out;
   },
   mini(g, k) {
     for (const b of this.bodies) {

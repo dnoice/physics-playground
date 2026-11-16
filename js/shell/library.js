@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Library (digiSpace Edition - v2.16)
+    - Title: Library (digiSpace Edition - v2.18)
     - File Name: library.js
     - Relative Path: js/shell/library.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the capture settings hold
+      the director's switch, its note and Preview direction.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
       dataset's ZIP download carries its CSVs with a README and a data
       package, and its Details show each column's unit, with its meaning on
@@ -22,10 +25,6 @@
       squares while running, with a Save state that confirms; capture settings
       that fold out beside it; and item cards with the kind's colour, one main
       action, downloads named by format and Delete as a corner trash button.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
-      cards on Dennis's call to fill the Library: record a clip, record a
-      dataset or save the state with one press, each saying what it will keep
-      for this lab and what it is doing now.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -57,6 +56,7 @@ import { $, clamp, el, fmtSI, keepFocus, store } from '../core/util.js';
 import { labsById } from '../labs/index.js';
 import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, saveState, toggleData, toggleVideo, vrec } from './capture.js';
 import { columnsOf, runZip } from './dataset.js';
+import { directorSettings } from './director.js';
 import { radioGroup } from './panel.js';
 import { active, announce } from './state.js';
 import { vault } from './vault.js';
@@ -239,6 +239,7 @@ export function buildCaptureSettings() {
   host.replaceChildren(
     el('div', { class: 'seg-wrap' }, el('span', { class: 'seg-label', text: 'Video quality' }), qg.group),
     sw('sw-overlay', 'Label videos with lab, scene and time', () => vrec.overlay, v => { vrec.overlay = v; store.set('overlay', v); }),
+    directorSettings(),
     el('div', { class: 'seg-wrap' }, el('span', { class: 'seg-label', text: 'Data sample rate (simulated time)' }), rg.group),
     sw('sw-tracks', 'Include tracks', () => dataRec.tracksOn, v => { dataRec.tracksOn = v; store.set('tracks', v); }),
     el('p', { class: 'ctl-note', id: 'tracks-note' }));

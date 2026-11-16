@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.16)
+    - Title: Physics Playground (digiSpace Edition - v2.18)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -13,6 +13,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the director's chip on
+      the stage, beside the recorders' chips.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       engine's release beside the name in the top bar (filled from
       js/core/version.js), linking to the changelog.
@@ -20,11 +23,6 @@
       Library page in two sections, Capture and Saved, with the capture
       settings folding out beside the Capture heading; the download and edit
       glyphs join the icon subset.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
-      call for a cockpit head-up display: the display's layer over the stage
-      canvas (tape, caution lights, target box, leader and callout), the HUD
-      button and menu in the top bar, the centre_focus_strong glyph and
-      headsup.css, and Shift+H on the keyboard sheet.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -157,6 +155,7 @@
           <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
           <button type="button" class="chip hud-rec" id="hud-rec" hidden></button>
           <button type="button" class="chip hud-rec data" id="hud-data" hidden></button>
+          <button type="button" class="chip hud-rec dir" id="hud-dir" aria-label="The director is filming: press to give the camera back" title="Give the camera back" hidden></button>
         </div>
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>

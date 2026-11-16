@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.13)
+    - Title: Gravity 3D View (digiSpace Edition - v2.18)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.13.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: aim3() and home3() give
+      the director an orbit target for a simulation point and the framing
+      frame3() goes to.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The 3D
       throw and its preview take the lab's throwVel: a drag's screen length
       against the circular speed about what holds its start, so a throw from
@@ -22,12 +26,6 @@
       zoomLimits3: the Solar System's free camera comes in to a few thousand
       km and out to all of Sedna's orbit; elsewhere from a fiftieth of the
       system to eight times it.
-    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
-      System in 3D: the first frame reaches Saturn and the zoom out reaches
-      the Kuiper belt; bodies keep their own pixel floor; a moon inside its
-      planet's disc is hidden and cannot be picked (apart3); the near plane
-      follows the camera in to a moon; names in the overlay, and the hover
-      readout names the body. The 3D names are the hudClear too.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -164,6 +162,10 @@ export const gravity3d = {
     if (!(id in S)) return;
     c.yawT = c.yaw + wrapAngle(S[id] - c.yaw); c.pitchT = 0.02;
   },
+  /* For the director's camera: a simulation point as an orbit target (simulation z is the scene's height, and one
+     simulation pixel is one scene unit), and the home framing that frame3() goes to, at the current heading. */
+  aim3(x, y, z = 0) { return { x, y: z, z: y, k: 1 }; },
+  home3() { const m = this.com3(); return { yaw: this.c3().yaw, pitch: PITCH3, dist: this.dist0(), tx: m.x, ty: m.z, tz: m.y }; },
   tick3(real) {
     const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 10), tb = this.tracked3();
     if (this.track != null && !tb) this.track = null;

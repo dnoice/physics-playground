@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.17)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: The director's camera
+      under Capturing runs, with what it films in each lab, what your hand on
+      the camera does, Preview direction, and why there is no background mode.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0: what each lab tracks and what its README records of the scene.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -204,7 +208,8 @@ capture what happens.
   simulation controls.
 - **Run guided experiments** with live checks of the claims they test.
 - **Capture and revisit results** with rewind, WebM video, CSV datasets and
-  saved states in the library.
+  saved states in the library. A director's camera can film a clip for you,
+  with wide shots, slow pans, dollies and orbits onto what is happening.
 - **Choose your units**: metric, US customary or the simulation’s own
   units.
 
@@ -655,6 +660,55 @@ that matter. The layout reflows to one column below 1180 px.
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
 
+### The director's camera
+
+Turn on **Direct clips like a film** in the Library's capture settings, and
+a clip is filmed for you. While it records, the director drives your own
+view the way a camera crew would:
+
+- **It opens on an establishing shot.** The whole scene, with a slow push
+  in, and in 3D a slow orbit.
+- **It films what is happening.** Each lab names its areas of interest, and
+  the director picks among them by how much each stands out, preferring
+  what it has not shown lately. A strong moment is held for a few seconds
+  more; one not to miss, such as a merger, takes over a routine shot.
+- **It returns to a wide shot** after two subjects in a row, and whenever
+  nothing stands out.
+- **It never cuts.** Between shots the camera pulls out, travels and pushes
+  in along one smooth, eased path. Within a shot it follows the subject on
+  a critically damped spring. Pan, zoom and turn speeds have fixed limits
+  that hold in every frame.
+- **With reduced motion**, every limit is halved and every shot is longer.
+
+| Lab | What the director films |
+| --- | --- |
+| Gravity | Close encounters, mergers, the fastest body, a body being ejected, the heaviest body and its system; in Our Solar System, each world with its moons |
+| Collisions | The Brownian tracer, the densest cluster, the fastest ball |
+| Fluid | The splash front and the fastest flow |
+| Waves | The sources, the interference pattern, the detector line, the brightest spot |
+| Chaos | The pendulum tips, where the copies part, the copies on the phase map |
+| Cloth | The tear or the most strained weave, the wind-blown edge |
+| Fields | The tracked particle, the swarm of particles, the charges |
+
+**Your hand comes first.** If you move the camera during a take, the
+director stops moving it. It carries on once you have left the camera alone
+for four seconds (six with reduced motion), starting from where you left
+it. In Gravity, the director sets Follow and the followed body aside while
+it films. When the clip stops, your view eases back to where it was, and
+Follow comes back with it. The amber chip on the stage names the shot.
+Press the chip to take the camera back for the rest of the clip.
+
+**Preview direction**, under the switch, runs the director without
+recording. Press it again, or the chip, to stop it. A clip started during a
+preview carries on with the same director.
+
+The director moves your own view. A background mode, filming a second
+camera while your view stays still, was considered and left out. It would
+draw every recorded frame twice, on a machine already busy encoding the
+clip. Some labs are also not made to be drawn twice. Gravity's flat view
+moves its camera and notes what it drew as it draws. Fluid's liquid
+surface is rendered for the stage's own view and size.
+
 ### Datasets that explain themselves
 
 A dataset is made for someone who never saw the run. Its **ZIP** download,
@@ -707,7 +761,7 @@ The **Library** page gathers all of this in two sections.
   - **Save state** saves at once, and says so.
   - Each button shows its key.
   - **Settings**, beside the heading, folds out the video quality, labels,
-    sample rate and tracks.
+    the director, sample rate and tracks.
   - A fold under the bar lists what a dataset will hold.
 - **Saved** lists everything kept, for this lab or all of them, with where
   it is stored.

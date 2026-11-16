@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Stage Camera for the 3D Mode (digiSpace Edition - v2.1)
+    - Title: Stage Camera for the 3D Mode (digiSpace Edition - v2.18)
     - File Name: stage3d.js
     - Relative Path: js/labs/stage3d.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: aim3() turns a world
+      point into an orbit target for the director, with the scene units per
+      world unit there.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: one orbit camera and one plane mapping for every lab
       that simulates on a plane.
@@ -182,6 +186,9 @@ export const stage3d = {
     const yawMax = this.rig3.yawMax, yaw = yawMax != null ? clamp(S[id], -yawMax, yawMax) : S[id];
     c.yawT = c.yaw + wrapAngle(yaw - c.yaw); c.pitchT = Math.max(0.08, this.pitchFloor(c));
   },
+  /* For the director's camera: a world point on the plane as an orbit target in the scene, and how many scene units
+     one world unit is there. */
+  aim3(x, y) { const P = this.plane3(), p = this.to3(x, y, 0, P); return { x: p[0], y: p[1], z: p[2], k: P.k }; },
   tick3(real) {
     const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 10);
     c.yaw += wrapAngle(c.yawT - c.yaw) * k;
