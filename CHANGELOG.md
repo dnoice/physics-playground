@@ -166,6 +166,17 @@ well as the GPU. And a fix for the Pluto orbit line he caught hula-hooping.
 - **Shadows are equally soft on every tier.** A larger map only sharpens
   their edge. Before, Ultra's shadows were harder than High's.
 
+### Two GPU memory leaks, found and fixed
+
+- **The bloom's eleven render targets** leaked at every change of tier and
+  every resize of the window. The post chain was rebuilt each time, but
+  only the composer's own two targets were freed, never its passes'.
+- **The studio's environment light** leaked at every rebake. A render
+  target's texture is freed only with its target, and only the texture was
+  being disposed.
+- **The count now holds.** Cycling Ultra and Lite holds the GPU's texture
+  count steady, where it had grown by about eleven a change.
+
 ### Checks
 
 - `tests/solar.py`: Pluto's orbit holds through a turn of Charon.
@@ -176,7 +187,8 @@ well as the GPU. And a fix for the Pluto orbit line he caught hula-hooping.
   - the GPU, CPU, memory and texture-limit verdicts, and the suggestion
     as the cheapest of them;
   - the speed test;
-  - the Graphics menu reading the whole machine.
+  - the Graphics menu reading the whole machine;
+  - a change of tier freeing what the last one made.
 
 ## 2.14.0 (11/16/2026)
 

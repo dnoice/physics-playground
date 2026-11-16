@@ -17,7 +17,7 @@
       reaching the studio and the texture shop; Ultra's finer environment; the
       GPU, CPU, memory and texture-limit verdicts and the suggestion as their
       cheapest; the speed test; and the Graphics menu reading the whole
-      machine.
+      machine. A change of tier frees what the last one made.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The scene
       menu check expects Gravity's eight scenes, now that Our Solar System is
       one of them. The frame key check waits for the camera to arrive home, up
@@ -303,7 +303,8 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport=VIEW)
     pg = page(ctx, lab="fluid")
     settle(pg, IS3D, 30000); pg.wait_for_timeout(400)
-    pg.evaluate(f"{P}.view.snap('y')"); pg.wait_for_timeout(900)
+    # The camera eases round; the heavier tank draws fewer frames a second on software GL, so wait for it to arrive.
+    pg.evaluate(f"{P}.view.snap('y')"); settle(pg, f"Math.abs(Math.abs({P}.view.get().yaw) - Math.PI) < 0.05", 10000); pg.wait_for_timeout(300)
     yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))
     glow = pg.evaluate(f"{P}.mode.world.engine.studioOf('fluid').dome.material.uniforms.uDir.value.z")
     ok("fluid_seen_from_behind", abs(yaw - 3.1416) < 0.3 and pg.evaluate(LIT) > 0.02, round(yaw, 2))
@@ -317,7 +318,7 @@ with sync_playwright() as p:
     ok("auto_finds_lite_on_software_gl", pg.evaluate(f"{P}.mode.world.engine.tier.id") == "lite")
     BUDGET = f"""(() => {{ const E = {P}.mode.world.engine, t = E.tier, st = E.studioOf('chaos'), d = {P}.mode.world.device, b = E.mats.budget();
       return {{ radius: st.key.shadow.radius, want: t.shadow ? Math.max(1, t.soft * t.shadow / 2048) : null, fill: st.fill.intensity > 0, haze: !!(st.haze && st.haze.visible),
-        contact: st.contacts.length > 0 && st.contacts.every(c => c.visible), aniso: b.aniso, maxAniso: d.maxAniso, env: st.env.image.width,
+        contact: st.contacts.length > 0 && st.contacts.every(c => c.visible), aniso: b.aniso, maxAniso: d.maxAniso, env: st.env.userData.size,
         maps: b.maps.every(m => m.at <= Math.max(t.tex, 1)) }}; }})()"""
     env = {}
     for tier in ["ultra", "high", "medium", "low", "lite"]:
@@ -328,6 +329,14 @@ with sync_playwright() as p:
         ok(f"tier_{tier}_budgets_reach_the_studio", (g["want"] is None or abs(g["radius"] - g["want"]) < 1e-9) and g["fill"] == spec[0] and g["haze"] == spec[1]
            and g["contact"] and g["aniso"] == min(spec[2], g["maxAniso"]) and g["maps"], g)
     ok("ultra_bakes_a_finer_environment", env["ultra"] > env["high"] == env["lite"], env)
+    # A change of tier frees what the last one made: the bloom's eleven targets, and the environment's render target with
+    # its texture. Both had leaked at every change, and at every resize.
+    counts = []
+    for _ in range(2):
+        for tier in ["ultra", "lite"]:
+            pg.evaluate(f"{P}.mode.tier('{tier}')"); pg.wait_for_timeout(600)
+        counts.append(pg.evaluate(f"{P}.mode.info().textures"))
+    ok("tier_changes_free_their_targets", counts[0] == counts[1], counts)
     pg.click("#btn-gfx")
     ok("menu_opens", not pg.evaluate("document.getElementById('gfx-sheet').hidden"))
     dev = pg.inner_text("#gfx-device")

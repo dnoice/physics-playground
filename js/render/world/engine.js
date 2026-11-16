@@ -14,7 +14,9 @@
 ✒ Changelog:
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A change
       of tier reaches the material shop, and studioOf(labId) hands a scene's
-      studio to the tests.
+      studio to the tests. Rebuilding the post chain frees its passes' targets
+      too: the bloom's eleven had leaked at every change of tier and every
+      resize.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: one renderer and post stack shared by every lab.
     Earlier entries: see CHANGELOG.md
@@ -88,7 +90,8 @@ export function createEngine(tier) {
   renderer.domElement.addEventListener('webglcontextrestored', () => { E.lost = false; size.w = 0; if (onRestored) onRestored(); });
 
   function buildPost(w, h, pr) {
-    if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer.dispose(); composer = null; bloom = grade = render0 = null; }
+    // Its passes hold targets of their own (the bloom's eleven), which the composer's dispose() leaves behind.
+    if (composer) { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer.dispose(); composer = null; bloom = grade = render0 = null; }
     const t = E.tier;
     if (!t.bloom && !t.grade && !t.msaa) return;
     const target = new THREE.WebGLRenderTarget(w * pr, h * pr, { type: THREE.HalfFloatType, samples: t.msaa });
@@ -183,6 +186,6 @@ export function createEngine(tier) {
       return true;
     },
     info() { const i = renderer.info; return { calls: i.render.calls, triangles: i.render.triangles, textures: i.memory.textures, geometries: i.memory.geometries, programs: i.programs ? i.programs.length : 0 }; },
-    dispose() { for (const s of scenes.values()) if (s.dispose) s.dispose(); scenes.clear(); E.mats.dispose(); if (composer) composer.dispose(); renderer.dispose(); },
+    dispose() { for (const s of scenes.values()) if (s.dispose) s.dispose(); scenes.clear(); E.mats.dispose(); if (composer) { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } renderer.dispose(); },
   });
 }

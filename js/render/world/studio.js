@@ -18,6 +18,8 @@
       floor, with a warm bounce; contact shadows on every tier; a polished
       concrete floor whose key glint is kept faint; a haze beam on High and
       Ultra; and the environment resolution and shadow penumbra from the tier.
+      A rebaked environment frees its render target with its texture, where
+      only the texture had been freed.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the 3D mode: the shared photo studio every apparatus stands in.
     Earlier entries: see CHANGELOG.md
@@ -72,6 +74,9 @@ export function bakeEnvironment(renderer, { top = 0xfff4e6, left = 0x8fc8ff, rig
   const rt = pm.fromScene(room, 0.018, 0.1, 80, { size });
   pm.dispose();
   room.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+  /* A render target's texture is freed only with its target, so the texture carries the way to free both. */
+  rt.texture.userData.release = () => rt.dispose();
+  rt.texture.userData.size = rt.width;
   return rt.texture;
 }
 
@@ -317,7 +322,7 @@ export function createStudio(E, o = {}) {
       const was = env;
       envSize = size; env = bakeEnvironment(E.renderer, O.envLook, size);
       scene.environment = env; if (floor) floor.mat.envMap = env;
-      was.dispose();
+      was.userData.release();
     }
     fillOn = !!tier.fill;
     fill.intensity = fillOn ? O.fill * keyLux : 0; bounce.intensity = fillOn ? O.bounce * keyLux : 0;
@@ -345,7 +350,7 @@ export function createStudio(E, o = {}) {
       if (floor) floor.dispose();
       for (const c of contacts) { c.geometry.dispose(); c.material.dispose(); }
       if (haze) { haze.geometry.dispose(); haze.material.dispose(); }
-      env.dispose(); dome.geometry.dispose(); dome.material.dispose(); key.dispose(); fill.dispose(); bounce.dispose();
+      env.userData.release(); dome.geometry.dispose(); dome.material.dispose(); key.dispose(); fill.dispose(); bounce.dispose();
     },
   };
 }
