@@ -1,17 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.7)
+    - Title: Collisions Lab (digiSpace Edition - v2.12)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call to steady the pile test at its cause: the walls take part
+      in every contact pass, as positions only, so the floor's push carries up
+      through a deep pile instead of being undone after the last pass; two
+      passes always, up to four while one still meets an overlap deeper than
+      half a pixel. The pile's worst overlap over 40 runs fell from 2.85 to
+      1.08 px; a sparse gas costs what it did.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: balls, kinetic energy, RMS speed and PA / NkT on its tape, and
       the selected ball as its target, its centre lifted as the 3D table draws
@@ -30,12 +37,6 @@
       half full, mixed sizes included, where 1 + 2φ, its first terms, fell 4
       to 20 % short; the reading averages about five seconds of wall impacts,
       where before it was about two.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      the impulse with e and the energy it keeps, the speed distribution
-      checked and plotted against Maxwell–Boltzmann, PA / NkT against 1 + 2φ,
-      and friction's spin share; Inspect follows a ball's speed. Random new
-      balls gives each ball added a random size from 4 to 24 px, and so a
-      random mass.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,6 +45,9 @@
 
 ✒ Key Features:
     - Sweep-and-prune broad phase for up to 1500 discs.
+    - Two contact passes a step, up to four while one still meets an overlap
+      deeper than half a pixel, with the walls in every pass, so a deep pile
+      stands on the floor.
     - Maxwell–Boltzmann speed histogram and an ideal-gas pressure check.
     - Grab, heat, cool and erase tools; a Brownian tracer with its path.
     - Random new balls: a random size, and so a random mass, for each ball
@@ -238,8 +242,11 @@ export const collisions = {
       while (b >= 0 && X[O[b]] - R[O[b]] > key) { O[b + 1] = O[b]; b--; }
       O[b + 1] = id;
     }
-    const e = this.p.e, rest = g > 0 ? g * dt * 3 : 0;
-    for (let it = 0; it < 2; it++) {
+    const e = this.p.e, rest = g > 0 ? g * dt * 3 : 0, w = this.w, h = this.h;
+    // Two passes always, and up to four while a pass still meets an overlap deeper than half a pixel: a sparse gas
+    // stops at two, a deep pile under gravity takes the extra passes it needs to stand on the floor without sinking.
+    for (let it = 0; it < 4; it++) {
+      let deep = 0;
       for (let a = 0; a < n; a++) {
         const i = O[a], right = X[i] + R[i];
         for (let b = a + 1; b < n; b++) {
@@ -250,6 +257,7 @@ export const collisions = {
           const wi = IM[i], wj = IM[j], ws = wi + wj;
           if (ws === 0) continue;
           const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, corr = (rr - d) / ws * 0.9;
+          if (rr - d > deep) deep = rr - d;
           X[i] -= nx * corr * wi; Y[i] -= ny * corr * wi; X[j] += nx * corr * wj; Y[j] += ny * corr * wj;
           const vn = (VX[j] - VX[i]) * nx + (VY[j] - VY[i]) * ny;
           if (vn < 0) {
@@ -266,16 +274,25 @@ export const collisions = {
           }
         }
       }
+      // The walls take part in every pass, as positions only: a ball the pass pushed into the floor is set back on it
+      // before the next pass, so the floor's push carries up through a deep pile instead of being undone after the
+      // last pass, which left the pile's bottom layer overlapping by up to a third of a radius.
+      for (let i = 0; i < n; i++) {
+        const r = R[i];
+        if (X[i] < r) X[i] = r; else if (X[i] > w - r) X[i] = w - r;
+        if (Y[i] < r) Y[i] = r; else if (Y[i] > h - r) Y[i] = h - r;
+      }
+      if (it >= 1 && deep < 0.5) break;
     }
-    const w = this.w, h = this.h;
+    // Bounces and the pressure count, for a ball touching a wall while moving into it.
     let imp = 0;
     for (let i = 0; i < n; i++) {
       const r = R[i], m = IM[i] ? 1 / IM[i] : 0;
       let jx = 0, jy = 0, nx = 0, ny = 0;
-      if (X[i] < r) { X[i] = r; if (VX[i] < 0) { jx = m * (1 + e) * -VX[i]; VX[i] = -VX[i] * e; nx = -1; } }
-      else if (X[i] > w - r) { X[i] = w - r; if (VX[i] > 0) { jx = m * (1 + e) * VX[i]; VX[i] = -VX[i] * e; nx = 1; } }
-      if (Y[i] < r) { Y[i] = r; if (VY[i] < 0) { jy = m * (1 + e) * -VY[i]; VY[i] = -VY[i] * e; ny = -1; } }
-      else if (Y[i] > h - r) { Y[i] = h - r; if (VY[i] > 0) { const ee = VY[i] < rest ? 0 : e; jy = m * (1 + ee) * VY[i]; VY[i] = -VY[i] * ee; ny = 1; } }
+      if (X[i] <= r) { X[i] = r; if (VX[i] < 0) { jx = m * (1 + e) * -VX[i]; VX[i] = -VX[i] * e; nx = -1; } }
+      else if (X[i] >= w - r) { X[i] = w - r; if (VX[i] > 0) { jx = m * (1 + e) * VX[i]; VX[i] = -VX[i] * e; nx = 1; } }
+      if (Y[i] <= r) { Y[i] = r; if (VY[i] < 0) { jy = m * (1 + e) * -VY[i]; VY[i] = -VY[i] * e; ny = -1; } }
+      else if (Y[i] >= h - r) { Y[i] = h - r; if (VY[i] > 0) { const ee = VY[i] < rest ? 0 : e; jy = m * (1 + ee) * VY[i]; VY[i] = -VY[i] * ee; ny = 1; } }
       imp += jx + jy;
       if (mu > 0 && IM[i]) { if (nx) this.wallSpin(i, nx, 0, mu * jx); if (ny) this.wallSpin(i, 0, ny, mu * jy); }
     }
@@ -532,7 +549,7 @@ export const collisions = {
         const i = O[a], right = X[i] + R[i];
         for (let b = a + 1; b < this.n; b++) { const j = O[b]; if (X[j] - R[j] > right) break; const d = Math.hypot(X[j] - X[i], Y[j] - Y[i]); worst = Math.max(worst, (R[i] + R[j] - d) / Math.min(R[i], R[j])); }
       }
-      if (worst > 0.5) out.push({ id: 'c-squash', level: 'warn', title: 'The pile is over-compressed', body: `Neighbours overlap by up to <b>${pct(worst)}</b> of a radius. Gravity of ${fmtQ(this, 'acc', this.p.gravity)} squeezes the pile faster than two solver passes per step can push it apart.`,
+      if (worst > 0.5) out.push({ id: 'c-squash', level: 'warn', title: 'The pile is over-compressed', body: `Neighbours overlap by up to <b>${pct(worst)}</b> of a radius. Gravity of ${fmtQ(this, 'acc', this.p.gravity)} squeezes the pile faster than the solver's four passes per step can push it apart.`,
         fixes: [{ label: 'Halve gravity', run() { setParam(collisions, 'gravity', Math.round(collisions.p.gravity / 20) * 10); } }] });
     }
     if (this.p.e < 1 && this.p.gravity === 0 && this.KE0 > 0) {

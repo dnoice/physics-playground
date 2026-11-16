@@ -1,17 +1,20 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.11)
+    - Title: README Media Manifest (digiSpace Edition - v2.12)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero
+      and the banner are recaptured from release 2.12.0 with the redesigned
+      Star system: a world of every class, each in its own colour.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero
       is recaptured from release 2.11.0 with the refined dials. The gallery
       and the 2D and 3D pair are no longer said to show the Controls page
@@ -101,26 +104,27 @@ the change that made them necessary.
 The Solar System pair was captured from release 2.10.0 on 11/14/2026 in the
 same way, about five months into the run (the scene also runs while the page
 boots). Its orbits fade back round from each body, and the close-up's zoom
-reads in short form (41.8k%). The hero was captured from release 2.11.0 on 11/14/2026, headless in
-software WebGL on four CPU cores, in metric units. It shows the head-up
-display's readings tape, the Star system's planets as the gas giants the
-research classes make them, the planet-class buttons under New bodies, and
-the refined dials: open cells, the value unframed with its unit set back,
-and each row's wheels level.
+reads in short form (41.8k%). The hero and the banner were captured from
+release 2.12.0 on 11/16/2026, headless in software WebGL on four CPU cores,
+in metric units. They show the redesigned Star system, a world of every
+class each in its own colour: a grey rock, a rust super-Earth, an ocean
+world, a lavender sub-Neptune, two golden giants, a blue ice giant and the
+comet's white trail. The hero also shows the head-up display's readings
+tape, the planet-class buttons under New bodies, and the dials: open cells,
+the value unframed with its unit set back, and each row's wheels level.
 The Collisions picture was captured from release 2.7.0 on 11/10/2026 in the
 same way, and shows the target box and callout on the selected cue ball. The Fluid,
 Waves and Fields pictures and the 2D and 3D pair stand from release 2.5.0,
 with the Random dice on the stage rail; they show the stage, not the
 Controls page, so the dials' later refinements do not touch them;
-Chaos and Cloth, whose rails have no dice, from release 2.4.0; and the
-banner, which shows no interface, from release 2.3.0.
+and Chaos and Cloth, whose rails have no dice, from release 2.4.0.
 
 ## The pictures
 
 | File | Size (px) | Shows | Used in |
 | --- | --- | --- | --- |
-| `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's star system | README title |
-| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's star system after 8 simulated seconds (about 1.8 years), its six planets gas giants by the research classes, with the head-up display's readings tape and the HUD button, the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and planet-class buttons, and the colophon | README, under the badges |
+| `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's Star system, its worlds of every planet class in their own colours | README title |
+| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's Star system after 8 simulated seconds (about 1.8 years), a world of every planet class in its own colour, a moon on each giant and a comet, with the head-up display's readings tape and the HUD button, the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and planet-class buttons, and the colophon | README, under the badges |
 | `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in, with the cue ball selected: the head-up display's target box and callout on it, and its readings tape | Lab gallery |
 | `lab-fluid.webp` | 1106 × 610 | Fluid, Dam break, 1.4 s in | Lab gallery |
 | `lab-waves.webp` | 1106 × 610 | Waves, Double slit, 6 s in | Lab gallery |

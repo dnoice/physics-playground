@@ -1,17 +1,19 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.11)
+    - Title: Changelog (digiSpace Edition - v2.12)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.12.0 release.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.11.0 release.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -65,6 +67,105 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.12.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+Two follow-ups, on Dennis's call: steady the flaky pile test at its cause,
+and redesign the Star system so its worlds vary instead of six alike giants.
+
+### Collisions: a pile that stands on the floor
+
+- **The cause.** The solver ran two passes over the ball contacts, then set
+  any ball pushed through a wall back on it. A bottom ball the passes pushed
+  into the floor was lifted after the last pass, which reopened its overlap
+  with the ball above. A deep random pile under 900 px/s² was left with
+  bottom-layer overlaps of up to 3.3 px. `pile_overlap_small`, limited to
+  3 px, failed in about one run in eight, on main as well.
+- **The fix.** The walls now take part in every pass, as positions only, so
+  the floor's push carries up through the pile. The bounces and the
+  pressure count still follow once, after the last pass.
+- **Adaptive passes.** Two passes always, then up to four while a pass
+  still meets an overlap deeper than half a pixel. Over 40 random piles,
+  the worst overlap fell from 2.85 to 1.08 px and the mean from 1.69 to
+  0.55 px.
+- **Cost.** A sparse gas stops at two passes and costs what it did. Brownian
+  motion costs about a tenth more, and the deep pile about 0.03 ms more per
+  step.
+- **Still exact where it was.** The ideal gas keeps its energy to 10⁻¹⁴ and
+  relaxes to Rayleigh speeds as before. The check is unchanged and passes
+  with a wide margin.
+
+### Gravity: the Star system, and no two worlds alike
+
+- **Every class in one system.** In place of six gas giants (0.3 to 2
+  Jupiter masses):
+  - a grey rock on an eccentric orbit;
+  - a rust super-Earth;
+  - an ocean world at 1 AU (its year is still the metric year);
+  - a lavender sub-Neptune;
+  - a banded Jupiter-mass giant;
+  - a ringed pale giant of Saturn's mass;
+  - a deep blue ice giant.
+
+  Each giant has a moon.
+- **Stable by design.**
+  - Neighbouring giants sit at least four mutual Hill radii apart at closest
+    approach.
+  - Each moon is about a third of the way to the edge of its planet's Hill
+    sphere.
+  - The scene's softening is 1 px, down from 4. At 4 px the moons, a few
+    pixels from their planets, felt half their planet's pull, and the
+    star's tides pulled them loose within seconds. Close passes still end in
+    a merge long before 1 px matters.
+  - Over 14 runs of 60 to 90 s, every planet and moon survived, and energy
+    drifted 10⁻⁵ %.
+- **The comet is a comet.** At 0.01 the Star system's and Tilted orbits'
+  comets weighed three Earths and were classed as super-Earths. They are
+  now light comets. The Star system's starts at aphelion, between the outer
+  giants, so its first dive through the inner system comes seconds in
+  rather than among the planets at the start.
+- **No two worlds alike.**
+  - Each class has a few colours (`KINDS[k].hues`), and every world takes
+    one by its id, shaded lighter or darker.
+  - Over a run, the accretion disk's 131 giants show 39 colours, where they
+    showed eight shades of one.
+  - Worlds with a tint of their own, the Solar System's and the Star
+    system's, keep it.
+- **Calm worlds.**
+  - Sub-Neptunes and ice giants have a surface of their own in 3D
+    (`surface: 3`): faint bands under a cool haze, like Uranus and Neptune.
+    They had Jupiter's bands before.
+  - Uranus and Neptune take this surface too.
+- **Storms and rings.** Banded giants carry a storm about half the time,
+  calm worlds a dark spot about a third, each in the planet's own colours;
+  every giant used to carry the same orange spot. Rings come from one rule
+  for 2D and 3D (`ringed`): as a world was given them, else about two gas
+  giants in five, of any mass. In 2D, rings take the planet's colour washed
+  toward ice.
+
+### Tests
+
+- **`tests/planets.py`:**
+  - `star_system_planets_are_gas_giants` becomes
+    `star_system_has_every_class`;
+  - new `star_system_worlds_look_different`: seven colours, all four
+    surfaces, and rings on the pale giant only;
+  - new `star_system_giants_have_moons`;
+  - new `random_giants_vary`: random giants take several hues, and some wear
+    rings.
+- **`tests/check.py`:** the Star system's 30 s run accounts for its twelve
+  bodies, and its star, seven planets and three moons all survive.
+
+### Docs
+
+- **README:** the Planet classes section covers the variety and the new
+  Star system, and the 3D table describes it.
+- **ARCHITECTURE:** `hues`, the calm surface, `ringed`, the Star system's
+  design, and the Collisions solver's passes.
+- **Media:** the banner and the hero are recaptured with the new Star
+  system, and `docs/media/MANIFEST.md` records the run.
 
 ## 2.11.0 (11/14/2026)
 

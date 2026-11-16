@@ -1,17 +1,25 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.10)
+    - Title: Gravity Lab (digiSpace Edition - v2.12)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.10.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for variety: the Star system shows every class (a grey
+      rock, a rust super-Earth, an ocean world at 1 AU, a lavender
+      sub-Neptune, a banded giant, a ringed pale giant, a blue ice giant), a
+      moon on each giant, softening of 1 px so the moons keep their planets,
+      and a comet that is a comet; Tilted orbits' comet too. Each class has a
+      few hues a world picks by its id; sub-Neptunes and ice giants are calm
+      (surface 3); ringed() gives rings in 2D and 3D alike.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits as
       smooth curves (orbitFrame, orbitCurve): any span that would draw long is
       halved again, so an orbit the camera sits inside no longer crosses the
@@ -29,17 +37,6 @@
       reference's mass-radius relation), density, gravity, escape speed and
       Hill sphere, the Roche limit of a real host, and the IAU mass-ratio
       test. pullHost rebuilds a stale source list.
-    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
-      System (built by solarsystem.js): body metadata carried through rewind
-      and saved states and checked on load; massless test bodies; moons on
-      their own substeps inside each step (r-RESPA); the sky frame seen from
-      the north; bodies drawn at real size above a pixel floor, a moon hidden
-      in its planet until a zoom parts them; the Orbits and Names switches;
-      the date on the clock; and a speed fix that removes the belts and keeps
-      the moons. The names drawn are its hudClear, which the head-up display's
-      callout keeps off. prepare() keeps a moon's host only when it is another
-      live body, heavier than the moon and not itself a moon, so a tampered
-      state's self-host, cycle or chain is cut.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -50,9 +47,9 @@
 ✒ Key Features:
     - Full 3D dynamics: flat scenes add exact zeros and step bit-for-bit as in
       v1.3.
-    - Eight scenes, including Tilted orbits with inclinations from 0° to 70°
-      and a polar comet, and Our Solar System at J2000 from
-      js/labs/solarsystem.js.
+    - Eight scenes, including a Star system with every planet class and a
+      moon on each giant, Tilted orbits with inclinations from 0° to 70° and a
+      polar comet, and Our Solar System at J2000 from js/labs/solarsystem.js.
     - Multi-scale stepping: massless test bodies feel every pull and pull
       nothing, and each moon and its planet take their own substeps inside a
       step (r-RESPA), so Phobos and the Kuiper belt share one run.
@@ -63,8 +60,9 @@
       reaches from a few thousand km to all of Sedna's orbit.
     - Planet classes from the research reference (terrestrial, super-Earth,
       sub-Neptune, ice giant, gas giant, then brown dwarf and star), each with
-      its colour in 2D and its surface in 3D; By mass on the reference's
-      boundaries, and mergers that keep their composition.
+      a few colours a world picks from by its id, its surface in 3D and rings
+      on some giants; By mass on the reference's boundaries, and mergers that
+      keep their composition.
     - Physical models in Inspect: radius from the reference's mass-radius
       relation (or the real one), density, gravity, escape speed, Hill sphere,
       Roche limit and the IAU mass ratio.
@@ -133,15 +131,21 @@ export const JUP = 1000 / 1047.348644, EARTH = 1000 / 332946.0487;
    class starts from: Earth, LHS 1140 b, GJ 1214 b, Neptune and Jupiter (the reference's Table 5.1). The surface is
    the 3D world's: 0 rocky, 1 ocean, 2 banded. */
 export const KINDS = {
-  terrestrial: { label: 'Terrestrial planet', short: 'Terrestrial', me: [0.02, 1.5], typ: 1, rgb: [186, 140, 108], surface: 0, odds: 0.16, rank: 1, family: 'rock' },
-  superEarth: { label: 'Super-Earth', short: 'Super-Earth', me: [1.5, 10], typ: 5.6, rgb: [168, 102, 80], surface: 0, odds: 0.2, rank: 2, family: 'rock' },
-  subNeptune: { label: 'Sub-Neptune', short: 'Sub-Neptune', me: [3, 15], typ: 8.17, rgb: [150, 166, 222], surface: 2, odds: 0.22, rank: 3, family: 'gas' },
-  ice: { label: 'Ice giant', short: 'Ice giant', me: [10, 40], typ: 17.15, rgb: [124, 214, 212], surface: 2, odds: 0.14, rank: 4, family: 'gas' },
-  gas: { label: 'Gas giant', short: 'Gas giant', me: [50, 4130], typ: 317.8, rgb: [224, 178, 122], surface: 2, odds: 0.2, rank: 5, family: 'gas' },
-  brown: { label: 'Brown dwarf', short: 'Brown dwarf', m: [13 * JUP, 70], typ: 30 / EARTH, rgb: [178, 86, 80], surface: 2, odds: 0.08, rank: 6, family: 'gas' },
+  terrestrial: { label: 'Terrestrial planet', short: 'Terrestrial', me: [0.02, 1.5], typ: 1, rgb: [186, 140, 108], surface: 0, odds: 0.16, rank: 1, family: 'rock',
+    hues: [[186, 140, 108], [154, 148, 142], [196, 118, 84], [214, 190, 146], [128, 116, 106]] },
+  superEarth: { label: 'Super-Earth', short: 'Super-Earth', me: [1.5, 10], typ: 5.6, rgb: [168, 102, 80], surface: 0, odds: 0.2, rank: 2, family: 'rock',
+    hues: [[168, 102, 80], [140, 130, 122], [184, 138, 92], [124, 100, 114]] },
+  subNeptune: { label: 'Sub-Neptune', short: 'Sub-Neptune', me: [3, 15], typ: 8.17, rgb: [150, 166, 222], surface: 3, odds: 0.22, rank: 3, family: 'gas',
+    hues: [[150, 166, 222], [176, 166, 218], [130, 190, 214], [170, 198, 188]] },
+  ice: { label: 'Ice giant', short: 'Ice giant', me: [10, 40], typ: 17.15, rgb: [124, 214, 212], surface: 3, odds: 0.14, rank: 4, family: 'gas',
+    hues: [[124, 214, 212], [90, 142, 226], [164, 222, 228], [104, 188, 168]] },
+  gas: { label: 'Gas giant', short: 'Gas giant', me: [50, 4130], typ: 317.8, rgb: [224, 178, 122], surface: 2, odds: 0.2, rank: 5, family: 'gas',
+    hues: [[224, 178, 122], [228, 206, 150], [214, 148, 102], [198, 182, 162], [206, 128, 96]] },
+  brown: { label: 'Brown dwarf', short: 'Brown dwarf', m: [13 * JUP, 70], typ: 30 / EARTH, rgb: [178, 86, 80], surface: 2, odds: 0.08, rank: 6, family: 'gas',
+    hues: [[178, 86, 80], [150, 70, 96], [194, 106, 72], [132, 64, 72]] },
   star: { label: 'Star', short: 'Star', surface: -1, rank: 7 },
   // The Solar System's moons and smaller worlds; with no odds they are never drawn at random or offered as a type.
-  moon: { label: 'Moon', short: 'Moon', rgb: [168, 166, 160], surface: 0, rank: 0 },
+  moon: { label: 'Moon', short: 'Moon', rgb: [168, 166, 160], surface: 0, rank: 0, hues: [[168, 166, 160], [214, 192, 108], [206, 214, 220], [138, 120, 102]] },
   dwarf: { label: 'Dwarf planet', short: 'Dwarf', rgb: [204, 186, 160], surface: 0, rank: 0 },
   asteroid: { label: 'Asteroid', short: 'Asteroid', rgb: [150, 138, 124], surface: 0, rank: 0 },
   icy: { label: 'Icy body', short: 'Icy', rgb: [176, 196, 212], surface: 0, rank: 0 },
@@ -187,18 +191,23 @@ export function planetRadius(m, kind) {
   return null;
 }
 const hash01 = n => { let x = Math.imul(n + 1, 2654435761) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
-/* A body's colour: its type's, a shade lighter or darker by its id, in eight steps so the 3D tint cache stays
-   small; a star keeps the heat ramp of its mass, and a real world (the Solar System's) its own tint. Cached on the
-   body until its type or id changes. */
+/* A body's colour: one of its type's hues, picked by its id, a shade lighter or darker in eight steps, so no two
+   giants of a run need look alike while the 3D tint cache stays small (a few dozen colours a type). A star keeps
+   the heat ramp of its mass, a world with a tint of its own (the Solar System's, a scene's) keeps that, and a real
+   world without one its type's plain colour. Cached on the body until its type or id changes. */
 export function bodyRgb(b) {
   if (b.kind === 'star') return massRgb(b.m);
   const key = b.kind + b.id;
   if (b.ck !== key) {
-    const k = b.tint ? 1 : 0.84 + 0.045 * Math.floor(hash01(b.id) * 8);
-    b.rgb = (b.tint || KINDS[b.kind].rgb).map(c => Math.min(255, Math.round(c * k))); b.css = `rgb(${b.rgb})`; b.ck = key;
+    const K = KINDS[b.kind], hues = !b.real && K.hues ? K.hues : [K.rgb];
+    const k = b.tint ? 1 : 0.84 + 0.045 * Math.floor(hash01(b.id) * 8), base = b.tint || hues[Math.floor(hash01(b.id + 3301) * hues.length)];
+    b.rgb = base.map(c => Math.min(255, Math.round(c * k))); b.css = `rgb(${b.rgb})`; b.ck = key;
   }
   return b.rgb;
 }
+/* Whether a world wears rings: as it was given (the Solar System's, a scene's), else about two gas giants in five,
+   by id. Shared by the 2D and 3D views. */
+export const ringed = b => (typeof b.ring === 'boolean' ? b.ring : b.kind === 'gas' && hash01(b.id + 9001) < 0.4);
 export const bodyCss = b => (b.kind === 'star' ? massColor(b.m) : (bodyRgb(b), b.css));
 /* A body's name: its own, for the Solar System's, else its number; and the same as a thing to measure from. */
 export const nameOf = b => b.name || `Body ${b.id}`;
@@ -224,7 +233,7 @@ function cleanMeta(m) {
   if (!m || typeof m !== 'object') return null;
   const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : undefined), num = (v, lo, hi) => (Number.isFinite(+v) && +v >= lo && +v <= hi ? +v : undefined);
   const tint = Array.isArray(m.tint) && m.tint.length === 3 && m.tint.every(c => Number.isFinite(+c)) ? m.tint.map(c => clamp(Math.round(+c), 0, 255)) : undefined;
-  return { name: str(m.name, 40), desc: str(m.desc, 80), tint, r: num(m.r, 1e-9, 1e4), px: num(m.px, 0.5, 12), surface: [0, 1, 2].includes(m.surface) ? m.surface : undefined, real: !!m.real, label: !!m.label, ring: !!m.ring, noTrail: !!m.noTrail, hostId: num(m.hostId, 0, 1e9) };
+  return { name: str(m.name, 40), desc: str(m.desc, 80), tint, r: num(m.r, 1e-9, 1e4), px: num(m.px, 0.5, 12), surface: [0, 1, 2, 3].includes(m.surface) ? m.surface : undefined, real: !!m.real, label: !!m.label, ring: !!m.ring, noTrail: !!m.noTrail, hostId: num(m.hostId, 0, 1e9) };
 }
 /* Moons find their planets by id once every body of a scene, a rewind or a saved state exists. */
 function linkHosts(B) {
@@ -258,7 +267,9 @@ export const gravity = {
   random: { key: 'rand', label: 'Random new bodies', tip: 'Random new bodies: each one you place gets a random planet type and mass' },
   presetId: 'solar',
   presets: [
-    { id: 'solar', label: 'Star system', params: { incl: 0, G: 1, soft: 4, merge: true, zoom: 0.85, follow: true, orbits: false } },
+    // Softening of 1 px: close passes end in a merge well before it matters, and the giants' moons, a few pixels out,
+    // feel their planet's full pull (at 4 px it fell to half, and the star's tides pulled the moons loose).
+    { id: 'solar', label: 'Star system', params: { incl: 0, G: 1, soft: 1, merge: true, zoom: 0.6, follow: true, orbits: false } },
     // Our own: real masses, sizes and orbits, with softening far below any distance in it (a few hundred km). Its
     // centre of mass is built at rest, so following it adds nothing; left off, the wheel zooms toward the cursor.
     { id: 'sol', label: 'Our Solar System', params: { incl: 0, G: 1, soft: 0.0001, merge: true, zoom: 0.28, follow: false, orbits: true, labels: true } },
@@ -335,9 +346,9 @@ export const gravity = {
   },
   surfaceOf(b) { return b.surface ?? KINDS[b.kind].surface; },
   vCirc(M, d) { const G = G0 * this.p.G, e2 = this.p.soft * this.p.soft; return Math.sqrt(G * M * d * d / Math.pow(d * d + e2, 1.5)); },
-  orbit(host, d, ang, m, dir = 1) {
+  orbit(host, d, ang, m, dir = 1, kind = null, meta = null) {
     const v = this.vCirc(host.m + m, d);
-    const b = this.body(host.x + d * Math.cos(ang), host.y + d * Math.sin(ang), host.vx - dir * v * Math.sin(ang), host.vy + dir * v * Math.cos(ang), m);
+    const b = this.body(host.x + d * Math.cos(ang), host.y + d * Math.sin(ang), host.vx - dir * v * Math.sin(ang), host.vy + dir * v * Math.cos(ang), m, 0, 0, kind, meta);
     this.bodies.push(b); return b;
   },
   /* A circular orbit tilted by inc about its line of nodes, which points at longitude node. */
@@ -353,11 +364,34 @@ export const gravity = {
     this.merged = 0; this.escaped = 0; this.aim = null; this.pan = null; this.lastSample = -1;
     for (const s of Object.values(this.series)) s.clear();
     if (preset === 'solar') {
+      // A system of every class, each world its own: a hot grey rock on an eccentric orbit, a rust super-Earth, an
+      // ocean world at 1 AU (whose year is the metric year), a lavender sub-Neptune, a banded giant, a pale ringed
+      // giant and a deep blue ice giant, each giant with a moon about a third of the way out to the edge of its Hill
+      // sphere. Neighbouring giants sit at least four of their mutual Hill radii apart even at closest approach, so
+      // the system holds together run after run.
       const star = this.body(0, 0, 0, 0, 1000); B.push(star);
-      const radii = [60, 92, 135, 190, 265, 370], masses = [0.3, 0.8, 1, 0.5, 2, 1.2];
-      radii.forEach((d, i) => { const pl = this.orbit(star, d, rand(0, TAU), masses[i]); if (i === 4) this.orbit(pl, 8, rand(0, TAU), 0.02); });
-      const a = 250, e = 0.86, w = rand(0, TAU), G = G0 * this.p.G, rp = a * (1 - e), vp = Math.sqrt(G * 1000 * (1 + e) / rp);
-      B.push(this.body(rp * Math.cos(w), rp * Math.sin(w), -vp * Math.sin(w), vp * Math.cos(w), 0.01));
+      const world = (d, me, kind, tint, surface, e, ring = false) => {
+        const b = this.orbit(star, d, rand(0, TAU), me * EARTH, 1, kind, { tint, surface, ring });
+        // Started at periapsis: √(1 + e) times the circular speed draws an ellipse of eccentricity e.
+        const k = Math.sqrt(1 + e); b.vx = star.vx + (b.vx - star.vx) * k; b.vy = star.vy + (b.vy - star.vy) * k;
+        return b;
+      };
+      const moon = (pl, d, tint) => this.orbit(pl, d, rand(0, TAU), 0.1 * EARTH, 1, 'moon', { tint });
+      world(50, 0.35, 'terrestrial', [158, 148, 140], 0, 0.15);
+      world(85, 4, 'superEarth', [182, 106, 78], 0, 0.05);
+      world(135, 1, 'terrestrial', [72, 136, 216], 1, 0.02);
+      world(175, 7, 'subNeptune', [172, 162, 226], 3, 0.04);
+      const jove = world(250, JUP / EARTH, 'gas', [224, 176, 120], 2, 0.03);
+      moon(jove, 5.5, [214, 190, 104]);
+      const ringer = world(370, 0.32 * JUP / EARTH, 'gas', [228, 206, 150], 2, 0.03, true);
+      moon(ringer, 6.2, [204, 160, 90]);
+      const ice = world(470, 16, 'ice', [92, 146, 228], 3, 0.02);
+      moon(ice, 4.4, [206, 214, 220]);
+      // A comet, light enough to pull nothing that matters, on a long ellipse through the inner system. It starts at
+      // aphelion, between the ringed giant and the ice giant, so its first dive past the inner worlds comes a few
+      // seconds in rather than among them at the start.
+      const a = 240, e = 0.82, w = rand(0, TAU), G = G0 * this.p.G, ra = a * (1 + e), va = Math.sqrt(G * 1000 * (1 - e) / ra);
+      B.push(this.body(ra * Math.cos(w), ra * Math.sin(w), -va * Math.sin(w), va * Math.cos(w), 1e-4, 0, 0, 'comet'));
     } else if (preset === 'kepler') {
       const star = this.body(0, 0, 0, 0, 1000); B.push(star);
       const a = 210, G = G0 * this.p.G;
@@ -379,7 +413,8 @@ export const gravity = {
       const star = this.body(0, 0, 0, 0, 1000); B.push(star);
       [[80, 0, 0.5], [130, 10, 1], [190, 25, 1.5], [260, 45, 0.8], [340, 70, 2]].forEach(([d, inc, m]) => this.orbitTilted(star, d, rand(0, TAU), m, inc * Math.PI / 180, rand(0, TAU)));
       const a = 230, e = 0.7, rp = a * (1 - e), vp = Math.sqrt(G0 * this.p.G * 1000 * (1 + e) / rp), ci = Math.cos(1.2), si = Math.sin(1.2);
-      B.push(this.body(rp, 0, 0, vp * ci, 0.01, 0, vp * si));
+      // The polar comet, light and classed as a comet (at 0.01 it weighed three Earths and counted as a super-Earth).
+      B.push(this.body(rp, 0, 0, vp * ci, 1e-4, 0, vp * si, 'comet'));
     } else if (preset === 'disk') {
       const core = this.body(0, 0, 0, 0, 600); B.push(core);
       for (let i = 0; i < 140; i++) {
@@ -1042,9 +1077,11 @@ export const gravity = {
       // A moon still inside its planet's disc on screen waits until a zoom draws them apart.
       if (!this.apart(b, z)) continue;
       if (names && b.label) names.push([b, X, Y, R]);
-      if (b.ring && R >= 2.6) {
-        // Saturn's rings reach about 2.3 radii; from the north they are a broad pale band about the planet.
-        g.strokeStyle = 'rgba(226,206,160,0.55)'; g.lineWidth = Math.max(1, R * 0.55);
+      if (R >= 2.6 && ringed(b)) {
+        // Saturn's rings reach about 2.3 radii; from the north they are a broad pale band about the planet, its own
+        // colour washed toward ice.
+        const c = bodyRgb(b);
+        g.strokeStyle = `rgba(${(c[0] + 226) >> 1},${(c[1] + 210) >> 1},${(c[2] + 176) >> 1},0.55)`; g.lineWidth = Math.max(1, R * 0.55);
         g.beginPath(); g.ellipse(X, Y, R * 1.85, R * 1.62, 0.45, 0, TAU); g.stroke();
       }
       if (b.kind === 'star') {
@@ -1148,6 +1185,7 @@ export const gravity = {
     return true;
   },
   bodyColor3: b => (b.kind === 'star' ? '#ffcf7a' : bodyCss(b)),
+  ringed,
   diagnose() {
     const out = [], B = this.bodies, n = B.length;
     if (!n) { out.push({ id: 'g-empty', level: 'info', title: 'Empty sky', body: 'Drag on the stage to throw a body, or click to drop one in place.' }); return out; }
@@ -1326,4 +1364,4 @@ Object.assign(gravity, {
 });
 
 /* ---------- 3D mode: the lab's own camera, picking and overlays (gravity3d.js) ---------- */
-Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, KINDS, JUP, EARTH, STAR_LIMIT, kindOf, mergedKind, planetRadius, bodyRadius, massColor, bodyCss });
+Object.assign(gravity, gravity3d, { TRAIL_CAP, LAUNCH_K, BODY_CAP, STAR_MASS, KINDS, JUP, EARTH, STAR_LIMIT, kindOf, mergedKind, planetRadius, bodyRadius, massColor, bodyCss, bodyRgb });

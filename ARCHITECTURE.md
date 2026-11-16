@@ -1,17 +1,20 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.11)
+    - Title: Architecture Guide (digiSpace Edition - v2.12)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.12.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Class
+      hues, the calm surface, ringed(), the Star system's design, and the
+      Collisions solver's passes.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
       anatomy (text(), the parted ridges, the keyboard-only ring, the wheel as
       the field) and their grid of equal cells on a subgrid; the Math page's
@@ -440,6 +443,10 @@ default), US customary, and Simulation (the lab's own pixels or cells).
   Collisions, Cloth and Fields share one pixel, 9.81/900 m, so their default
   gravity of 900 px/s² is standard gravity. Waves uses 4 mm per cell, a
   ripple-tank scale. Chaos computes in metres and seconds already.
+- Collisions resolves contacts in two passes a step, and up to four while a
+  pass still meets an overlap deeper than half a pixel. The walls take part
+  in every pass, as positions only, so a deep pile stands on the floor; the
+  bounces and the pressure count follow once, after the last pass.
 - Gravity replaces the table with astronomy: the Star system's third planet
   orbits at 1 AU around a one-solar-mass star, so Kepler's third law fixes a
   year (4.4 simulated seconds at G = 1×), speeds in km/s and masses in solar,
@@ -632,10 +639,13 @@ give Jupiter and Earth in those units, from the IAU mass ratios.
   | `typ` | A typical member's mass |
   | `odds` | Its weight among Random's draws |
   | `family` | `rock` or `gas`: what a merger keeps |
-  | `rgb` | Its colour |
-  | `surface` | Its 3D surface: 0 rocky, 1 ocean, 2 banded |
+  | `rgb` | Its plain colour, for a real world without a tint of its own |
+  | `hues` | The colours its members take, one picked by each body's id |
+  | `surface` | Its 3D surface: 0 rocky, 1 ocean, 2 banded, 3 calm (hazy, faint bands) |
 
-  A body's own `surface` (Earth's ocean) overrides the class's.
+  A body's own `surface` (Earth's ocean) overrides the class's. Sub-Neptunes
+  and ice giants are calm, as Uranus and Neptune are; gas giants and brown
+  dwarfs banded.
 - **`kindOf(m)`** is By mass. Its boundaries are 1.5, 4.37, 10 and 50 Earth
   masses, 13 Jupiter masses and 80 (0.08 solar masses).
   - 4.37 is where Müller et al. (2024) find measured worlds turning from bare
@@ -680,6 +690,21 @@ give Jupiter and Earth in those units, from the IAU mass ratios.
     the IAU working definition.
 - **Drawing.** The drawn radius (`bodyRadius`) stays a scale for seeing, and
   is also the collision radius. The physical radius is only reported.
+- **No two alike.** `bodyRgb(b)` picks one of the class's `hues` by the body's
+  id and shades it in eight steps, so a run's giants differ while the 3D tint
+  cache stays a few dozen colours a class. A world with a `tint` of its own
+  (the Solar System's, a scene's) keeps it. `ringed(b)` gives rings as a world
+  was given them, else to about two gas giants in five, by id, in 2D and 3D
+  alike. In 3D a banded giant carries a storm about half the time, a calm
+  world a dark spot about a third, each in the planet's own colours.
+- **The Star system** shows every class: a grey rock on an eccentric orbit, a
+  rust super-Earth, an ocean world at 1 AU (its year is the metric year), a
+  lavender sub-Neptune, a banded giant, a ringed pale giant and a blue ice
+  giant, each giant with a moon about a third of the way to the edge of its
+  Hill sphere. Neighbouring giants sit at least four mutual Hill radii apart
+  at closest approach. Its softening is 1 px: at 4 px the giants' moons, a
+  few pixels out, felt half their planet's pull, and the star's tides pulled
+  them loose. The comet starts at aphelion, between the outer giants.
 
 ## Guided experiments
 
