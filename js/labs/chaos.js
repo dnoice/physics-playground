@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.16)
+    - Title: Chaos Lab (digiSpace Edition - v2.17)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
+      records the arms, bobs, g, the spread between copies as the code applies
+      it (each lower angle δ₀ beyond the last) and every copy's starting
+      state.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and per-copy tracks: each column's unit, meaning
       and SI factor, and a note on the pendulum's units.
@@ -19,15 +23,6 @@
       display: energy, drift, Lyapunov estimate and divergence on its tape,
       and the selected copy as its target: its lower bob, or its dot in the
       Phase map view.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
-      predictability check was circular, its λ taken from the same separation
-      at the moment the copies parted, so it always agreed; λ is now the
-      fitted growth rate of ln δ, the horizon is forecast halfway to parting
-      on a log scale and kept, and the check sets that forecast beside the
-      moment the copies part, within 35 %, saying so when the motion is too
-      regular to forecast or the copies outlast it; rewind and saved states
-      keep the forecast; the energy values say they are per kilogram of the
-      upper bob.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -861,6 +856,16 @@ Object.assign(pendulum, genericState, {
     bob2_y_m: ['m', 'Lower bob\'s height relative to the pivot: negative below it.', 'm', 1],
   },
   dataNote: 'Chaos computes in metres, kilograms and seconds: the upper arm is 1 m long and the upper bob weighs 1 kg; the lower arm\'s length and bob\'s mass are the scene\'s parameters.',
+  /* Every copy's starting state when a recording starts, so a reader knows how far apart they began. */
+  dataContext() {
+    const rows = [];
+    for (let i = 0; i < this.N; i++) { const o = i * 4; rows.push([i, this.s[o], this.s[o + 1], this.s[o + 2], this.s[o + 3]]); }
+    return {
+      facts: [['Copies', this.N], ['Upper arm and bob', '1 m, 1 kg'], ['Lower arm', `${this.p.len} m`], ['Lower bob', `${this.p.mass} kg`], ['Gravity g', `${this.p.g} m/s²`],
+        ['Spread at release', `each copy\'s lower angle starts δ₀ = ${this.p.delta} rad beyond the last\'s`], ['Damping', this.p.damp]],
+      tables: [{ title: 'Copies at the start', note: 'Each pendulum\'s state when the recording started: angles from straight down in radians, angular velocities in rad/s.', head: ['copy', 'theta1', 'theta2', 'omega1', 'omega2'], rows }],
+    };
+  },
   dataRow() {
     const E = this.N ? this.energy(0) : NaN, d = this.separation();
     return [this.t, this.N, E, this.N ? this.driftPct(E) : 0, Number.isFinite(d) ? Math.log10(Math.max(d, 1e-14)) : NaN, this.lyap, this.s[0], this.s[1], this.s[2], this.s[3]];

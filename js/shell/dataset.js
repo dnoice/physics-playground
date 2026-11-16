@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Dataset Description (digiSpace Edition - v2.16)
+    - Title: Dataset Description (digiSpace Edition - v2.17)
     - File Name: dataset.js
     - Relative Path: js/shell/dataset.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The README
+      renders each lab's scene as it was found, from its facts and tables, and
+      the data package keeps them; flags read as integers.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for datasets another person can analyse without
       having watched the run: every dataset explains itself.
@@ -45,7 +48,7 @@ import { zip } from '../core/zip.js';
 import { labsById } from '../labs/index.js';
 import { vault } from './vault.js';
 
-const INTEGER = new Set(['count', 'id', 'index']);
+const INTEGER = new Set(['count', 'id', 'index', 'flag']);
 const num = v => (v == null || !Number.isFinite(v) ? '' : Number.isInteger(v) && Math.abs(v) < 1e7 ? String(v) : String(+v.toPrecision(6)));
 /* A conversion factor: seven significant figures, in scientific notation when very large or small (full precision is in
    the data package). */
@@ -85,7 +88,7 @@ export function describeRun(item) {
   const years = item.lab === 'gravity' && lab && lab.dataInfo.t_years && Number.isFinite(item.t0) ? ` (${num((item.t1 - item.t0) * lab.dataInfo.t_s[3] / lab.dataInfo.t_years[3])} years)` : '';
   const asked = item.rateAsked && item.rateAsked !== item.rate ? `, asked for ${item.rateAsked} Hz; samples land on the solver's steps` : '';
   const stride = item.trackStride > 1 ? `every ${item.trackStride} samples, thinned evenly so the tracks span the whole run` : 'every sample';
-  const settings = settingsOf(lab, item.params), bodies = item.context && item.context.bodies;
+  const settings = settingsOf(lab, item.params), ctx = item.context || {}, bodies = ctx.bodies;
   const L = [];
   L.push(`# ${item.title}`, '');
   L.push(`A dataset recorded in [${APP.name}](${APP.home}) ${item.app || '(release not recorded)'}, in the **${labName}** lab, scene **${scene}**.${lab && lab.blurb ? ` ${lab.blurb}` : ''}`, '');
@@ -110,8 +113,13 @@ export function describeRun(item) {
   L.push(`## Columns of \`${mainFile}\``, '', colTable(main), '');
   if (tracks) L.push(`## Columns of \`${trackFile}\``, '', colTable(tracks), '');
   if (settings.length) L.push('## Settings', '', 'As the Controls page set them when the recording started, in the lab\'s own units.', '', table(['Setting', 'Key', 'Value'], settings.map(s => [s.label, `\`${s.key}\``, String(s.value)])), '');
-  if (bodies && bodies.length) {
-    L.push('## Bodies at the start', '', `The ${bodies.length} bodies when the recording started. Bodies can merge, escape or be added during a run; the tracks name every one at every sample.`, '');
+  // The scene as the recording found it: the lab's facts (its world, its fields, its sizes) and its tables (bodies,
+  // charges, sources, posts, starting states), so positions and ids in the files have something to stand on.
+  if (ctx.facts && ctx.facts.length) L.push('## The scene at the start', '', table(['', ''], ctx.facts.map(([k, v]) => [k, String(v)])), '');
+  for (const t of ctx.tables || []) if (t.rows && t.rows.length) L.push(`## ${t.title}`, '', ...(t.note ? [t.note, ''] : []), table(t.head, t.rows.map(r => r.map(v => (typeof v === 'number' ? num(v) : v ?? '')))), '');
+  // Datasets from 2.16.0 kept Gravity's bodies without a table of their own.
+  if (bodies && bodies.length && !(ctx.tables || []).length) {
+    L.push('## Bodies at the start', '', `The ${bodies.length} bodies when the recording started.`, '');
     L.push(table(['body_id', 'Name', 'Kind', 'Mass (sim)', 'Mass', 'Orbits'], bodies.map(b => [b.id, b.name, b.kind, num(b.mass), b.mass_text, b.orbits_id == null ? '' : `${b.orbits} (${b.orbits_id})`])), '');
   }
   if (item.summary && item.summary.length) L.push('## At a glance', '', table(['Column', 'Min', 'Mean', 'Max'], item.summary.map(s => [`\`${s.column}\``, num(s.min), num(s.mean), num(s.max)])), '');
@@ -132,6 +140,8 @@ export function describeRun(item) {
       track_rows: item.trackRows || 0, track_stride: item.trackStride || (item.trackRows ? 1 : null),
       scale_note: (lab && lab.scaleNote) || null, data_note: (lab && lab.dataNote) || null, units: item.units || null,
       settings: Object.fromEntries(settings.map(s => [s.key, s.value])), bodies: bodies || null,
+      scene_facts: ctx.facts ? Object.fromEntries(ctx.facts) : null,
+      scene_tables: ctx.tables ? ctx.tables.map(t => ({ title: t.title, columns: t.head, rows: t.rows })) : null,
     },
   };
   return { readme, pkg, names };

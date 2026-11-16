@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.16)
+    - Title: Fields Lab (digiSpace Edition - v2.17)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
+      records the world, k, B and its gradient, E₀, the probe and every
+      charge; the potential and tracked energies get their real units and SI
+      factors (volts and J/kg), and the scale note says how the app shows
+      potentials.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and particle tracks: each column's unit, meaning
       and SI factor, and a note on coordinates, scale and the 64-particle
@@ -20,11 +25,6 @@
       display: probe field and potential, particles and E × B drift on its
       tape, and the charted particle as its target, riding the field's relief
       in 3D.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
-      E × B check measures the drift by guiding centres, x + v_y / ω, so
-      particles of other charge-to-mass ratios, as Random particles have,
-      count as well as the scene's, where before their circling left a residue
-      over the panel's one period.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -111,7 +111,7 @@ export const fields = {
   ] },
   // Lengths share the mechanical labs' pixel. With q/m read as C/kg, a field that accelerates one C/kg by 1 m/s² is
   // 1 N/C, and B, which turns a velocity into an acceleration per C/kg, is already in tesla.
-  units: { len: 'px', m: PX_M }, scaleNote: 'In Fields one pixel is 1.09 cm, as in the mechanical labs. Charge-to-mass ratios read as C/kg, so E is in N/C and B in tesla; source charges and potentials stay in simulation units.',
+  units: { len: 'px', m: PX_M }, scaleNote: 'In Fields one pixel is 1.09 cm, as in the mechanical labs. Charge-to-mass ratios read as C/kg, so E is in N/C and B in tesla; source charges stay in simulation units, and the app shows potentials in them too (a dataset gives their factor to volts).',
   p: { tool: 'plus', k: 1, B: 0, gradB: 0, E0: 0, qm: 1, sign: 1, v0: 120, beam: false, map: true, equip: true, lines: true, vectors: false, trails: true, qNew: 1, rand: false },
   random: { key: 'rand', label: 'Random charges and particles', tip: 'Random: each charge you place gets a size from 1 to 4 units, and each particle you launch a random charge-to-mass ratio and sign' },
   presetId: 'dipole',
@@ -955,10 +955,10 @@ Object.assign(fields, genericState, {
     absorbed: ['count', 'Particles that have hit a charge of the opposite sign.'],
     escaped: ['count', 'Particles that have left the world.'],
     probe_E: ['px/s² per C/kg', 'Field strength |E| at the probe, as the acceleration it gives a particle per unit of its charge-to-mass ratio.', 'N/C', PX_M],
-    probe_V: ['sim potential', 'Electric potential at the probe, in the lab\'s units.'],
-    tracked_kinetic: ['sim energy', 'Kinetic energy of the tracked particle, per unit mass.'],
-    tracked_potential: ['sim energy', 'Its potential energy in the field, per unit mass.'],
-    tracked_total: ['sim energy', 'Their sum: constant without a magnetic field\'s help or a collision.'],
+    probe_V: ['px²/s² per C/kg', 'Electric potential at the probe, as the energy per unit mass it gives a particle per unit of its charge-to-mass ratio.', 'V', PX_M * PX_M],
+    tracked_kinetic: ['px²/s²', 'Kinetic energy of the tracked particle per unit mass, ½v².', 'J/kg', PX_M * PX_M],
+    tracked_potential: ['px²/s²', 'Its potential energy in the field per unit mass, (q/m)·V.', 'J/kg', PX_M * PX_M],
+    tracked_total: ['px²/s²', 'Their sum per unit mass: constant in a static field, since a magnetic field does no work.', 'J/kg', PX_M * PX_M],
     tracked_drift_pct: ['%', 'How far that total has moved, as a share of the energy being exchanged.'],
     particle_id: ['id', 'The particle\'s number: unique in this run.'],
     charge_to_mass: ['C/kg', 'Its charge-to-mass ratio q/m, which sets how the field moves it.', 'C/kg', 1],
@@ -968,6 +968,15 @@ Object.assign(fields, genericState, {
     vy: ['px/s', 'Velocity, y (downward).', 'm/s', PX_M],
   },
   dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm. The tracks follow at most the first 64 particles at each sample.',
+  /* The field's sources and the probe when a recording starts: the tracks and probe readings mean nothing without them. */
+  dataContext() {
+    return {
+      facts: [['World', `${this.w.toFixed(0)} × ${this.h.toFixed(0)} px (${(this.w * PX_M).toFixed(2)} × ${(this.h * PX_M).toFixed(2)} m)`], ['Coulomb strength k', this.p.k],
+        ['Magnetic field Bz', this.p.B ? `${this.p.B}${this.p.gradB ? `, changing by ${this.p.gradB} of itself from the middle to the top or bottom edge` : ', uniform'}` : 'off'],
+        ['Uniform field E₀', this.p.E0 || 'off'], ['Probe', this.probe ? `x ${this.probe.x.toFixed(1)} px, y ${this.probe.y.toFixed(1)} px` : 'none'], ['Particles in flight', this.n]],
+      tables: [{ title: 'Charges at the start', note: 'The source charges, which the Move tool can shift during a run; q is in the lab\'s charge units.', head: ['charge_id', 'x (px)', 'y (px)', 'q'], rows: this.charges.map(c => [c.id, c.x, c.y, c.q]) }],
+    };
+  },
   dataRow() {
     const s = this.stats(), pv = this.probeVal, en = s.ti >= 0 ? this.energyOf(s.ti) : null;
     return [this.t, this.charges.length, s.qnet, this.n, this.absorbed, this.escaped, pv ? pv.E : NaN, pv ? pv.V : NaN, en ? en.ke : NaN, en ? en.pe : NaN, en ? en.et : NaN, Number.isFinite(s.drift) ? s.drift * 100 : NaN];

@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.16)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.17)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.17.0: what each lab tracks and what its README records of the scene.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.16.0: datasets that explain themselves, under Capturing runs; readable
       badges in deeper colours; a contents table in place of the row of links.
@@ -128,8 +130,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.16.0-0e7490?style=flat-square&labelColor=0c1118"
-      alt="Release 2.16.0">
+    <img src="https://img.shields.io/badge/release-v2.17.0-0e7490?style=flat-square&labelColor=0c1118"
+      alt="Release 2.17.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -661,7 +663,7 @@ in the Library, holds four files:
 | File | What it holds |
 | --- | --- |
 | `….csv` | One row per sample: the readings for the whole system |
-| `…-tracks.csv` | One row per tracked object per sample (bodies, particles, the tracer, a detector profile), joined to the samples on `t_s` |
+| `…-tracks.csv` | One row per tracked object per sample, joined to the samples on `t_s`; each lab's tracks are listed below |
 | `…-README.md` | What every column means, its unit and the factor to SI units; the lab, scene, settings, scale, time span and sample rate; in Gravity, the bodies the run started with |
 | `…-datapackage.json` | The same, for software: a [Frictionless](https://frictionlessdata.io/) Tabular Data Package, which pandas, R and the frictionless tools read with every column's type |
 
@@ -681,6 +683,20 @@ Some points about the files:
   thinned.
 - **Older datasets get a README too.** One saved before this release gains
   its README and data package when you download its ZIP.
+- **The README records the scene as the run found it:** the world's size and
+  its fields, and a table of what the tracks refer to.
+
+What each lab tracks, every object with a stable number:
+
+| Lab | Tracks | The scene in the README |
+| --- | --- | --- |
+| Gravity | Every body: position, velocity, mass, name, class and what it orbits | The bodies at the start, G, softening |
+| Collisions | Every ball: position, velocity, radius, mass, spin, and whether it is the tracer | The box, the radii, gravity, e and μ |
+| Fluid | One particle in eight, chosen by number: position, velocity, density | The tank, the spacing, gravity and tilt, every post |
+| Waves | The detector line's intensity profile | The grid, the detector line, the slits, every source |
+| Chaos | Every copy's angles, angular velocities and lower bob | The arms and bobs, g, the spread, every copy's start |
+| Cloth | Every third point along each row and column, and every pinned point | The weave, its spacing, links and pins |
+| Fields | Up to 64 particles: position, velocity, charge-to-mass ratio | The world, k, B and E₀, the probe, every charge |
 
 The **Library** page gathers all of this in two sections.
 
@@ -869,7 +885,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-b45309?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&color=15803d&labelColor=0c1118&logo=githubactions&logoColor=6fcf97
-[badge-release]: https://img.shields.io/badge/release-v2.16.0-0e7490?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.17.0-0e7490?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

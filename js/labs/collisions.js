@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.16)
+    - Title: Collisions Lab (digiSpace Edition - v2.17)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call to audit every lab's exports: tracks follow every ball
+      (number, radius, mass, position, velocity, spin and the tracer flag),
+      where only the Brownian tracer had been followed, and a dataset records
+      the box, radii, tracer, gravity, e and μ.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and the tracer's tracks: each column's unit,
       meaning and SI factor, and a note on coordinates and scale.
@@ -22,11 +27,6 @@
       passes always, up to four while one still meets an overlap deeper than
       half a pixel. The pile's worst overlap over 40 runs fell from 2.85 to
       1.08 px; a sparse gas costs what it did.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: balls, kinetic energy, RMS speed and PA / NkT on its tape, and
-      the selected ball as its target, its centre lifted as the 3D table draws
-      it. A scene's balls are numbered from 1 again on every build, where the
-      count ran on across scenes (a 16-ball table could show Ball 276).
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -687,14 +687,28 @@ Object.assign(collisions, genericState, {
     pressure_ratio_PA_over_NkT: ['1', 'Measured wall pressure times area, over N·kT with kT the mean kinetic energy per ball: 1 for an ideal 2D gas, more as the discs crowd. Empty while gravity is on, when the walls feel weight too.'],
     collisions_per_s: ['1/s', 'Ball-on-ball collisions per second of simulated time, counted over half-second windows.', '1/s', 1],
     spin_energy: ['sim energy', 'Rotational kinetic energy, ¼m²ω² for each disc: zero without contact friction.'],
-    x: ['px', 'The tracer ball\'s position, x.', 'm', PX_M],
-    y: ['px', 'The tracer ball\'s position, y (downward).', 'm', PX_M],
-    vx: ['px/s', 'The tracer ball\'s velocity, x.', 'm/s', PX_M],
-    vy: ['px/s', 'The tracer ball\'s velocity, y (downward).', 'm/s', PX_M],
+    ball_id: ['id', 'The ball\'s number: unique in this run, never reused.'],
+    radius: ['px', 'Radius.', 'm', PX_M],
+    mass: ['sim mass', 'Mass: the radius squared (px²), so a disc weighs in proportion to its area.'],
+    x: ['px', 'Position, x.', 'm', PX_M],
+    y: ['px', 'Position, y (downward).', 'm', PX_M],
+    vx: ['px/s', 'Velocity, x.', 'm/s', PX_M],
+    vy: ['px/s', 'Velocity, y (downward).', 'm/s', PX_M],
+    spin: ['rad/s', 'Angular velocity of the ball\'s spin, with the sign of the stage\'s axes (x right, y down). Zero without contact friction.', 'rad/s', 1],
+    tracer: ['flag', '1 for the Brownian scene\'s large tracer ball, 0 for every other ball.'],
   },
-  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm, set so the 900 px/s² of gravity is 9.81 m/s². The tracks follow one ball, the Brownian tracer, when there is one.',
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the box\'s top-left corner. One pixel is 1.09 cm, set so the 900 px/s² of gravity is 9.81 m/s². The tracks follow every ball, so speed distributions, mean free paths and the tracer\'s random walk can all be read from them.',
+  /* The box and the balls when a recording starts. */
+  dataContext() {
+    let lo = Infinity, hi = 0;
+    for (let i = 0; i < this.n; i++) { lo = Math.min(lo, this.r[i]); hi = Math.max(hi, this.r[i]); }
+    return { facts: [['Box', `${this.w.toFixed(0)} × ${this.h.toFixed(0)} px (${(this.w * PX_M).toFixed(2)} × ${(this.h * PX_M).toFixed(2)} m)`], ['Balls', this.n],
+      ['Radii', this.n ? `${lo.toFixed(1)} to ${hi.toFixed(1)} px` : 'none'], ['Tracer', this.tracer >= 0 ? `ball ${this.uid[this.tracer]}` : 'none'],
+      ['Gravity', this.p.gravity ? `${this.p.gravity} px/s² downward` : 'off'], ['Restitution e', this.p.e], ['Contact friction μ', this.p.mu]] };
+  },
   dataRow() { const s = this.stats(); return [this.t, this.n, s.etot, s.p, s.vrms, s.vmax, s.phi, this.p.gravity === 0 ? this.Z : NaN, this.hitRate, s.kr]; },
-  trackLabel: 'Brownian tracer path',
-  trackColumns: ['t_s', 'x', 'y', 'vx', 'vy'],
-  trackRows(out) { const t = this.tracer; if (t >= 0) out.push([this.t, this.x[t], this.y[t], this.vx[t], this.vy[t]]); },
+  // Every ball, where the tracks had followed only the Brownian scene's tracer: a gas left no per-ball record at all.
+  trackLabel: 'Per-ball tracks',
+  trackColumns: ['t_s', 'ball_id', 'radius', 'mass', 'x', 'y', 'vx', 'vy', 'spin', 'tracer'],
+  trackRows(out) { for (let i = 0; i < this.n; i++) out.push([this.t, this.uid[i], this.r[i], this.r[i] * this.r[i], this.x[i], this.y[i], this.vx[i], this.vy[i], this.om[i], i === this.tracer ? 1 : 0]); },
 });
