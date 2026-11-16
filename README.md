@@ -14,7 +14,7 @@
 ✒ Changelog:
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.13.0: Mouse and touch explains throwing and dropping in Gravity; the
-      release badge.
+      release badge. A drag begun on a planet launches from its surface.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.12.0: no two worlds alike and the new Star system in Planet classes,
       the 3D table's Gravity row, and the release badge.
@@ -549,6 +549,7 @@ that matter. The layout reflows to one column below 1180 px.
     and in either view.
   - The reading beside the arrow gives the speed as a multiple of the
     circular speed, and says when the throw will escape.
+  - A drag begun on a planet launches the body from the planet's surface.
 
 ### Keyboard
 

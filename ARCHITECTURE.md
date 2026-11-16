@@ -14,7 +14,7 @@
 ✒ Changelog:
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — hostAt,
       dropOrbit, throwVel and throwText: how Gravity places bodies relative to
-      what holds the point.
+      what holds the point. throwFrom.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Class
       hues, the calm surface, ringed(), the Star system's design, and the
       Collisions solver's passes.
@@ -540,6 +540,9 @@ Gravity places bodies relative to what holds the point:
   both views. The old rule, the drag's length in the world times 1.6 a
   second, threw a 40-pixel drag out at several times escape speed in a
   zoomed-out view; it stands only with nothing to orbit.
+- **`throwFrom`** moves a throw that starts on a body to just outside it,
+  along the drag, so the new body launches from the surface instead of
+  merging into it on the first step.
 - **The previews.** The 2D and 3D throw previews use the same `throwVel` and
   read it out with `throwText`: the speed against the host, the multiple of
   the circular speed, and "escapes" from √2 up.

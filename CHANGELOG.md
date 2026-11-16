@@ -108,18 +108,25 @@ it.
   the star and the giant flung it away. A drop is refused only inside the
   merge distance; the old rule (the host's radius plus 4 px) left a giant
   almost no room for a moon.
+- **A drag begun on a planet launches from its surface (`throwFrom`).**
+  - Before, the new body started inside the planet, merged into it on the
+    first step and vanished, while the planet quietly gained its mass.
+  - Now it starts just outside, along the drag.
 
 ### Tests
 
-- **`tests/placement.py`, three new checks:**
+- **`tests/placement.py`, four new checks:**
   - `throw_speed_follows_the_orbit_not_the_zoom`: a 60 px drag at two zooms;
   - `thrown_bodies_stay_in_the_system`;
-  - `drop_beside_a_giant_makes_a_moon`.
+  - `drop_beside_a_giant_makes_a_moon`;
+  - `throw_from_a_planet_launches_from_its_surface`: it fails without the
+    fix, since the body is swallowed and the planet's mass changes.
 
 ### Docs
 
 - **README:** Mouse and touch explains throwing and dropping in Gravity.
-- **ARCHITECTURE:** `hostAt`, `dropOrbit`, `throwVel` and `throwText`.
+- **ARCHITECTURE:** `hostAt`, `dropOrbit`, `throwVel`, `throwFrom` and
+  `throwText`.
 
 ## 2.12.0 (11/16/2026)
 

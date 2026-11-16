@@ -14,7 +14,8 @@
 ✒ Changelog:
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       throws follow the orbit, not the zoom, and stay in the system; a drop
-      beside a giant makes a moon.
+      beside a giant makes a moon. A drag begun on a planet launches from its
+      surface.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
       new look: value without a box and unit set back, the degree sign, the
       ridges parted round the value, wheels level past a two-line name and
@@ -53,8 +54,9 @@
     - New parameters: Fluid's post radius, Fields' charge size, Cloth's
       gustiness and ball size.
     - Gravity's throws and drops: a short drag throws at the same share of
-      the circular speed at any zoom and stays in the system, and a drop
-      beside a giant becomes its moon.
+      the circular speed at any zoom and stays in the system, a drop beside a
+      giant becomes its moon, and a drag begun on a planet launches from its
+      surface.
 
 ✒ Usage Instructions:
     $ python tests/placement.py
@@ -224,6 +226,17 @@ with sync_playwright() as p:
       for (let i = 0; i < 480 * 8; i++) { L.step(h); L.t += h; const d = Math.hypot(m.x - J.x, m.y - J.y); lo = Math.min(lo, d); hi = Math.max(hi, d); }
       return [host === J, L.bodies.includes(m), +lo.toFixed(2), +hi.toFixed(2)]; })()""")
     ok("drop_beside_a_giant_makes_a_moon", moon and moon[0] and moon[1] and 4 < moon[2] and moon[3] < 8.5, moon)
+    # A drag that starts on a planet launches from its surface rather than merging into it at once.
+    pg.evaluate("PhysicsPlayground.preset('solar')"); pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(300)
+    at = pg.evaluate("""(() => { const L = PhysicsPlayground.active, J = L.bodies.find(b => b.kind === 'gas' && b.m > 0.5), v = L.viewXf, r = document.getElementById('stage-canvas').getBoundingClientRect();
+      L.p.launchMass = 0.001; L.p.kind = 'auto';
+      return { x: r.left + J.x * v.z + v.ox, y: r.top + J.y * v.z + v.oy, uid: L.uid, jm: J.m }; })()""")
+    pg.mouse.move(at["x"], at["y"]); pg.mouse.down(); pg.mouse.move(at["x"] + 20, at["y"] - 20, steps=3); pg.mouse.move(at["x"] + 40, at["y"] - 40, steps=3); pg.mouse.up(); pg.wait_for_timeout(150)
+    # Placed outside the planet's merge distance, and still its own body a few frames on, the planet's mass unchanged.
+    launch = pg.evaluate(f"""(() => {{ const L = PhysicsPlayground.active, J = L.bodies.find(b => b.kind === 'gas' && Math.abs(b.m - {at['jm']}) < 1e-12), b = L.bodies.find(q => q.id > {at['uid']});
+      if (!b || !J) return null; const gap = Math.hypot(b.x - J.x, b.y - J.y) / (0.7 * (J.r + b.r)); L.step(L.dt()); L.step(L.dt()); L.step(L.dt());
+      return [+gap.toFixed(2), L.bodies.includes(b), J.m === {at['jm']}]; }})()""")
+    ok("throw_from_a_planet_launches_from_its_surface", launch and launch[0] > 1 and launch[1] and launch[2], launch)
     pg.context.close()
 
     # ---- Collisions, Fluid, Waves, Fields: random sizes, frequencies, phases and charges

@@ -16,7 +16,8 @@
       throw and its preview take the lab's throwVel: a drag's screen length
       against the circular speed about what holds its start, so a throw from
       the 3D camera no longer leaves at several times escape speed; the
-      reading beside the arrow is throwText's.
+      reading beside the arrow is throwText's. A throw begun on a body
+      launches from its surface (throwFrom).
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       zoomLimits3: the Solar System's free camera comes in to a few thousand
       km and out to all of Sedna's orbit; elsewhere from a fiftieth of the
@@ -210,7 +211,8 @@ export const gravity3d = {
   aimOverlay3(g, a) {
     const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
     if (A && B) {
-      const t = this.throwVel(A.x, A.y, A.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), (this.next || this.drawNew()).m), zs = [], path = this.predict(A.x, A.y, t.vx, t.vy, A.z, zs);
+      const m = (this.next || this.drawNew()).m, o = this.throwFrom(A.x, A.y, A.z, B.x - A.x, B.y - A.y, m);
+      const t = this.throwVel(o.x, o.y, o.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), m), zs = [], path = this.predict(o.x, o.y, t.vx, t.vy, o.z, zs);
       g.setLineDash([4, 5]); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3;
       g.beginPath();
       let on = false;
@@ -252,7 +254,7 @@ export const gravity3d = {
     }
     const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
     if (!A || !B) { announce('Aim at the orbital plane to throw a body.'); return; }
-    const t = this.throwVel(A.x, A.y, A.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
-    this.addBody(this.body(A.x, A.y, t.vx, t.vy, nb.m, A.z, 0, nb.kind));
+    const o = this.throwFrom(A.x, A.y, A.z, B.x - A.x, B.y - A.y, nb.m), t = this.throwVel(o.x, o.y, o.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
+    this.addBody(this.body(o.x, o.y, t.vx, t.vy, nb.m, o.z, 0, nb.kind));
   },
 };

@@ -18,7 +18,9 @@
       (hostAt), so a drag means the same at any zoom (90 px is a circular
       orbit's speed; the old rule threw short drags at up to 13 times escape
       speed zoomed out); drops orbit hostAt, so a click beside a giant gives
-      it a moon; throwText reads the throw out beside the arrow.
+      it a moon; throwText reads the throw out beside the arrow. throwFrom
+      starts a throw begun on a body just outside it, so the new body launches
+      from the surface instead of merging into it at once.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for variety: the Star system shows every class (a grey
       rock, a rust super-Earth, an ocean world at 1 AU, a lavender
@@ -660,6 +662,16 @@ export const gravity = {
     const d = Math.max(Math.hypot(x - H.x, y - H.y, z - H.z), H.r), k = px / THROW_PX, s = this.vCirc(H.m + m, d) * k;
     return { vx: H.vx + dx / len * s, vy: H.vy + dy / len * s, vz: 0, rel: s, k };
   },
+  /* Where a throw starts: where the drag began, unless that is on a body, which the new one would merge into at
+     once; then just outside it along the drag, as if launched from its surface. */
+  throwFrom(x, y, z, dx, dy, m) {
+    const r = bodyRadius(m), len = Math.hypot(dx, dy) || 1;
+    let on = null;
+    for (const b of this.bodies) if (Math.hypot(x - b.x, y - b.y, z - b.z) < 0.7 * (b.r + r) + 1 && (!on || b.m > on.m)) on = b;
+    if (!on) return { x, y, z };
+    const k = 0.7 * (on.r + r) + 1.5;
+    return { x: on.x + dx / len * k, y: on.y + dy / len * k, z: on.z };
+  },
   /* The throw's reading beside the aim: its speed against what it orbits, as a multiple of the circular speed. */
   throwText(t) {
     const v = fmtQ(this, 'speed', t.rel);
@@ -885,8 +897,9 @@ export const gravity = {
       if (hit) this.followBody(hit); else this.dropOrbit(w.x, w.y, 0, nb);
       return;
     }
-    const z = this.viewXf.z, t = this.throwVel(w.x, w.y, 0, (a.x - a.sx) / z, (a.y - a.sy) / z, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
-    this.addBody(this.body(w.x, w.y, t.vx, t.vy, nb.m, 0, 0, nb.kind));
+    const z = this.viewXf.z, dx = (a.x - a.sx) / z, dy = (a.y - a.sy) / z, o = this.throwFrom(w.x, w.y, 0, dx, dy, nb.m);
+    const t = this.throwVel(o.x, o.y, 0, dx, dy, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
+    this.addBody(this.body(o.x, o.y, t.vx, t.vy, nb.m, 0, 0, nb.kind));
   },
   predict(x0, y0, vx0, vy0, z0 = 0, heights = null) {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
@@ -1166,7 +1179,8 @@ export const gravity = {
     if (this.p.tool === 'erase' && this.hover) brushRing(g, this.hover, 12, THEME.crit);
     if (this.aim && this.aim.moved) {
       const a = this.aim, wS = this.toWorld({ x: a.sx, y: a.sy });
-      const t = this.throwVel(wS.x, wS.y, 0, (a.x - a.sx) / z, (a.y - a.sy) / z, 0, Math.hypot(a.x - a.sx, a.y - a.sy), (this.next || this.drawNew()).m), path = this.predict(wS.x, wS.y, t.vx, t.vy);
+      const m = (this.next || this.drawNew()).m, dx = (a.x - a.sx) / z, dy = (a.y - a.sy) / z, o = this.throwFrom(wS.x, wS.y, 0, dx, dy, m);
+      const t = this.throwVel(o.x, o.y, 0, dx, dy, 0, Math.hypot(a.x - a.sx, a.y - a.sy), m), path = this.predict(o.x, o.y, t.vx, t.vy);
       g.setLineDash([4, 5]); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3;
       g.beginPath();
       for (let i = 0; i < path.length; i += 2) { const X = path[i] * z + ox, Y = path[i + 1] * z + oy; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
