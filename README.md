@@ -16,7 +16,8 @@
       2.15.0: the camera goes all the way round finished apparatus; the
       photographer's studio; worlds lit from behind; the tiers' textures and
       studio light; Auto weighing GPU, CPU, memory and limits; Pluto's orbit
-      as its system's; the release badge.
+      as its system's; the release badge. The Library page's Capture bar and
+      Saved list described.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.14.0: Mouse and touch says the workspace's words never highlight on a
       click or drag, while text fields still select; the release badge.
@@ -541,9 +542,9 @@ full-height Inspector beside them.
     formula's prediction beside what the simulation measures, and, where it
     helps, a plot: the speed distribution against Maxwell–Boltzmann, the
     double slit's fringes against λL/d, the pendulums' separation.
-  - **Library**: one press records a clip or a dataset or saves the state,
-    each card saying what it will keep for this lab; everything saved is
-    listed below.
+  - **Library**: a Capture bar of three buttons records a clip or a
+    dataset, or saves the state, in one press each; everything saved is
+    listed under it, with what to do with each item.
 - **Selecting things**: click a body in Gravity, a ball in Collisions (with
   Grab), a particle in Fields (with Move), a post in Fluid (with any tool but
   Obstacle), a source in Waves, or a pendulum or a dot on the map in Chaos.
@@ -626,9 +627,28 @@ that matter. The layout reflows to one column below 1180 px.
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
 
-Each can also be started from the cards at the top of the **Library** page,
-where everything saved is listed. The Library tab shows how many items are
-saved and marks new ones. When the
+The **Library** page gathers all of this in two sections.
+
+- **Capture** is a bar of three buttons.
+  - **Record clip** and **Record data** wear the familiar red record dot.
+    While recording, the dot turns into a stop square on a pulsing red disc,
+    and the button shows the time, size or rows so far.
+  - **Save state** saves at once, and says so.
+  - Each button shows its key.
+  - **Settings**, beside the heading, folds out the video quality, labels,
+    sample rate and tracks.
+  - A fold under the bar lists what a dataset will hold.
+- **Saved** lists everything kept, for this lab or all of them, with where
+  it is stored.
+  - Each item's kind (video, dataset or saved state) shows in its colour
+    and tag.
+  - Its main action leads: **Preview**, **Details** or **Load**.
+  - Its downloads are named by format: **WEBM**, **CSV**, **Tracks CSV**,
+    **JSON**.
+  - The trash button in its corner deletes it, after asking.
+  - Press an item's name to rename it.
+
+The Library tab shows how many items are saved and marks new ones. When the
 page runs as a published artifact, the library syncs with the artifact;
 otherwise it lives in this browser.
 

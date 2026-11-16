@@ -14,7 +14,7 @@
 ✒ Changelog:
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.15.0: the world pass, the whole-machine graphics tiers and Pluto's
-      orbit.
+      orbit. The Library, restructured.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.14.0 release. With the Star system's moon fix.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -83,7 +83,9 @@ On Dennis's call to go over every simulation's world: the room around
 each apparatus, its textures, lighting and realism, a camera that goes all
 the way round, and the finish of every apparatus. Also on his call: a
 graphics tier system that weighs the whole machine, the CPU and memory as
-well as the GPU. And a fix for the Pluto orbit line he caught hula-hooping.
+well as the GPU. A fix for the Pluto orbit line he caught hula-hooping.
+And, on his call, a Library page restructured so that what is what is
+obvious at a glance.
 
 ### Gravity: Pluto's orbit holds still
 
@@ -166,6 +168,42 @@ well as the GPU. And a fix for the Pluto orbit line he caught hula-hooping.
 - **Shadows are equally soft on every tier.** A larger map only sharpens
   their edge. Before, Ultra's shadows were harder than High's.
 
+### The Library, restructured
+
+- **Two sections, Capture and Saved**, each under its own heading with its
+  controls beside it.
+- **Capture is a control bar of three buttons.**
+  - Record clip and Record data wear the familiar red record dot in a ring.
+  - While recording, the dot turns into a stop square on a pulsing red
+    disc, the label to Stop, and the line under it to the time, size or
+    rows so far.
+  - Save state has its own mark, and confirms "Saved" for a moment when the
+    Library has it.
+  - Each button shows its key, and a lab that cannot record or save says so
+    on a disabled button.
+  - The lines under the buttons break where they read, never mid-phrase.
+- **The capture settings fold out** from a Settings button beside the
+  Capture heading, right by the buttons they shape, and stay as left. They
+  had sat at the bottom of the page, under every saved item.
+- **What a dataset will hold** folds under the bar as column chips. Before,
+  it was a long sentence.
+- **Saved has its count, filter and storage line in one place.** The
+  storage note is a single quiet line, not another card.
+- **Each item reads at a glance:**
+  - its kind (video, dataset or saved state) shows in its colour, tile and
+    tag;
+  - its main action leads, filled in that colour: Preview, Details or Load;
+  - its downloads are named by format (WEBM, CSV, Tracks CSV, JSON) with a
+    download mark, where "Save Per-body tracks CSV" had been;
+  - Delete is a quiet trash button in the corner, red on hover, and still
+    asks first;
+  - a pencil appears on the name to show it can be renamed.
+- **Wide notebooks tile the items side by side**, and the capture bar keeps
+  a comfortable width.
+- **Glyphs never join a button's spoken name.** They are drawn by CSS with
+  empty alt text, so a screen reader hears "Details", not "visibility
+  Details".
+
 ### Two GPU memory leaks, found and fixed
 
 - **The bloom's eleven render targets** leaked at every change of tier and
@@ -189,6 +227,8 @@ well as the GPU. And a fix for the Pluto orbit line he caught hula-hooping.
   - the speed test;
   - the Graphics menu reading the whole machine;
   - a change of tier freeing what the last one made.
+- `tests/capture.py`: the CSV download is pressed by its stable key, as its
+  label is now its format.
 
 ## 2.14.0 (11/16/2026)
 

@@ -16,7 +16,8 @@
       studio's camera-following glow and fill, the light link, contact
       shadows, haze, enamel and plaques, room() past an apparatus and
       studioOf(); the tiers' fuller budget, the GPU caps and the four
-      verdicts.
+      verdicts. The Library's two sections, the capture bar's states, the item
+      cards' kind colour and the alt-less CSS glyphs.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       Conventions: selection is one rule in tokens.css, with .selectable to
       opt in. The Star system's massless comet, and mergedKind's rule for
@@ -607,10 +608,28 @@ The dice in the rail, the switch in Controls and the Guide's card are three
 views of one parameter: each changes it through `setParam`, and
 `syncControl()` refreshes the others.
 
-The Library page opens with capture cards (`buildLibraryCapture` in
-`library.js`): a clip, a dataset or a saved state with one press. Each says
-what it will keep for the lab (the dataset's columns) and, while recording,
-how far it has got.
+The Library page has two sections in `index.html`, each headed by an
+`h4.sub` with its controls in `.lib-head`.
+
+- **Capture** is a control bar built by `buildLibraryCapture` in
+  `library.js`.
+  - Two recorders wear a CSS record dot, which becomes a stop square under
+    `aria-pressed`.
+  - Save state flashes `.is-saved` when the vault has it.
+  - `syncLibraryCapture` keeps each button's two lines current: what it
+    will keep, or how far it has got.
+  - `#btn-cap-settings` folds out `#capture-settings`, and the fold is
+    remembered.
+  - A `<details>` lists the dataset's columns.
+- **Saved** has the count, the filter and the storage line, then the items
+  from `renderItem`.
+  - Each item's kind sets `--k`, the colour of its tile, tag and main action.
+  - Downloads are named by format.
+  - Delete is the corner `.lib-del`.
+
+Action glyphs come from `data-ico` through CSS, with empty alt text
+(`content: … / ""`), so a button's text and accessible name are only its
+words.
 
 ## Gravity's Solar System
 
