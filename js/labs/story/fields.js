@@ -51,7 +51,7 @@ const pc = x => `${sig(x * 100, 2)} %`;
 const TRACK = 24;
 const choose = (L, pid) => ({ label: `Select particle ${pid}`, can: () => L.indexOf(pid) >= 0, run() { L.setTrack(pid); L.picked = true; } });
 
-function start(L, t) { S = { t0: t, t, recs: new Map(), absorbed: L.absorbed, escaped: L.escaped, periods: [], same: false, drifted: false, bent: false, hits: [] }; }
+function start(L, t) { S = { t0: t, t, look: 0, recs: new Map(), absorbed: L.absorbed, escaped: L.escaped, periods: [], same: false, drifted: false, bent: false, hits: [] }; }
 /* A particle's record: its velocity in the frame drifting at E/B (so a cycloid from rest still turns evenly), where
    it began its turn, and what has been told about it. */
 function rec(L, i, t, vE) {
@@ -66,11 +66,11 @@ export const fieldsStory = {
   narrate(N) {
     const L = this, t = N.t;
     if (N.fresh || !S) start(L, t);
-    const dt = t - S.t; S.t = t;
+    const dt = t - S.t; S.t = t; S.look++;
     const B0 = L.p.B, E0 = L.p.E0, pure = !L.charges.length, vE = pure && B0 !== 0 ? E0 / B0 : 0;
     for (let i = 0; i < L.n; i++) {
       const r = rec(L, i, t, vE); if (!r) continue;
-      r.seen++;
+      r.seen++; r.look = S.look;
       const vx = L.vx[i], vy = L.vy[i], q = L.qm[i], ux = vx - vE, uy = vy;
 
       // 1. Gyration: one full turn of the velocity (in the frame drifting at E/B), timed against 2πm/|q|B, and the
@@ -130,12 +130,13 @@ export const fieldsStory = {
       }
     }
 
-    // 4. Falling into a charge, or leaving the bench: the particles that are gone.
+    // 4. Falling into a charge, or leaving the bench: the particles that are gone. One erased by hand, or cleared,
+    //    goes without a word, and its record with it, so the next particles are timed in its place.
     const absorbed = L.absorbed - S.absorbed, escaped = L.escaped - S.escaped;
-    if (absorbed > 0 || escaped > 0) {
-      for (const [pid, r] of S.recs) {
-        if (L.indexOf(pid) >= 0) continue;
-        S.recs.delete(pid);
+    for (const [pid, r] of S.recs) {
+      if (r.look === S.look) continue;
+      S.recs.delete(pid);
+      if (absorbed > 0 || escaped > 0) {
         let best = null, bd = Infinity; for (const c of L.charges) { const dd = Math.hypot(c.x - r.lx, c.y - r.ly); if (c.q * r.q < 0 && dd < bd) { bd = dd; best = c; } }
         if (absorbed > 0 && best && bd < L.chargeR(best) * 3 && L.presetId === 'plates' && L.p.beam) { if (S.hits.length < 3) S.hits.push(r.lx); }
         else if (absorbed > 0 && best && bd < L.chargeR(best) * 3) N.add({ kind: 'absorbed', group: 'particles absorbed', title: `Particle ${pid} fell into a charge`,
@@ -143,8 +144,8 @@ export const fieldsStory = {
         else if (escaped > 0) N.add({ kind: 'escape', group: 'particles gone', title: `Particle ${pid} left the bench`,
           body: `It crossed the edge of the bench and was taken out of the run.${B0 !== 0 ? ' A magnetic field can bend a path into a circle but never stop it, so a particle whose circle is wider than the bench runs off it.' : ' With nothing to turn it back, it simply kept going.'}` });
       }
-      S.absorbed = L.absorbed; S.escaped = L.escaped;
     }
+    S.absorbed = L.absorbed; S.escaped = L.escaped;
 
     // 5. Between the plates: the beam is pulled into the plate of opposite sign, as a ball thrown sideways falls to the
     //    floor. How far in it lands, set beside a uniform field's projectile: across the gap at (q/m)E, along at v₀.

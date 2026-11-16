@@ -601,7 +601,7 @@ with its last look and, when something happens, adds a moment to the Story:
 what happened, why, and the numbers that show it, set beside the law it
 follows. The story begins again when a scene loads or restarts, waits while
 the run is paused, is kept for each lab when you switch, and drops whatever a
-rewind undid. A repeat folds into the entry before it ("3 more close
+rewind undid. A repeat folds into a recent entry of its kind ("3 more close
 passes"), the newest sixty entries are kept, and an important moment, such as
 a capture or a warning, is also announced to screen readers.
 
