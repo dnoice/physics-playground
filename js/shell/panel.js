@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.8)
+    - Title: Panel Builder (digiSpace Edition - v2.11)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.11.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Dials show
+      their value through the wheel's text(), unit set back; a degree sign
+      sits against its number (120°), as the SI writes plane angles.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A quantity
       on a log scale without a step shows three significant figures, where
       fixed decimals rounded its low end to nothing (Gravity's softening read
@@ -19,19 +22,19 @@
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       updateReadouts reads the lab once per panel tick and gives the rows to
       Telemetry and the head-up display's tape, so both show the same text.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Comments
-      speak of dials rather than sliders.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Builds the Controls page, the guide and math notebook pages, the readouts
     and the chart for the active lab. Controls are grouped into the sections
     the lab declares, with quick actions above them; numbers are thumbwheel
-    dials set out as a grid of compact cards.
+    dials set out in an open grid of equal cells.
 
 ✒ Key Features:
     - Thumbwheel dials (dial.js) for numbers, with typed entry, reset and log
-      scales, in a grid of compact cards; segmented choices; switches.
+      scales, in an open grid of equal cells; segmented choices; switches.
+    - A degree sign sits against its number (120°); other units take a
+      space.
     - Sections from the lab's groups list: a glyph and title, a remembered
       fold, Reset to the scene's values, and one note when changes restart the
       run.
@@ -113,7 +116,9 @@ export function controlFormat(lab, c) {
   // A quantity on a log scale with no step spans decades (Gravity's softening runs from 1e-4 to 30 px), so it keeps
   // three significant figures where fixed decimals would round its low end to nothing.
   if (!c.fmt && q && c.log && !c.step) return v => fmtQ(lab, q, v);
-  return c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + (c.unit ? ' ' + c.unit : ''));
+  // A degree sign sits against its number (120°), as the SI writes plane angles; other units take a space.
+  const unit = !c.unit ? '' : /^[°′″]/.test(c.unit) ? c.unit : ' ' + c.unit;
+  return c.fmt || (q ? v => fmtQ(lab, q, v, { digits: dec }) : v => v.toFixed(dec) + unit);
 }
 export function buildRange(lab, c) {
   const id = `ctl-${lab.id}-${c.key}`, { toS, fromS } = rangeMap(c);
@@ -129,7 +134,7 @@ export function buildRange(lab, c) {
   const round = v => c.log ? Number(v.toPrecision(3)) : (c.step ? Number((Math.round(v / c.step) * c.step).toFixed(decimalsFor(c.step) + 2)) : v);
   const same = (a, b) => Math.abs(a - b) <= Math.max(1e-12, Math.abs(b) * 1e-9);
   const show = v => {
-    val.textContent = fmt(v); input.setAttribute('aria-valuetext', fmt(v));
+    W.text(fmt(v)); input.setAttribute('aria-valuetext', fmt(v));
     const sv = lab.sceneP[c.key], scene = typeof sv === 'number';
     W.paint(scene ? toS(sv) : null);
     if (scene) { reset.hidden = same(v, sv); reset.setAttribute('aria-label', `Reset ${c.label} to the scene value, ${fmt(sv)}`); reset.title = `Back to ${fmt(sv)}`; }
@@ -211,7 +216,7 @@ export function panelGroups(lab) {
 function buildGroup(lab, g) {
   const id = `pg-${lab.id}-${g.id}`, key = `${lab.id}.${g.id}`;
   const body = el('div', { class: 'pgroup-body', id: id + '-body' });
-  // Consecutive dials share a grid of compact cards; choices between them keep the full width.
+  // Consecutive dials share a grid of equal cells; choices between them keep the full width.
   let dials = null;
   for (const c of g.controls.filter(c => c.type !== 'toggle')) {
     const n = buildControl(lab, c); if (!n) continue;

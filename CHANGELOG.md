@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.10)
+    - Title: Changelog (digiSpace Edition - v2.11)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.10.0
+    - Version: 2.11.0
     - Date: 11/14/2026
     - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.11.0 release.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.10.0 release.
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -63,6 +65,69 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.11.0 (11/14/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+A refinement pass over the thumbwheel dials, on Dennis's call that they
+looked busy and cluttered, and that they should sit balanced and equal in
+size wherever they can, not stacked one on another.
+
+### The dials
+
+- **One box, not four.** A dial was a card inside its section, a wheel
+  inside the card and a framed value inside the wheel. The card is now an
+  open cell, the value has no frame, and the wheel is the only box.
+- **Quieter ridges.** The ridges are finer and fainter at rest. They part
+  round the value at its measured width (`--gap`), fade toward the ends
+  like a turning cylinder, and come up under the pointer, with focus and
+  while turning.
+- **The unit set back.** A value reads as its number with its unit or
+  suffix in a quieter tone (`9.81 m/s²`, `1.50×`), through the dial's new
+  `text()`, which leaves an unchanged value alone. A degree sign sits
+  against its number (`120°`, not `120 °`).
+- **Quieter chevrons and range line.** The chevrons are smaller and muted
+  until the pointer comes. The range line runs along the wheel's foot, with
+  a fine tick for the scene's value.
+- **Wheels in line.** Each cell puts its name, wheel and note on rows it
+  shares with the cells beside it (a CSS subgrid). The wheels of a row line
+  up even when one name runs to two lines, as with Chaos' Perturbation δ₀,
+  or one cell has a note under it, as with Gravity's softening. Browsers
+  without subgrid get a plain column.
+- **The focus ring is for the keyboard.** A dial taken with the pointer no
+  longer shows the cyan ring until a key is pressed in it.
+- **Typing a value.** The wheel itself becomes the field, ringed in amber.
+  Before, a boxed text field sat inside it.
+
+### The Math page
+
+- **Equal and side by side.** A formula's parameter dials sit as the
+  Controls page's do: equal cells two across in the inspector, each with
+  its symbol over its wheel. Chaos' m₂/m₁, L₂/L₁, g and b now read as a
+  square, where they were a stack of wheels of four different widths.
+
+### Tests
+
+- **`tests/interact.py`:** the Chaos start-angle dial now reads `35.1°`,
+  with no space before the degree sign.
+- **`tests/placement.py`, eight new checks:**
+  - the value has no box, and its unit is set back;
+  - the degree sign sits against its number;
+  - the ridges part round the value;
+  - a row's wheels are level past a two-line name, and beside a note;
+  - the focus ring shows for the keyboard only;
+  - the wheel is the field while a value is typed;
+  - the Math page's wheels are equal and side by side.
+
+### Docs
+
+- **ARCHITECTURE:** the dials' anatomy and grid, and the Math page's layout.
+- **README:** the release badge.
+- **Media:** the hero, the one picture that shows the Controls page, is
+  recaptured with the new dials, and `docs/media/MANIFEST.md` records the
+  run. It no longer says the gallery and the 2D and 3D pair show the
+  dials: they show the stage.
 
 ## 2.10.0 (11/14/2026)
 

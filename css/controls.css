@@ -1,17 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Control Styles (digiSpace Edition - v2.6)
+    - Title: Control Styles (digiSpace Edition - v2.11)
     - File Name: controls.css
     - Relative Path: css/controls.css
     - Artifact Type: stylesheet
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.11.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials
+      refined on Dennis's call: open cells in place of cards, the wheel the
+      only box, faint ridges that part round an unframed value and come up
+      under the pointer, the unit set back, quiet chevrons, the range line
+      along the wheel's foot, a row's wheels level past a two-line name or a
+      note (subgrid), the focus ring for the keyboard only, and the wheel as
+      the field while typing.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
       leftover row styles of the old sliders (.ctl-head, .ctl-tools,
       output.ctl-val), which no markup uses since the dials.
@@ -21,9 +28,6 @@
       thumbwheel dials: compact cards in an auto-filling grid, a ridged wheel
       with the value set in its middle, step chevrons, a range hairline with
       the scene's mark, and a note held to two lines.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles the
-      control sections, the switch grid and the quick actions; removed the old
-      actions row.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -33,10 +37,14 @@
 ✒ Key Features:
     - Sections as soft wells with an uppercase header, a glyph, a fold chevron
       and a Reset pill.
-    - Dials as compact cards in an auto-filling grid: a ridged wheel that
-      turns with the value and falls away at the ends like a cylinder, the
-      value set in its middle, chevrons at the ends, and a hairline for the
-      range with the scene's mark.
+    - Dials in an open grid of equal cells, the wheel the only box: faint
+      ridges that turn with the value, part round it and fall away at the
+      ends like a cylinder, coming up under the pointer and with focus; the
+      value in the middle with its unit set back; quiet chevrons; and a
+      hairline along the foot for the range with the scene's mark.
+    - A row's wheels line up past a two-line name or a note (a subgrid).
+    - The focus ring for the keyboard only, and the wheel itself as the field
+      while a value is typed.
     - Switches in an auto-fitting grid, so a lone switch spans the section.
     - Disabled controls keep their reason visible underneath.
     - Quick actions as compact pills above the sections.
@@ -132,74 +140,93 @@
 .ctl-out { font: 400 12px/1 var(--font-mono); color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ctl.is-disabled label, .ctl.is-disabled .ctl-val { opacity: 0.45; }
 
-/* ---------- dials: a ridged thumbwheel per number, in a grid of compact cards ---------- */
+/* ---------- dials: a ridged thumbwheel per number, in an open grid ---------- */
 /* The native range input lies under the wheel, invisible and untouchable, keeping focus, keys and the value;
-   the wheel turns it (js/shell/dial.js). Ridges move with the pointer; the ends fall away like a cylinder's. */
-.dial-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
-.dial {
-  gap: 7px; padding: 8px 8px 9px; border-radius: 12px; transition: box-shadow 0.2s;
-  background: linear-gradient(180deg, color-mix(in oklab, white 3.5%, transparent), transparent 46px), color-mix(in oklab, var(--ink) 50%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hair), inset 0 1px 0 color-mix(in oklab, white 5%, transparent);
-}
-.dial:hover { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 26%, var(--hair)), inset 0 1px 0 color-mix(in oklab, white 5%, transparent); }
-.dial-head { display: flex; align-items: flex-start; gap: 4px; min-height: 17px; padding: 0 2px; }
+   the wheel turns it (js/shell/dial.js). The wheel is the one box: the cell around it is open, the value sits on the
+   wheel without a box of its own, and the ridges part around it at its measured width (--gap) and fall away at the
+   ends like a cylinder's. They are faint at rest and come up under the pointer, with focus and while turning. */
+.dial-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px 12px; }
+/* A cell is its name, wheel and note on three rows it shares with the cells beside it (a subgrid), so a row's
+   wheels line up when one name runs to two lines or one cell has a note; each name sits on its wheel. */
+.dial { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 6px; align-content: start; min-width: 0; }
+.dial-head { align-self: end; display: flex; align-items: flex-end; gap: 4px; min-height: 17px; padding: 0 2px; }
 .dial-name {
-  flex: 1; min-width: 0; font-size: 12px; line-height: 1.35; color: color-mix(in oklab, var(--text) 84%, var(--muted));
+  flex: 1; min-width: 0; font-size: 12px; line-height: 1.35; color: color-mix(in oklab, var(--text) 80%, var(--muted)); transition: color 0.2s;
   overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
 }
-.dial-head .ctl-reset { margin-top: -1px; }
-.dial .ctl-note { font-size: 11px; line-height: 1.45; padding: 0 2px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.dial:hover .dial-name, .dial:focus-within .dial-name { color: var(--text); }
+.dial-head .ctl-reset { margin-bottom: -1px; }
+.dial .ctl-note { margin-bottom: 6px; font-size: 11px; line-height: 1.45; padding: 0 2px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .dial .ctl-note:empty { display: none; }
 .dial-wheel {
-  position: relative; display: grid; grid-template-columns: 17px minmax(0, 1fr) 17px; align-items: center; height: 32px;
-  border-radius: 9px; overflow: hidden; touch-action: pan-y; cursor: ew-resize; user-select: none; -webkit-user-select: none;
-  background: linear-gradient(180deg, color-mix(in oklab, white 5%, transparent), transparent 45%, color-mix(in oklab, black 28%, transparent)), var(--well);
-  box-shadow: inset 0 1px 3px color-mix(in oklab, black 55%, transparent), inset 0 0 0 1px var(--hair);
+  --ridge: color-mix(in oklab, var(--text) 11%, transparent);
+  position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr) 20px; align-items: center; height: 30px;
+  border-radius: 8px; overflow: hidden; touch-action: pan-y; cursor: ew-resize; user-select: none; -webkit-user-select: none;
+  background: linear-gradient(180deg, color-mix(in oklab, white 3%, transparent), transparent 40%, color-mix(in oklab, black 16%, transparent)), var(--well);
+  box-shadow: inset 0 0 0 1px var(--hair);
   transition: box-shadow 0.2s, opacity 0.2s;
 }
+/* The ends fall into shadow, as a wheel's sides turn away. */
 .dial-wheel::after {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
-  background: linear-gradient(90deg, color-mix(in oklab, black 42%, transparent), transparent 24%, transparent 76%, color-mix(in oklab, black 42%, transparent));
+  background: linear-gradient(90deg, color-mix(in oklab, black 30%, transparent), transparent 18%, transparent 82%, color-mix(in oklab, black 30%, transparent));
+}
+.dial-wheel:hover, .dial-wheel:has(.dial-input:focus), .dial-wheel.is-turning {
+  --ridge: color-mix(in oklab, var(--text) 26%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--text) 14%, var(--hair));
 }
 .dial-wheel.is-turning { cursor: grabbing; }
-.dial-wheel:has(.dial-input:focus-visible) { box-shadow: inset 0 1px 3px color-mix(in oklab, black 55%, transparent), inset 0 0 0 1px var(--hair), 0 0 0 2px color-mix(in oklab, var(--cyan) 65%, transparent); }
+/* The focus ring is for the keyboard: a wheel taken by the pointer (by-pointer, until the next key) shows none. */
+.dial-wheel:not(.by-pointer):has(.dial-input:focus-visible) { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 45%, var(--hair)), 0 0 0 2px color-mix(in oklab, var(--cyan) 60%, transparent); }
 .dial-wheel .dial-input, .dial-wheel .dial-input:disabled { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; pointer-events: none; }
 .dial-ridges {
-  grid-area: 1 / 1 / 2 / -1; align-self: stretch; margin: 6px 0 7px; pointer-events: none;
-  background-image: repeating-linear-gradient(90deg, color-mix(in oklab, var(--text) 30%, transparent) 0 1px, color-mix(in oklab, black 50%, transparent) 1px 2px, transparent 2px 6px);
+  --clear: calc(var(--gap, 22px) + 6px);
+  grid-area: 1 / 1 / 2 / -1; align-self: stretch; margin: 8px 0 9px; pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, var(--ridge) 0 1px, transparent 1px 5px);
   background-position: var(--turn, 0px) 0;
-  -webkit-mask-image: linear-gradient(90deg, transparent 3%, #000 32%, #000 68%, transparent 97%);
-  mask-image: linear-gradient(90deg, transparent 3%, #000 32%, #000 68%, transparent 97%);
-  transition: filter 0.2s;
+  -webkit-mask-image: linear-gradient(90deg, transparent 5%, #000 22%, #000 calc(50% - var(--clear) - 12px), transparent calc(50% - var(--clear)), transparent calc(50% + var(--clear)), #000 calc(50% + var(--clear) + 12px), #000 78%, transparent 95%);
+  mask-image: linear-gradient(90deg, transparent 5%, #000 22%, #000 calc(50% - var(--clear) - 12px), transparent calc(50% - var(--clear)), transparent calc(50% + var(--clear)), #000 calc(50% + var(--clear) + 12px), #000 78%, transparent 95%);
 }
-.dial-wheel:has(.dial-input:focus) .dial-ridges, .dial-wheel.is-turning .dial-ridges { filter: brightness(1.45); }
 .dial-val {
   grid-area: 1 / 2; justify-self: center; position: relative; z-index: 2; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-  padding: 5px 7px; border: 0; border-radius: 6px; font: 600 12.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--amber); white-space: nowrap;
-  background: color-mix(in oklab, var(--well) 90%, black);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--amber) 20%, var(--hair)), 0 0 14px 8px color-mix(in oklab, var(--well) 78%, transparent);
+  padding: 4px 6px; border: 0; border-radius: 5px; background: none; white-space: nowrap;
+  font: 600 12.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--amber);
 }
-button.dial-val:hover { border: 0; background: color-mix(in oklab, var(--amber) 14%, var(--well)); }
-output.dial-val { pointer-events: none; font-size: 12px; padding: 4px 8px; }
-.dial-wheel .ctl-edit { grid-area: 1 / 2; justify-self: center; position: relative; z-index: 3; width: min(9em, 100%); text-align: center; }
+/* The unit or suffix is set back from the number, in the same colour at a lower weight and strength. */
+.dial-unit { font-weight: 500; color: color-mix(in oklab, var(--amber) 58%, var(--muted)); }
+button.dial-val { transition: background 0.2s; }
+button.dial-val:hover { border: 0; background: color-mix(in oklab, var(--amber) 12%, transparent); }
+output.dial-val { pointer-events: none; font-size: 12px; }
+/* Typing a value: the wheel itself becomes the field, ringed in amber, its ridges and hairline set aside. */
+.dial-wheel:has(.ctl-edit) { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 70%, transparent), 0 0 0 3px color-mix(in oklab, var(--amber) 16%, transparent); }
+.dial-wheel:has(.ctl-edit) .dial-ridges, .dial-wheel:has(.ctl-edit) .dial-bar { visibility: hidden; }
+.dial-wheel .ctl-edit {
+  grid-area: 1 / 2; align-self: stretch; position: relative; z-index: 3; width: 100%; min-width: 0; padding: 0 4px; border: 0; border-radius: 0;
+  background: none; text-align: center; font: 600 12.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); caret-color: var(--amber);
+}
+.dial-wheel .ctl-edit:focus-visible { outline: none; }
 .dial-step {
-  appearance: none; position: relative; z-index: 2; height: 100%; padding: 0; border: 0; background: none; color: var(--muted);
-  cursor: pointer; display: grid; place-items: center; transition: color 0.15s;
+  appearance: none; position: relative; z-index: 2; height: 100%; padding: 0; border: 0; background: none;
+  color: color-mix(in oklab, var(--muted) 72%, transparent); cursor: pointer; display: grid; place-items: center; transition: color 0.15s;
 }
 .dial-step[data-dir="-1"] { grid-area: 1 / 1; }
 .dial-step[data-dir="1"] { grid-area: 1 / 3; }
-.dial-step .ms { font-size: 17px; }
-.dial-step:hover { color: var(--amber); }
-.dial-step:active { color: var(--text); }
+.dial-step .ms { font-size: 16px; }
+.dial-wheel:hover .dial-step, .dial-wheel:has(.dial-input:focus) .dial-step { color: var(--muted); }
+.dial-wheel .dial-step:hover { color: var(--amber); }
+.dial-wheel .dial-step:active { color: var(--text); }
+/* The range hairline runs along the wheel's foot: amber up to the value, with a fine tick where the scene put it. */
 .dial-bar {
-  position: absolute; left: 17px; right: 17px; bottom: 3px; z-index: 2; height: 2px; border-radius: 1px; pointer-events: none;
-  background: linear-gradient(90deg, var(--amber) 0 var(--fill, 50%), color-mix(in oklab, var(--text) 13%, transparent) var(--fill, 50%) 100%);
+  position: absolute; left: 9px; right: 9px; bottom: 0; z-index: 2; height: 2px; border-radius: 1px 1px 0 0; pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--amber) 80%, transparent) 0 var(--fill, 50%), color-mix(in oklab, var(--text) 9%, transparent) var(--fill, 50%) 100%);
 }
-.dial-bar::after { content: ""; position: absolute; top: -2px; left: calc(var(--notch, 0.5) * 100% - 1px); width: 2px; height: 6px; border-radius: 1px; background: var(--text); opacity: 0.55; }
+.dial-bar::after { content: ""; position: absolute; bottom: 0; left: calc(var(--notch, 0.5) * 100% - 0.5px); width: 1px; height: 5px; background: var(--text); opacity: 0.5; }
 .dial-wheel.no-notch .dial-bar::after { display: none; }
 .dial.is-disabled .dial-wheel { cursor: not-allowed; opacity: 0.45; }
 .dial.is-disabled .dial-step, .dial.is-disabled .dial-val { pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .dial, .dial-wheel, .dial-ridges { transition: none; } }
+/* Without subgrid (Chrome before 117), a cell is a plain column. */
+@supports not (grid-template-rows: subgrid) { .dial { display: flex; flex-direction: column; gap: 6px; } .dial-head { align-self: stretch; } }
+@media (prefers-reduced-motion: reduce) { .dial-name, .dial-wheel, button.dial-val, .dial-step { transition: none; } }
 
 .range-wrap { position: relative; }
 .range-wrap::before {

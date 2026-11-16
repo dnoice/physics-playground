@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Live Math (digiSpace Edition - v2.6)
+    - Title: Live Math (digiSpace Edition - v2.11)
     - File Name: livemath.js
     - Relative Path: js/shell/livemath.js
     - Artifact Type: javascript
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.11.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Parameter
+      dials show their value through the wheel's text(), unit set back, and
+      sit in equal cells side by side, each its symbol over its wheel.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — A parameter
       in more than one formula gets a dial in each with its own id, numbered
       after the first, so no two dials share an id and each symbol's label
@@ -38,7 +41,8 @@
       page is open, and paused otherwise.
     - Parameter dials that change the run as the Controls page does, through
       setParam, so both stay in step; only parameters that do not restart the
-      run are offered.
+      run are offered. They sit as the Controls page's do, in equal cells
+      side by side, each its symbol over its wheel.
     - A check line: theory, simulation and how far apart, coloured by how well
       they agree, or a note when the run cannot show it yet.
     - An optional plot drawn by the lab, at the device's pixel ratio.
@@ -75,10 +79,10 @@ function param(lab, spec, ids) {
   ids.set(base, n);
   const { toS, fromS } = rangeMap(c), fmt = controlFormat(lab, c);
   const W = makeWheel({ id, min: c.log ? 0 : c.min, max: c.log ? 1000 : c.max, step: c.log ? 1 : (c.step || 'any'), label: c.label, editable: false });
-  const { input, val } = W;
+  const { input } = W;
   const last = (c.label.match(/\s([^\s]+)$/) || [, c.label])[1], sym = given || (last.length <= 3 ? last : c.label);
   const node = el('div', { class: 'fl-param', title: `${c.label}: the same setting as on the Controls page` }, el('label', { class: 'fl-sym', for: id, text: sym }), W.wheel);
-  const show = v => { val.textContent = fmt(v); input.setAttribute('aria-valuetext', fmt(v)); W.paint(typeof lab.sceneP[key] === 'number' ? toS(lab.sceneP[key]) : null); };
+  const show = v => { W.text(fmt(v)); input.setAttribute('aria-valuetext', fmt(v)); W.paint(typeof lab.sceneP[key] === 'number' ? toS(lab.sceneP[key]) : null); };
   input.addEventListener('input', () => {
     let v = clamp(fromS(+input.value), c.min, c.max);
     if (c.log) v = Number(v.toPrecision(3)); else if (c.step) v = Math.round(v / c.step) * c.step;

@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.5)
+    - Title: Tile Content Styles (digiSpace Edition - v2.11)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.11.0
+    - Date: 11/14/2026
+    - Update: Saturday, November 14, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Math
+      page's parameter dials sit as the Controls page's do, in equal cells
+      side by side, each its symbol over its wheel, in place of full-width
+      rows of uneven wheels.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
       the Math page's live panels, the Guide's tool, view and scene cards, the
       Inspect figures' sparklines and focus chart, and the sheen on gauges and
@@ -24,8 +28,6 @@
       Inspect card with plottable figures, primary and derived gauges, and
       units in a smaller face; the floating diagnostics sheet's styles are
       gone.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Short
-      windows set tools in two columns, so six fit without scrolling.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -42,6 +44,8 @@
       figures, each with a plot button.
     - Notebook tabs with counts and a new-item dot.
     - KaTeX formula cards that scroll sideways instead of overflowing.
+    - Live Math panels: the symbols' running values, the parameters as dials
+      in equal cells side by side, the check line and the plot.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -315,10 +319,11 @@ body.resizing { cursor: ns-resize; user-select: none; }
 .fl-var dt { font: italic 500 13px/1.25 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
 .fl-var dt.word { font: 500 11px/1.25 var(--font-body); font-style: normal; color: var(--muted); }
 .fl-var dd { margin: 0; font: 500 11.5px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
-.fl-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 6px 14px; padding-top: 2px; }
-.fl-param { display: grid; grid-template-columns: minmax(22px, max-content) minmax(0, 1fr); align-items: center; gap: 10px; }
-.fl-param .dial-wheel { height: 30px; }
-.fl-sym { font: italic 500 13.5px/1 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
+/* A formula's parameters sit as the Controls page's dials do: equal cells side by side, two across in the inspector,
+   each its symbol over its wheel, so a formula with four parameters reads as a square, not a stack. */
+.fl-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 10px 12px; padding-top: 4px; }
+.fl-param { display: grid; align-content: start; gap: 4px; min-width: 0; }
+.fl-sym { padding: 0 2px; overflow: hidden; text-overflow: ellipsis; font: italic 500 13.5px/1.2 "KaTeX_Math", "Times New Roman", serif; color: var(--amber); white-space: nowrap; }
 .fl-check { margin: 0; display: flex; align-items: baseline; gap: 8px; padding: 6px 9px; border-radius: 7px; font: 500 11.5px/1.45 var(--font-mono); color: color-mix(in oklab, var(--text) 86%, var(--muted)); background: color-mix(in oklab, var(--ink) 60%, transparent); }
 .fl-check[hidden] { display: none; }
 .fl-check::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transform: translateY(-1px); }
