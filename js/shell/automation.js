@@ -18,6 +18,10 @@
       narrator after advance() for tests. On Dennis's call for one settings
       dialog: settings opens, closes and reads the dialog, and gfx reads and
       sets the graphics settings of one's own and the budget the engine gets.
+      On Dennis's call for recordings shot like a film:
+      PhysicsPlayground.director turns the director on or off, previews and
+      stops it, reports what it is filming and its limits, and lists the
+      active lab's areas of interest.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       PhysicsPlayground.hud reads and sets the head-up display (on, opacity,
       parts) for tests.
@@ -54,6 +58,7 @@ import { globalInsights } from './diagnostics.js';
 import { labsById } from '../labs/index.js';
 import { camOf, is3D, navActual, navAnim, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
 import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
+import { DIRECTOR_CAP, director, directorState, previewDirector, setDirector, stopDirector } from './director.js';
 import { selectDock, selectView } from './dock.js';
 import { setUnitSystem, unitSystem } from '../core/units.js';
 import { applyPreset, setParam } from './lifecycle.js';
@@ -93,6 +98,9 @@ export function init() {
     play, pause, step: stepOnce, reset: resetActive, setSpeed,
     advance: seconds => advance(active, seconds, Infinity),
     capture: { toggleVideo, toggleData, saveState, loadState, vault, dataRec, vrec },
+    // The director's camera: its switch, a preview, what it is filming, and the active lab's areas of interest.
+    director: { get on() { return director.on; }, set: on => setDirector(on), preview: () => previewDirector(), stop: () => stopDirector(), state: () => directorState(),
+      interest: () => (active.interest ? active.interest(null) : []), caps: DIRECTOR_CAP },
     history: { seek: k => histSeek(active, k), size: () => hist(active).snaps.length, back: () => rewindStep(-1) },
     renderer: () => active.renderer || 'cpu',
     mode: { get: () => world.mode, set: setMode, tier: pickTier, world, is3D: () => is3D(active), info: () => world.engine && world.engine.info() },

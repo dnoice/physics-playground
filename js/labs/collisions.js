@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.17)
+    - Title: Collisions Lab (digiSpace Edition - v2.18)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      Brownian tracer, the densest cluster and the fastest ball for the
+      director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call to audit every lab's exports: tracks follow every ball
       (number, radius, mass, position, velocity, spin and the tracer flag),
@@ -20,13 +24,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and the tracer's tracks: each column's unit,
       meaning and SI factor, and a note on coordinates and scale.
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call to steady the pile test at its cause: the walls take part
-      in every contact pass, as positions only, so the floor's push carries up
-      through a deep pile instead of being undone after the last pass; two
-      passes always, up to four while one still meets an overlap deeper than
-      half a pixel. The pile's worst overlap over 40 runs fell from 2.85 to
-      1.08 px; a sparse gas costs what it did.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -54,6 +51,7 @@ import { chartFrame, chartMessage, velocityTracker } from '../core/chart.js';
 import { genericState } from '../core/codec.js';
 import { RAMP_HEAT, THEME } from '../core/color.js';
 import { brushRing, drawSphere, rampRgb, sphereSprite } from '../core/draw.js';
+import { densest } from '../core/interest.js';
 
 import { FOV3 } from '../core/math3d.js';
 import { TAU, clamp, fmtSI, pct, rand, reduceMotion } from '../core/util.js';
@@ -323,6 +321,23 @@ export const collisions = {
     return { id: `ball-${this.uid[i]}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${this.uid[i]}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
   deselect() { this.picked = -1; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the Brownian tracer, the densest
+     cluster (the pile, a jam) and the fastest ball, each weighted by how far it stands out from the rest. keep is the
+     ball being filmed, reported while it lasts. */
+  interest(keep) {
+    const out = [], n = this.n, X = this.x, Y = this.y, VX = this.vx, VY = this.vy;
+    if (!n) return out;
+    if (this.tracer >= 0) { const t = this.tracer; out.push({ x: X[t], y: Y[t], r: this.r[t] * 4, w: 0.75, key: 'tracer', label: 'The tracer' }); }
+    const d = densest(X, Y, n, this.w, this.h);
+    out.push({ x: d.x, y: d.y, r: d.r, w: clamp((d.ratio - 1.4) / 2.5, 0.05, 0.7), key: 'dense', label: 'The densest cluster' });
+    let f = 0, fv = 0, sum = 0;
+    for (let i = 0; i < n; i++) { const v = Math.hypot(VX[i], VY[i]); sum += v; if (v > fv) { fv = v; f = i; } }
+    const ball = (i, w, key, label) => out.push({ x: X[i], y: Y[i], r: this.r[i] * 5 + Math.hypot(VX[i], VY[i]) * 0.35, w, key, label });
+    if (fv > 0 && f !== this.tracer) ball(f, clamp((fv / (sum / n) - 2) / 4, 0.05, 0.7), `ball:${this.uid[f]}`, 'The fastest ball');
+    const k = keep && keep.startsWith('ball:') ? +keep.slice(5) : 0;
+    if (k && !out.some(p => p.key === keep)) for (let i = 0; i < n; i++) if (this.uid[i] === k) { ball(i, 0.2, keep, 'A ball'); break; }
+    return out;
+  },
   /* The head-up display: its readings, and the selected ball in stage pixels, its centre lifted as the table draws it. */
   hud: [['Balls', 'BALLS'], ['Total kinetic energy', 'KINETIC E'], ['RMS speed', 'RMS SPEED'], ['Pressure check PA / NkT', 'PA / NkT']],
   hudTarget(three) {

@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Stage Styles (digiSpace Edition - v2.6)
+    - Title: Stage Styles (digiSpace Edition - v2.18)
     - File Name: stage.css
     - Relative Path: css/stage.css
     - Artifact Type: stylesheet
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the director's chip,
+      amber with a steady dot.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On a narrow
       stage, where the rail becomes a sideways scroller, the side with more
       tools beyond it fades out, so a cut-off tool reads as more to come; at
@@ -23,11 +26,6 @@
       tools fill their rows and still fits a 1440 by 900 stage in every lab;
       it sits inline in the bottom bar at 720 px and below. The section gap
       and tool height are variables the short-stage rules set.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail
-      hangs from the top-right corner instead of centring on the stage edge,
-      so its camera group no longer moves between labs; it gains a named View
-      group, focus rings, larger axis targets, and captions and the axis ball
-      that give way on short stages.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -265,6 +263,9 @@
 .hud-rec { pointer-events: auto; cursor: pointer; color: var(--crit); border-color: color-mix(in oklab, var(--crit) 50%, var(--rule)); display: inline-flex; align-items: center; gap: 6px; }
 .hud-rec::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blink 1s steps(2, start) infinite; }
 .hud-rec.data { color: var(--cyan); border-color: color-mix(in oklab, var(--cyan) 45%, var(--rule)); }
+/* The director's chip: amber like the camera's own marks, its dot steady, since the clip's chip already blinks. */
+.hud-rec.dir { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 45%, var(--rule)); }
+.hud-rec.dir::before { animation: none; }
 .exp-b-text { display: grid; gap: 2px; min-width: 0; }
 .exp-b-text b { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exp-b-text span { font: 400 11px/1.35 var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

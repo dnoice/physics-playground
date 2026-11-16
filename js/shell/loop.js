@@ -14,7 +14,9 @@
 ✒ Changelog:
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the lab's narrator
-      looks at the run four times a second (tickStory).
+      looks at the run four times a second (tickStory). On Dennis's call for
+      recordings shot like a film: each frame runs the director just before
+      the camera's own easing, so it sets the view the camera then shows.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Each frame,
       after drawing, the head-up display places its target box on the selected
       object; at panel rate it refreshes the callout.
@@ -45,6 +47,7 @@ import { $ } from '../core/util.js';
 import { is3D, navTick } from './camera.js';
 import { dataRec, drawRecOverlay, histBranch, histCapture, sampleData, updateCaptureChips, updateRewind } from './capture.js';
 import { drawPerf, evaluateDiagnostics, updatePerfNums } from './diagnostics.js';
+import { tickDirector } from './director.js';
 import { tickExperiment } from './experiments.js';
 import { updateDetails } from './details.js';
 import { updateLiveMath } from './livemath.js';
@@ -91,6 +94,7 @@ export function frame(now) {
     const stepping = state.running && !active.holding;
     if (stepping) { histBranch(active); n = advance(active, real * state.speed); if (n) histCapture(active); }
     const t1 = performance.now();
+    tickDirector(real);
     navTick(real);
     drawStage(active);
     trackHud(active);
