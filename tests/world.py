@@ -17,7 +17,8 @@
       reaching the studio and the texture shop; Ultra's finer environment; the
       GPU, CPU, memory and texture-limit verdicts and the suggestion as their
       cheapest; the speed test; and the Graphics menu reading the whole
-      machine. A change of tier frees what the last one made.
+      machine. A change of tier frees what the last one made. Fluid is seen
+      from behind in the Chaos page, with no second start-up.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The scene
       menu check expects Gravity's eight scenes, now that Our Solar System is
       one of them. The frame key check waits for the camera to arrive home, up
@@ -296,13 +297,10 @@ with sync_playwright() as p:
     pg.evaluate(f"{P}.view.snap('y')"); pg.wait_for_timeout(900)
     yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))
     ok("chaos_seen_from_behind", abs(yaw - 3.1416) < 0.3 and pg.evaluate(LIT) > 0.02, round(yaw, 2))
-    ctx.close()
-
     # The Fluid tank too, now that its yaw is free: its back is finished, and the backdrop's glow follows the camera
-    # round, so it stays behind the apparatus (+z) when seen from the back (-z).
-    ctx = b.new_context(viewport=VIEW)
-    pg = page(ctx, lab="fluid")
-    settle(pg, IS3D, 30000); pg.wait_for_timeout(400)
+    # round, so it stays behind the apparatus (+z) when seen from the back (-z). Same page, so no second start-up.
+    pg.evaluate(f"{P}.select('fluid')")
+    settle(pg, f"{P}.active.id === 'fluid' && " + IS3D, 30000); pg.wait_for_timeout(400)
     # The camera eases round; the heavier tank draws fewer frames a second on software GL, so wait for it to arrive.
     pg.evaluate(f"{P}.view.snap('y')"); settle(pg, f"Math.abs(Math.abs({P}.view.get().yaw) - Math.PI) < 0.05", 10000); pg.wait_for_timeout(300)
     yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))

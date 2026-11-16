@@ -229,6 +229,8 @@ obvious at a glance.
   - a change of tier freeing what the last one made.
 - `tests/capture.py`: the CSV download is pressed by its stable key, as its
   label is now its format.
+- `tests/run_all.py`: World gets a 900 s ceiling of its own. It renders every
+  lab and every tier in 3D on software GL, and outgrew the shared 600 s.
 
 ## 2.14.0 (11/16/2026)
 
