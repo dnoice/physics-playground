@@ -161,8 +161,11 @@ with sync_playwright() as p:
     ok("rec_chip_counts", re.match(r"REC \d", pg.inner_text("#hud-rec")) is not None, pg.inner_text("#hud-rec"))
     # The clip keeps one size when the stage changes shape (here the window; the deck's charts do the same), and its
     # frames keep coming. Recording the stage canvas itself had frozen a clip at the first resize.
-    rec = """(() => { const v = PhysicsPlayground.capture.vrec, s = v.stream.getVideoTracks()[0].getSettings(), d = v.rc.getContext('2d').getImageData(0, 0, v.rc.width, v.rc.height).data;
-      let h = 0; for (let i = 0; i < d.length; i += 4097) h = (h * 31 + d[i] + d[i + 1] * 3) >>> 0;
+    # The frames are sampled through a small scratch canvas made for reading, so the clip's canvas is never read back.
+    rec = """(() => { const v = PhysicsPlayground.capture.vrec, s = v.stream.getVideoTracks()[0].getSettings();
+      const k = window.__probe || (window.__probe = Object.assign(document.createElement('canvas'), { width: 64, height: 32 })), g = k.getContext('2d', { willReadFrequently: true });
+      g.drawImage(v.rc, 0, 0, 64, 32); const d = g.getImageData(0, 0, 64, 32).data;
+      let h = 0; for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + d[i + 1] * 3) >>> 0;
       return { stream: [s.width, s.height], stage: document.getElementById('stage-canvas').width, hash: h }; })()"""
     v0 = pg.evaluate(rec); pg.set_viewport_size({"width": 1240, "height": 760}); pg.wait_for_timeout(1200)
     v1 = pg.evaluate(rec); pg.wait_for_timeout(800); v2 = pg.evaluate(rec)
