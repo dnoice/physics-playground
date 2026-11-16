@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.12)
+    - Title: Changelog (digiSpace Edition - v2.13)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,8 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.13.0 release.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      2.12.0 release. Then throws and drops that obey the system.
+      2.12.0 release.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.11.0 release.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -68,14 +70,63 @@ The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
 
+## 2.13.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's report that a body placed in a system with larger bodies and a
+host star often sailed straight off into space, as if nothing were around
+it.
+
+### Gravity: throws and drops that obey the system
+
+- **The bug (Dennis's report).** A body thrown into a system often sailed
+  straight out of it as if nothing were there.
+  - Nothing was wrong with its gravity. It was thrown far too fast.
+  - A throw's speed was the drag's length in the world, times 1.6 a second,
+    so it grew as the view zoomed out.
+  - Measured with real drags of 30 to 60 px, throws left at up to 3.8 times
+    escape speed in the Star system's 3D view, up to 7 in Our Solar System,
+    and up to 13 zoomed out. At several times escape speed a pass barely
+    bends.
+  - The Star system's framing in 2.12.0 (0.6, from 0.85) had made the same
+    drag 40% faster there.
+- **Throws measured against the orbit (`throwVel`).**
+  - A drag's screen length over 90 px (`THROW_PX`) is its speed as a multiple
+    of the circular speed about the body that holds the point, added to that
+    body's own motion.
+  - About 127 px escapes.
+  - The same drags now throw at a third and two thirds of the circular
+    speed, in every scene, at every zoom and in either view, and none
+    escaped.
+- **The reading beside the arrow** gives the speed against the host, then
+  the multiple of the circular speed, and says when a throw will escape, in
+  2D and 3D.
+- **Drops orbit what holds the point (`hostAt`).** A click within half a
+  giant's Hill sphere puts the body round that giant, so zooming in on a
+  planet and clicking beside it gives it a moon. Before, every drop orbited
+  the star and the giant flung it away. A drop is refused only inside the
+  merge distance; the old rule (the host's radius plus 4 px) left a giant
+  almost no room for a moon.
+
+### Tests
+
+- **`tests/placement.py`, three new checks:**
+  - `throw_speed_follows_the_orbit_not_the_zoom`: a 60 px drag at two zooms;
+  - `thrown_bodies_stay_in_the_system`;
+  - `drop_beside_a_giant_makes_a_moon`.
+
+### Docs
+
+- **README:** Mouse and touch explains throwing and dropping in Gravity.
+- **ARCHITECTURE:** `hostAt`, `dropOrbit`, `throwVel` and `throwText`.
+
 ## 2.12.0 (11/16/2026)
 
 [dendogg + Anthropic - Claude Opus 5.5]
 
-Three follow-ups on Dennis's calls:
-- steady the flaky pile test at its cause;
-- redesign the Star system so its worlds vary, instead of six alike giants;
-- make thrown and dropped bodies stay in the system they are placed in.
+Two follow-ups, on Dennis's call: steady the flaky pile test at its cause,
+and redesign the Star system so its worlds vary instead of six alike giants.
 
 ### Collisions: a pile that stands on the floor
 
@@ -147,43 +198,8 @@ Three follow-ups on Dennis's calls:
   giants in five, of any mass. In 2D, rings take the planet's colour washed
   toward ice.
 
-### Gravity: throws and drops that obey the system
-
-- **The bug (Dennis's report).** A body thrown into a system often sailed
-  straight out of it as if nothing were there.
-  - Nothing was wrong with its gravity. It was thrown far too fast.
-  - A throw's speed was the drag's length in the world, times 1.6 a second,
-    so it grew as the view zoomed out.
-  - Measured with real drags of 30 to 60 px, throws left at up to 3.8 times
-    escape speed in the Star system's 3D view, up to 7 in Our Solar System,
-    and up to 13 zoomed out. At several times escape speed a pass barely
-    bends.
-  - The Star system's new framing (0.6, from 0.85) had made the same drag 40%
-    faster there.
-- **Throws measured against the orbit (`throwVel`).**
-  - A drag's screen length over 90 px (`THROW_PX`) is its speed as a multiple
-    of the circular speed about the body that holds the point, added to that
-    body's own motion.
-  - About 127 px escapes.
-  - The same drags now throw at a third and two thirds of the circular
-    speed, in every scene, at every zoom and in either view, and none
-    escaped.
-- **The reading beside the arrow** gives the speed against the host, then
-  the multiple of the circular speed, and says when a throw will escape, in
-  2D and 3D.
-- **Drops orbit what holds the point (`hostAt`).** A click within half a
-  giant's Hill sphere puts the body round that giant, so zooming in on a
-  planet and clicking beside it gives it a moon. Before, every drop orbited
-  the star and the giant flung it away. A drop is refused only inside the
-  merge distance; the old rule (the host's radius plus 4 px) left a giant
-  almost no room for a moon.
-
 ### Tests
 
-- **`tests/placement.py`, three new checks:**
-  - `throw_speed_follows_the_orbit_not_the_zoom`: a 60 px drag at two zooms;
-  - `thrown_bodies_stay_in_the_system`;
-  - `drop_beside_a_giant_makes_a_moon`.
 - **`tests/planets.py`:**
   - `star_system_planets_are_gas_giants` becomes
     `star_system_has_every_class`;
@@ -198,11 +214,9 @@ Three follow-ups on Dennis's calls:
 ### Docs
 
 - **README:** the Planet classes section covers the variety and the new
-  Star system, the 3D table describes it, and Mouse and touch explains
-  throwing and dropping in Gravity.
+  Star system, and the 3D table describes it.
 - **ARCHITECTURE:** `hues`, the calm surface, `ringed`, the Star system's
-  design, the Collisions solver's passes, and `hostAt`, `dropOrbit`,
-  `throwVel` and `throwText`.
+  design, and the Collisions solver's passes.
 - **Media:** the banner and the hero are recaptured with the new Star
   system, and `docs/media/MANIFEST.md` records the run.
 

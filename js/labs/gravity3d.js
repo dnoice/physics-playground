@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.12)
+    - Title: Gravity 3D View (digiSpace Edition - v2.13)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,7 +12,7 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The 3D
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The 3D
       throw and its preview take the lab's throwVel: a drag's screen length
       against the circular speed about what holds its start, so a throw from
       the 3D camera no longer leaves at several times escape speed; the

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.12)
+    - Title: Gravity Lab (digiSpace Edition - v2.13)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's report of placed bodies sailing out of the system: throwVel
+      measures a throw against the circular speed about what holds its start
+      (hostAt), so a drag means the same at any zoom (90 px is a circular
+      orbit's speed; the old rule threw short drags at up to 13 times escape
+      speed zoomed out); drops orbit hostAt, so a click beside a giant gives
+      it a moon; throwText reads the throw out beside the arrow.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for variety: the Star system shows every class (a grey
       rock, a rust super-Earth, an ocean world at 1 AU, a lavender
@@ -19,12 +26,7 @@
       moon on each giant, softening of 1 px so the moons keep their planets,
       and a comet that is a comet; Tilted orbits' comet too. Each class has a
       few hues a world picks by its id; sub-Neptunes and ice giants are calm
-      (surface 3); ringed() gives rings in 2D and 3D alike. On Dennis's report
-      of thrown bodies sailing out of the system: throwVel measures a throw
-      against the circular speed about what holds its start (hostAt), so a
-      drag means the same at any zoom (the old rule threw short drags at up to
-      13 times escape speed zoomed out); drops orbit hostAt, so a click beside
-      a giant makes a moon; throwText reads the throw out.
+      (surface 3); ringed() gives rings in 2D and 3D alike.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits as
       smooth curves (orbitFrame, orbitCurve): any span that would draw long is
       halved again, so an orbit the camera sits inside no longer crosses the
@@ -32,16 +34,6 @@
       carry a dark halo. Our Solar System zooms twice as far a step (zoomPace)
       and no longer follows its centre of mass, so the wheel zooms toward the
       cursor.
-    - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Planet
-      classes from Dennis's research reference (docs/research/md):
-      terrestrial, super-Earth, sub-Neptune, ice giant and gas giant, then
-      brown dwarfs and stars, By mass on the reference's boundaries in place
-      of rocky and ocean worlds alternating by id; mergers keep their family;
-      a chosen class keeps the launch mass in its range, and the dial reaches
-      0.02 Earth masses. Inspect gives a world's radius (real, or from the
-      reference's mass-radius relation), density, gravity, escape speed and
-      Hill sphere, the Roche limit of a real host, and the IAU mass-ratio
-      test. pullHost rebuilds a stale source list.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.12)
+    - Title: Architecture Guide (digiSpace Edition - v2.13)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,9 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — hostAt,
+      dropOrbit, throwVel and throwText: how Gravity places bodies relative to
+      what holds the point.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Class
       hues, the calm surface, ringed(), the Star system's design, and the
-      Collisions solver's passes. hostAt, dropOrbit, throwVel and throwText.
+      Collisions solver's passes.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
       anatomy (text(), the parted ridges, the keyboard-only ring, the wheel as
       the field) and their grid of equal cells on a subgrid; the Math page's

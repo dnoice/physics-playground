@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Dials and Placement Tests (digiSpace Edition - v2.12)
+    - Title: Dials and Placement Tests (digiSpace Edition - v2.13)
     - File Name: placement.py
     - Relative Path: tests/placement.py
     - Artifact Type: test
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,7 +12,7 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       throws follow the orbit, not the zoom, and stay in the system; a drop
       beside a giant makes a moon.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dials'
@@ -199,7 +199,7 @@ with sync_playwright() as p:
     ok("inspector_names_the_type", "Ice giant" in pg.inner_text("#tile-deck"))
     pg.context.close()
 
-    # ---- Gravity (2.12.0): a throw is measured against the orbit it goes into, so a short drag stays in the system at
+    # ---- Gravity (2.13.0): a throw is measured against the orbit it goes into, so a short drag stays in the system at
     # any zoom (it used to leave at several times escape speed zoomed out), and a drop beside a giant becomes its moon
     pg = fresh("gravity")
     pg.evaluate("PhysicsPlayground.preset('solar')"); pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(300)
