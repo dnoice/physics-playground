@@ -1,0 +1,40 @@
+# ✒ Metadata
+#     - Title: Issue Chooser Settings (digiSpace Edition - v2.13)
+#     - File Name: config.yml
+#     - Relative Path: .github/ISSUE_TEMPLATE/config.yml
+#     - Artifact Type: config
+#     - Version: 2.13.0
+#     - Date: 11/16/2026
+#     - Update: Monday, November 16, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       on Dennis's call for welcoming, intuitive community documents.
+#
+# ✒ Description:
+#     What GitHub's "New issue" page offers beside the forms: blank issues
+#     for questions, and links to the live lab, the contributing guide and
+#     the private security route.
+#
+# ✒ Key Features:
+#     - Blank issues stay on, so a question never has to fit a form.
+#     - Security reports are steered away from public issues.
+#
+# ✒ Other Important Information:
+#     - Dependencies: GitHub issue forms
+#     - Compatible platforms: GitHub
+# ---------
+blank_issues_enabled: true
+contact_links:
+  - name: Try the live lab
+    url: https://dnoice.github.io/physics-playground/
+    about: Run the playground in your browser, nothing to install.
+  - name: Read the contributing guide
+    url: https://github.com/dnoice/physics-playground/blob/main/CONTRIBUTING.md
+    about: How to set up, check a change and open a pull request.
+  - name: Report a security problem privately
+    url: https://github.com/dnoice/physics-playground/blob/main/SECURITY.md
+    about: Please do not file security problems as public issues. The security policy explains how to report them.

@@ -1,0 +1,79 @@
+# ✒ Metadata
+#     - Title: Feature Request Form (digiSpace Edition - v2.13)
+#     - File Name: feature_request.yml
+#     - Relative Path: .github/ISSUE_TEMPLATE/feature_request.yml
+#     - Artifact Type: config
+#     - Version: 2.13.0
+#     - Date: 11/16/2026
+#     - Update: Monday, November 16, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       on Dennis's call for welcoming, intuitive community documents.
+#
+# ✒ Description:
+#     The GitHub issue form for an idea: where it belongs, the wish or
+#     problem behind it, the idea itself, and whether the person would like
+#     to help build it.
+#
+# ✒ Key Features:
+#     - Starts from the wish or problem, so ideas arrive with their reason.
+#     - "A new lab" sits beside the seven labs as a place an idea can go.
+#     - An optional offer to help, for ideas that want a builder.
+#
+# ✒ Other Important Information:
+#     - Dependencies: GitHub issue forms
+#     - Compatible platforms: GitHub
+# ---------
+name: Feature request
+description: An idea for a new scene, tool, lab or improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome, big or small. Tell us what you would like to do, and we can work out the best way to make it happen together.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it belong?
+      options:
+        - Gravity
+        - Collisions
+        - Fluid
+        - Waves
+        - Chaos
+        - Cloth
+        - Fields
+        - The workspace (panels, deck, Library, menus)
+        - A new lab
+        - Somewhere else
+    validations:
+      required: true
+  - type: textarea
+    id: wish
+    attributes:
+      label: What would you like to do?
+      description: The wish or the problem behind the idea. "I want to see…" or "It is hard to…" is a great start.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How it might work. Sketches, screenshots or links to similar things are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Other ways you have considered
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Helping out
+      options:
+        - label: I would like to help build this.

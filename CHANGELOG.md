@@ -13,7 +13,7 @@
 
 ✒ Changelog:
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
-      2.13.0 release.
+      2.13.0 release. With the community documents.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.12.0 release.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -76,7 +76,8 @@ here in full, newest first.
 
 On Dennis's report that a body placed in a system with larger bodies and a
 host star often sailed straight off into space, as if nothing were around
-it.
+it. And, as the repository began to draw stars and forks, a welcome for
+contributors.
 
 ### Gravity: throws and drops that obey the system
 
@@ -113,6 +114,37 @@ it.
     first step and vanished, while the planet quietly gained its mass.
   - Now it starts just outside, along the drag.
 
+### Community
+
+- **`CONTRIBUTING.md`**, a guide written to be welcoming and quick to follow:
+  - the ways to help, code or not;
+  - a first contribution in five steps, from fork to pull request;
+  - every check, matched to what CI runs, and how to run the browser tests;
+  - a tour of the code;
+  - the house style for code, physics and words;
+  - the ✒ file headers in full, with a worked example;
+  - what happens to a pull request.
+- **`CODE_OF_CONDUCT.md`**, written for a project about learning: beginners
+  and their questions are explicitly welcome. Concerns go to the maintainer
+  privately, and no one's personal email is published.
+- **`SECURITY.md`**: supported versions, a scope written for a static
+  browser app, and private reporting through GitHub's vulnerability
+  reporting, with a fallback that discloses nothing in public.
+- **Issue forms** in `.github/ISSUE_TEMPLATE/`:
+  - a bug report, which asks for the lab, view, steps, browser and
+    graphics tier;
+  - a physics accuracy report, which separates what the playground shows
+    from what physics says, with its source;
+  - a feature request;
+  - a chooser that keeps blank issues for questions, and steers security
+    reports away from public issues.
+- **A pull request template** with the checks as boxes. It carries no ✒
+  header, since GitHub copies it into every pull request; `tools/check.mjs`
+  exempts it by name.
+- **The README** gains a Contributing section, a "contributions welcome"
+  badge, a Contribute link, and the three documents in its table.
+  `.gitignore` covers the `.venv/` the guide sets up.
+
 ### Tests
 
 - **`tests/placement.py`, four new checks:**
@@ -126,7 +158,7 @@ it.
 
 - **README:** Mouse and touch explains throwing and dropping in Gravity.
 - **ARCHITECTURE:** `hostAt`, `dropOrbit`, `throwVel`, `throwFrom` and
-  `throwText`.
+  `throwText`, and a pointer to the contributing guide.
 
 ## 2.12.0 (11/16/2026)
 

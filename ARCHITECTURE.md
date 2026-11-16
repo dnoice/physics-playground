@@ -14,7 +14,8 @@
 ✒ Changelog:
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — hostAt,
       dropOrbit, throwVel and throwText: how Gravity places bodies relative to
-      what holds the point. throwFrom.
+      what holds the point. throwFrom. Conventions points contributors to
+      CONTRIBUTING.md.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Class
       hues, the calm surface, ringed(), the Star system's design, and the
       Collisions solver's passes.
@@ -871,6 +872,9 @@ recapturing. [docs/media/MANIFEST.md](docs/media/MANIFEST.md) lists every
 picture.
 
 ## Conventions
+
+[CONTRIBUTING.md](CONTRIBUTING.md) is the guide for contributors: setting
+up, the checks, the house style and the header rules in full.
 
 - Every project file starts with the digiSpace ✒ header.
   Browser-delivered files keep at most three changelog entries in 40

@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.4)
+    - Title: Project Checker (digiSpace Edition - v2.13)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.13.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exempts
+      the pull request template by name, since GitHub copies it into every new
+      pull request's description, where a header would be noise; every other
+      own file still needs one.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Counts the
       deck size button's two glyphs, which deck.js swaps in.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Counts
@@ -32,7 +36,8 @@
 ✒ Key Features:
     - Header, signature and Relative Path check on every own file,
       including the workflow YAML and the .gitignore, .gitattributes and
-      .nojekyll dotfiles.
+      .nojekyll dotfiles; the pull request template alone is exempt, since
+      GitHub copies it into every pull request.
     - Changelog bound on shipped files: three entries, 40 lines,
       CHANGELOG.md pointer.
     - Material Symbols subset ⊇ glyphs used, sorted as Google Fonts
@@ -61,6 +66,8 @@ const SIGNATURE = '︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!';
 const SKIP_DIRS = new Set(['node_modules', 'katex', '.git', 'shots', '__pycache__', '_site']);
 const OWN_EXT = new Set(['.js', '.mjs', '.css', '.html', '.md', '.py', '.jsonc', '.yml']);
 const DOTFILES = ['.gitignore', '.gitattributes', '.nojekyll'];
+// GitHub copies the pull request template into every new pull request's description, where a header would be noise.
+const NO_HEADER = new Set(['.github/pull_request_template.md']);
 const SHIPPED_EXT = new Set(['.js', '.css', '.html']);
 const problems = [], notes = [];
 
@@ -71,8 +78,8 @@ function walk(dir, out = []) {
   }
   return out;
 }
-const files = walk(ROOT).filter(p => OWN_EXT.has(extname(p)) || DOTFILES.includes(relative(ROOT, p)));
 const rel = p => relative(ROOT, p).split('\\').join('/');
+const files = walk(ROOT).filter(p => (OWN_EXT.has(extname(p)) || DOTFILES.includes(relative(ROOT, p))) && !NO_HEADER.has(rel(p)));
 
 /* 1. Every own file carries the ✒ header and the byte-exact signature. */
 for (const p of files) {
