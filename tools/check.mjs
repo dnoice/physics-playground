@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.16)
+    - Title: Project Checker (digiSpace Edition - v2.18)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the glyphs in
+      STORY_ICON count toward the font subset.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       release a dataset names (js/core/version.js) must match package.json.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exempts
@@ -121,6 +124,8 @@ else {
   for (const m of block('ICON').matchAll(/:\s*'([a-z0-9_]+)'/g)) used.add(m[1]);
   for (const m of block('LAB_ICON').matchAll(/\['([a-z0-9_]+)'/g)) used.add(m[1]);
   for (const m of block('SWAPPED_GLYPHS').matchAll(/'([a-z0-9_]+)'/g)) used.add(m[1]);
+  // The Story's moments take their glyph from their kind.
+  for (const m of block('STORY_ICON').matchAll(/:\s*'([a-z0-9_]+)'/g)) used.add(m[1]);
   const missing = [...used].filter(g => !have.has(g)).sort(), unused = subset.filter(g => !used.has(g));
   if (missing.length) problems.push(`index.html: icon_names lacks ${missing.join(', ')}`);
   if (unused.length) notes.push(`icon_names carries glyphs no code uses: ${unused.join(', ')}`);

@@ -1,26 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Automation Surface (digiSpace Edition - v2.7)
+    - Title: Automation Surface (digiSpace Edition - v2.18)
     - File Name: automation.js
     - Relative Path: js/shell/automation.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: PhysicsPlayground.story
+      lists the Story's moments, its unread count and its view, and ticks the
+      narrator after advance() for tests.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       PhysicsPlayground.hud reads and sets the head-up display (on, opacity,
       parts) for tests.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — view.get()
       reports moving while a zoom, frame or recentre is still easing in, so
       tests can wait for the view to come to rest instead of a fixed time.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds
-      viewMode() for a lab's view and units.get() and units.set() for the unit
-      system.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -31,6 +32,7 @@
     - Read lab state and drive the transport from the console or a test.
     - view.get/zoomBy/toWorld expose the camera.
     - capture exposes the vault and recorders.
+    - story lists the Insights pane's Story and ticks the narrator.
 
 ✒ Usage Instructions:
     In the browser console: PhysicsPlayground.select('fields');
@@ -59,6 +61,7 @@ import { pause, play, resetActive, setSpeed, stepOnce } from './transport.js';
 import { vault } from './vault.js';
 import { selectLab } from './workspace.js';
 import { configureHud, hudState } from './headsup.js';
+import { showView, storyOf, storyUnread, tickStory } from './story.js';
 
 /* ---------- automation surface ---------- */
 
@@ -76,6 +79,8 @@ export function init() {
     units: { get: () => unitSystem(), set: id => setUnitSystem(id) },
     hud: { get: () => hudState(), set: o => configureHud(o || {}) },
     diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
+    // The Story: its moments as data, the unread count, the view, and one look by the narrator now (after advance()).
+    story: { list: () => storyOf(active), unread: () => storyUnread(active), view: id => showView(id), tick: () => tickStory(active) },
     play, pause, step: stepOnce, reset: resetActive, setSpeed,
     advance: seconds => advance(active, seconds, Infinity),
     capture: { toggleVideo, toggleData, saveState, loadState, vault, dataRec, vrec },

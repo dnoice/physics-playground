@@ -1,17 +1,25 @@
 """
 ✒ Metadata
-    - Title: Workspace Tests (digiSpace Edition - v2.4)
+    - Title: Workspace Tests (digiSpace Edition - v2.18)
     - File Name: workspace.py
     - Relative Path: tests/workspace.py
     - Artifact Type: test
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Story's checks. A
+      brown dwarf dropped at the Star system's edge moves the barycentre and
+      reshapes orbits; three fast throws into Empty sky each get explained,
+      then what follows; Collisions and Chaos tell their own moments; the
+      unread count, the keyboard, Show me, pause, rewind and a new scene.
+      Insights now opens on its Story, with Now a click away, so the pane
+      check reads both views.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the unified interaction architecture of release 2.4.0: the stage
       rail, view modes, Chaos's three views, the deck workspace, object
@@ -21,8 +29,9 @@
     Drives the 2.4.0 workspace in the flat view: the rail that keeps its
     camera group in one place, view modes that never restart a run, Chaos's
     Pendulum, Phase map and Both views with a selection shared between them,
-    the deck's panes and sizes, inspection of posts and sources, and the
-    Metric, US and Simulation unit systems.
+    the deck's panes and sizes, inspection of posts and sources, the
+    Metric, US and Simulation unit systems, and the Insights pane's Story
+    told by each lab's narrator.
 
 ✒ Key Features:
     - Rail: the camera group sits at the same height in every lab; tools
@@ -34,6 +43,10 @@
     - Inspection: a Fluid post and a Waves source, each removable.
     - Units: readings, controls, typed values and the scale bar follow the
       system; the simulation does not change.
+    - Story: Gravity's narrator explains a giant at the edge of the Star
+      system and three fast throws into Empty sky within a bounded run;
+      Collisions and Chaos tell their own; the unread count, the keyboard,
+      Show me, pause, rewind and a new scene behave.
 
 ✒ Usage Instructions:
     $ python tests/workspace.py
@@ -130,7 +143,11 @@ with sync_playwright() as p:
     # ---- the deck: Insights in place of a floating sheet, size presets, and the grip on the keyboard
     pg = fresh("fluid")
     pg.click("#dt-insights"); pg.wait_for_timeout(300)
-    ok("insights_pane_shows", pane() == "insights" and pg.is_visible("#insights") and pg.is_visible("#perf-spark"))
+    # Insights opens on its Story; the run's state (the insight cards) and the frame-timing strip are its Now view.
+    ok("insights_pane_shows", pane() == "insights" and pg.is_visible("#ip-story") and pg.get_attribute("#iv-story", "aria-selected") == "true" and pg.is_hidden("#insights"))
+    pg.click("#iv-now"); pg.wait_for_timeout(200)
+    ok("insights_now_view", pg.is_visible("#insights") and pg.is_visible("#perf-spark") and pg.is_hidden("#ip-story"))
+    pg.focus("#dt-insights")
     pg.keyboard.press("ArrowLeft")
     ok("deck_tabs_arrow_keys", pane() == "inspect" and pg.evaluate("document.activeElement.id") == "dt-inspect")
     ok("inspect_empty_says_how", "post" in pg.inner_text("#inspect-empty").lower())
@@ -188,6 +205,96 @@ with sync_playwright() as p:
     ok("chaos_energy_in_si", "J/kg" in pg.inner_text("#readouts"))
     pg.evaluate(P + ".units.set('us')"); pg.wait_for_timeout(400)
     ok("chaos_energy_in_us", "ft²/s²" in pg.inner_text("#readouts") and abs(state("active.p.g") - 9.81) < 1e-9)
+    pg.context.close()
+
+    # ---- Insights: the Story, the lab's narrator telling the run as it happens
+    STEP = "(s => {{ const P = PhysicsPlayground, L = P.active, end = L.t + s; while (L.t < end - 1e-9) {{ const e2 = Math.min(end, L.t + 0.25); while (L.t < e2 - 1e-9) if (!P.advance(Math.min(1 / 60, e2 - L.t))) break; P.story.tick(); }} }})({})"
+    story = lambda: pg.evaluate(P + ".story.list()")
+    kinds = lambda: {m["kind"] for m in story()}
+    def drag(x0, y0, x1, y1):
+        r = pg.locator("#stage-canvas").bounding_box()
+        pg.mouse.move(r["x"] + x0, r["y"] + y0); pg.mouse.down()
+        for k in range(1, 9): pg.mouse.move(r["x"] + x0 + (x1 - x0) * k / 8, r["y"] + y0 + (y1 - y0) * k / 8)
+        pg.mouse.up()
+
+    # Gravity: a brown dwarf dropped at the outer edge of the Star system pulls the barycentre out of the star.
+    pg = fresh("gravity"); pg.evaluate(P + ".pause()")
+    scene(pg, "#preset-gravity-solar"); pg.wait_for_timeout(300); pg.evaluate(P + ".story.tick()")
+    ok("story_opens_with_the_scale", "scale" in kinds(), kinds())
+    pg.evaluate(P + ".setParam('launchMass', 70)")
+    # Empty sky 520 px out from the star (3.85 AU, past the ice giant), within 30° of the stage's wide axis so the click
+    # lands on the stage, at the angle there farthest from every body.
+    spot = pg.evaluate("(() => { const L = PhysicsPlayground.active, H = L.heaviest(); let best = null, far = -1; for (let k = 0; k < 26; k++) { const a = (k < 13 ? -Math.PI / 6 + k * Math.PI / 36 : 5 * Math.PI / 6 + (k - 13) * Math.PI / 36), x = H.x + 520 * Math.cos(a), y = H.y + 520 * Math.sin(a), d = Math.min(...L.bodies.map(b => Math.hypot(b.x - x, b.y - y))); if (d > far) { far = d; best = { x, y }; } } return best; })()")
+    n0 = state("active.bodies.length")
+    pg.mouse.click(*to_screen(spot["x"], spot["y"])); pg.wait_for_timeout(200)
+    ok("giant_dropped", state("active.bodies.length") == n0 + 1 and state("active.heaviest().m") == 1000 and state("active.bodies.some(b => b.kind === 'brown')"), state("active.bodies.length"))
+    pg.evaluate(STEP.format(5))
+    bary = [m for m in story() if m["kind"] == "bary"]
+    ok("story_giant_moves_the_barycentre", {"added", "bary"} <= kinds() and bary and "barycentre" in bary[0]["body"] and "km/s" in bary[0]["body"], kinds())
+    ok("story_explains_the_wobble", bool(bary) and "wobble" in bary[0]["body"] and bary[0]["show"])
+    pg.evaluate(STEP.format(40))
+    ok("story_giant_reshapes_orbits", bool(kinds() & {"perturb", "pass", "cross", "packed", "resonance", "capture", "loss", "merge"}), kinds())
+    lst = story()
+    ok("story_newest_first", all(lst[i]["t"] >= lst[i + 1]["t"] for i in range(len(lst) - 1)) and len(lst) <= 60, [round(m["t"], 2) for m in lst])
+    ok("story_numbers_and_causes", all(any(c.isdigit() for c in m["body"]) for m in lst), [m["title"] for m in lst if not any(c.isdigit() for c in m["body"])])
+    # The unread count rides on the Insights tab and clears when the Story is read.
+    pg.wait_for_timeout(400)
+    ok("story_unread_on_tab", pg.is_visible("#dt-story-n") and int(pg.inner_text("#dt-story-n").split()[0]) > 0, pg.inner_text("#dt-story-n"))
+    pg.click("#dt-insights")
+    ok("story_read_clears_unread", settle(pg, "document.getElementById('dt-story-n').hidden && " + P + ".story.unread() === 0", 5000))
+    # Keyboard: the Now and Story views are a tablist; the list itself and every moment's buttons are tab stops.
+    pg.focus("#iv-story"); pg.keyboard.press("Home")
+    ok("story_views_keys", pg.evaluate("document.activeElement.id") == "iv-now" and pg.is_visible("#insights"))
+    pg.keyboard.press("ArrowRight")
+    ok("story_view_back", pg.evaluate("document.activeElement.id") == "iv-story" and pg.is_visible("#story"))
+    reached = False
+    for k in range(4):
+        pg.keyboard.press("Tab")
+        if pg.evaluate("document.activeElement.id") == "story": reached = True; break
+    ok("story_list_keyboard_reachable", reached, pg.evaluate("document.activeElement.id || document.activeElement.className"))
+    pg.keyboard.press("Tab")
+    ok("story_moment_button_reachable", pg.evaluate("(e => !!e.closest('#story') && (e.tagName === 'BUTTON' || e.tagName === 'SUMMARY'))(document.activeElement)"))
+    follow = pg.locator("#story .btn-show:visible", has_text="Follow").first
+    follow.focus(); pg.keyboard.press("Enter"); pg.wait_for_timeout(200)
+    ok("story_show_me_follows", state("active.track") is not None)
+    # Show me never offers a body that has merged away or left: its button goes with it.
+    ok("story_show_me_only_live", pg.evaluate("[...document.querySelectorAll('#story .btn-show')].filter(b => b.offsetParent).every(b => { const m = b.textContent.match(/Follow Body (\\d+)/); return !m || PhysicsPlayground.active.bodies.some(q => q.id === +m[1]); })"))
+    # The story survives a pause, and a rewind drops what it undid.
+    n_before = len(story()); pg.wait_for_timeout(800)
+    ok("story_survives_pause", len(story()) == n_before and state("state.running") is False)
+    # Rewind needs recorded history, which only real playing captures: play a moment, then seek back to the start.
+    pg.evaluate(P + ".play()"); settle(pg, P + ".history.size() >= 2", 8000); pg.evaluate(P + ".pause()")
+    pg.evaluate(P + ".history.seek(0)"); pg.evaluate(P + ".story.tick()")
+    t_now = state("active.t")
+    ok("story_rewind_trims", t_now < 1 and len(story()) < n_before and all(m["t"] <= t_now + 1e-6 for m in story()), (t_now, n_before, [round(m["t"], 2) for m in story()]))
+    # A new scene starts a new story.
+    pg.evaluate(P + ".preset('kepler')"); pg.evaluate(P + ".story.tick()")
+    ok("story_resets_on_scene", all(m["t"] < 0.01 for m in story()), [(m["kind"], m["t"]) for m in story()])
+    pg.context.close()
+
+    # Empty sky, three fast throws by hand: each throw is explained, then what follows from it.
+    pg = fresh("gravity"); pg.evaluate(P + ".pause()")
+    scene(pg, "#preset-gravity-empty"); pg.wait_for_timeout(300); pg.evaluate(P + ".story.tick()")
+    r = pg.locator("#stage-canvas").bounding_box(); cx, cy = r["width"] / 2, r["height"] / 2
+    drag(cx, cy, cx + 160, cy - 20); pg.evaluate(STEP.format(1))
+    drag(cx - 160, cy + 30, cx + 140, cy + 30); pg.evaluate(STEP.format(1))
+    drag(cx, cy - 120, cx + 70, cy - 120); pg.evaluate(STEP.format(40))
+    total = sum(m["n"] for m in story())
+    ok("empty_sky_three_bodies", state("active.bodies.length") == 3, state("active.bodies.length"))
+    ok("empty_sky_steady_story", {"added", "momentum", "pass"} <= kinds() and total >= 6, (kinds(), total))
+    added = [m for m in story() if m["kind"] == "added"]
+    ok("empty_sky_throws_explained", bool(added) and added[0]["n"] == 3 and ("escape" in added[0]["body"] or "once every" in added[0]["body"]), added[0]["body"][:120] if added else None)
+    pg.context.close()
+
+    # Other labs tell their own moments: the gas relaxing and pressing on its walls, the copies parting.
+    pg = fresh("collisions"); pg.evaluate(P + ".pause()"); pg.evaluate(P + ".preset('gas')"); pg.evaluate(P + ".story.tick()")
+    pg.evaluate(STEP.format(10))
+    ok("collisions_story", {"relax", "pressure"} <= kinds(), kinds())
+    pg.click("#tab-chaos"); pg.wait_for_timeout(300); pg.evaluate(P + ".pause()"); pg.evaluate(P + ".preset('chaos')"); pg.evaluate(P + ".story.tick()")
+    pg.evaluate(STEP.format(12))
+    ok("chaos_story", {"lyapunov", "parted"} <= kinds(), kinds())
+    pg.click("#tab-collisions"); pg.wait_for_timeout(300)
+    ok("story_kept_per_lab", {"relax", "pressure"} <= kinds(), kinds())
     pg.context.close()
 
     b.close()

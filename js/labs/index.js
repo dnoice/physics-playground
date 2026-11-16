@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Lab Registry (digiSpace Edition - v2.1)
+    - Title: Lab Registry (digiSpace Edition - v2.18)
     - File Name: index.js
     - Relative Path: js/labs/index.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the registry mixes each
+      lab's narrator (js/labs/story/) into it.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       registry mixes the plane camera into labs with a rig.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
@@ -45,6 +48,7 @@ import { fluid } from './fluid.js';
 import { gravity } from './gravity.js';
 import { mixStage3D } from './stage3d.js';
 import { waves } from './waves.js';
+import { STORIES } from './story/index.js';
 
 /* ================================================================== */
 /*  Shell: registry, panel, diagnostics, loop                           */
@@ -53,3 +57,5 @@ export const labs = [gravity, collisions, fluid, waves, pendulum, cloth, fields]
 export const labsById = Object.fromEntries(labs.map(l => [l.id, l]));
 for (const l of labs) Object.assign(l, { t: 0, _acc: 0, ready: false, holding: l.holding || false, size: { w: 0, h: 0 }, hover: null, sceneP: { ...l.p }, experiments: EXPERIMENTS[l.id] || [] });
 for (const l of labs) if (l.rig3) mixStage3D(l);
+// Each lab's narrator (storyHint and narrate), which tells the Insights pane's Story.
+for (const l of labs) if (STORIES[l.id]) Object.assign(l, STORIES[l.id]);

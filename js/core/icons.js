@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Icon Glyphs (digiSpace Edition - v2.15)
+    - Title: Icon Glyphs (digiSpace Edition - v2.18)
     - File Name: icons.js
     - Relative Path: js/core/icons.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,12 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: STORY_ICON, the glyph
+      of each kind of moment, all from glyphs the font subset already carries.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
       the Library's actions: download, rename, preview, details and load.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
       dice glyph for random placement.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
-      the view modes: pendulum, phase map, both, height and intensity.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -66,3 +67,16 @@ export const msEl = (name, cls = '') => el('span', { class: 'ms' + (cls ? ' ' + 
    experiment banner). Listed so tools/check.mjs can confirm the font subset
    in index.html carries them. */
 export const SWAPPED_GLYPHS = ['pause', 'play_arrow', 'fullscreen', 'fullscreen_exit', 'task_alt', 'science'];
+/* The glyph of each kind of moment in Insights · Story (story.js writes it into the moment's icon span). Kinds are
+   shared across labs where the meaning is: a settling liquid and a settling cloth both settle. */
+export const STORY_ICON = {
+  added: 'add_circle', pass: 'radar', merge: 'bubble_chart', infall: 'local_fire_department', plunge: 'local_fire_department', escape: 'rocket_launch',
+  capture: 'my_location', loss: 'open_in_full', binary: 'adjust', bary: 'balance', perturb: 'orbit', orbit: 'task_alt', resonance: 'linear_scale',
+  cross: 'warning', packed: 'warning', scale: 'straighten', momentum: 'arrow_outward', energy: 'check_circle', empty: 'radio_button_unchecked',
+  relax: 'scatter_plot', cooling: 'ac_unit', pile: 'bubble_chart', pressure: 'monitoring', break: 'sports_baseball', walk: 'point_scan', still: 'check_circle',
+  surge: 'waves', runup: 'view_column', squash: 'close_fullscreen', settle: 'check_circle', splash: 'water_drop', blobs: 'lens_blur', round: 'radio_button_unchecked', wake: 'radio_button_checked',
+  arrive: 'radar', fringes: 'blur_on', beam: 'arrow_outward', standing: 'airwave', absorb: 'format_color_reset', doppler: 'speed', focus: 'center_focus_strong',
+  lyapunov: 'show_chart', parted: 'vertical_split', flip: 'cyclone', regular: 'linear_scale', mode: 'airwave', damped: 'monitoring',
+  tear: 'content_cut', rip: 'content_cut', flutter: 'flag', lean: 'arrow_outward', fall: 'keep',
+  gyration: 'orbit', drift: 'arrow_outward', absorbed: 'radio_button_checked', trapped: 'my_location', deflect: 'electric_bolt',
+};

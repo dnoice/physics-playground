@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.16)
+    - Title: Physics Playground (digiSpace Edition - v2.18)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -13,6 +13,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Insights pane's Now
+      and Story views with their tablist in the deck's header, the Story's
+      list, and the unread count on the Insights tab.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       engine's release beside the name in the top bar (filled from
       js/core/version.js), linking to the changelog.
@@ -20,11 +24,6 @@
       Library page in two sections, Capture and Saved, with the capture
       settings folding out beside the Capture heading; the download and edit
       glyphs join the icon subset.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
-      call for a cockpit head-up display: the display's layer over the stage
-      canvas (tape, caution lights, target box, leader and callout), the HUD
-      button and menu in the top bar, the centre_focus_strong glyph and
-      headsup.css, and Shift+H on the keyboard sheet.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -40,7 +39,8 @@
     - Stage rail anchored top right: Camera (axis ball, zoom, pan, frame),
       then the lab's Tools with the Random dice, View and This scene groups.
     - Instruments deck with Telemetry, Inspect and Insights panes, compact,
-      standard and tall sizes, and a grip to drag it to any height.
+      standard and tall sizes, and a grip to drag it to any height; Insights
+      has two views, Now and the Story of the run.
     - Units menu (U): metric, US customary or simulation units for every
       reading and control.
     - Focus mode (F) and hideable instruments (Shift+B); the layout reflows
@@ -233,7 +233,12 @@
       <div class="deck-tabs" role="tablist" aria-label="Instruments" id="deck-tabs">
         <button type="button" role="tab" class="deck-tab" id="dt-telemetry" aria-controls="dp-telemetry" aria-selected="true"><span class="ms" aria-hidden="true">show_chart</span><span class="deck-tab-name">Telemetry</span></button>
         <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span><span class="deck-tab-dot" id="dt-inspect-dot" hidden></span></button>
-        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum">Stable</span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum">Stable</span><span class="story-new" id="dt-story-n" hidden></span></button>
+      </div>
+      <!-- Insights has two views: Now, the run's state with fixes, and Story, the moments the lab's narrator has found. -->
+      <div class="ins-views" role="tablist" aria-label="Insights view" id="ins-views">
+        <button type="button" role="tab" class="ins-view" id="iv-now" aria-controls="ip-now" aria-selected="false" tabindex="-1">Now<span class="iv-n" id="iv-now-n"></span></button>
+        <button type="button" role="tab" class="ins-view" id="iv-story" aria-controls="ip-story" aria-selected="true">Story<span class="iv-n" id="iv-story-n" hidden></span></button>
       </div>
       <h3 class="deck-title" id="chart-title">Chart</h3>
       <div class="scope-legend" id="scope-legend"></div>
@@ -264,6 +269,7 @@
         </div>
       </div>
       <div class="deck-pane deck-insights" role="tabpanel" id="dp-insights" aria-labelledby="dt-insights" hidden>
+        <div class="ins-now" role="tabpanel" id="ip-now" aria-labelledby="iv-now" hidden>
         <div class="insights" id="insights" aria-live="polite"></div>
         <div class="perf" aria-label="Frame timing">
           <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
@@ -273,6 +279,12 @@
             <dt>Steps / frame</dt><dd id="perf-steps">0</dd>
             <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
           </dl>
+        </div>
+        </div>
+        <!-- The Story: what the run has done and why, newest first. The list scrolls on its own, so it takes focus. -->
+        <div class="ins-story" role="tabpanel" id="ip-story" aria-labelledby="iv-story">
+          <p class="story-empty" id="story-empty"><span class="ms" aria-hidden="true">history</span><span id="story-how"></span></p>
+          <ol class="story" id="story" tabindex="0" aria-label="Story of this run, newest first"></ol>
         </div>
       </div>
     </div>
