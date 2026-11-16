@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.12)
+    - Title: Collisions Lab (digiSpace Edition - v2.16)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.12.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
+      dictionary for datasets and the tracer's tracks: each column's unit,
+      meaning and SI factor, and a note on coordinates and scale.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call to steady the pile test at its cause: the walls take part
       in every contact pass, as positions only, so the floor's push carries up
@@ -24,19 +27,6 @@
       the selected ball as its target, its centre lifted as the 3D table draws
       it. A scene's balls are numbered from 1 again on every build, where the
       count ran on across scenes (a 16-ball table could show Ball 276).
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit:
-      balls carry a stable identity, so Inspect stays on its ball when another
-      is erased, lets go when its ball is erased and clears on a rebuild,
-      where before it could show another ball's figures; a press on empty
-      table adds a ball without clearing the selection, so adding and throwing
-      in turn no longer flip the instruments between Inspect and the pane in
-      use; the tunnelling Insight gives lengths in the chosen units. The
-      ideal-gas check sets the pressure measured at the walls beside
-      Henderson's hard-disc equation of state, (1 + φ²/8) / (1 − φ)², which a
-      sweep of the running box matched to 1 % up to a fifth full and 4 % up to
-      half full, mixed sizes included, where 1 + 2φ, its first terms, fell 4
-      to 20 % short; the reading averages about five seconds of wall impacts,
-      where before it was about two.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -685,6 +675,24 @@ Object.assign(collisions, genericState, {
     return true;
   },
   dataColumns: ['t_s', 'balls', 'kinetic_energy', 'momentum', 'rms_speed', 'max_speed', 'packing_fraction', 'pressure_ratio_PA_over_NkT', 'collisions_per_s', 'spin_energy'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it]. */
+  dataInfo: {
+    t_s: ['s', 'Simulated time on the lab clock.', 's', 1],
+    balls: ['count', 'Balls in the box.'],
+    kinetic_energy: ['sim energy', 'Total kinetic energy: ½Σmv² for the motion plus spin_energy, with each disc weighing its radius squared (r² in px²).'],
+    momentum: ['sim momentum', 'Size of the total momentum |Σmv|, with masses as above.'],
+    rms_speed: ['px/s', 'Root-mean-square speed of the balls.', 'm/s', PX_M],
+    max_speed: ['px/s', 'Speed of the fastest ball.', 'm/s', PX_M],
+    packing_fraction: ['1', 'Share of the box\'s area the discs cover.'],
+    pressure_ratio_PA_over_NkT: ['1', 'Measured wall pressure times area, over N·kT with kT the mean kinetic energy per ball: 1 for an ideal 2D gas, more as the discs crowd. Empty while gravity is on, when the walls feel weight too.'],
+    collisions_per_s: ['1/s', 'Ball-on-ball collisions per second of simulated time, counted over half-second windows.', '1/s', 1],
+    spin_energy: ['sim energy', 'Rotational kinetic energy, ¼m²ω² for each disc: zero without contact friction.'],
+    x: ['px', 'The tracer ball\'s position, x.', 'm', PX_M],
+    y: ['px', 'The tracer ball\'s position, y (downward).', 'm', PX_M],
+    vx: ['px/s', 'The tracer ball\'s velocity, x.', 'm/s', PX_M],
+    vy: ['px/s', 'The tracer ball\'s velocity, y (downward).', 'm/s', PX_M],
+  },
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm, set so the 900 px/s² of gravity is 9.81 m/s². The tracks follow one ball, the Brownian tracer, when there is one.',
   dataRow() { const s = this.stats(); return [this.t, this.n, s.etot, s.p, s.vrms, s.vmax, s.phi, this.p.gravity === 0 ? this.Z : NaN, this.hitRate, s.kr]; },
   trackLabel: 'Brownian tracer path',
   trackColumns: ['t_s', 'x', 'y', 'vx', 'vy'],

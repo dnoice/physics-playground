@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.7)
+    - Title: Chaos Lab (digiSpace Edition - v2.16)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
+      dictionary for datasets and per-copy tracks: each column's unit, meaning
+      and SI factor, and a note on the pendulum's units.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: energy, drift, Lyapunov estimate and divergence on its tape,
       and the selected copy as its target: its lower bob, or its dot in the
@@ -25,10 +28,6 @@
       regular to forecast or the copies outlast it; rewind and saved states
       keep the forecast; the energy values say they are per kilogram of the
       upper bob.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      the equations with their ratios as dials, the predictability horizon
-      checked against when the copies part, the energy fence and the normal
-      modes; Inspect follows the lower angle.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -845,6 +844,23 @@ Object.assign(pendulum, genericState, {
     return true;
   },
   dataColumns: ['t_s', 'copies', 'energy', 'energy_drift_pct', 'log10_separation', 'lyapunov_estimate', 'theta1', 'theta2', 'omega1', 'omega2'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it]. */
+  dataInfo: {
+    t_s: ['s', 'Simulated time on the lab clock.', 's', 1],
+    copies: ['count', 'Pendulums released together, each from a slightly different start.'],
+    energy: ['J/kg', 'Energy of the front pendulum, per kilogram of the upper bob (1 kg, on a 1 m arm), with g in m/s².', 'J/kg', 1],
+    energy_drift_pct: ['%', 'How far that energy has moved since the start, as a share of its size: the integrator\'s error.'],
+    log10_separation: ['log10', 'Base-10 logarithm of the distance in phase space between the first two copies: angles in radians, angular velocities scaled by √(1 m / g). It climbs at the Lyapunov rate.'],
+    lyapunov_estimate: ['1/s', 'Running estimate of the largest Lyapunov exponent: how fast nearby starts part.', '1/s', 1],
+    theta1: ['rad', 'Upper arm angle from straight down, front pendulum, counter-clockwise positive.'],
+    theta2: ['rad', 'Lower arm angle from straight down.'],
+    omega1: ['rad/s', 'Upper arm angular velocity.', 'rad/s', 1],
+    omega2: ['rad/s', 'Lower arm angular velocity.', 'rad/s', 1],
+    copy: ['index', 'Which pendulum: 0 is the front one, in the scene\'s order.'],
+    bob2_x_m: ['m', 'Lower bob\'s position, to the right of the pivot.', 'm', 1],
+    bob2_y_m: ['m', 'Lower bob\'s height relative to the pivot: negative below it.', 'm', 1],
+  },
+  dataNote: 'Chaos computes in metres, kilograms and seconds: the upper arm is 1 m long and the upper bob weighs 1 kg; the lower arm\'s length and bob\'s mass are the scene\'s parameters.',
   dataRow() {
     const E = this.N ? this.energy(0) : NaN, d = this.separation();
     return [this.t, this.N, E, this.N ? this.driftPct(E) : 0, Number.isFinite(d) ? Math.log10(Math.max(d, 1e-14)) : NaN, this.lyap, this.s[0], this.s[1], this.s[2], this.s[3]];

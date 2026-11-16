@@ -1,25 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Responsive Styles (digiSpace Edition - v2.7)
+    - Title: Responsive Styles (digiSpace Edition - v2.16)
     - File Name: responsive.css
     - Relative Path: css/responsive.css
     - Artifact Type: stylesheet
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
+      tag steps aside below 1280 px, where the lab tabs need the room.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
       button keeps its glyph only below 1024 px, like Graphics and Units.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On phones
       (560 px and below) the lab tabs take a row of their own, where all seven
       fit with the selected lab's name; beside the actions they had 77 px.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
-      custom deck heights apply in the stacked layout too, and the Units
-      button keeps only its glyph on narrow screens.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,7 +43,7 @@
 */
 /* Seven labs crowd the rail first: drop the numbers, then the selected
    lab's equation, before the rail ever has to scroll. */
-@media (max-width: 1280px) { .tab { padding: 0 10px; } .brand h1 { font-size: 22px; } }
+@media (max-width: 1280px) { .tab { padding: 0 10px; } .brand h1 { font-size: 22px; } .brand-ver { display: none; } }
 @media (max-width: 1120px) { .tab-name { display: none; } .tab[aria-selected="true"] .tab-name { display: inline; } }
 /* ---------- narrower screens: the bento reflows and the page scrolls ---------- */
 @media (max-width: 1180px) {

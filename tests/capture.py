@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.15)
+    - Title: Capture Test (digiSpace Edition - v2.16)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Datasets
+      explain themselves: the ZIP is whole, the data package matches the CSVs
+      and describes every field, the README covers scene, columns, settings
+      and bodies, Gravity's context columns, every lab's dictionary complete,
+      quoted CSV text and tracks that thin to the end of the run; the vault
+      check waits for the vault to connect. A clip keeps its size and its
+      frames through a mid-recording resize.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The CSV
       download is pressed by its stable key (data-fk), as the restructured
       Library names it by its format.
@@ -43,7 +50,9 @@
       Windows, macOS and Linux
 ---------
 """
+import json
 import re
+import zipfile
 from playwright.sync_api import sync_playwright
 from harness import URL, finish, launch, ok, open_page, settle, shot
 with sync_playwright() as p:
@@ -51,6 +60,8 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
     pg = open_page(ctx)
     pg.goto(URL + "#gravity"); pg.wait_for_timeout(1500)
+    # The vault opens IndexedDB in the background; on a cold start it can still be connecting after the fixed wait.
+    settle(pg, "PhysicsPlayground.capture.vault.mode !== 'connecting'", 10000)
     ok("vault_is_local", pg.evaluate("PhysicsPlayground.capture.vault.mode") == "local", pg.evaluate("PhysicsPlayground.capture.vault.mode"))
     # --- determinism through rewind (gravity figure-eight)
     pg.evaluate("() => { const P = PhysicsPlayground; P.preset('figure8'); P.play(); }")
@@ -103,12 +114,40 @@ with sync_playwright() as p:
     e = r["summary0"]
     ok("dataset_summary_column", e["column"] == "total_energy" and e["min"] <= e["mean"] <= e["max"], e["column"])
     ok("dataset_energy_conserved", abs((e["max"] - e["min"]) / e["mean"]) < 1e-4, abs((e["max"] - e["min"]) / e["mean"]))
+    # Gravity's files carry their own context: physical time in both, and who each tracked body is and what it orbits.
+    ok("dataset_gravity_context_columns", columns[-1] == "t_years" and r["trackHeader"].endswith("t_years,name,kind,orbits_id"), (columns[-1], r["trackHeader"]))
+    # Every column of every lab is in its dictionary, so no README ever says "not described".
+    gaps = pg.evaluate("""Object.values(PhysicsPlayground.labs).flatMap(L => [...(L.dataColumns || []), ...(L.trackColumns || [])]
+      .filter(c => !(L.dataInfo && L.dataInfo[c] && L.dataInfo[c][0] && L.dataInfo[c][1])).map(c => `${L.id}.${c}`))""")
+    ok("dataset_every_column_described", gaps == [], gaps)
+    q = pg.evaluate("import(new URL('js/shell/capture.js', location.href).href).then(m => m.toCSV(['a', 'b'], [[1.5, 'Body, \"the first\"'], [NaN, 'plain']]))")
+    ok("dataset_csv_quotes_text", q == 'a,b\n1.5,"Body, ""the first"""\n,plain\n', q)
+    # Tracks that fill up thin evenly instead of stopping: with room for only 24 rows, a run's tracks still reach its end.
+    # The run is deleted afterwards, so the Library checks below see the items they expect.
+    pg.evaluate("() => { const P = PhysicsPlayground; P.preset('figure8'); P.capture.dataRec.trackCap = 24; P.capture.toggleData(); P.play(); }")
+    pg.wait_for_timeout(3200)
+    pg.evaluate("() => { PhysicsPlayground.capture.toggleData(); PhysicsPlayground.capture.dataRec.trackCap = 400000; }")
+    pg.wait_for_timeout(600)
+    t = pg.evaluate("""async () => { const C = PhysicsPlayground.capture, run = C.vault.list().find(i => i.kind === 'run');
+      const tr = (await (await C.vault.blob(run, 1)).text()).trim().split('\\n'), csv = (await (await C.vault.blob(run, 0)).text()).trim().split('\\n');
+      const out = { stride: run.trackStride, rows: tr.length - 1, lastTrack: +tr[tr.length - 1].split(',')[0], lastData: +csv[csv.length - 1].split(',')[0], period: 1 / run.rateAsked };
+      await C.vault.remove(run); return out; }""")
+    ok("dataset_tracks_thin_to_the_end", t["stride"] > 1 and t["rows"] < 24 and t["lastData"] - t["lastTrack"] <= t["stride"] * t["period"] * 1.5, t)
     # --- video recording
     pg.evaluate("() => { PhysicsPlayground.capture.toggleVideo(); }")
     pg.wait_for_timeout(2600)
     # A cold software encoder can take seconds to start, and stopping sooner saves nothing.
     settle(pg, "PhysicsPlayground.capture.vrec.bytes > 0", 30000)
     ok("rec_chip_counts", re.match(r"REC \d", pg.inner_text("#hud-rec")) is not None, pg.inner_text("#hud-rec"))
+    # The clip keeps one size when the stage changes shape (here the window; the deck's charts do the same), and its
+    # frames keep coming. Recording the stage canvas itself had frozen a clip at the first resize.
+    rec = """(() => { const v = PhysicsPlayground.capture.vrec, s = v.stream.getVideoTracks()[0].getSettings(), d = v.rc.getContext('2d').getImageData(0, 0, v.rc.width, v.rc.height).data;
+      let h = 0; for (let i = 0; i < d.length; i += 4097) h = (h * 31 + d[i] + d[i + 1] * 3) >>> 0;
+      return { stream: [s.width, s.height], stage: document.getElementById('stage-canvas').width, hash: h }; })()"""
+    v0 = pg.evaluate(rec); pg.set_viewport_size({"width": 1240, "height": 760}); pg.wait_for_timeout(1200)
+    v1 = pg.evaluate(rec); pg.wait_for_timeout(800); v2 = pg.evaluate(rec)
+    pg.set_viewport_size({"width": 1440, "height": 900}); pg.wait_for_timeout(600)
+    ok("clip_keeps_its_size_through_a_resize", v0["stream"] == v1["stream"] == v2["stream"] and v0["stage"] != v1["stage"] and v1["hash"] != v2["hash"], (v0, v1, v2))
     pg.evaluate("() => PhysicsPlayground.capture.toggleVideo()")
     pg.wait_for_timeout(1500)
     r = pg.evaluate("() => { const c = PhysicsPlayground.capture.vault.list().find(i => i.kind === 'clip'); return c ? { title: c.title, size: c.sizeBytes, type: c.files[0].type, name: c.files[0].name, dur: +c.duration.toFixed(2) } : null; }")
@@ -136,6 +175,19 @@ with sync_playwright() as p:
         run.locator("[data-fk=save-0]").click()
     d = dl.value
     ok("download_name", re.fullmatch(r"physics-gravity-figure8-[\d-]+\.csv", d.suggested_filename) is not None, d.suggested_filename)
+    # The ZIP carries the dataset whole: both CSVs, the README that explains them and the data package.
+    with pg.expect_download() as dl:
+        run.locator("[data-fk=zip]").click()
+    d = dl.value
+    zf = zipfile.ZipFile(d.path()); names = zf.namelist()
+    ok("dataset_zip_whole", zf.testzip() is None and d.suggested_filename.endswith(".zip") and len(names) == 4
+       and sum(n.endswith(".csv") for n in names) == 2 and any(n.endswith("-README.md") for n in names) and any(n.endswith("-datapackage.json") for n in names), (d.suggested_filename, names))
+    pkg = json.loads(zf.read(next(n for n in names if n.endswith("-datapackage.json"))))
+    heads = {r["path"]: zf.read(r["path"]).decode().split("\n")[0].split(",") for r in pkg["resources"]}
+    ok("dataset_package_matches_files", pkg["profile"] == "tabular-data-package" and all([f["name"] for f in r["schema"]["fields"]] == heads[r["path"]] for r in pkg["resources"])
+       and all(f.get("description") and f.get("unit") for r in pkg["resources"] for f in r["schema"]["fields"]), [r["path"] for r in pkg["resources"]])
+    readme = zf.read(next(n for n in names if n.endswith("-README.md"))).decode()
+    ok("dataset_readme_explains", all(k in readme for k in ["scene **Figure-eight**", "## Columns of", "Multiply by", "## Bodies at the start", "## Settings", "Join it to the samples on `t_s`"]), len(readme))
     run.locator(".lib-title").click(); pg.keyboard.press("Control+A"); pg.keyboard.type("Wild three-body figure-eight"); pg.keyboard.press("Enter"); pg.wait_for_timeout(300)
     r = pg.evaluate("PhysicsPlayground.capture.vault.list().find(i => i.kind === 'run').title")
     ok("rename_applied", r == "Wild three-body figure-eight", r)

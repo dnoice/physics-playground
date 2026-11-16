@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.15)
+    - Title: Fluid Lab (digiSpace Edition - v2.16)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,20 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
+      dictionary for datasets: each column's unit, meaning and SI factor, and
+      a note on coordinates and scale.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The camera
       orbits all the way round the tank, as in every other lab: its back is
       now finished.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: particles, mean and peak density and top speed on its tape, and
       the selected post as its target, on the tank's mid-plane in 3D.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: a
-      settled tank rests about a tenth under ρ₀ throughout, near-pressure
-      holding neighbours apart, with gravity or without, so the density check
-      now sets the densest tenth of the particles against the median, the
-      evenness that incompressible means here, where before it set the mean
-      against ρ₀ and passed only on a wide tolerance; the pressure check says
-      when nothing is squeezed or the liquid foams instead of giving a
-      negative excess, and both checks wait for liquid in an empty tank.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -663,6 +658,18 @@ Object.assign(fluid, genericState, {
     return true;
   },
   dataColumns: ['t_s', 'particles', 'mean_density_ratio', 'peak_compression', 'ke_per_particle', 'speed_capped_fraction', 'fastest_px_s', 'obstacles'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it]. */
+  dataInfo: {
+    t_s: ['s', 'Simulated time on the lab clock.', 's', 1],
+    particles: ['count', 'Fluid particles.'],
+    mean_density_ratio: ['1', 'Mean density of the particles, over the rest density ρ₀ (counting particles above 0.3 ρ₀, so spray does not drag it down).'],
+    peak_compression: ['1', 'Highest particle density over ρ₀: how far the most squeezed spot is compressed.'],
+    ke_per_particle: ['px²/s²', 'Mean kinetic energy per particle per unit mass, ½v².', 'J/kg', PX_M * PX_M],
+    speed_capped_fraction: ['1', 'Share of particles held at the solver\'s speed limit, a sign the run is pushed too hard.'],
+    fastest_px_s: ['px/s', 'Speed of the fastest particle.', 'm/s', PX_M],
+    obstacles: ['count', 'Posts in the tank.'],
+  },
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm, set so the 900 px/s² of gravity is 9.81 m/s².',
   dataRow() {
     let vmax = 0, ke = 0;
     const s = this.U / this.TICK;

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Library (digiSpace Edition - v2.15)
+    - Title: Library (digiSpace Edition - v2.16)
     - File Name: library.js
     - Relative Path: js/shell/library.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
+      dataset's ZIP download carries its CSVs with a README and a data
+      package, and its Details show each column's unit, with its meaning on
+      hover, and how far its tracks were thinned.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for a Library where what is what is obvious: a Capture
       control bar whose recorders wear the red record dot and turn to stop
@@ -22,9 +26,6 @@
       cards on Dennis's call to fill the Library: record a clip, record a
       dataset or save the state with one press, each saying what it will keep
       for this lab and what it is doing now.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Keyboard
-      focus survives rebuilds; read-only artifacts hide write actions; sync
-      failures are shown; datasets state their real rate.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -55,6 +56,7 @@ import { ICON, icon } from '../core/icons.js';
 import { $, clamp, el, fmtSI, keepFocus, store } from '../core/util.js';
 import { labsById } from '../labs/index.js';
 import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, saveState, toggleData, toggleVideo, vrec } from './capture.js';
+import { columnsOf, runZip } from './dataset.js';
 import { radioGroup } from './panel.js';
 import { active, announce } from './state.js';
 import { vault } from './vault.js';
@@ -147,6 +149,9 @@ export function renderItem(li, item) {
     if (item.kind === 'clip') acts.append(toggle('Preview', ICON.preview));
     if (item.kind === 'run') acts.append(toggle('Details', ICON.details));
     if (item.kind === 'state') acts.append(act('load', 'Load', ICON.load, () => loadState(item), { class: 'lib-act lib-act-main', title: 'Load this state into the lab' }));
+    // A dataset leaves whole as one ZIP: its CSVs with the README and data package that explain them.
+    if (item.kind === 'run' && vault.canDownload()) acts.append(act('zip', 'ZIP', ICON.download, async () => { try { const z = await runZip(item); vault.download(z.name, z.blob); } catch (_) { announce('The dataset could not be packed.'); } },
+      { title: 'Download everything: the CSVs, a README that explains every column, and a data package', 'aria-label': 'Download all files with their README, as a ZIP' }));
     if (vault.canDownload()) item.files.forEach((f, i) => {
       const ext = (f.name.split('.').pop() || '').toUpperCase(), tracks = f.name.endsWith('-tracks.csv'), label = tracks ? `Tracks ${ext}` : ext;
       acts.append(act(`save-${i}`, label, ICON.download, async () => { const b = await vault.blob(item, i); if (b) vault.download(f.name, b); else announce('That file could not be read.'); }, { title: `Download ${f.name}`, 'aria-label': `Download ${tracks ? `${(item.trackLabel || 'tracks').toLowerCase()} ${ext}` : ext}` }));
@@ -163,11 +168,16 @@ export function renderItem(li, item) {
       kids.push(el('div', { class: 'lib-preview' }, v));
     }
     if (lib.open === item.id && item.kind === 'run') {
-      const tbl = el('table', { class: 'lib-sum' });
-      tbl.append(el('tr', {}, el('th', { text: 'Column' }), el('th', { text: 'Min' }), el('th', { text: 'Mean' }), el('th', { text: 'Max' })));
-      for (const s of item.summary || []) tbl.append(el('tr', {}, el('th', { text: s.column }), el('td', { text: s.min == null ? '—' : fmtSI(s.min) }), el('td', { text: s.mean == null ? '—' : fmtSI(s.mean) }), el('td', { text: s.max == null ? '—' : fmtSI(s.max) })));
+      // Each column with its unit, and what it means on hover: the README in the ZIP has it all in full.
+      const tbl = el('table', { class: 'lib-sum' }), info = new Map(columnsOf(labsById[item.lab], item.columns).map(c => [c.name, c]));
+      tbl.append(el('tr', {}, el('th', { text: 'Column' }), el('th', { text: 'Unit' }), el('th', { text: 'Min' }), el('th', { text: 'Mean' }), el('th', { text: 'Max' })));
+      for (const s of item.summary || []) {
+        const c = info.get(s.column) || {};
+        tbl.append(el('tr', { title: c.about || '' }, el('th', { text: s.column }), el('td', { class: 'lib-unit', text: c.unit || '' }), el('td', { text: s.min == null ? '—' : fmtSI(s.min) }), el('td', { text: s.mean == null ? '—' : fmtSI(s.mean) }), el('td', { text: s.max == null ? '—' : fmtSI(s.max) })));
+      }
       const asked = item.rateAsked && item.rateAsked !== item.rate ? ` (asked for ${item.rateAsked} Hz; samples land on solver steps)` : '';
-      const note = `${(item.rows || 0).toLocaleString()} rows at ${item.rate} Hz of simulated time${asked}${item.trackRows ? `, plus ${item.trackRows.toLocaleString()} rows of ${(item.trackLabel || 'tracks').toLowerCase()}` : ''}.`;
+      const thin = item.trackStride > 1 ? `, every ${item.trackStride} samples so they span the whole run` : '';
+      const note = `${(item.rows || 0).toLocaleString()} rows at ${item.rate} Hz of simulated time${asked}${item.trackRows ? `, plus ${item.trackRows.toLocaleString()} rows of ${(item.trackLabel || 'tracks').toLowerCase()}${thin}` : ''}. The ZIP adds a README that explains every column, its unit and its SI factor.`;
       kids.push(el('div', { class: 'lib-preview' }, el('p', { class: 'caption', text: note }), tbl));
     }
   }

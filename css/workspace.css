@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.6)
+    - Title: Workspace Styles (digiSpace Edition - v2.16)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
+      release tag beside the name: monospace small capitals, the release in
+      amber, quiet until hovered.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The lab tab
       strip is centred by auto margins instead of justify-content, so when it
       overflows it scrolls from its first tab rather than pushing the first
@@ -20,8 +23,6 @@
       the glass look over the page's light: a faint cool light at the top and
       a warm sheen along the top edge, drawn as one background layer and an
       inset shadow so that a tile costs no more to paint than before.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Compact and
-      custom deck heights join the tall one, set through --bay.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -51,6 +52,15 @@
 .brand-mark { color: var(--amber); font-size: 27px; filter: drop-shadow(0 0 12px color-mix(in oklab, var(--amber) 45%, transparent)); }
 .brand h1 { margin: 0; font: 700 20px/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
 .brand h1 em { color: var(--amber); font-style: normal; font-weight: 500; }
+/* The engine's release beside the name, read from js/core/version.js at start-up, linking to what changed. */
+.brand-ver {
+  align-self: center; display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 7px 3px; border-radius: 6px; text-decoration: none;
+  font: 500 9.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--hair); background: color-mix(in oklab, var(--well) 55%, transparent); transition: color 0.15s, box-shadow 0.15s;
+}
+.brand-ver b { font-weight: 600; letter-spacing: 0.04em; color: var(--amber); }
+.brand-ver:hover { color: var(--text); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 45%, var(--hair)); }
+.brand-ver[hidden] { display: none; }
 /* Centred by auto margins, not justify-content: when the tabs overflow, the margins collapse and the strip scrolls
    from its first tab, where centring would push the first tabs out of reach to the left. */
 .rail { flex: 1; min-width: 0; overflow-x: auto; display: flex; scrollbar-width: none; }

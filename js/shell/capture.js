@@ -1,25 +1,30 @@
 /*
 ✒ Metadata
-    - Title: Capture (digiSpace Edition - v2.4)
+    - Title: Capture (digiSpace Edition - v2.16)
     - File Name: capture.js
     - Relative Path: js/shell/capture.js
     - Artifact Type: javascript
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call after his tracks stopped at under half a run: tracks thin
+      evenly when they fill, doubling their stride so they always reach the
+      end; a recording keeps its start time, span, release and the lab's
+      context; CSV text is quoted as RFC 4180 asks. Clips record a canvas of
+      their own, fixed at the stage's size when they began and fed a scaled
+      copy of the stage each frame, so a resize (the deck's charts, the
+      window) no longer freezes them part way.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Saved
       datasets record the lab's native unit and its scale in metres, since
       their columns stay in the lab's own units.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Loading a
       saved state rebuilds fresh before the state is restored.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Datasets
-      stay one timeline across a rewind and name their own scene; saved
-      states carry their world size; clips stop at 512 MB.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -39,6 +44,7 @@
 ---------
 */
 import { THEME } from '../core/color.js';
+import { APP } from '../core/version.js';
 import { $, clamp, store } from '../core/util.js';
 import { view } from '../core/view.js';
 import { labsById } from '../labs/index.js';
@@ -69,8 +75,11 @@ export function bytesOf(o) {
   if (typeof o === 'object') { let s = 16; for (const [k, v] of Object.entries(o)) if (k !== 'shared') s += bytesOf(v); return s; }
   return 8;
 }
+/* CSV as RFC 4180 writes it: numbers to ten significant figures, a missing value empty, and text quoted when it holds a
+   comma, a quote or a line break. */
 export function toCSV(cols, rows) {
-  const cell = v => (typeof v === 'number' ? (Number.isFinite(v) ? (Number.isInteger(v) ? String(v) : String(+v.toPrecision(10))) : '') : String(v ?? ''));
+  const text = v => { const t = String(v ?? ''); return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const cell = v => (typeof v === 'number' ? (Number.isFinite(v) ? (Number.isInteger(v) ? String(v) : String(+v.toPrecision(10))) : '') : text(v));
   const out = [cols.join(',')];
   for (const r of rows) out.push(r.map(cell).join(','));
   return out.join('\n') + '\n';
@@ -146,7 +155,8 @@ export function startVideo() {
   if (!videoSupported()) { announce('Video recording is not supported in this browser.'); return; }
   const mime = pickMime();
   try {
-    vrec.stream = canvas.captureStream(60);
+    vrec.rc = recCanvas(); vrec.rctx = vrec.rc.getContext('2d', { alpha: false }); copyFrame();
+    vrec.stream = vrec.rc.captureStream(60);
     vrec.mr = new MediaRecorder(vrec.stream, mime ? { mimeType: mime, videoBitsPerSecond: VQ[vrec.quality] || VQ.standard } : { videoBitsPerSecond: VQ.standard });
   } catch (e) { vrec.mr = null; announce('The browser refused to start a recording.'); return; }
   Object.assign(vrec, { chunks: [], bytes: 0, t0: performance.now(), lab: active, preset: active.presetId, simT0: active.t, mime: (vrec.mr.mimeType || mime || 'video/webm').split(';')[0] });
@@ -160,19 +170,40 @@ export function startVideo() {
   updateCaptureUI(); announce('Recording video');
 }
 export function stopVideo() { if (vrec.mr && vrec.mr.state !== 'inactive') vrec.mr.stop(); }
+/* The recording's own canvas, fixed at the size the stage had when recording began, in even pixels as encoders prefer.
+   The stage is copied into it each frame, scaled to fit, with dark bars when its shape changes, so the encoder always
+   sees one resolution. Recording the stage canvas itself froze the clip at the first resize (opening the deck's charts
+   shortens the stage): a WebM stream cannot change size part way, so players held the last frame while the clock ran. */
+function recCanvas() {
+  const c = document.createElement('canvas');
+  c.width = Math.max(2, canvas.width - (canvas.width % 2)); c.height = Math.max(2, canvas.height - (canvas.height % 2));
+  return c;
+}
+function copyFrame() {
+  const c = vrec.rc, g = vrec.rctx, sw = canvas.width, sh = canvas.height;
+  if (!c || !sw || !sh) return;
+  const k = Math.min(c.width / sw, c.height / sh), dw = Math.round(sw * k), dh = Math.round(sh * k);
+  if (dw !== c.width || dh !== c.height) { g.fillStyle = THEME.ink || '#05070b'; g.fillRect(0, 0, c.width, c.height); }
+  g.drawImage(canvas, (c.width - dw) >> 1, (c.height - dh) >> 1, dw, dh);
+}
 export async function finishVideo() {
-  const lab = vrec.lab, dur = (performance.now() - vrec.t0) / 1000, blob = new Blob(vrec.chunks, { type: vrec.mime });
+  const lab = vrec.lab, dur = (performance.now() - vrec.t0) / 1000, blob = new Blob(vrec.chunks, { type: vrec.mime }), size = vrec.rc ? [vrec.rc.width, vrec.rc.height] : [canvas.width, canvas.height];
   try { vrec.stream.getTracks().forEach(t => t.stop()); } catch (_) { /* already stopped */ }
-  vrec.mr = null; vrec.chunks = []; updateCaptureUI();
+  vrec.mr = null; vrec.chunks = []; vrec.rc = vrec.rctx = null; updateCaptureUI();
   if (!blob.size) { announce('The recording came out empty.'); return; }
   const ext = vrec.mime.includes('mp4') ? 'mp4' : 'webm', saved = vrec.preset;
-  const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab, saved)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: canvas.width, height: canvas.height },
+  const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab, saved)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: size[0], height: size[1] },
     [{ name: `${baseName(lab, saved)}.${ext}`, type: vrec.mime, blob }]);
   announce(`Clip saved${where === 'session' ? ' for this session' : ''}: ${fmtDur(dur)}, ${fmtBytes(blob.size)}`);
 }
 export function toggleVideo() { vrec.mr ? stopVideo() : startVideo(); }
+/* Each frame while recording: the label on the stage, when labels are on, then the stage into the recording's canvas. */
 export function drawRecOverlay() {
-  if (!vrec.mr || !vrec.overlay) return;
+  if (!vrec.mr) return;
+  if (vrec.overlay) drawRecLabel();
+  copyFrame();
+}
+function drawRecLabel() {
   const lab = active, sp = state.speed !== 1 ? ` · ${state.speed.toFixed(2)}× speed` : '';
   const text = `${lab.name} · ${presetLabel(lab)} · t = ${lab.t.toFixed(2)} s${sp}`;
   ctx.save();
@@ -185,13 +216,23 @@ export function drawRecOverlay() {
 }
 
 /* ---------- dataset recorder ---------- */
-export const dataRec = { on: false, lab: null, rows: [], tracks: [], next: 0, rate: store.get('dataRate', 10), tracksOn: store.get('tracks', true), meta: null };
+/* Tracks keep the whole run. When they reach trackCap rows, every other sample's rows are dropped and the stride
+   doubles, so they thin evenly instead of stopping; the README says how far they were thinned. They had stopped at
+   400,000 rows and said nothing, which cut a 17-body run at 60 Hz short at under half its length. */
+export const dataRec = { on: false, lab: null, rows: [], tracks: [], next: 0, rate: store.get('dataRate', 10), tracksOn: store.get('tracks', true), meta: null, trackCap: 400000, trackStride: 1, trackK: 0 };
 export function startData() {
   const lab = active;
   if (!lab.dataColumns || dataRec.on) return;
-  Object.assign(dataRec, { on: true, lab, rows: [], tracks: [], next: lab.t, meta: { preset: lab.presetId, params: { ...lab.p }, t0: lab.t, rate: dataRec.rate } });
+  Object.assign(dataRec, { on: true, lab, rows: [], tracks: [], next: lab.t, trackStride: 1, trackK: 0,
+    meta: { preset: lab.presetId, params: { ...lab.p }, t0: lab.t, rate: dataRec.rate, startedAt: new Date().toISOString(), context: lab.dataContext ? jsonSafe(lab.dataContext()) : null } });
   sampleData(lab);
   updateCaptureUI(); announce('Recording data');
+}
+function thinTracks() {
+  const out = [];
+  let k = -1, last = NaN;
+  for (const r of dataRec.tracks) { if (r[0] !== last) { last = r[0]; k++; } if (k % 2 === 0) out.push(r); }
+  dataRec.tracks = out; dataRec.trackStride *= 2;
 }
 export function sampleData(lab) {
   if (lab.t + 1e-9 < dataRec.next) return;
@@ -199,7 +240,10 @@ export function sampleData(lab) {
   dataRec.next += period;
   if (dataRec.next <= lab.t) dataRec.next = lab.t + period;
   dataRec.rows.push(lab.dataRow());
-  if (dataRec.tracksOn && lab.trackRows && dataRec.tracks.length < 400000) lab.trackRows(dataRec.tracks);
+  if (dataRec.tracksOn && lab.trackRows && dataRec.trackK++ % dataRec.trackStride === 0) {
+    lab.trackRows(dataRec.tracks);
+    if (dataRec.tracks.length >= dataRec.trackCap) thinTracks();
+  }
   if (dataRec.rows.length >= 200000) stopData('The dataset reached 200,000 rows and was saved.');
 }
 export async function stopData(note) {
@@ -214,15 +258,17 @@ export async function stopData(note) {
     for (const r of rows) { const v = r[j]; if (Number.isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; sum += v; k++; } }
     return { column: c, min: k ? lo : null, max: k ? hi : null, mean: k ? sum / k : null };
   });
-  const dur = rows[rows.length - 1][0] - rows[0][0], tracks = dataRec.tracks.length;
+  const dur = rows[rows.length - 1][0] - rows[0][0], tracks = dataRec.tracks.length, stride = dataRec.trackStride;
   // Samples land on solver steps, so a coarse step can deliver fewer than the rate asked for.
   const actual = dur > 0 ? Number(((rows.length - 1) / dur).toPrecision(3)) : rate;
   dataRec.rows = []; dataRec.tracks = [];
   const { where } = await vault.add({ kind: 'run', lab: lab.id, preset, title: `${lab.name} · ${presetLabel(lab, preset)} data`, duration: dur, rows: rows.length, columns: cols, rate: actual, rateAsked: rate,
-    params: dataRec.meta.params, summary, trackRows: tracks, trackColumns: tracks ? lab.trackColumns : null, trackLabel: tracks ? lab.trackLabel : null,
+    params: dataRec.meta.params, summary, trackRows: tracks, trackColumns: tracks ? lab.trackColumns : null, trackLabel: tracks ? lab.trackLabel : null, trackStride: tracks ? stride : null,
+    // What a reader of the files needs that the rows do not say: when, over what span, from what release, among which bodies.
+    startedAt: dataRec.meta.startedAt, t0: rows[0][0], t1: rows[rows.length - 1][0], app: APP.version, context: dataRec.meta.context,
     // Datasets keep the lab's own units, exactly as computed; the scale to real units travels with them.
     units: { native: (lab.units && lab.units.len) || 'px', metresPerUnit: lab.units ? lab.units.m : null, note: lab.scaleNote || null } }, files);
-  announce(note || `Dataset saved${where === 'session' ? ' for this session' : ''}: ${rows.length} rows over ${fmtDur(dur)}`);
+  announce(note || `Dataset saved${where === 'session' ? ' for this session' : ''}: ${rows.length} rows over ${fmtDur(dur)}${stride > 1 && tracks ? `, tracks every ${stride} samples to fit the whole run` : ''}`);
 }
 export function toggleData() { dataRec.on ? stopData() : startData(); }
 

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.13)
+    - Title: Project Checker (digiSpace Edition - v2.16)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.13.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      release a dataset names (js/core/version.js) must match package.json.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exempts
       the pull request template by name, since GitHub copies it into every new
       pull request's description, where a header would be noise; every other
@@ -123,6 +125,13 @@ else {
   if (missing.length) problems.push(`index.html: icon_names lacks ${missing.join(', ')}`);
   if (unused.length) notes.push(`icon_names carries glyphs no code uses: ${unused.join(', ')}`);
   notes.push(`${used.size} glyphs used, ${subset.length} in the font subset`);
+}
+
+/* 3b. The version the app writes into its datasets is the release's own. */
+{
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+  const app = (readFileSync(join(ROOT, 'js/core/version.js'), 'utf8').match(/version: '([^']+)'/) || [, null])[1];
+  if (app !== pkg) problems.push(`js/core/version.js: APP.version is ${app}, but package.json says ${pkg}`);
 }
 
 /* 4. Every module parses as ES module source. */
