@@ -16,7 +16,10 @@
       Dennis's call after his tracks stopped at under half a run: tracks thin
       evenly when they fill, doubling their stride so they always reach the
       end; a recording keeps its start time, span, release and the lab's
-      context; CSV text is quoted as RFC 4180 asks.
+      context; CSV text is quoted as RFC 4180 asks. Clips record a canvas of
+      their own, fixed at the stage's size when they began and fed a scaled
+      copy of the stage each frame, so a resize (the deck's charts, the
+      window) no longer freezes them part way.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Saved
       datasets record the lab's native unit and its scale in metres, since
       their columns stay in the lab's own units.
@@ -152,7 +155,8 @@ export function startVideo() {
   if (!videoSupported()) { announce('Video recording is not supported in this browser.'); return; }
   const mime = pickMime();
   try {
-    vrec.stream = canvas.captureStream(60);
+    vrec.rc = recCanvas(); vrec.rctx = vrec.rc.getContext('2d', { alpha: false }); copyFrame();
+    vrec.stream = vrec.rc.captureStream(60);
     vrec.mr = new MediaRecorder(vrec.stream, mime ? { mimeType: mime, videoBitsPerSecond: VQ[vrec.quality] || VQ.standard } : { videoBitsPerSecond: VQ.standard });
   } catch (e) { vrec.mr = null; announce('The browser refused to start a recording.'); return; }
   Object.assign(vrec, { chunks: [], bytes: 0, t0: performance.now(), lab: active, preset: active.presetId, simT0: active.t, mime: (vrec.mr.mimeType || mime || 'video/webm').split(';')[0] });
@@ -166,19 +170,40 @@ export function startVideo() {
   updateCaptureUI(); announce('Recording video');
 }
 export function stopVideo() { if (vrec.mr && vrec.mr.state !== 'inactive') vrec.mr.stop(); }
+/* The recording's own canvas, fixed at the size the stage had when recording began, in even pixels as encoders prefer.
+   The stage is copied into it each frame, scaled to fit, with dark bars when its shape changes, so the encoder always
+   sees one resolution. Recording the stage canvas itself froze the clip at the first resize (opening the deck's charts
+   shortens the stage): a WebM stream cannot change size part way, so players held the last frame while the clock ran. */
+function recCanvas() {
+  const c = document.createElement('canvas');
+  c.width = Math.max(2, canvas.width - (canvas.width % 2)); c.height = Math.max(2, canvas.height - (canvas.height % 2));
+  return c;
+}
+function copyFrame() {
+  const c = vrec.rc, g = vrec.rctx, sw = canvas.width, sh = canvas.height;
+  if (!c || !sw || !sh) return;
+  const k = Math.min(c.width / sw, c.height / sh), dw = Math.round(sw * k), dh = Math.round(sh * k);
+  if (dw !== c.width || dh !== c.height) { g.fillStyle = THEME.ink || '#05070b'; g.fillRect(0, 0, c.width, c.height); }
+  g.drawImage(canvas, (c.width - dw) >> 1, (c.height - dh) >> 1, dw, dh);
+}
 export async function finishVideo() {
-  const lab = vrec.lab, dur = (performance.now() - vrec.t0) / 1000, blob = new Blob(vrec.chunks, { type: vrec.mime });
+  const lab = vrec.lab, dur = (performance.now() - vrec.t0) / 1000, blob = new Blob(vrec.chunks, { type: vrec.mime }), size = vrec.rc ? [vrec.rc.width, vrec.rc.height] : [canvas.width, canvas.height];
   try { vrec.stream.getTracks().forEach(t => t.stop()); } catch (_) { /* already stopped */ }
-  vrec.mr = null; vrec.chunks = []; updateCaptureUI();
+  vrec.mr = null; vrec.chunks = []; vrec.rc = vrec.rctx = null; updateCaptureUI();
   if (!blob.size) { announce('The recording came out empty.'); return; }
   const ext = vrec.mime.includes('mp4') ? 'mp4' : 'webm', saved = vrec.preset;
-  const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab, saved)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: canvas.width, height: canvas.height },
+  const { where } = await vault.add({ kind: 'clip', lab: lab.id, preset: saved, title: `${lab.name} · ${presetLabel(lab, saved)} clip`, duration: dur, simFrom: vrec.simT0, simTo: lab.t, width: size[0], height: size[1] },
     [{ name: `${baseName(lab, saved)}.${ext}`, type: vrec.mime, blob }]);
   announce(`Clip saved${where === 'session' ? ' for this session' : ''}: ${fmtDur(dur)}, ${fmtBytes(blob.size)}`);
 }
 export function toggleVideo() { vrec.mr ? stopVideo() : startVideo(); }
+/* Each frame while recording: the label on the stage, when labels are on, then the stage into the recording's canvas. */
 export function drawRecOverlay() {
-  if (!vrec.mr || !vrec.overlay) return;
+  if (!vrec.mr) return;
+  if (vrec.overlay) drawRecLabel();
+  copyFrame();
+}
+function drawRecLabel() {
   const lab = active, sp = state.speed !== 1 ? ` · ${state.speed.toFixed(2)}× speed` : '';
   const text = `${lab.name} · ${presetLabel(lab)} · t = ${lab.t.toFixed(2)} s${sp}`;
   ctx.save();

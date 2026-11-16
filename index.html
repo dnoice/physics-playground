@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.15)
+    - Title: Physics Playground (digiSpace Edition - v2.16)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -13,6 +13,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      engine's release beside the name in the top bar (filled from
+      js/core/version.js), linking to the changelog.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       Library page in two sections, Capture and Saved, with the capture
       settings folding out beside the Capture heading; the download and edit
@@ -22,9 +25,6 @@
       canvas (tape, caution lights, target box, leader and callout), the HUD
       button and menu in the top bar, the centre_focus_strong glyph and
       headsup.css, and Shift+H on the keyboard sheet.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      keyboard sheet adds ? and Esc, and how to work the dials: drag, nudge,
-      scroll once clicked, arrows and typing.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -107,6 +107,7 @@
   <div class="brand">
     <span class="ms fill brand-mark" aria-hidden="true">orbit</span>
     <h1>Physics <em>Playground</em></h1>
+    <a class="brand-ver" id="brand-ver" target="_blank" rel="noopener" hidden></a>
   </div>
   <nav class="rail" aria-label="Simulation labs">
     <div role="tablist" id="rail" aria-label="Simulation labs"></div>

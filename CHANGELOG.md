@@ -14,7 +14,8 @@
 ✒ Changelog:
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.16.0: self-describing datasets, Gravity's context columns, tracks that
-      keep the whole run, readable README badges and a contents table.
+      keep the whole run, readable README badges and a contents table. Clips
+      that never freeze, and the engine's release beside the name.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.15.0: the world pass, the whole-machine graphics tiers and Pluto's
       orbit. The Library, restructured.
@@ -87,7 +88,9 @@ dataset must make sense to someone who never saw the run. His files
 carried bare column names in the engine's units, with no scene, settings,
 scale or body names. His per-body tracks had silently stopped at under
 half the run. Also on his call: README badges that are easy to read, and a
-contents table in place of a row of links.
+contents table in place of a row of links. A fix for clips that froze part
+way, which he found in a 7-minute recording. And the engine's release shown
+beside the name.
 
 ### Datasets that explain themselves
 
@@ -137,6 +140,25 @@ contents table in place of a row of links.
   end of the run. The README, the Details and the save notice say how far
   they were thinned.
 
+### Clips that never freeze
+
+- **The bug.** A 7-minute clip froze at 1:15 and showed one still frame
+  until the end. The recorder filmed the stage canvas itself. Opening the
+  deck's charts shortened the stage, and a WebM stream cannot change size
+  part way. So the encoder ran on while players held the last frame.
+- **The fix.** A clip now records its own canvas, fixed at the stage's size
+  when recording began. Each frame copies the stage into it, scaled to fit,
+  with dark bars if the stage changes shape. Resizing the window, opening
+  the deck or folding a panel no longer stops the picture.
+
+### Engine version
+
+- **ENGINE and the release now sit beside the name in the top bar**, in the
+  instruments' monospace, linking to this changelog.
+- **The release comes from `js/core/version.js`,** the same place that
+  names it in every dataset. `tools/check.mjs` ties it to `package.json`.
+- **It steps aside on narrower windows,** where the lab tabs need the room.
+
 ### CSV
 
 - **Text cells are quoted** as RFC 4180 asks, when they hold a comma, a
@@ -160,7 +182,11 @@ contents table in place of a row of links.
   - Gravity's context columns are there;
   - every lab's columns are all described;
   - CSV text is quoted;
-  - tracks forced to thin still reach the end of the run.
+  - tracks forced to thin still reach the end of the run;
+  - a clip keeps its size, and keeps getting new frames, when the stage
+    changes shape mid-recording.
+- `tests/boot.py`: the engine's release beside the name matches
+  `package.json`.
 - `tests/capture.py` waits for the vault to finish connecting before it
   checks the vault's mode. A cold start can take longer than the fixed wait.
 - `tools/check.mjs`: the release named in datasets (`js/core/version.js`)

@@ -1,23 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Boot Sequence (digiSpace Edition - v2.7)
+    - Title: Boot Sequence (digiSpace Edition - v2.16)
     - File Name: main.js
     - Relative Path: js/main.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fills the
+      ENGINE tag beside the name from js/core/version.js, with its link to the
+      changelog.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Boot wires
       the head-up display's menu and remembered settings.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts the
       deck workspace and the Units menu.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Starts
-      the mode module and reopens the last lab.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -45,6 +46,7 @@
 */
 import { labs, labsById } from './labs/index.js';
 import { readTheme } from './core/color.js';
+import { APP } from './core/version.js';
 import { clamp, store } from './core/util.js';
 import { updateCaptureUI } from './shell/capture.js';
 import { buildCaptureSettings, buildLibraryFilter } from './shell/library.js';
@@ -84,6 +86,9 @@ export function start(data) {
   }
   showSpeed(); updatePlay(); buildOrbit();
   buildCaptureSettings(); buildLibraryFilter(); updateCaptureUI();
+  // The engine's release beside the name, from the one place it is kept.
+  const ver = document.getElementById('brand-ver');
+  if (ver) { ver.replaceChildren('Engine ', Object.assign(document.createElement('b'), { textContent: APP.version })); ver.href = `${APP.source}/blob/main/CHANGELOG.md`; ver.title = `Physics Playground engine ${APP.version}: what changed`; ver.hidden = false; }
   const fromHash = location.hash.slice(1), last = (data && data.lab) || store.get('lab');
   selectLab(labsById[fromHash] ? fromHash : labsById[last] ? last : labs[0].id, { silent: true });
   requestAnimationFrame(t => { setLast(t); frame(t); });

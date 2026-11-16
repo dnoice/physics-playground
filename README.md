@@ -15,6 +15,7 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.16.0: datasets that explain themselves, under Capturing runs; readable
       badges in deeper colours; a contents table in place of the row of links.
+      Clips keep their size through a resize.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.15.0: the camera goes all the way round finished apparatus; the
       photographer's studio; worlds lit from behind; the tiers' textures and
@@ -646,7 +647,8 @@ that matter. The layout reflows to one column below 1180 px.
 
 - **Rewind**: drag the timeline back to replay recent history. Playing
   from the past starts a new branch.
-- **Video**: records the stage as a WebM clip.
+- **Video**: records the stage as a WebM clip. The clip keeps the size it
+  started at, so resizing the window or opening the deck never freezes it.
 - **Data**: records a CSV dataset of the lab's quantities, plus per-body
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.

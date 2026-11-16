@@ -1,17 +1,19 @@
 """
 ✒ Metadata
-    - Title: Boot Test (digiSpace Edition - v2.1)
+    - Title: Boot Test (digiSpace Edition - v2.16)
     - File Name: boot.py
     - Relative Path: tests/boot.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      engine's release beside the name matches package.json.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added real
       assertions on every lab it visits, started the page in flat 2D mode
       and moved the marks to the shared harness.
@@ -45,6 +47,10 @@ with sync_playwright() as p:
     ok("mode_stored_2d", pg.evaluate("localStorage.getItem('psp:mode')") == '"2d"')
     ok("app_in_2d", pg.evaluate("PhysicsPlayground.mode.get()") == "2d", pg.evaluate("PhysicsPlayground.mode.get()"))
     ok("lab_count", pg.evaluate("Object.keys(PhysicsPlayground.labs).length") == 7)
+    # The engine's release shows beside the name, read from js/core/version.js, which tools/check.mjs ties to package.json.
+    want = __import__("json").load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "package.json")))["version"]
+    ver = pg.evaluate("(() => { const a = document.getElementById('brand-ver'); return a && !a.hidden ? [a.textContent, a.href] : null; })()")
+    ok("engine_version_beside_the_name", ver is not None and ver[0] == f"Engine {want}" and ver[1].endswith("/CHANGELOG.md"), ver)
     for lab in ["gravity", "collisions", "fluid", "waves", "chaos", "cloth", "fields"]:
         pg.evaluate(f"PhysicsPlayground.select('{lab}')"); pg.wait_for_timeout(900)
         settle(pg, "PhysicsPlayground.active.t > 0")
