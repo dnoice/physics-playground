@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: View Mode and Graphics Tiers (digiSpace Edition - v2.15)
+    - Title: View Mode and Graphics Tiers (digiSpace Edition - v2.18)
     - File Name: mode.js
     - Relative Path: js/shell/mode.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,14 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the Graphics section lives in it,
+      with the tiers, the machine's four verdicts with the part that set the
+      suggestion marked, and a card for each setting of one's own. A setting
+      holds over whichever tier is in use, shows the tier's own value, resets
+      on its own or with Reset to tier, is kept in this browser and reaches
+      the engine through the change-of-tier path. The GPU's caps still bound
+      the budget, and nothing above them is offered.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The engine
       gets the tier's budget capped at what the GPU reports (MSAA samples,
       anisotropy, texture size), and the Graphics sheet reads the whole
@@ -30,8 +38,9 @@
 
 ✒ Key Features:
     - 2D and 3D switch in the top bar, key Z, remembered between visits.
-    - Graphics menu: Auto plus five named tiers, with the detected device and
-      what the active tier costs.
+    - The Graphics section of Settings: Auto plus five named tiers, the
+      machine's four verdicts and what the budget costs, and a card for each
+      setting of one's own laid over the tier, within the GPU's limits.
     - Auto steps down when frames run long and back up when there is room; a
       step that buys nothing is undone and adapting stops, because the limit
       is then the solver or the display, not the GPU.
@@ -46,26 +55,37 @@
       16.4+)
 ---------
 */
-import { TIERS, probeDevice, tierById, tierStep } from '../core/tiers.js';
+import { KNOBS, KNOB_GROUPS, TIERS, cleanOverrides, knobByKey, knobText, layered, probeDevice, tierById, tierStep } from '../core/tiers.js';
 import { $, el, reduceMotion, store } from '../core/util.js';
+import { msEl } from '../core/icons.js';
 import { view } from '../core/view.js';
 import { sticky } from './diagnostics.js';
 import { updateDock } from './dock.js';
 import { updateNav } from './navigator.js';
-import { refreshEnabled } from './panel.js';
+import { radioGroup, refreshEnabled } from './panel.js';
+import { allowSection } from './settings.js';
 import { cancelLabPointer } from './stage.js';
 import { active, announce, canvas, stageEl } from './state.js';
 
 export const world = {
   mode: store.get('mode', '3d') === '2d' ? '2d' : '3d',
   pick: store.get('tier', 'auto'), autoTier: null, device: null,
+  // The person's own settings, laid over whichever tier is in use (Settings, under Graphics).
+  over: cleanOverrides(store.get('gfxOverrides', {})),
   engine: null, loading: null, fail: null, lost: false, broken: new Set(),
 };
 const tierNow = () => tierById(world.pick) || tierById(world.autoTier) || tierById(world.device.suggest) || TIERS[TIERS.length - 1];
-/* The tier as the engine spends it: never more antialiasing samples or texture filtering than this GPU offers, and
-   never a texture larger than it takes. */
-const budget = () => { const t = tierNow(), d = world.device;
-  return { ...t, msaa: Math.min(t.msaa, d.maxSamples || 0), aniso: Math.max(1, Math.min(t.aniso, d.maxAniso || 1)), tex: d.maxTexture ? Math.min(t.tex, d.maxTexture) : t.tex }; };
+/* The most of a setting this GPU takes, by its knob's cap: no samples or filtering reported means none, and an
+   unreported texture limit bounds nothing. */
+const limit = key => { const c = (knobByKey(key) || {}).cap, v = c && world.device[c]; return !c ? Infinity : v || (c === 'maxTexture' ? Infinity : c === 'maxAniso' ? 1 : 0); };
+/* Never more antialiasing samples or texture filtering than this GPU offers, and never a texture larger than it takes. */
+const capped = t => ({ ...t, msaa: Math.min(t.msaa, limit('msaa')), aniso: Math.max(1, Math.min(t.aniso, limit('aniso'))), tex: Math.min(t.tex, limit('tex')) });
+/* The tier as the engine spends it: the tier in use with the person's own settings laid over it, within the GPU's
+   limits. */
+const budget = () => capped(layered(tierNow(), world.over));
+export const gfxBudget = () => budget();
+/* The tier's own value for each setting on this GPU; a tier without shadows still names the penumbra one would get. */
+const tierOwn = () => { const t = capped(layered(tierNow(), {})); if (!(t.soft > 0)) t.soft = 5; return t; };
 export const in3D = lab => world.mode === '3d' && !!world.engine && !world.lost && !world.broken.has(lab.id) && world.engine.ready(lab.id);
 
 /* ---------- engine ---------- */
@@ -131,7 +151,7 @@ function setAutoTier(id, why) {
   if (world.engine) world.engine.setTier(budget());
   renderGfx();
   announce(why);
-  if (active) sticky({ id: 'gfx-auto', level: 'info', title: `Graphics tier is now ${tierById(id).label}`, body: `${why} Pick a fixed tier in the Graphics menu to stop this.` }, 8);
+  if (active) sticky({ id: 'gfx-auto', level: 'info', title: `Graphics tier is now ${tierById(id).label}`, body: `${why} Pick a fixed tier in Settings, under Graphics, to stop this.` }, 8);
 }
 /* From the frame loop: raw is the true frame gap in seconds. */
 export function tickWorld(raw) {
@@ -190,6 +210,40 @@ export function pickTier(id) {
 /* A cheaper fixed tier to offer from diagnostics, or null at the bottom. */
 export const cheaperTier = () => (world.pick === 'auto' ? null : tierStep(tierNow().id, 1));
 
+/* ---------- settings of one's own ---------- */
+/* Set one part of the budget apart from the tier. It holds over whatever tier is in use, Auto's included; choosing the
+   tier's own value hands the setting back to the tier. A value the GPU cannot take is refused. */
+export function setOverride(key, v) {
+  const k = knobByKey(key);
+  if (!k || !(k.bool ? typeof v === 'boolean' : k.options.includes(v) && v <= limit(key))) return false;
+  const was = world.over[key];
+  if (v === tierOwn()[key]) delete world.over[key]; else world.over[key] = v;
+  if (world.over[key] !== was) gfxChanged(`${k.label}: ${knobText(k, v)}`);
+  return true;
+}
+export function resetOverride(key) {
+  const k = knobByKey(key);
+  if (!k || !Object.hasOwn(world.over, key)) return false;
+  delete world.over[key];
+  gfxChanged(`${k.label} follows the ${tierNow().label} tier again`);
+  return true;
+}
+export function resetOverrides() {
+  if (!Object.keys(world.over).length) return false;
+  world.over = {};
+  gfxChanged(`Every graphics setting follows the ${tierNow().label} tier again`);
+  return true;
+}
+/* Kept for the next visit and applied at once, through the same path as a change of tier, which frees what the last
+   budget made. Auto measures afresh, since the cost of a frame has changed. */
+function gfxChanged(msg) {
+  store.set('gfxOverrides', world.over);
+  resetAuto();
+  if (world.engine) world.engine.setTier(budget());
+  renderGfx();
+  announce(msg);
+}
+
 /* ---------- top bar ---------- */
 const gfxLabel = () => (world.pick === 'auto' ? `Auto · ${tierNow().label}` : tierNow().label);
 export function renderMode() {
@@ -200,29 +254,99 @@ export function renderMode() {
   b3.title = world.fail || '3D world (Z)';
   stageEl.dataset.mode = active && in3D(active) ? '3d' : '2d';
   $('#btn-gfx').hidden = !!world.fail;
+  allowSection('graphics', !world.fail);
   if (active) { refreshEnabled(); updateDock(); updateNav(); canvas.style.cursor = 'crosshair'; }
 }
+const ownText = n => `${n} setting${n === 1 ? '' : 's'} of your own`;
 function renderGfx() {
+  const b = budget(), t = tierNow(), n = Object.keys(world.over).length, btn = $('#btn-gfx');
   $('#btn-gfx-label').textContent = gfxLabel();
-  for (const b of document.querySelectorAll('#gfx-list [role="radio"]')) { const on = b.dataset.tier === world.pick; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }
-  const t = tierNow(), d = world.device, sum = [`${t.label}: resolution up to ${t.scale}×`, t.msaa ? `${t.msaa}× antialiasing` : 'no antialiasing', t.shadow ? `${t.shadow} shadows` : 'no shadows', t.reflect ? 'floor reflections' : 'no reflections'];
-  $('#gfx-now').textContent = `${sum.join(', ')}.`;
-  const v = d.verdict, mem = d.memory == null ? 'memory not reported' : `${d.memory} GB memory`;
-  $('#gfx-device').textContent = `${d.name} · ${d.cores} threads at ${d.cpu.toFixed(1)}× a laptop core · ${mem} · suggests ${tierById(d.suggest).label}${v && v.by ? `, set by the ${v.by}` : ''}`;
+  btn.title = `Graphics: ${gfxLabel()}${n ? `, ${ownText(n)}` : ''}`;
+  btn.classList.toggle('has-own', n > 0);
+  for (const r of document.querySelectorAll('#gfx-list [role="radio"]')) { const on = r.dataset.tier === world.pick; r.setAttribute('aria-checked', String(on)); r.tabIndex = on ? 0 : -1; }
+  const sum = [`resolution up to ${b.scale}×`, b.msaa ? `${b.msaa}× antialiasing` : 'no antialiasing', b.shadow ? `${b.shadow} shadows` : 'no shadows', b.reflect ? 'floor reflections' : 'no reflections'];
+  $('#gfx-now').textContent = `${t.label}${n ? ` with ${ownText(n)}` : ''}: ${sum.join(', ')}.`;
+  renderKnobs(b, n);
 }
-const gfxOpen = () => !$('#gfx-sheet').hidden;
-export function setGfx(open) {
-  $('#gfx-sheet').hidden = !open;
-  $('#btn-gfx').setAttribute('aria-expanded', String(open));
-  if (open) { const cur = $('#gfx-list [aria-checked="true"]'); if (cur) cur.focus(); }
+
+/* ---------- Settings: the Graphics section ---------- */
+/* What this machine reports and what each part of it can carry, with the part that set the suggestion marked. */
+function renderDevice() {
+  const d = world.device, v = d.verdict, host = $('#gfx-device');
+  if (!v) { host.textContent = 'This browser did not report its graphics hardware.'; return; }
+  const what = {
+    GPU: `${v.parts[0][1].kind}: ${d.name}`, CPU: `${d.cores} threads at ${d.cpu.toFixed(1)}× a laptop core`,
+    Memory: d.memory == null ? 'memory not reported' : `${d.memory} GB memory`, 'GPU limits': d.maxTexture ? `${d.maxTexture} px textures at most` : 'texture limit not reported',
+  };
+  const rows = v.parts.map(([part, pv]) => el('div', { class: 'dev-row', 'data-sets': String(part === v.by) },
+    el('dt', { text: part === 'GPU limits' ? 'Texture limit' : part }), el('dd', {}, el('span', { class: 'dev-what', text: what[part] }), el('span', { class: 'dev-tier', text: tierById(pv.tier).label }))));
+  host.replaceChildren(el('dl', { class: 'dev-list' }, ...rows), el('p', { class: 'dev-sum', text: `This machine suggests ${tierById(d.suggest).label}${v.by ? `, set by the ${v.by}` : ''}.` }));
 }
-export function closeGfx() { if (!gfxOpen()) return false; setGfx(false); $('#btn-gfx').focus(); return true; }
+/* A card for each setting: its name, the tier's own value, its choices (only what this GPU takes) or a switch, and a
+   reset that shows while the setting is the person's own. */
+const knobs = new Map();
+let shown = {};
+const slug = v => String(v).replace('.', 'p');
+function buildKnob(k) {
+  const id = `ov-${k.key}`, tag = el('span', { class: 'knob-tag', text: 'Yours', hidden: true }), own = el('span', { class: 'knob-tier', id: `${id}-tier` });
+  const note = el('p', { class: 'knob-note', id: `${id}-note` }), reset = el('button', { type: 'button', class: 'knob-reset', id: `${id}-reset`, title: 'Back to the tier\'s value', hidden: true },
+    msEl('restart_alt'), el('span', { class: 'sr-only', text: `${k.label}: back to the tier's value` }));
+  const u = { k, tag, own, note, reset, row: null, sync: null, focus: null };
+  if (k.bool) {
+    const ctl = el('button', { type: 'button', role: 'switch', class: 'switch', id, 'aria-describedby': `${id}-tier ${id}-note` },
+      el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-thumb' })), el('span', { class: 'switch-text' }, el('span', { class: 'knob-name', text: k.label })));
+    ctl.addEventListener('click', () => setOverride(k.key, !shown[k.key]));
+    u.sync = () => ctl.setAttribute('aria-checked', String(!!shown[k.key]));
+    u.focus = () => ctl.focus();
+    u.row = el('div', { class: 'knob', 'data-key': k.key }, el('div', { class: 'knob-head' }, ctl, tag, own, reset), note);
+  } else {
+    const opts = k.options.filter(v => v <= limit(k.key)).map(v => [v, knobText(k, v)]), name = el('span', { class: 'knob-name', id: `${id}-name`, text: k.label });
+    const { group, update } = radioGroup(k.label, opts, () => shown[k.key], v => setOverride(k.key, v), id), buttons = [...group.children];
+    group.removeAttribute('aria-label'); group.setAttribute('aria-labelledby', name.id); group.setAttribute('aria-describedby', `${id}-tier ${id}-note`);
+    buttons.forEach((b, i) => { b.id = `${id}-${slug(opts[i][0])}`; });
+    u.sync = off => {
+      update();
+      for (const b of buttons) b.disabled = !!off;
+      // A value between the offered steps (a GPU limit) still leaves the group one tab stop.
+      if (!buttons.some(b => b.tabIndex === 0)) buttons[0].tabIndex = 0;
+    };
+    u.focus = () => (buttons.find(b => b.tabIndex === 0) || buttons[0]).focus();
+    u.row = el('div', { class: 'knob', 'data-key': k.key }, el('div', { class: 'knob-head' }, name, tag, own, reset), group, note);
+  }
+  reset.addEventListener('click', () => { resetOverride(k.key); u.focus(); });
+  knobs.set(k.key, u);
+  return u.row;
+}
+function buildKnobs() {
+  const host = $('#gfx-knobs');
+  for (const [g, title] of KNOB_GROUPS) host.append(el('div', { class: 'knob-group', role: 'group', 'aria-labelledby': `knobs-${g}` },
+    el('h5', { class: 'knob-group-title', id: `knobs-${g}`, text: title }), el('div', { class: 'knobs' }, ...KNOBS.filter(k => k.group === g).map(buildKnob))));
+  // Everything now follows the tier, so focus goes to the tier.
+  $('#gfx-reset').addEventListener('click', () => { resetOverrides(); const cur = $('#gfx-list [aria-checked="true"]'); if (cur) cur.focus(); });
+}
+function renderKnobs(b, n) {
+  if (!knobs.size) return;
+  const own = tierOwn(), label = tierNow().label;
+  shown = { ...b, soft: b.soft || own.soft };
+  for (const [key, u] of knobs) {
+    const k = u.k, mine = Object.hasOwn(world.over, key), off = !!k.needs && !b[k.needs], top = limit(key);
+    u.row.dataset.own = String(mine); u.tag.hidden = !mine; u.reset.hidden = !mine;
+    u.own.textContent = `${label}: ${knobText(k, own[key])}`;
+    u.sync(off);
+    const more = off ? ' Switch the shadow map on to soften it.' : key === 'scale' ? ` This display has ${+view.dpr.toFixed(2)}×.` : k.options && top < Math.max(...k.options) ? ` This GPU takes up to ${knobText(k, top)}.` : '';
+    u.note.textContent = k.note + more;
+  }
+  const own1 = ownText(n);
+  $('#gfx-own').textContent = n ? `${own1[0].toUpperCase()}${own1.slice(1)}, kept over whichever tier is in use.` : 'Every setting follows the tier.';
+  $('#gfx-reset').hidden = !n;
+}
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
   world.device = probeDevice();
   if (!world.device.webgl2) { world.fail = 'This browser did not provide WebGL 2, so the playground stays in 2D.'; world.mode = '2d'; }
   const list = $('#gfx-list'), rows = [{ id: 'auto', label: 'Auto', blurb: 'Starts from your device and adapts to the frame rate.' }, ...TIERS];
+  if (world.device.webgl2) { renderDevice(); buildKnobs(); }
   rows.forEach((t, i) => {
     const b = el('button', { type: 'button', role: 'radio', class: 'gfx-row', 'data-tier': t.id, 'aria-checked': 'false' }, el('b', { text: t.label }), el('span', { text: t.blurb }));
     b.addEventListener('click', () => pickTier(t.id));
@@ -238,11 +362,6 @@ export function init() {
   $('#mode-3d').addEventListener('click', () => setMode('3d'));
   const modeKeys = e => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) { e.preventDefault(); toggleMode(); $(world.mode === '3d' ? '#mode-3d' : '#mode-2d').focus(); } };
   $('#mode-2d').addEventListener('keydown', modeKeys); $('#mode-3d').addEventListener('keydown', modeKeys);
-  $('#btn-gfx').addEventListener('click', () => setGfx(!gfxOpen()));
-  $('#gfx-close').addEventListener('click', closeGfx);
-  document.addEventListener('pointerdown', e => {
-    if (gfxOpen() && !$('#gfx-sheet').contains(e.target) && !$('#btn-gfx').contains(e.target)) setGfx(false);
-  });
   renderMode(); renderGfx();
   if (world.mode === '3d') ensureEngine();
 }

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Scene (digiSpace Edition - v2.15)
+    - Title: Fluid Scene (digiSpace Edition - v2.18)
     - File Name: fluid.js
     - Relative Path: js/render/world/scenes/fluid.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for graphics settings of one's own: the field is sized
+      again when the mesh detail changes, not only when the tier's name does.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — With the
       camera free to go round: a finished back of stove enamel, steel
       stiffeners and a maker's plaque; rays leaving the tank see the room, not
@@ -496,7 +499,7 @@ export function createScene(E, lab) {
     waterMat.uniforms.uSteps.value = Math.round(5 + 9 * tier.detail);
   }
   function layout() {
-    const P = lab.plane3(), k = `${P.hw.toFixed(3)}:${P.hh.toFixed(3)}:${P.o[1].toFixed(3)}`, f = `${tier.id}:${lab.Wu.toFixed(2)}:${lab.Hu.toFixed(2)}`;
+    const P = lab.plane3(), k = `${P.hw.toFixed(3)}:${P.hh.toFixed(3)}:${P.o[1].toFixed(3)}`, f = `${tier.detail}:${lab.Wu.toFixed(2)}:${lab.Hu.toFixed(2)}`;
     plane = P;
     if (k !== shape) {
       shape = k;

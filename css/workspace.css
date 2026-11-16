@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.16)
+    - Title: Workspace Styles (digiSpace Edition - v2.18)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the floating sheet and its
+      backdrop blur are gone, and the keyboard list and the tier and unit
+      lists sit in Settings.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       release tag beside the name: monospace small capitals, the release in
       amber, quiet until hovered.
@@ -19,16 +23,12 @@
       strip is centred by auto margins instead of justify-content, so when it
       overflows it scrolls from its first tab rather than pushing the first
       tabs out of reach; removed the unused .tile-meta.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tiles take
-      the glass look over the page's light: a faint cool light at the top and
-      a warm sheen along the top edge, drawn as one background layer and an
-      inset shadow so that a tile costs no more to paint than before.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Top bar, lab rail, icon buttons, the console grid, tile chrome, the
-    keyboard sheet, the 2D and 3D switch with its Graphics menu, and the
-    colophon.
+    keyboard list, the 2D and 3D switch, the Graphics, Units and HUD buttons
+    with the tier and unit lists they open in Settings, and the colophon.
 
 ✒ Key Features:
     - Console grid: the stage over the instruments deck, beside a
@@ -127,15 +127,7 @@
 .tile.flash { animation: tile-flash 1.2s var(--ease); }
 @keyframes tile-flash { 0%, 100% { box-shadow: var(--tile-shadow); } 20% { box-shadow: var(--tile-shadow), 0 0 0 2px color-mix(in oklab, var(--warn) 70%, transparent); } }
 
-/* ---------- keyboard sheet (the one floating panel) ---------- */
-.sheet {
-  position: fixed; top: 66px; right: 12px; z-index: 20; width: min(420px, calc(100vw - 24px)); max-height: calc(100vh - 80px); overflow: auto;
-  background: color-mix(in oklab, var(--bench) 94%, transparent); border: 1px solid var(--rule); border-radius: var(--radius);
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.85);
-  animation: tile-in 0.22s var(--ease) both;
-}
-.sheet[hidden] { display: none; }
-.sheet .tile-head .icon-btn { margin-left: auto; }
+/* ---------- the keyboard list (Settings, under Keyboard) ---------- */
 .keys-list { margin: 0; padding: 12px var(--pad) 16px; display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; font-size: 13px; align-items: baseline; }
 .keys-list dt { white-space: nowrap; color: var(--muted); }
 .keys-list dd { margin: 0; color: color-mix(in oklab, var(--text) 88%, var(--muted)); }
@@ -160,7 +152,6 @@ body:has(.bento.focus) .colophon { display: none; }
 .mode-switch button[disabled] { opacity: 0.45; cursor: not-allowed; }
 .mode-switch { background: color-mix(in oklab, var(--bench) 80%, transparent); border: 0; box-shadow: inset 0 0 0 1px var(--hair); border-radius: 11px; padding: 3px; }
 .gfx-btn { height: 34px; background: color-mix(in oklab, var(--bench) 80%, transparent); border-color: var(--hair); border-radius: 11px; padding: 0 10px; gap: 6px; white-space: nowrap; font-size: 12.5px; }
-.gfx-sheet { width: min(380px, calc(100vw - 24px)); }
 .gfx-list { display: grid; gap: 2px; padding: 8px; }
 .gfx-row { appearance: none; display: grid; gap: 2px; text-align: left; padding: 8px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font: inherit; }
 .gfx-row b { font-weight: 600; font-size: 13.5px; }

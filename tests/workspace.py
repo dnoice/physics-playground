@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Workspace Tests (digiSpace Edition - v2.4)
+    - Title: Workspace Tests (digiSpace Edition - v2.18)
     - File Name: workspace.py
     - Relative Path: tests/workspace.py
     - Artifact Type: test
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: U opens its Units section with
+      focus on the current system, and Escape closes it.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the unified interaction architecture of release 2.4.0: the stage
       rail, view modes, Chaos's three views, the deck workspace, object
@@ -171,11 +174,12 @@ with sync_playwright() as p:
     g_label = lambda: pg.inner_text("#ctl-fluid-gravity-out")
     ok("control_in_metric", g_label().endswith("m/s²") and g_label().startswith("9.8"), g_label())
     pg.keyboard.press("u"); pg.wait_for_timeout(200)
-    ok("u_opens_units", pg.is_visible("#units-sheet") and "1.09 cm" in pg.inner_text("#units-scale"))
+    ok("u_opens_units", pg.is_visible("#sp-units") and pg.evaluate("document.getElementById('settings').matches(':modal')") and state("settings.section()") == "units"
+       and pg.evaluate("document.activeElement === document.querySelector('#units-list [aria-checked=true]')") and "1.09 cm" in pg.inner_text("#units-scale"))
     pg.keyboard.press("ArrowDown"); pg.wait_for_timeout(300)
     ok("arrow_picks_us", state("units.get()") == "us" and g_label().endswith("ft/s²") and g_label().startswith("32.2"), g_label())
     pg.keyboard.press("Escape")
-    ok("escape_closes_units", pg.is_hidden("#units-sheet"))
+    ok("escape_closes_units", pg.is_hidden("#sp-units") and not state("settings.isOpen()") and pg.evaluate("document.activeElement === document.body"))
     pg.evaluate(P + ".units.set('si')"); pg.wait_for_timeout(300)
     pg.click("#ctl-fluid-gravity-out"); pg.keyboard.press("Control+A"); pg.keyboard.type("4.905"); pg.keyboard.press("Enter"); pg.wait_for_timeout(200)
     ok("typed_value_in_display_units", abs(state("active.p.gravity") - 450) < 0.6, state("active.p.gravity"))

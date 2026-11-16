@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.17)
+    - Title: Architecture Guide (digiSpace Edition - v2.18)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the Settings section
+      (settings.js), graphics settings of one's own over the tier,
+      settings.css in the styles, and :modal in the selection rule.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       dataContext() returns facts and tables, rendered in the README and kept
       in the data package.
@@ -159,7 +163,7 @@ flowchart TB
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
 | Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, the Settings dialog and its sections, capture, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
@@ -178,9 +182,10 @@ before anything else reads it. Then `boot()` runs:
    `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
    (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
-   card), `unitmenu.init` (Units menu), `headsup.init` (the head-up
-   display's menu and its remembered settings), `automation.init`
-   (`window.PhysicsPlayground`).
+   card), `unitmenu.init` (the Units section), `headsup.init` (the head-up
+   display's section and its remembered settings), `settings.init` (the
+   Settings dialog: its nav, its keys and the top bar's openers),
+   `automation.init` (`window.PhysicsPlayground`).
 3. `start()` reads the theme, sizes the stage, applies saved parameters
    and presets, builds the orbit ball and library controls, selects the
    lab from the address hash or the last visit, starts the frame loop and
@@ -240,7 +245,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `enabled(key)` | `true`, or a sentence saying why a control is disabled right now |
 | `onParam(key, value)`, `onResize(w, h, ow, oh)`, `after(simDt)` | React to changes |
 | `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, and the lab's own length per stage pixel for the scale bar |
-| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units menu; `timeNote` adds to the HUD clock |
+| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units section of Settings; `timeNote` adds to the HUD clock |
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
 | `zoomPace()`, `zoomLimits3()` | How strongly the user's zoom controls act (the wheel, the rail's buttons and drag, the keys raise their factor to this power; Gravity's Solar System, eight decades of scale, returns 2), and Gravity's 3D zoom limits as multiples of the framing distance. Pinch and scripted zooms keep their exact factor |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
@@ -370,11 +375,35 @@ cheapest of four verdicts from `suggestTier`:
 - the memory the browser reports;
 - the largest texture the GPU takes.
 
-The Graphics sheet names the part that set it. `tickWorld` runs the
+The Graphics section of Settings shows the four verdicts and marks the part
+that set it. `tickWorld` runs the
 Auto mode from the frame loop: three-second windows, a step down above 25 ms
 per frame, a step up after twelve seconds under 17.6 ms. A step down that does
 not improve the frame time by 8% is undone and adapting stops, because the
 limit is then the solver or the display.
+
+### Settings of one's own
+
+Any part of the budget the engine honours can be set apart from the tier.
+
+- **`KNOBS`** in `tiers.js` lists them: resolution, MSAA, mesh detail, bloom,
+  grade, the shadow map and its penumbra, fill, haze, contact shadows, the
+  environment, texture size and filtering, and the floor's reflection. Each
+  names the values it offers, its section, a `cap` (the GPU limit that bounds
+  it) and `needs` (a setting it means nothing without).
+- **`mode.js`** keeps them in `world.over`, stored under `psp:gfxOverrides`
+  and read back through `cleanOverrides`, so a stored value is only ever data.
+  The budget is the tier in use (Auto's too) with them laid over it
+  (`layered`), then the GPU's caps. A value above a cap is neither offered
+  nor accepted.
+- **`setOverride`** drops a value equal to the tier's own, so a setting is
+  either the tier's or the person's. `resetOverride` and `resetOverrides`
+  hand settings back.
+- **A change goes through `engine.setTier`**, the path a change of tier
+  takes, which frees what the last budget made. Two fixes keep that true:
+  shadows switched off free their map, and the floor's mirror pass gives the
+  contact pools and the haze back as it found them, so one switched off stays
+  off. Fluid's field follows `detail` rather than the tier's name.
 
 ### When 3D cannot run
 
@@ -496,9 +525,45 @@ the same figures) and never clickable.
   clamped into the free part of the stage and scored by what it would cover:
   the object most, then the tape, the lights, the overview map, and the
   lab's `hudClear` boxes, such as Gravity's names.
-- **Settings**: the HUD menu in the top bar and Shift+H. On or off, opacity in
+- **Settings**: its section of the Settings dialog, which the top bar's HUD
+  button opens, and Shift+H. On or off, opacity in
   four steps (40, 60, 80, 100 %) and each part on or off, kept per browser
   under `psp:hud`; `PhysicsPlayground.hud` reads and sets them for tests.
+
+## Settings
+
+`js/shell/settings.js` is one native modal `<dialog>` (`#settings`) with a
+section for each part of the workspace a person sets once and keeps:
+Graphics, Units, Head-up display and Keyboard. It owns the frame, not the
+contents. `mode.js` builds Graphics (tiers, verdicts and the settings of one's
+own), `unitmenu.js` Units and `headsup.js` the head-up display. The keyboard
+list is markup in `index.html`.
+
+- **Opening.** `openSettings(id, from)` opens at a section and focuses its
+  current choice (the checked tier or unit system, the display's switch), or
+  its tab for the keyboard list. The top bar's Graphics, Units, HUD and
+  keyboard buttons open their own section, and so do U and ?. The Settings
+  button and Shift+S open the section last shown, remembered as
+  `psp:settingsTab`. Each opener's `aria-expanded` says whether the dialog
+  is open at its section.
+- **Inside.** The workspace behind is inert. Tab and Shift+Tab go round the
+  dialog's own controls. The nav is a tablist with the full keyboard
+  contract. `settingsKey` takes the dialog's keys: Escape and Shift+S close
+  it, U and ? move between sections, and Shift+H still turns the display on
+  or off. Every other key stops at the dialog, and `transport.js` leaves the
+  workspace's shortcuts alone while it is open, and hands it keys that reach
+  the page because focus dropped there.
+- **Closing.** Escape, the close button, Shift+S or a click on the backdrop
+  close it, and focus goes back to whatever opened it.
+- **Missing sections.** `allowSection` takes a section out of the nav when
+  the workspace cannot offer it, as Graphics when 3D cannot run.
+- **Layout.** A centred panel on a desktop, over a plain dimmed backdrop with
+  no blur, so the stage behind stays at its frame rate while a change is
+  judged against it. A full-screen sheet on a phone, with the nav across the
+  top.
+- **Automation.** `PhysicsPlayground.settings` opens, closes and reads it, and
+  `PhysicsPlayground.gfx` reads and sets the settings of one's own and the
+  budget the engine gets.
 
 ## Units
 
@@ -862,12 +927,13 @@ The stylesheets load in this order, each building on the last:
 | --- | --- |
 | `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass tokens (opaque tiles in one plain-colour gradient with the sheen as an inset shadow; see Conventions) |
 | `icons.css` | Material Symbols styling and tab glyph animations |
-| `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
+| `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, the tier and unit lists, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
-| `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and the HUD menu |
+| `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and its section in Settings |
 | `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), Live Math panels, Guide cards, tabs |
 | `library.css` | Library page |
+| `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, and its phone layout |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 
 Tiles are inline-size containers, so their contents adapt with container
@@ -975,7 +1041,9 @@ up, the checks, the house style and the header rules in full.
   lines; the full history is in [CHANGELOG.md](CHANGELOG.md).
 - Dates are written MM/DD/YYYY.
 - **Selection is one rule.** `css/tokens.css` makes the whole document
-  unselectable, so no drag or double-click paints a highlight. Text fields
+  unselectable, so no drag or double-click paints a highlight. The rule names
+  `:modal` beside the root, because the browser's own sheet makes a modal
+  dialog's text selectable. Text fields
   select again, and a block meant to be copied opts in with `.selectable`,
   inside which buttons, tabs and icons still do not select. No element sets
   `user-select` of its own. `tests/shell.py` sweeps every page, pane, sheet

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: World Studio (digiSpace Edition - v2.15)
+    - Title: World Studio (digiSpace Edition - v2.18)
     - File Name: studio.js
     - Relative Path: js/render/world/studio.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,11 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for graphics settings of one's own: shadows switched off
+      free their map, the floor's mirror pass gives the contact pools and the
+      haze back as it found them, and a pool fitted later follows the budget,
+      so contact shadows switched off stay off.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call to polish every world: the backdrop's glow follows the
       camera; a shadowless fill follows it too, light-linked away from the
@@ -239,9 +244,10 @@ function createFloor(E, o, env) {
     U.uMirror.value.copy(clipBias).multiply(mirror.projectionMatrix).multiply(mirror.matrixWorldInverse);
     const shadows = renderer.shadowMap.autoUpdate, fog = scene.fog;
     mesh.visible = false; scene.fog = null; renderer.shadowMap.autoUpdate = false;
-    for (const h of hide) h.visible = false;
+    // Each comes back as it was: a contact pool or the haze a budget has switched off stays off.
+    for (const h of hide) { h.userData.was = h.visible; h.visible = false; }
     renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, mirror); renderer.setRenderTarget(null);
-    for (const h of hide) h.visible = h.userData.on !== false;
+    for (const h of hide) h.visible = h.userData.was;
     mesh.visible = true; scene.fog = fog; renderer.shadowMap.autoUpdate = shadows;
   };
   // The studio's own floor-level and air effects stay out of the mirror.
@@ -288,10 +294,11 @@ export function createStudio(E, o = {}) {
   /* Contact shadows: one pool per footprint. Without footprints from the scene, one is fitted on the first frame to
      everything that casts a shadow and is not the studio's own. */
   const contacts = [], own = new Set([dome, haze, floor && floor.mesh]);
-  let fitted = O.contact === false || Array.isArray(O.contact);
+  let fitted = O.contact === false || Array.isArray(O.contact), contactOn = E.tier.contact !== false;
+  // userData.on marks a pool in use; it shows while the budget has contact shadows on.
   const ground = list => {
     while (contacts.length < list.length) { const c = createContact(); contacts.push(c); own.add(c); scene.add(c); if (floor) floor.hide.push(c); }
-    contacts.forEach((c, i) => { c.visible = i < list.length; c.userData.on = c.visible; if (c.visible) c.userData.fit(list[i]); });
+    contacts.forEach((c, i) => { c.userData.on = i < list.length; c.visible = c.userData.on && contactOn; if (c.userData.on) c.userData.fit(list[i]); });
     fitted = true;
   };
   if (Array.isArray(O.contact)) ground(O.contact);
@@ -315,6 +322,8 @@ export function createStudio(E, o = {}) {
       key.shadow.mapSize.set(tier.shadow, tier.shadow);
       if (key.shadow.map) { key.shadow.map.dispose(); key.shadow.map = null; }
     }
+    // Shadows switched off free their map, which on Ultra is 4096 texels a side; switched on again, three.js makes one.
+    if (!(tier.shadow > 0) && key.shadow.map) { key.shadow.map.dispose(); key.shadow.map = null; }
     // The filter's radius is in texels of the map, so the same penumbra takes more of a larger one.
     if (tier.shadow > 0) key.shadow.radius = Math.max(1, (tier.soft ?? 5) * tier.shadow / 2048);
     const size = Math.max(256, tier.env || 256);
@@ -327,7 +336,8 @@ export function createStudio(E, o = {}) {
     fillOn = !!tier.fill;
     fill.intensity = fillOn ? O.fill * keyLux : 0; bounce.intensity = fillOn ? O.bounce * keyLux : 0;
     if (haze) { haze.visible = !!tier.haze; haze.userData.on = haze.visible; }
-    for (const c of contacts) if (c.userData.on !== false) c.visible = tier.contact !== false;
+    contactOn = tier.contact !== false;
+    for (const c of contacts) c.visible = !!c.userData.on && contactOn;
     if (floor) floor.setResolution(w, h, tier.reflect);
   };
   const eye = new THREE.Vector3();

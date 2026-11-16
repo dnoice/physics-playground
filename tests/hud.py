@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Head-Up Display Tests (digiSpace Edition - v2.7)
+    - Title: Head-Up Display Tests (digiSpace Edition - v2.18)
     - File Name: hud.py
     - Relative Path: tests/hud.py
     - Artifact Type: test
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the menu checks drive the
+      display's section of Settings, and Shift+H works inside it.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for release 2.7.0: the head-up display over the stage.
 
@@ -29,8 +32,10 @@
       object, an object off the stage gets a dashed box at the edge, and
       clearing the selection clears both.
     - Cautions: an under-resolved wave lights a warning by its title.
-    - Menu and keys: opacity steps, parts, Escape, Shift+H (which leaves a
-      lab's H tool alone), the keys sheet, and settings kept across a reload.
+    - Settings and keys: the display's section of Settings, its opacity
+      steps and parts, Shift+H inside it, Escape, Shift+H (which leaves a
+      lab's H tool alone), the keyboard section, and settings kept across a
+      reload.
     - Phone: one caution light and two callout figures on a 390 px stage.
 
 ✒ Usage Instructions:
@@ -152,7 +157,8 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport=VIEW)
     pg = fresh("gravity", ctx=ctx)
     pg.click("#btn-hud"); pg.wait_for_timeout(200)
-    ok("menu_opens_on_switch", pg.is_visible("#hud-sheet") and pg.evaluate("document.activeElement.id") == "hud-on" and pg.get_attribute("#btn-hud", "aria-expanded") == "true")
+    ok("menu_opens_on_switch", pg.is_visible("#sp-hud") and pg.evaluate("document.getElementById('settings').matches(':modal')") and pg.evaluate(P + ".settings.section()") == "hud"
+       and pg.evaluate("document.activeElement.id") == "hud-on" and pg.get_attribute("#btn-hud", "aria-expanded") == "true")
     pg.click("#hud-alpha-40"); pg.wait_for_timeout(150)
     ok("menu_opacity_step", pg.evaluate("getComputedStyle(document.getElementById('hu')).getPropertyValue('--hu-a').trim()") == "0.4" and pg.inner_text("#btn-hud-label") == "HUD 40%"
        and pg.get_attribute("#hud-alpha-40", "aria-checked") == "true")
@@ -162,8 +168,15 @@ with sync_playwright() as p:
     pg.evaluate(SELECT["gravity"]); pg.wait_for_timeout(900)
     ok("menu_part_target", pg.evaluate("document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden"))
     pg.click("#hud-part-target")
+    # Shift+H still works inside Settings, and the switch there follows it.
+    pg.keyboard.press("Shift+H"); pg.wait_for_timeout(150)
+    inside = [pg.is_visible("#hu"), pg.get_attribute("#hud-on", "aria-checked")]
+    pg.keyboard.press("Shift+H"); pg.wait_for_timeout(150)
+    inside += [pg.is_visible("#hu"), pg.get_attribute("#hud-on", "aria-checked"), pg.evaluate("document.getElementById('settings').open")]
+    ok("shift_h_inside_settings", inside == [False, "false", True, "true", True], inside)
     pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
-    ok("menu_escape_returns_focus", pg.evaluate("document.getElementById('hud-sheet').hidden") and pg.evaluate("document.activeElement.id") == "btn-hud")
+    ok("menu_escape_returns_focus", not pg.evaluate("document.getElementById('settings').open") and not pg.is_visible("#sp-hud") and pg.evaluate("document.activeElement.id") == "btn-hud"
+       and pg.get_attribute("#btn-hud", "aria-expanded") == "false")
     tool = pg.evaluate(P + ".active.p.tool")
     pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("Shift+H"); pg.wait_for_timeout(200)
     ok("shift_h_hides", not pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD off")
@@ -173,7 +186,7 @@ with sync_playwright() as p:
     pg.keyboard.press("Shift+H"); pg.wait_for_timeout(200)
     ok("shift_h_shows", pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD 40%")
     pg.keyboard.press("?"); pg.wait_for_timeout(150)
-    ok("keys_sheet_lists_shift_h", "head-up display" in pg.inner_text("#keys-sheet"))
+    ok("keys_sheet_lists_shift_h", pg.is_visible("#sp-keys") and pg.evaluate(P + ".settings.section()") == "keys" and "head-up display" in pg.inner_text("#sp-keys"))
     ctx.close()
 
     # ---- Phone: one light and its count, two callout figures
