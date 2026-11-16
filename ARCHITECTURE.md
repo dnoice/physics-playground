@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.15)
+    - Title: Architecture Guide (digiSpace Edition - v2.16)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      dataset dictionary hooks, the export path through dataset.js and zip.js,
+      the tracks' even thinning and the release check.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       studio's camera-following glow and fill, the light link, contact
       shadows, haze, enamel and plaques, room() past an apparatus and
@@ -241,6 +244,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `snapshot()`, `restore(s)`, `histBudget`, `histInterval` | Rewind history |
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
+| `dataInfo`, `dataNote`, `dataContext()` | What a dataset means to someone who never saw the run. `dataInfo` maps every data and track column to `[unit, meaning, SI unit, factor]`, and the capture suite fails if any column lacks one. `dataNote` explains the coordinates and scale. `dataContext()` returns what the rows cannot say, such as Gravity's bodies at the start. `js/shell/dataset.js` builds each dataset's README and Frictionless data package from them |
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
 | `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
@@ -630,6 +634,15 @@ The Library page has two sections in `index.html`, each headed by an
 Action glyphs come from `data-ico` through CSS, with empty alt text
 (`content: … / ""`), so a button's text and accessible name are only its
 words.
+
+A dataset leaves the Library as a ZIP (`runZip` in `js/shell/dataset.js`,
+written by the dependency-free `js/core/zip.js`) of its CSVs, a README and a
+`datapackage.json`, built when it is downloaded from the item and the lab's
+dictionary, so older datasets gain them too. The recorder in `capture.js`
+keeps the whole run in the tracks: when they reach `dataRec.trackCap` rows,
+every other sample's rows go and the stride doubles, and the item records
+the stride for the README. `js/core/version.js` names the release in every
+README; `tools/check.mjs` fails if it parts from `package.json`.
 
 ## Gravity's Solar System
 

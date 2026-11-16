@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.15)
+    - Title: Changelog (digiSpace Edition - v2.16)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.16.0: self-describing datasets, Gravity's context columns, tracks that
+      keep the whole run, readable README badges and a contents table.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.15.0: the world pass, the whole-machine graphics tiers and Pluto's
       orbit. The Library, restructured.
@@ -74,6 +77,94 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.16.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's call, after analysing a 17-body Gravity run in Excel: a
+dataset must make sense to someone who never saw the run. His files
+carried bare column names in the engine's units, with no scene, settings,
+scale or body names. His per-body tracks had silently stopped at under
+half the run. Also on his call: README badges that are easy to read, and a
+contents table in place of a row of links.
+
+### Datasets that explain themselves
+
+- **A ZIP of everything.** A dataset's ZIP download in the Library holds:
+  - its CSVs;
+  - a README that a person can read;
+  - a `datapackage.json` that software can read: a Frictionless Tabular
+    Data Package, which pandas, R and the frictionless tools take with
+    every column's type.
+- **The README covers everything a reader needs:**
+  - every column's unit, its meaning and the factor to SI units;
+  - the lab, the scene and the settings, by their Controls names;
+  - the scale and coordinates;
+  - the recording's time span, sample rate and start;
+  - the release that recorded it;
+  - how the files join (on `t_s`) and what an empty cell means;
+  - in Gravity, the bodies the run started with, by name, class, mass and
+    what each orbits.
+- **Older datasets gain one too.** The README and data package are built
+  when a dataset is downloaded, from the Library item and the lab's
+  dictionary.
+- **Every lab has a column dictionary.** Each of the seven labs gives every
+  column a unit, a meaning and, where it has one, its SI factor. A check
+  fails if any column lacks an entry.
+- **The Library shows units too.** A dataset's Details show each column's
+  unit beside its range, with its meaning on hover.
+
+### Gravity's files read on their own
+
+- **`t_years`, in both files.** `t_s` is the engine's clock (at G = 1×, a
+  year is 4.41 of its seconds), so a reader had no way to know a run's real
+  span.
+- **The tracks say who each body is**, with `name`, `kind` and `orbits_id`:
+  the body it orbits at that moment, a moon's planet or else the heavier
+  body pulling hardest, as Inspect reports it.
+- **The new columns follow the old ones**, so analyses built on earlier
+  files still line up.
+
+### Tracks keep the whole run
+
+- **The bug.** The recorder stopped writing tracks at 400,000 rows and said
+  nothing. A 17-body run at 60 Hz reached that limit after about 23,500
+  samples. Dennis's 50,369-sample run kept per-body tracks for only its
+  first 48 %.
+- **The fix.** When the tracks fill, every other sample's rows are dropped
+  and the stride doubles. So the tracks thin evenly and always reach the
+  end of the run. The README, the Details and the save notice say how far
+  they were thinned.
+
+### CSV
+
+- **Text cells are quoted** as RFC 4180 asks, when they hold a comma, a
+  quote or a line break. Gravity's tracks now carry names.
+
+### README
+
+- **The badges are readable.** Their message colours are the deeper amber,
+  teal and green, which give white text about 5:1 contrast. The bright
+  tints stay on the dark labels.
+- **The row of inline links became a contents table** under the tagline:
+  Start here, Work with it, Go deeper and The project.
+- **Capturing runs describes the dataset files**, column by column.
+
+### Checks
+
+- `tests/capture.py`:
+  - the ZIP is whole, with its four files;
+  - the data package matches the CSV headers and describes every field;
+  - the README explains the scene, columns, settings and bodies;
+  - Gravity's context columns are there;
+  - every lab's columns are all described;
+  - CSV text is quoted;
+  - tracks forced to thin still reach the end of the run.
+- `tests/capture.py` waits for the vault to finish connecting before it
+  checks the vault's mode. A cold start can take longer than the fixed wait.
+- `tools/check.mjs`: the release named in datasets (`js/core/version.js`)
+  must match `package.json`.
 
 ## 2.15.0 (11/16/2026)
 

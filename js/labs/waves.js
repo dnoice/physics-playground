@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.7)
+    - Title: Waves Lab (digiSpace Edition - v2.16)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
+      dictionary for datasets and the detector profile: each column's unit,
+      meaning and SI factor, and a note on the grid and the profile rows.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: wavelength, sources, Courant number and beam angle on its tape,
       and the selected source as its target, a line source at its middle.
@@ -21,13 +24,6 @@
       sources placed by hand or with Random sources break the row; the fringe
       check asks for the scene's lone plane wave; a beam angle near zero is
       judged in degrees rather than as a share of zero.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      c and damping with the Courant number, Snell's index, the double slit's
-      fringe spacing measured against λL/d with the detector plotted, the
-      phased array's beam angle, and the Mach cone; Inspect follows a source's
-      drive. Random sources gives each source added its own frequency, from
-      half to twice f, and a random phase; Inspect shows a source's own
-      frequency.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -647,6 +643,21 @@ Object.assign(waves, genericState, {
     return { mean: sum / this.Ny, peak };
   },
   dataColumns: ['t_s', 'sources', 'max_displacement', 'detector_mean_intensity', 'detector_peak_intensity', 'wave_speed_cells_s', 'frequency_hz', 'phase_step_deg', 'source_speed_c'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it]. */
+  dataInfo: {
+    t_s: ['s', 'Simulated time on the lab clock.', 's', 1],
+    sources: ['count', 'Wave sources.'],
+    max_displacement: ['amplitude', 'Largest |u| over the water, in the sources\' own units (a source drives u between −1 and 1).'],
+    detector_mean_intensity: ['amplitude²', 'Mean time-averaged intensity ⟨u²⟩ along the detector line at the screen.'],
+    detector_peak_intensity: ['amplitude²', 'Brightest time-averaged intensity on the detector line.'],
+    wave_speed_cells_s: ['cells/s', 'Wave speed c.', 'm/s', 0.004],
+    frequency_hz: ['Hz', 'Source frequency.', 'Hz', 1],
+    phase_step_deg: ['°', 'Phase step between neighbouring sources, which steers a beam.'],
+    source_speed_c: ['1', 'Speed of a moving source as a fraction of c: above 1 it outruns its waves.'],
+    y_cell: ['cells', 'Position along the detector line, in grid cells from the top.', 'm', 0.004],
+    intensity: ['amplitude²', 'Time-averaged intensity ⟨u²⟩ at that cell: a running mean of u² over about 1.2 s.'],
+  },
+  dataNote: 'Positions are in grid cells: x to the right and y downward, from the top-left of the tank. One cell is 4 mm. Each row of the tracks is one cell of the detector line, so a sample writes a whole profile.',
   dataRow() {
     let m = 0; const u = this.u; for (let i = 0; i < u.length; i += 5) { const v = Math.abs(u[i]); if (v > m) m = v; }
     const d = this.detector();

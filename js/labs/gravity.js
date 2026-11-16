@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.15)
+    - Title: Gravity Lab (digiSpace Edition - v2.16)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for datasets another person can read: a column dictionary
+      (unit, meaning, SI factor) on the Star system's exact scale, a note on
+      coordinates and G, the bodies at the start as dataContext(), and t_years
+      in both files with each track's name, kind and orbits_id appended after
+      the earlier columns.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's report of Pluto's orbit hula-hooping: a planet's orbit is its
       whole system's (system(), relative()), the planet and its moons
@@ -24,15 +30,6 @@
       planet in about one run in forty. mergedKind keeps a small world's class
       when it takes in another small world, so a moon hit by a comet stays a
       moon.
-    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's report of placed bodies sailing out of the system: throwVel
-      measures a throw against the circular speed about what holds its start
-      (hostAt), so a drag means the same at any zoom (90 px is a circular
-      orbit's speed; the old rule threw short drags at up to 13 times escape
-      speed zoomed out); drops orbit hostAt, so a click beside a giant gives
-      it a moon; throwText reads the throw out beside the arrow. throwFrom
-      starts a throw begun on a body just outside it, so the new body launches
-      from the surface instead of merging into it at once.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -1422,16 +1419,58 @@ Object.assign(gravity, {
     for (const s of Object.values(this.series)) s.clear();
     return true;
   },
-  dataColumns: ['t_s', 'bodies', 'kinetic_energy', 'potential_energy', 'total_energy', 'energy_drift_pct', 'virial_2K_over_absU', 'momentum_x', 'momentum_y', 'com_x', 'com_y', 'momentum_z', 'com_z'],
+  // t_years joined in 2.16, after the columns earlier datasets already had, so their analyses still line up.
+  dataColumns: ['t_s', 'bodies', 'kinetic_energy', 'potential_energy', 'total_energy', 'energy_drift_pct', 'virial_2K_over_absU', 'momentum_x', 'momentum_y', 'com_x', 'com_y', 'momentum_z', 'com_z', 't_years'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it].
+     The scale is the Star system's: 1 AU is 135 px, the Sun weighs 1000, and at G = 1× a year is AU_YR seconds. */
+  dataInfo: (() => {
+    const L = AU_M / AU_PX, T = YR_S / AU_YR, M = 1.98847e30 / 1000, E = M * L * L / (T * T), P = M * L / T;
+    return {
+      t_s: ['sim s', 'Time on the simulation clock. At G = 1×, one year passes every 4.41 simulated seconds.', 's', T],
+      t_years: ['yr', 'The same time in years, on the Star system\'s scale: one year is the orbit of a planet 1 AU from a star of one solar mass, at G = 1×.', 's', YR_S],
+      bodies: ['count', 'Bodies in the scene, after any merges and escapes.'],
+      kinetic_energy: ['sim energy', 'Total kinetic energy, ½Σmv².', 'J', E],
+      potential_energy: ['sim energy', 'Total gravitational potential energy, −ΣGmm/r over every pair, with the softening length ε.', 'J', E],
+      total_energy: ['sim energy', 'Kinetic plus potential energy: constant for an isolated system, apart from merges and escapes.', 'J', E],
+      energy_drift_pct: ['%', 'How far the total energy has moved since it was last reset (a scene, a merge, an escape or a change of G), as a share of its size: the integrator\'s error.'],
+      virial_2K_over_absU: ['1', 'Twice the kinetic energy in the centre-of-mass frame over |potential energy|: 1 for a bound system in equilibrium (the virial theorem).'],
+      momentum_x: ['sim momentum', 'Total momentum Σmv, x component.', 'kg·m/s', P],
+      momentum_y: ['sim momentum', 'Total momentum, y component.', 'kg·m/s', P],
+      momentum_z: ['sim momentum', 'Total momentum, z component (out of the orbital plane).', 'kg·m/s', P],
+      com_x: ['px', 'Centre of mass, x. 135 px is 1 AU.', 'm', L],
+      com_y: ['px', 'Centre of mass, y.', 'm', L],
+      com_z: ['px', 'Centre of mass, z (out of the orbital plane).', 'm', L],
+      body_id: ['id', 'The body\'s number: unique in this run, kept through merges by the heavier body, never reused.'],
+      name: ['text', 'The body\'s name, or "Body" and its number.'],
+      kind: ['text', 'Its class: star, brown dwarf, gas giant, ice giant, sub-Neptune, super-Earth, terrestrial, dwarf planet, icy body or comet.'],
+      orbits_id: ['id', 'The body_id of what this body orbits at that moment, the reference Inspect uses: a moon\'s planet, else the heavier body that pulls on it hardest. Empty for the heaviest body.'],
+      mass: ['sim mass', 'Mass. 1000 is one solar mass, about 0.955 one Jupiter, 0.003 one Earth; 0 is a test body that feels gravity but pulls on nothing.', 'kg', M],
+      x: ['px', 'Position, x, in the orbital plane. 135 px is 1 AU.', 'm', L],
+      y: ['px', 'Position, y, in the orbital plane.', 'm', L],
+      z: ['px', 'Position, z, out of the orbital plane.', 'm', L],
+      vx: ['px/sim s', 'Velocity, x.', 'm/s', L / T],
+      vy: ['px/sim s', 'Velocity, y.', 'm/s', L / T],
+      vz: ['px/sim s', 'Velocity, z.', 'm/s', L / T],
+    };
+  })(),
+  dataNote: 'Positions are relative to the scene\'s origin, where its centre of mass sat when it was built. The scale holds at G = 1×; with G changed, gravity is stronger or weaker than in the real units the scale names.',
+  /* The bodies when a recording starts, so a reader knows who body 448 was. */
+  dataContext() {
+    return { bodies: this.bodies.map(b => { const P = this.pullHost(b); return { id: b.id, name: nameOf(b), kind: KINDS[b.kind].label, mass: b.m, mass_text: b.m > 0 ? this.massText(b.m) : 'massless', orbits_id: P ? P.id : null, orbits: P ? nameOf(P) : null }; }) };
+  },
   dataRow() {
     this.energy();
     let M = 0, px = 0, py = 0, pz = 0, cx = 0, cy = 0, cz = 0;
     for (const b of this.bodies) { M += b.m; px += b.m * b.vx; py += b.m * b.vy; pz += b.m * b.vz; cx += b.m * b.x; cy += b.m * b.y; cz += b.m * b.z; }
-    return [this.t, this.bodies.length, this.KE, this.PE, this.E, this.E0 ? (this.E - this.E0) / Math.abs(this.E0) * 100 : 0, this.PE ? 2 * this.Kint / Math.abs(this.PE) : NaN, px, py, M ? cx / M : NaN, M ? cy / M : NaN, pz, M ? cz / M : NaN];
+    return [this.t, this.bodies.length, this.KE, this.PE, this.E, this.E0 ? (this.E - this.E0) / Math.abs(this.E0) * 100 : 0, this.PE ? 2 * this.Kint / Math.abs(this.PE) : NaN, px, py, M ? cx / M : NaN, M ? cy / M : NaN, pz, M ? cz / M : NaN, this.t / AU_YR];
   },
   trackLabel: 'Per-body tracks',
-  trackColumns: ['t_s', 'body_id', 'mass', 'x', 'y', 'vx', 'vy', 'z', 'vz'],
-  trackRows(out) { for (const b of this.bodies) out.push([this.t, b.id, b.m, b.x, b.y, b.vx, b.vy, b.z, b.vz]); },
+  // t_years, name, kind and orbits_id joined in 2.16, after the columns earlier tracks already had.
+  trackColumns: ['t_s', 'body_id', 'mass', 'x', 'y', 'vx', 'vy', 'z', 'vz', 't_years', 'name', 'kind', 'orbits_id'],
+  trackRows(out) {
+    const ty = this.t / AU_YR;
+    for (const b of this.bodies) { const P = this.pullHost(b); out.push([this.t, b.id, b.m, b.x, b.y, b.vx, b.vy, b.z, b.vz, ty, nameOf(b), KINDS[b.kind].label, P ? P.id : null]); }
+  },
 });
 
 /* ---------- 3D mode: the lab's own camera, picking and overlays (gravity3d.js) ---------- */

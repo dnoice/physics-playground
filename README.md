@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.15)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.16)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.15.0
+    - Version: 2.16.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.16.0: datasets that explain themselves, under Capturing runs; readable
+      badges in deeper colours; a contents table in place of the row of links.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.15.0: the camera goes all the way round finished apparatus; the
       photographer's studio; worlds lit from behind; the tiers' textures and
@@ -109,16 +112,6 @@
     alt="Physics Playground: seven live physics labs in one browser workspace">
 </p>
 
-<p align="center">
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#the-labs">Explore the labs</a> ·
-  <a href="#our-solar-system">Our Solar System</a> ·
-  <a href="#deploying-to-github-pages">Deploy</a> ·
-  <a href="#documentation">Documentation</a> ·
-  <a href="#contributing">Contribute</a> ·
-  <a href="CHANGELOG.md">Changelog</a>
-</p>
-
 ![The Physics Playground workspace in 3D: the Gravity lab's star system on
 the stage with the stage rail at its top right, the player bar beneath it,
 the instruments deck with live readings, and the inspector with the lab's
@@ -126,23 +119,23 @@ controls](docs/media/hero-workspace.webp)
 
 <p align="center">
   <a href="https://dnoice.github.io/physics-playground/">
-    <img src="https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541"
+    <img src="https://img.shields.io/badge/live_demo-open_the_lab-b45309?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541"
       alt="Live demo: open the lab">
   </a>
   <a href="https://github.com/dnoice/physics-playground/actions/workflows/pages.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df"
+    <img src="https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&color=15803d&labelColor=0c1118&logo=githubactions&logoColor=6fcf97"
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.15.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.15.0">
+    <img src="https://img.shields.io/badge/release-v2.16.0-0e7490?style=flat-square&labelColor=0c1118"
+      alt="Release 2.16.0">
   </a>
   <a href="LICENSE">
-    <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
+    <img src="https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
       alt="License: Apache 2.0">
   </a>
   <a href="CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/contributions-welcome-6fcf97?style=flat-square&labelColor=0c1118&logo=github&logoColor=6fcf97"
+    <img src="https://img.shields.io/badge/contributions-welcome-15803d?style=flat-square&labelColor=0c1118&logo=github&logoColor=6fcf97"
       alt="Contributions welcome">
   </a>
 </p>
@@ -155,6 +148,37 @@ controls](docs/media/hero-workspace.webp)
   Exact simulations in 2D; physical, rendered apparatus in 3D.
   No build step required.
 </p>
+
+<table align="center">
+  <tr>
+    <th>Start here</th>
+    <th>Work with it</th>
+    <th>Go deeper</th>
+    <th>The project</th>
+  </tr>
+  <tr valign="top">
+    <td>
+      <a href="#quick-start">Quick start</a><br>
+      <a href="#the-labs">The seven labs</a><br>
+      <a href="#our-solar-system">Our Solar System</a>
+    </td>
+    <td>
+      <a href="#using-the-workspace">Using the workspace</a><br>
+      <a href="#keyboard">Keyboard</a><br>
+      <a href="#capturing-runs">Capturing runs</a>
+    </td>
+    <td>
+      <a href="#two-modes-2d-and-3d">2D and 3D</a><br>
+      <a href="#graphics-tiers">Graphics tiers</a><br>
+      <a href="#planet-classes">Planet classes</a>
+    </td>
+    <td>
+      <a href="#documentation">Documentation</a><br>
+      <a href="#contributing">Contributing</a><br>
+      <a href="CHANGELOG.md">Changelog</a>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -627,6 +651,35 @@ that matter. The layout reflows to one column below 1180 px.
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
 
+### Datasets that explain themselves
+
+A dataset is made for someone who never saw the run. Its **ZIP** download,
+in the Library, holds four files:
+
+| File | What it holds |
+| --- | --- |
+| `….csv` | One row per sample: the readings for the whole system |
+| `…-tracks.csv` | One row per tracked object per sample (bodies, particles, the tracer, a detector profile), joined to the samples on `t_s` |
+| `…-README.md` | What every column means, its unit and the factor to SI units; the lab, scene, settings, scale, time span and sample rate; in Gravity, the bodies the run started with |
+| `…-datapackage.json` | The same, for software: a [Frictionless](https://frictionlessdata.io/) Tabular Data Package, which pandas, R and the frictionless tools read with every column's type |
+
+Some points about the files:
+
+- **Values are exact.** They are written as the simulation computed them,
+  in its own units, to ten significant figures. The README gives the
+  factor that converts each column to SI.
+- **Gravity's files read on their own.**
+  - Both files carry `t_years`, the time in years. `t_s` is the engine's
+    clock, and at G = 1× a year is 4.41 of its seconds.
+  - Each track row also names its body, its class and the body it orbits
+    at that moment.
+- **Tracks always span the whole run.** On a long run with many bodies
+  they thin evenly, keeping every other sample each time they fill.
+  Before, they stopped without a word. The README says how far they were
+  thinned.
+- **Older datasets get a README too.** One saved before this release gains
+  its README and data package when you download its ZIP.
+
 The **Library** page gathers all of this in two sections.
 
 - **Capture** is a bar of three buttons.
@@ -812,12 +865,12 @@ Physics Playground is licensed under the Apache License 2.0: see
 
 [demo]: https://dnoice.github.io/physics-playground/
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
-[badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
-[badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.15.0-5fd0df?style=flat-square&labelColor=0c1118
-[badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
+[badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-b45309?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
+[badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&color=15803d&labelColor=0c1118&logo=githubactions&logoColor=6fcf97
+[badge-release]: https://img.shields.io/badge/release-v2.16.0-0e7490?style=flat-square&labelColor=0c1118
+[badge-license]: https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
 [badge-katex]: https://img.shields.io/badge/KaTeX-0.19.1-232c39?style=flat-square&labelColor=0c1118&logo=latex&logoColor=5fd0df
 [badge-tests]: https://img.shields.io/badge/tests-Playwright-232c39?style=flat-square&labelColor=0c1118&logo=playwright&logoColor=6fcf97
-[badge-coffee]: https://img.shields.io/badge/brewed_with-epic_amounts_of_coffee-f2a541?style=flat-square&labelColor=0c1118
+[badge-coffee]: https://img.shields.io/badge/brewed_with-epic_amounts_of_coffee-b45309?style=flat-square&labelColor=0c1118

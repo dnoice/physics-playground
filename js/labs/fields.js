@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.7)
+    - Title: Fields Lab (digiSpace Edition - v2.16)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
+      dictionary for datasets and particle tracks: each column's unit, meaning
+      and SI factor, and a note on coordinates, scale and the 64-particle
+      limit.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: probe field and potential, particles and E × B drift on its
       tape, and the charted particle as its target, riding the field's relief
@@ -21,13 +25,6 @@
       particles of other charge-to-mass ratios, as Random particles have,
       count as well as the scene's, where before their circling left a residue
       over the panel's one period.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      Coulomb at the probe, the Lorentz force's fields as dials, the
-      cyclotron period and radius, the E × B drift measured over a full period
-      against E/B, and the grad-B drift; Inspect follows kinetic energy. Size
-      of new charges sets how many units a click places, and Random gives each
-      charge 1 to 4 units and each launched particle a random charge-to-mass
-      ratio and sign.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -949,6 +946,28 @@ Object.assign(fields, genericState, {
     return true;
   },
   dataColumns: ['t_s', 'charges', 'net_charge', 'particles', 'absorbed', 'escaped', 'probe_E', 'probe_V', 'tracked_kinetic', 'tracked_potential', 'tracked_total', 'tracked_drift_pct'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it]. */
+  dataInfo: {
+    t_s: ['s', 'Simulated time on the lab clock.', 's', 1],
+    charges: ['count', 'Source charges placed.'],
+    net_charge: ['sim charge', 'Sum of the source charges, in the lab\'s charge units.'],
+    particles: ['count', 'Test particles in flight.'],
+    absorbed: ['count', 'Particles that have hit a charge of the opposite sign.'],
+    escaped: ['count', 'Particles that have left the world.'],
+    probe_E: ['px/s² per C/kg', 'Field strength |E| at the probe, as the acceleration it gives a particle per unit of its charge-to-mass ratio.', 'N/C', PX_M],
+    probe_V: ['sim potential', 'Electric potential at the probe, in the lab\'s units.'],
+    tracked_kinetic: ['sim energy', 'Kinetic energy of the tracked particle, per unit mass.'],
+    tracked_potential: ['sim energy', 'Its potential energy in the field, per unit mass.'],
+    tracked_total: ['sim energy', 'Their sum: constant without a magnetic field\'s help or a collision.'],
+    tracked_drift_pct: ['%', 'How far that total has moved, as a share of the energy being exchanged.'],
+    particle_id: ['id', 'The particle\'s number: unique in this run.'],
+    charge_to_mass: ['C/kg', 'Its charge-to-mass ratio q/m, which sets how the field moves it.', 'C/kg', 1],
+    x: ['px', 'Position, x.', 'm', PX_M],
+    y: ['px', 'Position, y (downward).', 'm', PX_M],
+    vx: ['px/s', 'Velocity, x.', 'm/s', PX_M],
+    vy: ['px/s', 'Velocity, y (downward).', 'm/s', PX_M],
+  },
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm. The tracks follow at most the first 64 particles at each sample.',
   dataRow() {
     const s = this.stats(), pv = this.probeVal, en = s.ti >= 0 ? this.energyOf(s.ti) : null;
     return [this.t, this.charges.length, s.qnet, this.n, this.absorbed, this.escaped, pv ? pv.E : NaN, pv ? pv.V : NaN, en ? en.ke : NaN, en ? en.pe : NaN, en ? en.et : NaN, Number.isFinite(s.drift) ? s.drift * 100 : NaN];

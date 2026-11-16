@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.7)
+    - Title: Cloth Lab (digiSpace Edition - v2.16)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.16.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
+      dictionary for datasets: each column's unit, meaning and SI factor, and
+      a note on coordinates and scale.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: mean and peak stretch, torn links and tearing rate on its tape;
       with nothing to select, no target.
@@ -22,11 +25,6 @@
       the mean beside the peak and says where the peak gathers, so a hammock
       hanging from two pins reads as a loaded corner rather than a cloth
       holding within 44 %.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Live Math:
-      gravity, wind and damping as dials for the Verlet step, and the
-      constraint passes with the stretch they leave. Gustiness scales how much
-      the wind rises and falls about its mean, and Ball size scales the Ball
-      tool's collider.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -440,5 +438,17 @@ Object.assign(cloth, genericState, {
     return true;
   },
   dataColumns: ['t_s', 'points', 'pinned', 'links_intact', 'links_torn', 'mean_stretch', 'peak_stretch', 'tearing_per_s'],
+  /* What each recorded column means, for a dataset's README and data package: [unit, meaning, SI unit, factor to it]. */
+  dataInfo: {
+    t_s: ['s', 'Simulated time on the lab clock.', 's', 1],
+    points: ['count', 'Mass points in the cloth.'],
+    pinned: ['count', 'Points held in place.'],
+    links_intact: ['count', 'Links still joining their points.'],
+    links_torn: ['count', 'Links torn or cut so far.'],
+    mean_stretch: ['1', 'Mean strain of the intact links: length over rest length, minus 1 (0.01 is 1 % longer).'],
+    peak_stretch: ['1', 'Strain of the most stretched intact link.'],
+    tearing_per_s: ['1/s', 'Links torn per second of simulated time.', '1/s', 1],
+  },
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm.',
   dataRow() { return [this.t, this.n, this.pins(), this.aliveCount, this.L - this.aliveCount, this.meanStretch, this.maxStretch, Math.max(0, this.tearRate)]; },
 });
