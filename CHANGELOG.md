@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.12)
+    - Title: Changelog (digiSpace Edition - v2.13)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
+      2.13.0 release. With the community documents.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       2.12.0 release.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
@@ -67,6 +69,96 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.13.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's report that a body placed in a system with larger bodies and a
+host star often sailed straight off into space, as if nothing were around
+it. And, as the repository began to draw stars and forks, a welcome for
+contributors.
+
+### Gravity: throws and drops that obey the system
+
+- **The bug (Dennis's report).** A body thrown into a system often sailed
+  straight out of it as if nothing were there.
+  - Nothing was wrong with its gravity. It was thrown far too fast.
+  - A throw's speed was the drag's length in the world, times 1.6 a second,
+    so it grew as the view zoomed out.
+  - Measured with real drags of 30 to 60 px, throws left at up to 3.8 times
+    escape speed in the Star system's 3D view, up to 7 in Our Solar System,
+    and up to 13 zoomed out. At several times escape speed a pass barely
+    bends.
+  - The Star system's framing in 2.12.0 (0.6, from 0.85) had made the same
+    drag 40% faster there.
+- **Throws measured against the orbit (`throwVel`).**
+  - A drag's screen length over 90 px (`THROW_PX`) is its speed as a multiple
+    of the circular speed about the body that holds the point, added to that
+    body's own motion.
+  - About 127 px escapes.
+  - The same drags now throw at a third and two thirds of the circular
+    speed, in every scene, at every zoom and in either view, and none
+    escaped.
+- **The reading beside the arrow** gives the speed against the host, then
+  the multiple of the circular speed, and says when a throw will escape, in
+  2D and 3D.
+- **Drops orbit what holds the point (`hostAt`).** A click within half a
+  giant's Hill sphere puts the body round that giant, so zooming in on a
+  planet and clicking beside it gives it a moon. Before, every drop orbited
+  the star and the giant flung it away. A drop is refused only inside the
+  merge distance; the old rule (the host's radius plus 4 px) left a giant
+  almost no room for a moon.
+- **A drag begun on a planet launches from its surface (`throwFrom`).**
+  - Before, the new body started inside the planet, merged into it on the
+    first step and vanished, while the planet quietly gained its mass.
+  - Now it starts just outside, along the drag.
+
+### Community
+
+- **`CONTRIBUTING.md`**, a guide written to be welcoming and quick to follow:
+  - the ways to help, code or not;
+  - a first contribution in five steps, from fork to pull request;
+  - every check, matched to what CI runs, and how to run the browser tests;
+  - a tour of the code;
+  - the house style for code, physics and words;
+  - the ✒ file headers in full, with a worked example;
+  - what happens to a pull request.
+- **`CODE_OF_CONDUCT.md`**, written for a project about learning: beginners
+  and their questions are explicitly welcome. Concerns go to the maintainer
+  privately, and no one's personal email is published.
+- **`SECURITY.md`**: supported versions, a scope written for a static
+  browser app, and private reporting through GitHub's vulnerability
+  reporting, with a fallback that discloses nothing in public.
+- **Issue forms** in `.github/ISSUE_TEMPLATE/`:
+  - a bug report, which asks for the lab, view, steps, browser and
+    graphics tier;
+  - a physics accuracy report, which separates what the playground shows
+    from what physics says, with its source;
+  - a feature request;
+  - a chooser that keeps blank issues for questions, and steers security
+    reports away from public issues.
+- **A pull request template** with the checks as boxes. It carries no ✒
+  header, since GitHub copies it into every pull request; `tools/check.mjs`
+  exempts it by name.
+- **The README** gains a Contributing section, a "contributions welcome"
+  badge, a Contribute link, and the three documents in its table.
+  `.gitignore` covers the `.venv/` the guide sets up.
+
+### Tests
+
+- **`tests/placement.py`, four new checks:**
+  - `throw_speed_follows_the_orbit_not_the_zoom`: a 60 px drag at two zooms;
+  - `thrown_bodies_stay_in_the_system`;
+  - `drop_beside_a_giant_makes_a_moon`;
+  - `throw_from_a_planet_launches_from_its_surface`: it fails without the
+    fix, since the body is swallowed and the planet's mass changes.
+
+### Docs
+
+- **README:** Mouse and touch explains throwing and dropping in Gravity.
+- **ARCHITECTURE:** `hostAt`, `dropOrbit`, `throwVel`, `throwFrom` and
+  `throwText`, and a pointer to the contributing guide.
 
 ## 2.12.0 (11/16/2026)
 

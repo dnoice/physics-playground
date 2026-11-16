@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.10)
+    - Title: Gravity 3D View (digiSpace Edition - v2.13)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.10.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.13.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The 3D
+      throw and its preview take the lab's throwVel: a drag's screen length
+      against the circular speed about what holds its start, so a throw from
+      the 3D camera no longer leaves at several times escape speed; the
+      reading beside the arrow is throwText's. A throw begun on a body
+      launches from its surface (throwFrom).
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       zoomLimits3: the Solar System's free camera comes in to a few thousand
       km and out to all of Sedna's orbit; elsewhere from a fiftieth of the
@@ -22,9 +28,6 @@
       planet's disc is hidden and cannot be picked (apart3); the near plane
       follows the camera in to a moon; names in the overlay, and the hover
       readout names the body. The 3D names are the hudClear too.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Throws and
-      drops in 3D place the body drawn for the throw, random or set, and the
-      preview shows its colour and size.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -58,7 +61,6 @@ import { THEME } from '../core/color.js';
 import { brushRing } from '../core/draw.js';
 import { FOV3, m4look, m4mul, m4persp } from '../core/math3d.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
-import { fmtQ } from '../core/units.js';
 import { view } from '../core/view.js';
 import { in3D } from '../shell/mode.js';
 import { announce } from '../shell/state.js';
@@ -209,7 +211,8 @@ export const gravity3d = {
   aimOverlay3(g, a) {
     const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
     if (A && B) {
-      const vx = (B.x - A.x) * this.LAUNCH_K, vy = (B.y - A.y) * this.LAUNCH_K, zs = [], path = this.predict(A.x, A.y, vx, vy, A.z, zs);
+      const m = (this.next || this.drawNew()).m, o = this.throwFrom(A.x, A.y, A.z, B.x - A.x, B.y - A.y, m);
+      const t = this.throwVel(o.x, o.y, o.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), m), zs = [], path = this.predict(o.x, o.y, t.vx, t.vy, o.z, zs);
       g.setLineDash([4, 5]); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3;
       g.beginPath();
       let on = false;
@@ -218,7 +221,7 @@ export const gravity3d = {
       const s0 = this.project3(A.x, A.y, A.z);
       if (s0) { const look = this.nextLook(); g.fillStyle = look.css; g.beginPath(); g.arc(a.sx, a.sy, Math.max(2, look.r * this.scale3(s0)), 0, TAU); g.fill(); }
       g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted; g.textAlign = 'left'; g.textBaseline = 'bottom';
-      g.fillText(fmtQ(this, 'speed', Math.hypot(vx, vy)), a.x + 10, a.y - 6);
+      g.fillText(this.throwText(t), a.x + 10, a.y - 6);
     }
     g.strokeStyle = A && B ? THEME.text : THEME.crit; g.lineWidth = 1.5;
     g.beginPath(); g.moveTo(a.sx, a.sy); g.lineTo(a.x, a.y); g.stroke();
@@ -251,6 +254,7 @@ export const gravity3d = {
     }
     const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
     if (!A || !B) { announce('Aim at the orbital plane to throw a body.'); return; }
-    this.addBody(this.body(A.x, A.y, (B.x - A.x) * this.LAUNCH_K, (B.y - A.y) * this.LAUNCH_K, nb.m, A.z, 0, nb.kind));
+    const o = this.throwFrom(A.x, A.y, A.z, B.x - A.x, B.y - A.y, nb.m), t = this.throwVel(o.x, o.y, o.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
+    this.addBody(this.body(o.x, o.y, t.vx, t.vy, nb.m, o.z, 0, nb.kind));
   },
 };

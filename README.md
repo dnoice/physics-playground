@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.12)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.13)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.12.0
+    - Version: 2.13.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.13.0: Mouse and touch explains throwing and dropping in Gravity; the
+      release badge. A drag begun on a planet launches from its surface. On
+      Dennis's call for a welcome to contributors: a Contributing section, a
+      contributions-welcome badge, a Contribute link, and CONTRIBUTING.md,
+      CODE_OF_CONDUCT.md and SECURITY.md in the Documentation table.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.12.0: no two worlds alike and the new Star system in Planet classes,
       the 3D table's Gravity row, and the release badge.
@@ -100,6 +106,7 @@
   <a href="#our-solar-system">Our Solar System</a> ·
   <a href="#deploying-to-github-pages">Deploy</a> ·
   <a href="#documentation">Documentation</a> ·
+  <a href="#contributing">Contribute</a> ·
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
@@ -118,12 +125,16 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.12.0-5fd0df?style=flat-square&labelColor=0c1118"
-      alt="Release 2.12.0">
+    <img src="https://img.shields.io/badge/release-v2.13.0-5fd0df?style=flat-square&labelColor=0c1118"
+      alt="Release 2.13.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
       alt="License: Apache 2.0">
+  </a>
+  <a href="CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/contributions-welcome-6fcf97?style=flat-square&labelColor=0c1118&logo=github&logoColor=6fcf97"
+      alt="Contributions welcome">
   </a>
 </p>
 
@@ -537,6 +548,16 @@ that matter. The layout reflows to one column below 1180 px.
 - Zooming in follows the cursor and zooming back out returns to the home
   view, so you can always find your way back.
 - On touch screens, pinch zooms and two fingers pan.
+- **Throwing and dropping in Gravity.**
+  - A click on empty sky drops a body into a circular orbit about what holds
+    that point: the star, or a planet when you click close beside it (zoom in
+    on a giant and click near it to give it a moon).
+  - A drag throws one. About 90 px of drag throws at the circular speed of the
+    orbit it goes into, and about 127 px escapes. That holds at every zoom
+    and in either view.
+  - The reading beside the arrow gives the speed as a multiple of the
+    circular speed, and says when the throw will escape.
+  - A drag begun on a planet launches the body from the planet's surface.
 
 ### Keyboard
 
@@ -686,12 +707,33 @@ without it the workspace says so and stays in 2D.
 
 | Document | What it covers |
 | --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to help: a first contribution in five steps, the checks, a tour of the code, the house style and the file headers |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | How we treat one another, and how to raise a concern privately |
+| [SECURITY.md](SECURITY.md) | Supported versions, what counts as a security problem here, and how to report one privately |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layers, boot order, the frame loop, the lab contract, the 3D mode, deployment, and recipes for extending the playground |
 | [CHANGELOG.md](CHANGELOG.md) | Every release in full, newest first |
 | [vendor/VENDOR.md](vendor/VENDOR.md) | Third-party code: versions, sources, licences and what happens offline |
 | [package.metadata.md](package.metadata.md) | What `package.json` declares, and every npm script |
 | [docs/media/MANIFEST.md](docs/media/MANIFEST.md) | The README pictures: what each shows, where it came from, how to recapture it |
 | [docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md](docs/research/md/PLANETARY_CLASSIFICATION_REFERENCE.md) | The research behind Gravity's planet classes: the five classes, their physics, the mass–radius relations and the reference dataset |
+
+## Contributing
+
+Contributions of every size are welcome, from a typo fix or a bug report to
+a whole new lab. [CONTRIBUTING.md](CONTRIBUTING.md) gets you from a fresh
+clone to a pull request in five steps, and explains the checks and the
+house style.
+
+- **Found a bug, or physics that looks wrong?** Open an
+  [issue](https://github.com/dnoice/physics-playground/issues/new/choose).
+  The forms ask for just what helps.
+- **Have an idea?** The feature request form is the place.
+- **New to the code?** Issues labelled `good first issue` are a gentle
+  start.
+
+Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
+Security problems go privately, as the [security policy](SECURITY.md)
+describes.
 
 ## Credits and license
 
@@ -714,7 +756,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-f2a541?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&labelColor=0c1118&logo=githubactions&logoColor=5fd0df
-[badge-release]: https://img.shields.io/badge/release-v2.12.0-5fd0df?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.13.0-5fd0df?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-5fd0df?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

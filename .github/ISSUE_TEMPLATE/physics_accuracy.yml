@@ -1,0 +1,101 @@
+# ✒ Metadata
+#     - Title: Physics Accuracy Form (digiSpace Edition - v2.13)
+#     - File Name: physics_accuracy.yml
+#     - Relative Path: .github/ISSUE_TEMPLATE/physics_accuracy.yml
+#     - Artifact Type: config
+#     - Version: 2.13.0
+#     - Date: 11/16/2026
+#     - Update: Monday, November 16, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       on Dennis's call for welcoming, intuitive community documents.
+#
+# ✒ Description:
+#     The GitHub issue form for physics that looks wrong: what the
+#     playground shows, what physics says it should be and why, and how to
+#     see it, with the units in use.
+#
+# ✒ Key Features:
+#     - Separates the observed value from the expected one and its source.
+#     - Asks for the unit system, since readouts convert between three.
+#     - Points to the Math page, whose checks set theory beside the run.
+#
+# ✒ Other Important Information:
+#     - Dependencies: GitHub issue forms
+#     - Compatible platforms: GitHub
+# ---------
+name: Physics accuracy
+description: A simulation, readout or formula disagrees with real physics.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The playground aims to be real physics, so a report like this is especially valuable.
+
+        Tip: many formulas on a lab's **Math** page set the theory beside what the simulation measures. If one of those checks turns red, say which.
+  - type: dropdown
+    id: lab
+    attributes:
+      label: Which lab?
+      options:
+        - Gravity
+        - Collisions
+        - Fluid
+        - Waves
+        - Chaos
+        - Cloth
+        - Fields
+    validations:
+      required: true
+  - type: input
+    id: scene
+    attributes:
+      label: Scene
+      placeholder: "e.g. Kepler ellipses, Ideal gas, Cyclotron motion"
+  - type: textarea
+    id: observed
+    attributes:
+      label: What the playground shows
+      description: The behaviour or value you saw, with its units.
+      placeholder: "e.g. The Math page's period check reads 1.12 yr for the third planet."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and why
+      description: The physics behind your expectation. A formula, a worked number or a reference all help.
+      placeholder: "e.g. Kepler's third law gives T = 2π√(a³/GM) = 1.00 yr at a = 1 AU."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: dropdown
+    id: units
+    attributes:
+      label: Units in use
+      description: Set by the units button in the top bar.
+      options:
+        - Metric
+        - US customary
+        - Simulation
+        - Not sure
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: A link to a paper, textbook page or data set, if you have one.
+      placeholder: "https://"

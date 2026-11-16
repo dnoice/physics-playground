@@ -1,0 +1,132 @@
+# ✒ Metadata
+#     - Title: Bug Report Form (digiSpace Edition - v2.13)
+#     - File Name: bug_report.yml
+#     - Relative Path: .github/ISSUE_TEMPLATE/bug_report.yml
+#     - Artifact Type: config
+#     - Version: 2.13.0
+#     - Date: 11/16/2026
+#     - Update: Monday, November 16, 2026
+#     - Author: Dennis 'dendogg' Smaltz
+#     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+#     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+#
+# ✒ Changelog:
+#     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
+#       on Dennis's call for welcoming, intuitive community documents.
+#
+# ✒ Description:
+#     The GitHub issue form for a bug: where it happened, what happened and
+#     what was expected, how to reproduce it, and the browser it ran in.
+#
+# ✒ Key Features:
+#     - Lab, view and graphics tier as choices, so reports arrive sorted.
+#     - Steps prefilled as a numbered list.
+#     - Room for screenshots, a clip, console errors or a saved state.
+#
+# ✒ Other Important Information:
+#     - Dependencies: GitHub issue forms
+#     - Compatible platforms: GitHub
+# ---------
+name: Bug report
+description: Something in the playground does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. A few details help us see what you saw, and fix it sooner.
+
+        If the simulation runs but the physics looks wrong, the **Physics accuracy** form fits better.
+  - type: dropdown
+    id: lab
+    attributes:
+      label: Where did it happen?
+      options:
+        - Gravity
+        - Collisions
+        - Fluid
+        - Waves
+        - Chaos
+        - Cloth
+        - Fields
+        - The workspace (panels, deck, Library, menus)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: scene
+    attributes:
+      label: Scene
+      description: The scene picked in the lab's menu, if it matters.
+      placeholder: "e.g. Star system, Our Solar System, Double slit"
+  - type: dropdown
+    id: view
+    attributes:
+      label: View
+      options:
+        - 2D
+        - 3D
+        - Both
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest path from opening the page to seeing the problem.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: "e.g. Chrome 131 on Windows 11, Safari 18 on an iPad"
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Graphics tier (3D only)
+      description: Shown on the Graphics button beside the 2D/3D switch.
+      options:
+        - Not in 3D
+        - Auto
+        - Ultra
+        - High
+        - Medium
+        - Low
+        - Lite
+        - Not sure
+  - type: textarea
+    id: extras
+    attributes:
+      label: Screenshots, clips or errors
+      description: >-
+        Drag files here. A screenshot or a short clip helps most. Errors from the browser console
+        (F12) help too, and so does a saved state: press Save in the player bar, then download the
+        state from the Library.
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Before you send
+      options:
+        - label: I searched the open issues and this has not been reported yet.
+          required: true
