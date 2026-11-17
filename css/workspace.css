@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.18)
+    - Title: Workspace Styles (digiSpace Edition - v2.19)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the description names the one
+      quick opener left beside the Settings gear, the Graphics button; the
+      Units and HUD buttons are gone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the floating sheet and its
       backdrop blur are gone, and the keyboard list and the tier and unit
@@ -19,16 +23,12 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       release tag beside the name: monospace small capitals, the release in
       amber, quiet until hovered.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The lab tab
-      strip is centred by auto margins instead of justify-content, so when it
-      overflows it scrolls from its first tab rather than pushing the first
-      tabs out of reach; removed the unused .tile-meta.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Top bar, lab rail, icon buttons, the console grid, tile chrome, the
-    keyboard list, the 2D and 3D switch, the Graphics, Units and HUD buttons
-    with the tier and unit lists they open in Settings, and the colophon.
+    keyboard list, the 2D and 3D switch, the Graphics button with the tier
+    and unit lists in Settings, and the colophon.
 
 ✒ Key Features:
     - Console grid: the stage over the instruments deck, beside a

@@ -30,15 +30,18 @@
 
 ✒ Description:
     Evaluates each lab's diagnose() and the frame budget, and shows insights
-    with one-click fixes in the Insights pane's Now view and a HUD alert
-    chip. The pane's other view, the Story, is js/shell/story.js.
+    with one-click fixes in the Insights pane's Now view, an alert chip on
+    the stage, and a mark on the Insights tab while a problem stands. The
+    pane's other view, the Story, is js/shell/story.js.
 
 ✒ Key Features:
     - Severity levels with glyphs; insights appear and leave without
       flicker.
     - Frame-time strip and solver, drawing and real-time numbers.
-    - The HUD alert opens the Insights pane on its Now view, as opening the
-      pane does while a warning or critical notice stands.
+    - The stage's alert chip opens the Insights pane on its Now view, as
+      opening the pane does while a warning or critical notice stands.
+    - The Insights tab carries an amber or red dot with a few words only
+      while a warning or critical notice stands, and nothing otherwise.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports

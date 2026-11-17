@@ -267,7 +267,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `enabled(key)` | `true`, or a sentence saying why a control is disabled right now |
 | `onParam(key, value)`, `onResize(w, h, ow, oh)`, `after(simDt)` | React to changes |
 | `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, and the lab's own length per stage pixel for the scale bar |
-| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units section of Settings; `timeNote` adds to the HUD clock |
+| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units section of Settings; `timeNote` adds to the run's clock on the stage (`#hud-time`) and to the Story's time stamps |
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
 | `zoomPace()`, `zoomLimits3()` | How strongly the user's zoom controls act (the wheel, the rail's buttons and drag, the keys raise their factor to this power; Gravity's Solar System, eight decades of scale, returns 2), and Gravity's 3D zoom limits as multiples of the framing distance. Pinch and scripted zooms keep their exact factor |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
