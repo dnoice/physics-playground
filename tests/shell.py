@@ -557,10 +557,11 @@ with sync_playwright() as p:
     st = lambda: pg.evaluate(SET)
     pg = fresh("fluid")
     # Two openers in the top bar, not five: the Settings button and Graphics, which shows the tier. The Units, HUD and
-    # keyboard buttons are gone, markup and all.
-    openers = pg.evaluate("[...document.querySelectorAll('[aria-controls=settings]')].map(b => b.id).sort()")
+    # keyboard buttons are gone, markup and all. The one other opener anywhere is the player bar's capture settings,
+    # beside the buttons it sets.
+    openers = pg.evaluate("[...document.querySelectorAll('[aria-controls=settings]')].map(b => [b.id, !!b.closest('.topbar'), !!b.closest('.player .capture')]).sort()")
     gone = pg.evaluate("['btn-units', 'btn-hud', 'btn-keys', 'btn-units-label', 'btn-hud-label'].filter(i => document.getElementById(i))")
-    ok("settings_two_openers", openers == ["btn-gfx", "btn-settings"] and not gone, (openers, gone))
+    ok("settings_two_openers", openers == [["btn-cap-settings", False, True], ["btn-gfx", True, False], ["btn-settings", True, False]] and not gone, (openers, gone))
     # Graphics opens at its section on its current choice. Every other section is one press of its tab away from the
     # Settings button, and one Tab more lands on its current choice, where the removed buttons put focus.
     at = {}

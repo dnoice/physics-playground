@@ -1382,11 +1382,18 @@ class), add it to the sorted `icon_names` list in the Material Symbols
 link in `index.html`, and run `npm run check`. The checker fails if a
 glyph the code uses is missing from the font subset.
 
-A glyph means one thing. `replay` restarts the run (Reset, R); `restart_alt`
-sets a value back (a dial, the speed, a section, a graphics setting);
-`view_in_ar` is Graphics, in the top bar and in Settings; `tune` is the
-Controls tab. Choose a glyph no other control wears, and a tool key no
-workspace key uses (`tests/shell.py` checks both against the keyboard list).
+The goal is that a glyph means one thing. `replay` restarts the run (Reset,
+R); `restart_alt` sets a value back (a dial, the speed, a section, a
+graphics setting); `view_in_ar` is Graphics, in the top bar and in
+Settings; `tune` is the Controls tab; `fit_screen` is Frame the scene. Give
+a new control a glyph no other control wears, and a tool key no workspace
+key uses (`tests/shell.py` checks the keys against the keyboard list, and
+the first four glyphs here). Some pairs still break the rule, to be parted
+when their controls are next reworked: `radar` is Waves' Pulse tool and its
+Sources section; `add_circle` is Fields' Add + tool and the New sections of
+Gravity, Collisions and Fields; `history` is the rewind timeline and the
+Library's Load (and the empty Story); `cyclone` is the Chaos tab and Fluid's
+Stir tool; `water_drop` is the Fluid tab and Fluid's Pour tool.
 
 ### Add or upgrade a third-party library
 
