@@ -402,7 +402,11 @@ with sync_playwright() as p:
     groups = pg.evaluate("[...document.querySelectorAll('#params-body .pgroup')].map(s => s.dataset.group)")
     ok("sections_in_lab_order", groups == ["start", "physics", "display"], groups)
     # Chaos's "Restart from these angles" only repeated Reset (R): with it gone the panel opens on its first section.
-    ok("chaos_no_second_restart", pg.evaluate("(() => { const p = document.querySelector('#params-body .params'); return p.firstElementChild.classList.contains('pgroup') && !p.querySelector('.quick') && ![...p.querySelectorAll('button')].some(b => /restart/i.test(b.textContent)); })()"))
+    # A button's name is its words and its aria-label, not its glyph's ligature (restart_alt on every dial's Reset).
+    second = pg.evaluate("""(() => { const p = document.querySelector('#params-body .params');
+      const name = b => `${b.getAttribute('aria-label') || ''} ${[...b.childNodes].filter(n => !(n.nodeType === 1 && n.classList.contains('ms'))).map(n => n.textContent).join('')}`;
+      return { first: p.firstElementChild.className, quick: !!p.querySelector('.quick'), restarts: [...p.querySelectorAll('button')].map(name).filter(t => /restart/i.test(t)), resets: p.querySelectorAll('.pgroup-reset').length }; })()""")
+    ok("chaos_no_second_restart", second == {"first": "pgroup", "quick": False, "restarts": [], "resets": 3}, second)
     ok("restart_note_once", pg.locator("#params-body .pgroup-note").count() == 1 and "restart" in pg.inner_text("[data-group='start'] .pgroup-note"))
     ok("no_restart_note_per_slider", pg.inner_text("#ctl-chaos-copies-note") == "", pg.inner_text("#ctl-chaos-copies-note"))
     reset = pg.locator("[data-group='physics'] .pgroup-reset")
