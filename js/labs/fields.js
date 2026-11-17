@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.18)
+    - Title: Fields Lab (digiSpace Edition - v2.19)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: the selection contract for the test
+      particles, which Inspect lists with q/m, speed and kinetic energy;
+      Select (Q) charts one without the Move tool.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for recordings shot like a film: interest() names the
       tracked particle, framed round its circle in a magnetic field, the swarm
@@ -21,10 +25,6 @@
       charge; the potential and tracked energies get their real units and SI
       factors (volts and J/kg), and the scale note says how the app shows
       potentials.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and particle tracks: each column's unit, meaning
-      and SI factor, and a note on coordinates, scale and the 64-particle
-      limit.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -58,10 +58,11 @@ import { genericState } from '../core/codec.js';
 import { RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing, drawSphere, zoomOf } from '../core/draw.js';
 import { Series } from '../core/series.js';
-import { PX_M, fmtQ, unitSystem } from '../core/units.js';
+import { PX_M, fmtQ, sig, unitOf, unitSystem } from '../core/units.js';
 import { TAU, clamp, fmtSI, pct, reduceMotion } from '../core/util.js';
 import { announce, canvas } from '../shell/state.js';
 import { toScreen } from '../shell/camera.js';
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 
 /* ================================================================== */
 /*  Lab 7 · Fields & charges                                           */
@@ -222,8 +223,28 @@ export const fields = {
     this.track = pid; for (const s of Object.values(this.series)) s.clear();
     const i = this.indexOf(pid); this.E0track = i >= 0 ? this.energyOf(i).et : NaN; this.sampleClock = 0;
   },
-  /* The charted particle, once the user has picked it, for the Details card. */
+  /* ---------- the selection contract (ARCHITECTURE.md): the charted particle, once the user has picked it ---------- */
   picked: false,
+  selectedId() { return this.picked && this.indexOf(this.track) >= 0 ? this.track : null; },
+  select(id) {
+    if (id == null) { this.picked = false; return true; }
+    if (this.indexOf(id) < 0) return false;
+    if (this.track !== id) this.setTrack(id);
+    this.picked = true; return true;
+  },
+  pick(s) { const f = pickFrame(this, s), i = f ? this.hitParticle(f.p, PICK_PX * f.k) : -1; return i >= 0 ? this.pid[i] : null; },
+  objectsName: 'Particles',
+  objectsEmpty: 'No test particles. Fire one with the Launch tool.',
+  objectCols: [
+    { label: 'q/m', unit: () => 'C/kg', text: v => v.toFixed(2) },
+    { label: 'Speed', unit: () => unitOf(fields, 'speed')[1], text: v => sig(v * unitOf(fields, 'speed')[0]) },
+    { label: 'Kinetic E', unit: () => 'per mass', text: v => fmtSI(v) },
+  ],
+  objects() {
+    const out = [];
+    for (let i = 0; i < this.n; i++) out.push({ id: this.pid[i], name: `Particle ${this.pid[i]}`, kind: this.qm[i] > 0 ? 'Positive' : 'Negative', v: [this.qm[i], Math.hypot(this.vx[i], this.vy[i]), 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2)] });
+    return out.sort((a, b) => a.id - b.id);
+  },
   inspect() {
     const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
     const en = this.energyOf(i), q = this.qm[i], B = this.p.B;
@@ -245,15 +266,15 @@ export const fields = {
     if (C.length) { const c = spread(C.length, k => [C[k].x, C[k].y]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.3, 80), w: 0.3, key: 'charges', label: C.length > 1 ? 'The charges' : 'The charge' }); }
     return out;
   },
-  /* The head-up display: its readings, and the charted particle in stage pixels, riding the field's relief in 3D. */
+  /* The head-up display: its readings, and a particle in stage pixels, riding the field's relief in 3D. */
   hud: [['Probe |E|', 'PROBE |E|'], ['Probe potential V', 'PROBE V'], ['Test particles', 'PARTICLES'], ['E × B drift speed E/B', 'DRIFT E/B']],
-  hudTarget(three) {
-    const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
+  spot(id, three) {
+    const i = id == null ? -1 : this.indexOf(id); if (i < 0) return null;
     const x = this.x[i], y = this.y[i];
     if (three) { const s = this.project3(x, y, this.lift3(x, y) + 0.04); return s && { x: s.x, y: s.y, r: 7 }; }
     const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: 6 };
   },
-  inspectHint: 'With the Move tool, click a test particle to chart and inspect it here.',
+  inspectHint: 'Click a test particle with Move or with Select (Q) to chart and inspect it here.',
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
   retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },
   energyOf(i) { const ke = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2), pe = this.qm[i] * this.Vat(this.x[i], this.y[i]); return { ke, pe, et: ke + pe }; },
@@ -447,8 +468,8 @@ export const fields = {
     for (const c of this.charges) { const d = Math.hypot(c.x - p.x, c.y - p.y); if (d < this.chargeR(c) + 6 && d < bd) { bd = d; best = c; } }
     return best;
   },
-  hitParticle(p) {
-    let best = -1, bd = 14 * 14;
+  hitParticle(p, reach = 14) {
+    let best = -1, bd = reach * reach;
     for (let i = 0; i < this.n; i++) { const d = (this.x[i] - p.x) ** 2 + (this.y[i] - p.y) ** 2; if (d < bd) { bd = d; best = i; } }
     return best;
   },

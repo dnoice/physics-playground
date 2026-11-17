@@ -1,17 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.18)
+    - Title: Tile Content Styles (digiSpace Edition - v2.19)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for every object in a table under Inspect: the Inspect
+      pane sets the card beside the objects list (sortable column heads, rows
+      drawn only where they show, the selection marked) and stacks them below
+      720 px. Each figure is one button that focuses it, and the focus chart's
+      caption carries Pin to Telemetry in place of a second chart button per
+      figure.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Now and Story views
       beside the deck's tabs, the Story's moments with their time, actions and
@@ -20,10 +27,6 @@
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The deck
       resize drag's own user-select is gone: the workspace's one selection
       rule in tokens.css covers it.
-    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Math
-      page's parameter dials sit as the Controls page's do, in equal cells
-      side by side, each its symbol over its wheel, in place of full-width
-      rows of uneven wheels.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -37,7 +40,11 @@
     - Gauges: primary readings lead with larger figures, derived ones are set
       in italics, and units sit in a smaller face.
     - Inspect card: portrait, name and actions beside a grid of read-only
-      figures, each with a plot button.
+      figures; a figure focuses the chart below, whose caption pins it to
+      Telemetry.
+    - Objects list beside the card: column heads that sort, rows that exist
+      only where they show, the selected row in amber and the keyboard's row
+      ringed.
     - Notebook tabs with counts and a new-item dot.
     - KaTeX formula cards that scroll sideways instead of overflowing.
     - Live Math panels: the symbols' running values, the parameters as dials
@@ -67,7 +74,7 @@
 .preset-list button[aria-checked="true"]::before { background: var(--amber); box-shadow: 0 0 8px color-mix(in oklab, var(--amber) 70%, transparent); }
 
 .details {
-  position: relative; display: grid; grid-template-columns: minmax(190px, 250px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 14px; row-gap: 10px; align-items: start;
+  position: relative; display: grid; grid-template-columns: minmax(170px, 220px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 14px; row-gap: 8px; align-items: start;
   min-height: 0; height: 100%; animation: tile-in 0.26s var(--ease) both;
 }
 .details[hidden] { display: none; }
@@ -76,10 +83,10 @@
 .details-name span { font-size: 12px; color: var(--muted); padding-top: 6px; }
 .details-name h3 { margin: 0; font: 700 17px/1.15 var(--font-display); letter-spacing: -0.005em; }
 .details .icon-btn { position: absolute; top: 0; right: 0; width: 28px; height: 28px; }
-/* Each figure is a small read-only gauge; the chart button plots it under Telemetry in the object's own colour. */
-.details-rows { grid-column: 2; grid-row: 1; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
-/* A figure: name, value and the sparkline of its history; the whole tile focuses it, the chart button plots it. */
-.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.7), rgba(12, 17, 24, 0.7) 30px); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
+/* Each figure is a small read-only gauge; one pinned to Telemetry wears the object's series colour. */
+.details-rows { grid-column: 2; grid-row: 1; align-self: stretch; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
+/* A figure: name, value and the sparkline of its history; the whole tile focuses it in the chart below. */
+.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.7), rgba(12, 17, 24, 0.7) 30px); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
 .drow:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .drow.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
 .drow.focus { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 60%, transparent), 0 0 18px -8px color-mix(in oklab, var(--cyan) 60%, transparent); }
@@ -92,20 +99,24 @@
 .drow-pick { position: absolute; inset: 0; appearance: none; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 .drow-pick[hidden] { display: none; }
 .drow-pick:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
-.drow-plot { position: relative; z-index: 1; grid-column: 3; grid-row: 1 / span 2; align-self: center; appearance: none; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; opacity: 0.6; transition: opacity 0.15s, background 0.15s, color 0.15s; }
-.drow-plot[hidden] { display: none; }
-.drow-plot .ms { font-size: 17px; }
-.drow:hover .drow-plot, .drow-plot:focus-visible { opacity: 1; }
-.drow-plot:hover { color: var(--text); background: color-mix(in oklab, var(--text) 9%, transparent); }
-.drow-plot[aria-pressed="true"] { opacity: 1; color: var(--series); }
 .details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; margin-left: -68px; }
 /* The focus chart takes the rest of the pane, so a tall deck shows the object's history instead of empty space. */
-.details-focus { grid-column: 2; grid-row: 2; align-self: stretch; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding-right: 34px; }
+.details-focus { grid-column: 2; grid-row: 2; min-height: 0; display: grid; grid-template-rows: auto auto; gap: 4px; padding-right: 34px; }
 .details-focus-cap { margin: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* The canvas fills a positioned box, so its own pixel size can never feed back into the layout. */
-.details-plot-wrap { position: relative; min-height: 70px; }
+/* The caption names the focused figure, and its button pins that figure to Telemetry. */
+.details-focus-head { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 24px; }
+.details-focus-head .details-focus-cap { flex: 1 1 auto; min-width: 0; }
+.details-pin { appearance: none; flex: none; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px 0 7px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.06); color: var(--muted); font: 500 11.5px/1 var(--font-body); white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.details-pin[hidden] { display: none; }
+.details-pin .ms { font-size: 15px; }
+.details-pin:hover { color: var(--text); background: rgba(255, 255, 255, 0.1); }
+.details-pin[aria-pressed="true"] { color: var(--cyan); background: rgba(95, 208, 223, 0.13); }
+.details-pin:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+/* The canvas fills a positioned box, so its own pixel size can never feed back into the layout. It takes a share of
+   the pane's height, and a pane too short for it keeps the caption and its pin and lets the plot go. */
+.details-plot-wrap { position: relative; height: clamp(48px, 36cqh, 240px); }
+@container inspect (max-height: 175px) { .details-plot-wrap { display: none; } }
 .details-plot { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: 10px; background: color-mix(in oklab, var(--ink) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
-.tile-deck.deck-short .details-focus { display: none; }
 .details-actions .btn { min-height: 30px; border-radius: 9px; font-size: 12.5px; }
 .details-actions:empty { display: none; }
 .details-how { margin: 10px 0 0 -68px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
@@ -148,12 +159,48 @@ body.resizing { cursor: ns-resize; }
 /* Too short for a plot: the readings stay, the plot and the timing strip go. */
 .tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
 .tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }
-.deck-inspect { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
+/* Inspect: the card (or how to select) beside the list of every object in the scene. */
+.deck-inspect { container: inspect / size; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 34%); grid-template-rows: minmax(0, 1fr); column-gap: 14px; min-height: 0; }
+.deck-inspect > .details, .deck-inspect > .inspect-empty { grid-column: 1; grid-row: 1; }
+.objects { --orow: 26px; grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; padding-left: 14px; box-shadow: inset 1px 0 0 var(--hair); }
+.objects[hidden] { display: none; }
+.objects.none { grid-template-rows: auto auto; }
+.objects.none .objects-cols { display: none; }
+.objects-h { margin: 0; display: flex; align-items: baseline; gap: 6px; font: 600 12px/1.2 var(--font-body); color: var(--text); }
+.objects-n { font: 500 11px/1 var(--font-mono); color: var(--muted); }
+.objects-cols, .orow { display: grid; grid-template-columns: var(--ocols); column-gap: 6px; }
+.objects-cols { padding: 0 8px; }
+/* A column's name over its unit, with the sort arrow beside them once it sorts the list. */
+.ocol { appearance: none; position: relative; min-width: 0; display: grid; grid-template-columns: minmax(0, auto) auto; grid-template-rows: auto auto; justify-content: start; align-items: center; align-content: start; column-gap: 1px; padding: 2px 0; border: 0; border-radius: 6px; background: none; color: var(--muted); font: 500 11px/1.25 var(--font-body); text-align: left; cursor: pointer; }
+.ocol.num { justify-content: end; text-align: right; }
+.ocol-name, .ocol-unit { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocol-unit { font: 400 9.5px/1.2 var(--font-mono); color: #6f7b8a; }
+.ocol .ms { display: none; grid-column: 2; grid-row: 1 / span 2; font-size: 13px; }
+.ocol:hover, .ocol[aria-pressed="true"] { color: var(--text); }
+.ocol[aria-pressed="true"] .ms { display: block; }
+.ocol.up .ms { transform: rotate(180deg); }
+.ocol:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+/* Rows exist only where they show: each sits at its place in a spacer as tall as the whole list. */
+.objects-list { position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: 9px; background: rgba(8, 12, 18, 0.55); box-shadow: inset 0 0 0 1px var(--hair); }
+.objects-list[hidden] { display: none; }
+.objects-list:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.objects-space { position: relative; }
+.orow { position: absolute; top: 0; left: 0; right: 0; height: var(--orow); align-items: center; padding: 0 8px; color: #c9d2dd; font-size: 11.5px; cursor: pointer; }
+.orow[hidden] { display: none; }
+.orow:hover { background: rgba(255, 255, 255, 0.05); }
+.orow[aria-selected="true"] { color: var(--text); background: rgba(242, 165, 65, 0.14); box-shadow: inset 3px 0 0 var(--amber); }
+.objects-list:focus-visible .orow.act { box-shadow: inset 0 0 0 1.5px var(--cyan); }
+.objects-list:focus-visible .orow.act[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--amber), inset 0 0 0 1.5px var(--cyan); }
+.ocell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocell:nth-child(2) { color: var(--muted); }
+.ocell.num { text-align: right; font: 400 11px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.objects-empty { margin: 0; padding: 10px 2px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+@container tile (max-width: 720px) { .deck-inspect { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1.3fr) minmax(130px, 1fr); row-gap: 10px; } .objects { grid-column: 1; grid-row: 2; padding-left: 0; box-shadow: none; } }
 .deck-insights { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
 .ins-now { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .deck-insights .insights { align-content: start; }
 .deck-insights .insights:empty { display: grid; }
-@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(110px, 1fr); } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } .details-focus { grid-column: 1; grid-row: 3; padding-right: 0; } }
+@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } .details-focus { grid-column: 1; grid-row: 3; padding-right: 0; } }
 .deck-chart { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; }
 .deck-chart canvas { width: 100%; height: 100%; min-height: 0; display: block; }
 .scoping .deck-chart canvas { cursor: crosshair; touch-action: none; }

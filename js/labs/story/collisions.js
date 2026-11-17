@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Collisions Narrator (digiSpace Edition - v2.18)
+    - Title: Collisions Narrator (digiSpace Edition - v2.19)
     - File Name: collisions.js
     - Relative Path: js/labs/story/collisions.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: Show me selects a ball by its own
+      number, through the lab's select().
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for Insights that narrate the run: the gas relaxing to
       Maxwell–Boltzmann, energy bleeding away against Haff's law, a pile
@@ -72,7 +75,8 @@ function resting(L) {
   for (let i = 0; i < L.n; i++) if (L.vx[i] * L.vx[i] + L.vy[i] * L.vy[i] < 0.1 * g * L.r[i]) k++;
   return L.n ? k / L.n : 0;
 }
-function select(L, i) { return { label: i === L.tracer ? 'Select the tracer' : 'Select it', can: () => i < L.n, run() { L.picked = i; } }; }
+/* Show me selects a ball by its own number, which outlasts its slot in the arrays. */
+function select(L, i) { const id = L.uid[i]; return { label: i === L.tracer ? 'Select the tracer' : 'Select it', can: () => L.slot(id) >= 0, run() { L.select(id); } }; }
 
 export const collisionsStory = {
   storyHint: 'Let the gas run, or change restitution, gravity or friction: relaxation to Maxwell–Boltzmann, cooling, piling, the wall pressure and the tracer\'s random walk are told here as they happen.',

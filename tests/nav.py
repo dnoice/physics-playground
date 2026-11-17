@@ -1,17 +1,22 @@
 """
 ✒ Metadata
-    - Title: Navigation Test (digiSpace Edition - v2.5)
+    - Title: Navigation Test (digiSpace Edition - v2.19)
     - File Name: nav.py
     - Relative Path: tests/nav.py
     - Artifact Type: test
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Select
+      sits beside the hand in one row, picks a ball, never adds one, clears on
+      empty table, and is ended by the hand and by a tool; Q turns it on.
+      Gravity keeps one of each camera control: no Pan tool, Follow switch,
+      Zoom dial, View section or Release camera.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The frame,
       key 0 and follow checks wait for the end state (the view fitted, the
       camera on the body) instead of a fixed 800 to 1500 ms, which a renderer
@@ -96,6 +101,34 @@ with sync_playwright() as p:
     hb = pg.locator("#nav-pan").bounding_box(); c6 = V()
     pg.mouse.move(hb["x"] + 16, hb["y"] + 16); pg.mouse.down(); pg.mouse.move(hb["x"] - 34, hb["y"] + 16, steps=6); pg.mouse.up()
     c7 = V(); ok("hand_drag_pans", abs((c7["x"] - c6["x"]) * c7["z"] - 50) < 3 and pg.get_attribute("#nav-pan", "aria-pressed") == "false", round((c7["x"] - c6["x"]) * c7["z"], 1))
+    # Select (Q) beside the hand: a press only ever picks a ball, never adds one; empty table clears it; the hand, Q
+    # and the rail's tools each end it
+    row = pg.evaluate("[...document.querySelectorAll('.nav-row .nav-btn')].map(b => [b.id, b.offsetTop, b.offsetWidth])")
+    ok("select_pan_frame_in_one_row", [r[0] for r in row] == ["nav-select", "nav-pan", "nav-fit"] and len({r[1] for r in row}) == 1 and min(r[2] for r in row) >= 28, row)
+    run0 = pg.evaluate("PhysicsPlayground.state.running"); pg.evaluate("PhysicsPlayground.pause()")
+    pg.click("#nav-select")
+    ok("select_mode_on", pg.get_attribute("#nav-select", "aria-pressed") == "true" and pg.get_attribute("#nav-pan", "aria-pressed") == "false" and pg.inner_text("#stage-hint").startswith("Select"))
+    SPOTS = """(() => { const c = PhysicsPlayground.labs.collisions, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), V = PhysicsPlayground.view, a = V.toWorld(0, 0), b = V.toWorld(1, 1), k = b.x - a.x;
+      const free = (x, y) => x > 30 && y > 30 && x < r.width - 180 && y < r.height - 120 && document.elementFromPoint(r.left + x, r.top + y) === cv;
+      let ball = null, empty = null;
+      for (let i = 0; i < c.n && !ball; i++) { const x = (c.x[i] - a.x) / k, y = (c.y[i] - a.y) / k; if (free(x, y) && c.pick({ x, y }) === c.uid[i]) ball = [x, y, c.uid[i]]; }
+      for (let y = 40; y < r.height - 120 && !empty; y += 9) for (let x = 40; x < r.width - 180 && !empty; x += 9) if (free(x, y) && c.pick({ x, y }) == null) empty = [x, y];
+      return { ball, empty }; })()"""
+    sp = pg.evaluate(SPOTS); n3 = pg.evaluate("PhysicsPlayground.labs.collisions.n")
+    # While Select is on, the tools see no pointer, so none previews what a click will not do.
+    pg.mouse.move(box["x"] + sp["empty"][0], box["y"] + sp["empty"][1]); pg.mouse.move(box["x"] + sp["empty"][0] + 6, box["y"] + sp["empty"][1] + 4); pg.wait_for_timeout(100)
+    ok("select_hides_tool_preview", pg.evaluate("PhysicsPlayground.labs.collisions.hover") is None)
+    pg.mouse.click(box["x"] + sp["ball"][0], box["y"] + sp["ball"][1]); pg.wait_for_timeout(200)
+    ok("select_picks_a_ball", pg.evaluate("PhysicsPlayground.labs.collisions.selectedId()") == sp["ball"][2] and pg.evaluate("document.getElementById('tile-deck').dataset.pane") == "inspect", sp)
+    pg.mouse.move(box["x"] + sp["empty"][0], box["y"] + sp["empty"][1]); pg.mouse.down(); pg.mouse.move(box["x"] + sp["empty"][0] + 40, box["y"] + sp["empty"][1] + 10, steps=4); pg.mouse.up()
+    ok("select_never_adds_and_empty_clears", pg.evaluate("PhysicsPlayground.labs.collisions.n") == n3 and pg.evaluate("PhysicsPlayground.labs.collisions.selectedId()") is None, sp)
+    pg.click("#nav-pan")
+    ok("pan_ends_select", pg.get_attribute("#nav-select", "aria-pressed") == "false" and pg.get_attribute("#nav-pan", "aria-pressed") == "true")
+    pg.evaluate("document.activeElement && document.activeElement.blur()"); pg.keyboard.press("q")
+    ok("key_q_selects", pg.get_attribute("#nav-select", "aria-pressed") == "true" and pg.get_attribute("#nav-pan", "aria-pressed") == "false")
+    pg.click("#dock-collisions-grab")
+    ok("tool_ends_select", pg.get_attribute("#nav-select", "aria-pressed") == "false" and not pg.inner_text("#stage-hint").startswith("Select"))
+    if run0: pg.evaluate("PhysicsPlayground.play()")
     # minimap click recentres
     mb = pg.locator("#minimap-canvas").bounding_box()
     pg.mouse.click(mb["x"] + mb["width"] * 0.25, mb["y"] + mb["height"] * 0.5); v = V(); W = pg.evaluate("PhysicsPlayground.labs.collisions.worldRect()")
@@ -123,9 +156,14 @@ with sync_playwright() as p:
     pg.keyboard.press("1"); pg.wait_for_timeout(800)
     z0 = pg.evaluate("PhysicsPlayground.labs.gravity.p.zoom")
     pg.mouse.move(box["x"] + 400, box["y"] + 300); pg.mouse.wheel(0, -300); pg.wait_for_timeout(700)
-    ok("gravity_wheel_syncs_zoom", pg.evaluate("PhysicsPlayground.labs.gravity.p.zoom") > z0 * 1.3 and pg.inner_text("#ctl-gravity-zoom-out").endswith("×"), pg.inner_text("#ctl-gravity-zoom-out"))
+    # The zoom lives on the rail alone: p.zoom keeps it for saved states and the rail's reading shows it.
+    zg = pg.evaluate("[PhysicsPlayground.labs.gravity.p.zoom, document.getElementById('nav-zoom').textContent]")
+    ok("gravity_wheel_syncs_zoom", zg[0] > z0 * 1.3 and zg[1].endswith("%") and abs(float(zg[1][:-1]) - zg[0] * 100) <= max(0.051, zg[0]), zg)
     ok("follow_button_pressed", pg.get_attribute("#nav-follow", "aria-pressed") == "true")
     pg.click("#nav-follow"); ok("follow_button_frees", pg.evaluate("PhysicsPlayground.labs.gravity.p.follow") == False and pg.get_attribute("#nav-follow", "aria-pressed") == "false")
+    # One of each camera control: the gizmo's hand, Follow and zoom; no Pan tool, Follow switch, Zoom dial or View section.
+    gone = pg.evaluate("['dock-gravity-pan', 'ctl-gravity-follow', 'ctl-gravity-zoom'].filter(id => document.getElementById(id))")
+    ok("gravity_camera_duplicates_gone", not gone and pg.locator("#params-body [data-group=view]").count() == 0 and pg.locator("#dock .dock-btn").count() == 2, gone)
     pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(400)
     # pick a light body that is on screen and not under an overlay (minimap, gizmo, HUD)
     pos = pg.evaluate("""(() => { const g = PhysicsPlayground.labs.gravity, v = g.viewXf, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect();
@@ -134,6 +172,9 @@ with sync_playwright() as p:
     nb = pg.evaluate("PhysicsPlayground.labs.gravity.bodies.length")
     pg.mouse.click(box["x"] + pos[0], box["y"] + pos[1]); pg.wait_for_timeout(200)
     ok("click_body_tracks", pg.evaluate("PhysicsPlayground.labs.gravity.track") == pos[2] and pg.evaluate("PhysicsPlayground.labs.gravity.bodies.length") == nb)
+    # Inspect shows the body at once; the close button is the one way to let the camera go there.
+    acts = pg.inner_text("#details-actions")
+    ok("inspect_has_no_release_camera", not pg.is_hidden("#details") and "Delete body" in acts and "Release camera" not in acts, acts)
     # The camera eases onto the body over its first frames; wait until it has arrived, however slowly frames come.
     pg.evaluate("PhysicsPlayground.play()"); pg.wait_for_timeout(300); settle(pg, "PhysicsPlayground.labs.gravity.trackEase >= 1", 10000)
     tr = pg.evaluate("(() => { const g = PhysicsPlayground.labs.gravity, b = g.bodies.find(b => b.id === g.track); return [b.x - g.cam.x, b.y - g.cam.y] })()")

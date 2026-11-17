@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.18)
+    - Title: Transport and Keys (digiSpace Edition - v2.19)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button: Q turns Select on and off.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: Shift+S opens Settings, ahead of
       the tool letters so a lab whose tool is S keeps the plain key, and U and
@@ -19,10 +21,6 @@
       wait, and keys that reach the page go to the dialog.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The + and
       - keys take the lab's zoomPace.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Shift+H
-      shows or hides the head-up display, ahead of the tool letters so a lab
-      whose tool is H keeps it; Escape also closes the HUD menu; a held H acts
-      once.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -59,6 +57,7 @@ import { closeSceneMenu, hasBay, isFocus, setBay, setFocus } from './layout.js';
 import { toggleMode } from './mode.js';
 import { toggleHud } from './headsup.js';
 import { openSettings, settingsKey, settingsOpen } from './settings.js';
+import { toggleSelectMode } from './navigator.js';
 
 /* ---------- transport and keys ---------- */
 export const speedInput = $('#ctl-speed'), speedMap = rangeMap({ min: 0.1, max: 4, log: true });
@@ -133,6 +132,7 @@ export function init() {
     else if (k === 'd' || k === 'D') toggleData();
     else if (k === '[') setSpeed(state.speed / 2);
     else if (k === ']') setSpeed(state.speed * 2);
+    else if (k === 'q' || k === 'Q') { if (!e.repeat) toggleSelectMode(); }
     else if (/^[1-9]$/.test(k) && labs[+k - 1]) selectLab(labs[+k - 1].id);
     else if ((k === 'v' || k === 'V') && active && active.views) { e.preventDefault(); nextView(); }
     else if (active && active.dock && k.length === 1) {

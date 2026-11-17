@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fluid Narrator (digiSpace Edition - v2.18)
+    - Title: Fluid Narrator (digiSpace Edition - v2.19)
     - File Name: fluid.js
     - Relative Path: js/labs/story/fluid.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: Show me selects a post by its
+      number, through the lab's select().
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for Insights that narrate the run: the dam-break
       front against Ritter's 2√(gh₀), the run-up against v²/2g, the squash
@@ -188,7 +191,7 @@ export const fluidStory = {
         if (un < 4) continue;
         const ru = up / un, rd = dd ? dn / dd : 0, su = us / un, sd = dd ? ds / dd : 0, dry = dd < 4, piled = ru > 1.02 && ru > rd + 0.03, wake = dry || sd < 0.8 * su;
         S.posts.add(key);
-        N.add({ kind: 'wake', group: 'posts struck', show: { label: 'Select the post', can: () => L.obs.includes(o), run() { L.selAt = { x: o.x, y: o.y }; } }, title: 'The flow strikes a post',
+        N.add({ kind: 'wake', group: 'posts struck', show: { label: 'Select the post', can: () => L.obs.includes(o), run() { L.select(o.id); } }, title: 'The flow strikes a post',
           body: `Water reaches the post at ${spd(L, pxs(L, su))}.${piled ? ` On its upstream face it piles up to <b>${ru.toFixed(2)}×</b> rest density${dd ? `, against ${rd.toFixed(2)}× behind` : ''}: there the flow is stopped and its momentum becomes pressure, about ½ρv² above the rest.` : ''}${dry ? ' The stream parts round it and leaves the space just behind it empty: a sheltered pocket in its lee.' : wake ? ` Behind it the water moves at only <b>${spd(L, pxs(L, sd))}</b>: a sheltered wake, where the stream parts round the post and leaves a slower pocket.` : ` The stream parts round it and closes again behind, still moving at ${spd(L, pxs(L, sd))}: a post this small in a flow this fast barely shelters its lee.`}` });
       }
     }

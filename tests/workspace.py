@@ -1,17 +1,22 @@
 """
 ✒ Metadata
-    - Title: Workspace Tests (digiSpace Edition - v2.18)
+    - Title: Workspace Tests (digiSpace Edition - v2.19)
     - File Name: workspace.py
     - Relative Path: tests/workspace.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — One
+      control per figure, with the focus caption's Pin to Telemetry; the
+      objects list lists, sorts, selects by click and Enter and keeps focus;
+      every lab keeps the selection contract; 1200 balls draw only the rows in
+      view; the pane stays read-only.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Story's checks. A
       brown dwarf dropped at the Star system's edge moves the barycentre and
@@ -142,11 +147,62 @@ with sync_playwright() as p:
     ok("dot_click_selects_copy", state("active.sel") == k and state("active.t") == t0, (state("active.sel"), k))
     ok("selection_opens_inspect", pane() == "inspect" and pg.is_visible("#details") and ("Copy %d" % (k + 1)) in pg.inner_text("#details-kicker"), pane())
     ok("inspect_is_read_only", pg.locator("#dp-inspect input, #dp-inspect [role=slider]").count() == 0)
-    pg.locator(".drow-plot").first.click(); pg.wait_for_timeout(200)
-    ok("object_figure_plots", pg.locator(".drow-plot[aria-pressed=true]").count() == 1 and state("active.inst.pins.size") == 1)
+    # One control per figure: its tile focuses it in the chart, and the chart's caption pins it to Telemetry.
+    pg.locator(".drow-pick:not([hidden])").first.click(); pg.wait_for_timeout(200)
+    pg.click("#details-pin"); pg.wait_for_timeout(200)
+    ok("object_figure_plots", pg.get_attribute("#details-pin", "aria-pressed") == "true" and pg.locator(".drow.focus.on").count() == 1 and state("active.inst.pins.size") == 1 and pg.locator(".drow-plot").count() == 0)
     pg.click("#details-close"); pg.wait_for_timeout(500)
     ok("clearing_returns_to_telemetry", pane() == "telemetry" and state("active.sel") == -1, pane())
     ok("object_series_in_scope", pg.locator(".scope-chip").count() == 1 and ("Copy %d" % (k + 1)) in pg.inner_text("#scope-legend"))
+    # ---- the objects list in Inspect: every copy, sortable; a row click or Enter selects, and focus stays put
+    pg.click("#dt-inspect"); pg.wait_for_timeout(400)
+    n = state("active.N")
+    ok("objects_list_lists_all", pg.inner_text("#objects-n") == str(n) and pg.locator("#objects-list .orow:not([hidden])").count() >= 4 and "inspect" == pane(), pg.inner_text("#objects-n"))
+    # The list showed the copy picked on the map; back at its top, the rows are the copies in order.
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(200)
+    rows = pg.locator("#objects-list .orow:not([hidden])")
+    rows.nth(2).click(); card("Copy 3")
+    ok("objects_row_click_selects", state("active.sel") == 2 and rows.nth(2).get_attribute("aria-selected") == "true" and pg.locator("#objects-list .orow[aria-selected=true]").count() == 1, state("active.sel"))
+    pg.focus("#objects-list"); pg.keyboard.press("ArrowDown"); pg.keyboard.press("Enter"); card("Copy 4")
+    ok("objects_keyboard_selects", state("active.sel") == 3 and pg.evaluate("document.activeElement.id") == "objects-list")
+    pg.evaluate(P + ".play()"); pg.wait_for_timeout(900); pg.evaluate(P + ".pause()")
+    ok("objects_focus_kept", pg.evaluate("document.activeElement.id") == "objects-list" and pg.get_attribute("#objects-list", "aria-activedescendant") == "orow-act" and "Copy 4" in pg.inner_text("#orow-act"))
+    pg.mouse.move(5, 5); pg.locator("#objects-cols .ocol").nth(2).click(); pg.wait_for_timeout(300)
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(200)
+    top = pg.evaluate("(() => { const o = PhysicsPlayground.active.objects(); return o.reduce((a, b) => (b.v[0] > a.v[0] ? b : a)).name; })()")
+    ok("objects_sort_by_column", pg.locator("#objects-cols .ocol").nth(2).get_attribute("aria-pressed") == "true" and rows.first.inner_text().startswith(top), (top, rows.first.inner_text()))
+    # A pick in the list is work in Inspect: once the user has picked there, clearing the selection stays in Inspect,
+    # even when a selection elsewhere opened it from Telemetry.
+    # The card must have seen the selection cleared (a panel tick, which a loaded machine stretches) before the next one.
+    pg.evaluate(P + ".active.select(null)"); pg.click("#dt-telemetry"); settle(pg, "document.getElementById('details').hidden", 5000)
+    pg.evaluate(P + ".active.select(1)"); opened = settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
+    picked = None
+    if opened:
+        other = pg.evaluate("[...document.querySelectorAll('#objects-list .orow:not([hidden])')].findIndex(r => r.getAttribute('aria-selected') !== 'true')")
+        rows.nth(other).click(); pg.wait_for_timeout(300); picked = state("active.sel")
+        pg.click("#details-close"); pg.wait_for_timeout(500)
+    ok("list_pick_keeps_inspect_on_clear", opened and picked not in (-1, 1) and pane() == "inspect" and state("active.sel") == -1, (opened, picked, pane()))
+    pg.context.close()
+
+    # ---- one selection contract in every lab: objects(), select(id), selectedId(), inspect(), spot() and pick() agree
+    pg = fresh("gravity")
+    rt = pg.evaluate("""(() => { const P = PhysicsPlayground, out = {};
+      for (const [id, pre] of [['gravity', 'solar'], ['collisions', 'gas'], ['fluid', 'posts'], ['waves', 'twosrc'], ['chaos', 'chaos'], ['cloth', 'curtain'], ['fields', 'exb']]) {
+        P.select(id); P.preset(pre); P.pause(); const L = P.active, o = L.objects(), first = o[0], last = o[o.length - 1];
+        const took = L.select(last.id), sel = L.selectedId(), info = L.inspect(), at = L.spot(first.id, false), back = at && L.pick(at);
+        const none = L.select(null) && L.selectedId() === null && !L.inspect(), bogus = L.select(-12345) === false && L.selectedId() === null;
+        const res = { n: o.length, took, sel, last: last.id, info: !!info, back, first: first.id, none, bogus, unique: new Set(o.map(q => q.id)).size === o.length, shaped: o.every(q => q.name && q.kind && q.v.length === L.objectCols.length) };
+        out[id] = (took && sel === last.id && res.info && back === first.id && none && bogus && res.unique && res.shaped && o.length > 1) || res;
+      } return out; })()""")
+    ok("selection_contract_every_lab", all(v is True for v in rt.values()), rt)
+    # A thousand balls: the list holds them all and draws only the rows in view, to the very last.
+    pg.evaluate(P + ".select('collisions')"); pg.evaluate(P + ".setParam('count', 1200)"); pg.evaluate(P + ".pause()")
+    pg.click("#dt-inspect"); pg.wait_for_timeout(600)
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 1e9"); pg.wait_for_timeout(300)
+    v = pg.evaluate("""[PhysicsPlayground.active.objects().length, document.querySelectorAll('#objects-list .orow').length, +document.getElementById('objects-n').textContent,
+      [...document.querySelectorAll('#objects-list .orow:not([hidden])')].map(r => r.textContent).some(t => t.startsWith('Ball ' + Math.max(...PhysicsPlayground.active.objects().map(o => o.id)) + 'B'))]""")
+    ok("objects_list_draws_rows_in_view", v[0] >= 1000 and v[1] <= 40 and v[2] == v[0] and v[3], v)
+    ok("inspect_list_is_read_only", pg.locator("#dp-inspect input, #dp-inspect [role=slider]").count() == 0)
     pg.context.close()
 
     # ---- the deck: Insights in place of a floating sheet, size presets, and the grip on the keyboard

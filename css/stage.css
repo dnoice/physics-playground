@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Stage Styles (digiSpace Edition - v2.18)
+    - Title: Stage Styles (digiSpace Edition - v2.19)
     - File Name: stage.css
     - Relative Path: css/stage.css
     - Artifact Type: stylesheet
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button in the gizmo area: the camera row sets
+      Select, Pan and Frame side by side, three equal buttons on the rail and
+      fixed squares in the narrow bar.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for recordings shot like a film: the director's chip,
       amber with a steady dot.
@@ -19,13 +23,6 @@
       stage, where the rail becomes a sideways scroller, the side with more
       tools beyond it fades out, so a cut-off tool reads as more to come; at
       390 px six labs' bars overflow, by up to 196 px in Waves.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
-      Random dice: a toggle the size of a tool, dashed while off and lit amber
-      while on, that rolls when it turns on. With an odd number of tools it
-      takes the empty cell of their last row, so the rail grows only when the
-      tools fill their rows and still fits a 1440 by 900 stage in every lab;
-      it sits inline in the bottom bar at 720 px and below. The section gap
-      and tool height are variables the short-stage rules set.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -155,6 +152,9 @@
 .nav-btn:hover, .nav-zoom:hover { color: var(--text); background: color-mix(in oklab, var(--text) 9%, transparent); }
 .nav-btn:active { transform: scale(0.94); }
 .nav-btn[aria-pressed="true"] { color: #1a1206; background: var(--amber); }
+/* The camera row holds Select, Pan and Frame side by side: three equal buttons on the rail, fixed squares in the bar. */
+.nav-row .nav-btn { flex: 1 1 0; width: auto; min-width: 0; }
+@container stage (max-width: 720px) { .nav-row .nav-btn { flex: none; width: 36px; } }
 .nav-zoom { flex: 1; height: 30px; font: 500 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); cursor: ns-resize; touch-action: none; }
 .nav-extra { display: flex; flex-wrap: wrap; gap: 4px; }
 .nav-extra:empty { display: none; }

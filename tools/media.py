@@ -1,17 +1,19 @@
 """
 ✒ Metadata
-    - Title: README Media Capture (digiSpace Edition - v2.8)
+    - Title: README Media Capture (digiSpace Edition - v2.19)
     - File Name: media.py
     - Relative Path: tools/media.py
     - Artifact Type: CLI
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — The pool
+      picture selects the cue ball through the lab's select().
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — New picture
       set sol: Gravity's Solar System in 3D, the planets out to Saturn beside
       Jupiter followed up close with its moons. frame() takes the keycap shown
@@ -131,7 +133,7 @@ PP = 'PhysicsPlayground'
 CHAOS_SETUP = (f"{PP}.viewMode('both'); (() => {{ const L = {PP}.active; L.layout(L.size.w, L.size.h); "
                f"const q = L.sq; L.hover = {{ x: q.x0 + q.S * 0.34, y: q.y0 + q.S * 0.64 }}; }})()")
 # The cue ball (the last one racked) selected, so the picture shows the head-up display's target box and callout on it.
-POOL_SETUP = f"{PP}.active.picked = 15"
+POOL_SETUP = f"(() => {{ const L = {PP}.active; L.select(L.uid[15]); }})()"
 LABS = [
     ('gravity', 'Gravity', 'solar', 'Star system', 'orbit', 7.0, None),
     ('collisions', 'Collisions', 'pool', 'Billiard break', 'bubble_chart', 1.6, POOL_SETUP),

@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: v2 Feature Test (digiSpace Edition - v2.1)
+    - Title: v2 Feature Test (digiSpace Edition - v2.19)
     - File Name: labs3.py
     - Relative Path: tests/labs3.py
     - Artifact Type: test
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — A click on
+      a moving Gravity body follows it and drops nothing; Select (Q) never
+      adds a body and a click on a trail follows its body; Tilt marks is off
+      duty in the flat view and says why.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Both pages
       start in flat 2D mode. The per-lab gravity 3D checks became flat view
       checks and the fallback now goes through the global mode switch, since
@@ -118,6 +122,34 @@ with sync_playwright() as p:
     nb = pg.evaluate(G + ".bodies.length")
     pg.mouse.move(box["x"] + 200, box["y"] + 380); pg.mouse.down(); pg.mouse.move(box["x"] + 260, box["y"] + 360, steps=5); pg.mouse.up()
     ok("throw_in_flat_view", pg.evaluate(G + ".bodies.length") == nb + 1)
+    # A click on a moving body follows it: whether the press was on a body is decided where it was at the press, so a
+    # body that has moved on by the release is still followed, and nothing is dropped where it was.
+    pg.evaluate(G + ".select(null)"); pg.wait_for_timeout(200)
+    FAST = """(() => { const g = PhysicsPlayground.labs.gravity, v = g.viewXf, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect();
+      for (const b of g.bodies.filter(b => b.m > 0 && b.m < 100).sort((a, c) => Math.hypot(c.vx, c.vy) - Math.hypot(a.vx, a.vy))) { const x = b.x * v.z + v.ox, y = b.y * v.z + v.oy;
+        if (x > 30 && y > 30 && document.elementFromPoint(r.left + x, r.top + y) === cv && g.bodyAt({ x, y }) === b) return [x, y, b.id]; } return null; })()"""
+    m = pg.evaluate(FAST); nb = pg.evaluate(G + ".bodies.length")
+    pg.mouse.move(box["x"] + m[0], box["y"] + m[1]); pg.mouse.down(); pg.evaluate("PhysicsPlayground.play()")
+    settle(pg, "(() => { const g = PhysicsPlayground.labs.gravity, b = g.bodies.find(q => q.id === %d), v = g.viewXf; return !b || Math.hypot(b.x * v.z + v.ox - %f, b.y * v.z + v.oy - %f) > 30; })()" % (m[2], m[0], m[1]), 8000)
+    pg.evaluate("PhysicsPlayground.pause()")
+    left = pg.evaluate("(() => { const g = PhysicsPlayground.labs.gravity, b = g.bodies.find(q => q.id === %d), v = g.viewXf; return b ? Math.hypot(b.x * v.z + v.ox - %f, b.y * v.z + v.oy - %f) : -1; })()" % (m[2], m[0], m[1]))
+    pg.mouse.up(); pg.wait_for_timeout(200)
+    ok("click_on_moving_body_follows", left > 30 and pg.evaluate(G + ".track") == m[2] and pg.evaluate(G + ".bodies.length") == nb, (m, round(left, 1)))
+    # Select (Q): neither a drag nor a click on empty sky adds a body, and a click on a trail follows its body.
+    pg.evaluate(G + ".select(null)"); pg.keyboard.press("q"); nb = pg.evaluate(G + ".bodies.length")
+    pg.mouse.move(box["x"] + 200, box["y"] + 380); pg.mouse.down(); pg.mouse.move(box["x"] + 260, box["y"] + 360, steps=5); pg.mouse.up()
+    sky = pg.evaluate("(() => { const g = PhysicsPlayground.labs.gravity, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(); for (let y = 60; y < r.height - 120; y += 11) for (let x = 60; x < r.width - 200; x += 11) if (document.elementFromPoint(r.left + x, r.top + y) === cv && g.pick({ x, y }) == null) return [x, y]; return null; })()")
+    pg.mouse.click(box["x"] + sky[0], box["y"] + sky[1]); pg.wait_for_timeout(200)
+    ok("select_tool_never_adds_body", pg.evaluate(G + ".bodies.length") == nb and pg.evaluate(G + ".track") is None and pg.get_attribute("#nav-select", "aria-pressed") == "true")
+    tr = pg.evaluate("""(() => { const g = PhysicsPlayground.labs.gravity, { ox, oy, z } = g.viewXf, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), len = Math.round(g.p.trailLen), pts = [];
+      for (const b of g.bodies) { const n = Math.min(b.tn, len); for (let k = 0; k < n; k++) { const i = (b.th - n + k + g.TRAIL_CAP) % g.TRAIL_CAP; pts.push([b.trail[i * 2] * z + ox, b.trail[i * 2 + 1] * z + oy, b.id, k / n]); } }
+      for (const [x, y, id, f] of pts) { if (f < 0.3 || f > 0.8 || x < 40 || y < 40 || x > r.width - 200 || y > r.height - 120 || document.elementFromPoint(r.left + x, r.top + y) !== cv || g.bodyAt({ x, y }, 24)) continue;
+        if (pts.every(q => q[2] === id || Math.hypot(q[0] - x, q[1] - y) > 16)) return [x, y, id]; } return null; })()""")
+    if tr: pg.mouse.click(box["x"] + tr[0], box["y"] + tr[1]); pg.wait_for_timeout(200)
+    ok("select_tool_trail_click_follows", tr is not None and pg.evaluate(G + ".track") == tr[2] and pg.evaluate(G + ".bodies.length") == nb, tr)
+    pg.keyboard.press("q"); pg.evaluate(G + ".select(null)")
+    # Tilt marks belong to the 3D view, so in the flat view the switch is off duty and says why.
+    ok("tilt_marks_switch_3d_only", pg.is_disabled("#ctl-gravity-marks") and "3D view only" in pg.inner_text("#ctl-gravity-marks") and pg.get_attribute("#ctl-gravity-marks", "aria-checked") == "true")
     pg.screenshot(path=shot("v20_labs3_end.png"))
 
     # ---- honest fallback: asking for 3D with the CDN blocked leaves a working 2D page that says why

@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.18)
+    - Title: Physics Playground (digiSpace Edition - v2.19)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button in the gizmo area and every object in
+      a table under Inspect: #nav-select (Q) beside the hand in the camera
+      row, the objects list in the Inspect pane, the focus caption's Pin to
+      Telemetry button, and Q in the keyboard list.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Insights pane's Now
       and Story views with their tablist in the deck's header, the Story's
@@ -26,10 +31,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       engine's release beside the name in the top bar (filled from
       js/core/version.js), linking to the changelog.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      Library page in two sections, Capture and Saved, with the capture
-      settings folding out beside the Capture heading; the download and edit
-      glyphs join the icon subset.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -42,11 +43,13 @@
 ✒ Key Features:
     - Console layout: the stage with its player bar, an instruments deck
       beneath it, and a full-height inspector beside them.
-    - Stage rail anchored top right: Camera (axis ball, zoom, pan, frame),
-      then the lab's Tools with the Random dice, View and This scene groups.
+    - Stage rail anchored top right: Camera (axis ball, zoom, Select, pan,
+      frame), then the lab's Tools with the Random dice, View and This scene
+      groups.
     - Instruments deck with Telemetry, Inspect and Insights panes, compact,
-      standard and tall sizes, and a grip to drag it to any height; Insights
-      has two views, Now and the Story of the run.
+      standard and tall sizes, and a grip to drag it to any height; Inspect
+      lists every object beside the selected one's card; Insights has two
+      views, Now and the Story of the run.
     - One Settings dialog (Shift+S) with Graphics, Units (U), Head-up display
       and Keyboard (?) sections; the top bar's Graphics, Units, HUD and
       keyboard buttons open it at their own.
@@ -183,7 +186,9 @@
             <button type="button" class="nav-zoom" id="nav-zoom" data-tip="Drag to zoom · click for 100%">100%</button>
             <button type="button" class="nav-btn" id="nav-in" aria-label="Zoom in" data-tip="Zoom in · +"><span class="ms" aria-hidden="true">add</span></button>
           </div>
+          <!-- Select and Pan are modes for a press on the stage, each ending the other; a tool on the rail ends both. -->
           <div class="nav-row">
+            <button type="button" class="nav-btn" id="nav-select" aria-pressed="false" aria-label="Select mode" aria-keyshortcuts="Q" data-tip="Select objects only · Q"><span class="ms" aria-hidden="true">ads_click</span></button>
             <button type="button" class="nav-btn" id="nav-pan" aria-pressed="false" aria-label="Pan mode" data-tip="Pan · Space-drag anytime"><span class="ms" aria-hidden="true">pan_tool</span></button>
             <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" data-tip="Frame the scene · 0"><span class="ms" aria-hidden="true">fit_screen</span></button>
           </div>
@@ -264,18 +269,26 @@
           <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
           <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3>
             <div class="details-actions" id="details-actions"></div>
-            <p class="details-how">Figures are read-only and live. Click one to follow it in the chart, or its chart button to plot it under Telemetry. Click another object on the stage to switch; × clears.</p></div>
+            <p class="details-how">Figures are read-only and live. Click one to follow it in the chart, and pin it to Telemetry from there. Pick another object on the stage or in the list to switch; × clears.</p></div>
           <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
           <dl class="details-rows" id="details-rows"></dl>
           <div class="details-focus" id="details-focus">
-            <p class="details-focus-cap" id="details-focus-cap"></p>
+            <div class="details-focus-head"><p class="details-focus-cap" id="details-focus-cap"></p><button type="button" class="details-pin" id="details-pin" aria-pressed="false" hidden><span class="ms" aria-hidden="true">show_chart</span><span class="lbl">Pin to Telemetry</span></button></div>
             <div class="details-plot-wrap"><canvas class="details-plot" id="details-plot" role="img" aria-label="The focused figure of the selected object over time"></canvas></div>
           </div>
         </article>
         <div class="inspect-empty" id="inspect-empty">
           <span class="ms" aria-hidden="true">ads_click</span>
-          <p><b>Nothing selected.</b> <span id="inspect-how">Click an object on the stage to inspect it here.</span> Its live figures appear here, read-only; plot any of them over time with its chart button. Settings stay in Controls.</p>
+          <p><b>Nothing selected.</b> <span id="inspect-how">Click an object on the stage to inspect it here.</span> Or pick one in the list, or turn on Select (Q) in the view controls, where a click only ever selects. Its live figures appear here, read-only; follow any of them over time and pin it to Telemetry. Settings stay in Controls.</p>
         </div>
+        <!-- Every object in the scene (objects.js): sortable, the selection marked; a click or Enter selects. Only the
+             rows in view exist, so a thousand balls scroll as lightly as five posts. -->
+        <section class="objects" id="objects" aria-labelledby="objects-h">
+          <h4 class="objects-h" id="objects-h"><span id="objects-h-name">Objects</span> <span class="objects-n" id="objects-n"></span></h4>
+          <div class="objects-cols" id="objects-cols" role="group" aria-label="Sort the list"></div>
+          <div class="objects-list" id="objects-list" role="listbox" tabindex="0" aria-labelledby="objects-h"><div class="objects-space" id="objects-space"></div></div>
+          <p class="objects-empty" id="objects-empty" hidden></p>
+        </section>
       </div>
       <div class="deck-pane deck-insights" role="tabpanel" id="dp-insights" aria-labelledby="dt-insights" hidden>
         <div class="ins-now" role="tabpanel" id="ip-now" aria-labelledby="iv-now" hidden>
@@ -371,6 +384,7 @@
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
     <dt><kbd>Shift</kbd>+<kbd>H</kbd></dt><dd>Show or hide the head-up display on the stage</dd>
     <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
+    <dt><kbd>Q</kbd></dt><dd>Select: a click on the stage only selects, never throws, paints or erases</dd>
     <dt><kbd>V</kbd></dt><dd>Next view, in a lab with more than one (Chaos, Waves)</dd>
     <dt><kbd>U</kbd></dt><dd>Units in Settings: metric, US customary or simulation pixels</dd>
     <dt><kbd>Shift</kbd>+<kbd>S</kbd></dt><dd>Settings: graphics, units, the head-up display and these keys</dd>

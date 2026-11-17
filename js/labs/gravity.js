@@ -1,17 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.18)
+    - Title: Gravity Lab (digiSpace Edition - v2.19)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for easier selection: whether a click with Throw is on a
+      body is judged where the bodies were at the press, with the hover ring's
+      reach, so a moving body is followed rather than a new one dropped where
+      it was. One pickBody through each view's projector picks, erases and
+      rings in 2D and 3D; a click on a drawn orbit (and, with Select, a trail)
+      follows its body; the selection contract and the list of bodies. The Pan
+      tool, the Follow switch, the Zoom dial with its View group and Release
+      camera are gone, the view controls doing each; Tilt marks joins Display.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for worlds shaped by their distance from their stars:
       every world's climate from the light of every star (climate.js), kept up
@@ -27,12 +36,6 @@
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
       dataset's scene facts (G, softening, merging) and its bodies as a table,
       through the shared scene section.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call for datasets another person can read: a column dictionary
-      (unit, meaning, SI factor) on the Star system's exact scale, a note on
-      coordinates and G, the bodies at the start as dataContext(), and t_years
-      in both files with each track's name, kind and orbits_id appended after
-      the earlier columns.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -89,10 +92,10 @@
 */
 import { chartFrame, chartMessage, drawSeries, seriesRange } from '../core/chart.js';
 import { RAMP_HEAT, THEME } from '../core/color.js';
-import { brushRing, drawLit, drawStar, rampRgb } from '../core/draw.js';
+import { brushRing, drawLit, drawStar, followRing, hoverTag, rampRgb, segDist } from '../core/draw.js';
 
 import { Series } from '../core/series.js';
-import { fmtQ, sig, unitSystem } from '../core/units.js';
+import { fmtQ, sig, unitOf, unitSystem } from '../core/units.js';
 import { TAU, clamp, fmtSI, rand } from '../core/util.js';
 import { view } from '../core/view.js';
 import { navAnim } from '../shell/camera.js';
@@ -100,10 +103,11 @@ import { setParam } from '../shell/lifecycle.js';
 
 import { updateNav } from '../shell/navigator.js';
 import { syncControl } from '../shell/panel.js';
+import { HIT_PX, LINE_PX, PICK_PX, pickReach, ptr } from '../shell/stage.js';
 import { gravity3d } from './gravity3d.js';
 import { SKY_EPOCH, buildSolarSystem } from './solarsystem.js';
 import { AGE_YR, AIRS, CLIMATES, DRAPER, KIND_ALBEDO, LOCK_YR, S_W, atmosphere, classify, eqTemp, heatCss, heatShare, iceLine, internalTemp, lockYears, luminosity, rigidity, shoreline, tintInto, yearsText } from './climate.js';
-import { active, announce } from '../shell/state.js';
+import { announce } from '../shell/state.js';
 
 /* ================================================================== */
 /*  Lab 1 · Gravity                                                    */
@@ -226,6 +230,11 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const refName = P => (P.name ? (P.name === 'Sun' || P.name === 'Moon' ? `the ${P.name}` : P.name) : P.kind === 'star' ? 'the star' : `Body ${P.id}`);
 /* A body with no trail shares one empty buffer, and the trail code passes it by. */
 const NO_TRAIL = new Float32Array(0);
+/* Picking's scratch, reused so a hover or a press allocates nothing per body: a body's place on the stage, the line
+   nearest a point, and the last line found (a point and its time), which the cursor and the hover ring share. */
+const SPOT = { x: 0, y: 0, r: 0, w: 0 }, NEAR = { d: 0, b: null }, LINE = { x: NaN, y: NaN, at: 0, trails: false, b: null };
+/* The Delete brush's reach in stage pixels, in both views. */
+const ERASE_PX = 14;
 /* What makes a body one of the Solar System's: its name and kind of world, its own colour, its real radius in stage
    pixels and the smallest size it is drawn at, whether it is labelled, ringed or trail-less, and the id of the body
    it orbits. Kept as one object, so rewind snapshots and saved states carry it whole. */
@@ -267,16 +276,17 @@ export const gravity = {
     '<b>Random</b>, under the tools, gives each body you place a random planet class (terrestrial, super-Earth, sub-Neptune, ice giant or gas giant, now and then a brown dwarf) and a mass in that class\'s range. Off, the type and mass come from New bodies in Controls, where a chosen type keeps the mass within its range.',
     '<b>Planet classes</b> follow the research reference: by mass, a world under 1.5 Earth masses is terrestrial, then a super-Earth to 4.4, a sub-Neptune to 10, an ice giant to 50 and a gas giant to 13 Jupiter masses, where brown dwarfs begin. Follow a planet to read its radius, density, gravity and escape speed in Inspect.',
     '<b>Climate</b> follows starlight: every star warms each world by its brightness over the square of its distance. Close in, rock melts and tides turn one face to the star; inside the runaway limit oceans boil into a pale, Venus-like sky; where water stays liquid come oceans and clouds; farther out ice caps spread until the world freezes over. Giants darken and glow when hot and turn pale when cold. Follow a world to read its starlight, temperatures, air, climate and spin in Inspect.',
-    '<b>Click a body</b> to follow it with the camera, then zoom in to see its sunlit face. Click it again, or press Follow in the view controls, to let go.',
-    '<b>Delete</b> removes bodies you click or brush over. <b>Pan</b> drags the view. Hover a body to read its name, mass and speed.',
+    '<b>Click a body</b>, its orbit or its trail to follow it with the camera, then zoom in to see its sunlit face. Click the body again, or press Follow in the view controls, to let go. <b>Select</b> (Q) in the view controls makes every click a pick, so nothing is thrown by mistake, and Inspect lists every body.',
+    '<b>Delete</b> removes bodies you click or brush over. The hand in the view controls, or Space-drag, pans the view. Hover a body to read its name, mass and speed.',
     '<b>Our Solar System</b>: click a planet to follow it, then zoom in; its moons appear once they stand clear of it. <b>Orbits</b> and <b>Names</b> under Display draw each named body\'s ellipse and name, and the clock reads the date.',
   ],
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'throw', label: 'Throw', key: 't', icon: 'throw', hint: 'Drag to throw a body · click empty sky to drop one into orbit · click a body to follow it' },
     { id: 'erase', label: 'Delete', key: 'x', icon: 'erase', hint: 'Click or brush over bodies to delete them' },
-    { id: 'pan', label: 'Pan', key: 'h', icon: 'pan', hint: 'Drag to move the view · scroll to zoom at the cursor' },
   ] },
-  p: { tool: 'throw', G: 1, soft: 4, launchMass: 2, kind: 'auto', rand: false, orbitK: 1, merge: true, trails: true, trailLen: 360, follow: true, zoom: 1, vectors: false, field: false, incl: 0, orbits: false, labels: true },
+  // follow and zoom are the camera's own state, kept in saved states and set by each scene; the rail's Follow and zoom
+  // controls change them. marks draws the 3D view's drop lines and foot rings.
+  p: { tool: 'throw', G: 1, soft: 4, launchMass: 2, kind: 'auto', rand: false, orbitK: 1, merge: true, trails: true, trailLen: 360, follow: true, zoom: 1, vectors: false, field: false, incl: 0, orbits: false, labels: true, marks: true },
   random: { key: 'rand', label: 'Random new bodies', tip: 'Random new bodies: each one you place gets a random planet type and mass' },
   presetId: 'solar',
   presets: [
@@ -297,7 +307,6 @@ export const gravity = {
     { id: 'physics', label: 'Physics', icon: 'balance' },
     { id: 'spawn', label: 'New bodies', icon: 'add_circle' },
     { id: 'display', label: 'Display', icon: 'visibility' },
-    { id: 'view', label: 'View', icon: 'fit_screen' },
   ],
   controls: [
     { type: 'range', key: 'G', label: 'Gravity strength G', min: 0.1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + '×', group: 'physics' },
@@ -306,14 +315,13 @@ export const gravity = {
     { type: 'range', key: 'launchMass', label: 'Mass of new bodies', min: 0.02 * EARTH, max: 2000, log: true, note: 'The star in most scenes weighs 1000 here, one solar mass; Jupiter is about 1 and Earth 0.003. A chosen type keeps the mass within its range.',
       fmt: v => (unitSystem() === 'sim' ? v.toPrecision(3).replace(/\.?0+$/, '') : gravity.massText(v, true)), group: 'spawn' },
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: TRAIL_CAP, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
-    { type: 'range', key: 'zoom', label: 'Zoom', min: 0.002, max: 20000, log: true, fmt: v => (v >= 100 ? Math.round(v).toString() : v >= 10 ? v.toFixed(1) : v >= 0.1 ? v.toFixed(2) : v.toPrecision(2)) + '×', group: 'view' },
     { type: 'toggle', key: 'merge', label: 'Merge bodies on contact', group: 'physics', short: 'Merge on contact' },
     { type: 'toggle', key: 'trails', label: 'Show trails', group: 'display', short: 'Trails' },
-    { type: 'toggle', key: 'follow', label: 'Keep centre of mass in view', group: 'view', short: 'Follow the centre of mass' },
     { type: 'toggle', key: 'vectors', label: 'Show velocity vectors', group: 'display', short: 'Velocity vectors' },
     { type: 'toggle', key: 'field', label: 'Show potential field', group: 'display', short: 'Potential field' },
     { type: 'toggle', key: 'orbits', label: 'Show each named body\'s orbit about what it circles', short: 'Orbits', group: 'display' },
     { type: 'toggle', key: 'labels', label: 'Show names of named bodies', short: 'Names', group: 'display' },
+    { type: 'toggle', key: 'marks', label: 'Show a drop line and a foot ring under each body, to the orbital plane', short: 'Tilt marks', group: 'display' },
     { type: 'range', key: 'orbitK', label: 'Speed of dropped bodies', min: 0.5, max: 1.5, step: 0.01, fmt: v => v.toFixed(2) + '×',
       note: 'At 1× a dropped body circles its host; slower falls into an ellipse inside, faster swings out, and √2 ≈ 1.41× escapes.', group: 'spawn' },
     { type: 'range', key: 'incl', label: 'Tilt of new orbits', min: 0, max: 90, step: 1, unit: '°', note: 'Bodies dropped with a click or added from the panel get a random tilt up to this angle.', group: 'spawn' },
@@ -716,28 +724,132 @@ export const gravity = {
     this.dropOrbit(H.x + d * Math.cos(a), H.y + d * Math.sin(a), 0, nb);
   },
   toWorld(p) { const { ox, oy, z } = this.viewXf; return { x: (p.x - ox) / z, y: (p.y - oy) / z }; },
-  bodyAt(p, slack = 6) {
-    if (this.is3D()) return this.bodyAt3(p, slack + 2);
-    const { ox, oy, z } = this.viewXf; let best = null, bd = Infinity;
-    for (const b of this.bodies) { if (!this.apart(b, z)) continue; const d = Math.hypot(b.x * z + ox - p.x, b.y * z + oy - p.y) - this.drawR(b, z); if (d < bd) { bd = d; best = b; } }
+  /* ---------- picking: one way in both views ---------- */
+  /* The view's projector: it writes where body b is drawn on the stage, and how large, into o, and says false when b
+     is not drawn (behind the camera, or a moon still inside its planet's disc). Every test below measures on the
+     stage through it, so the flat and 3D views pick, erase and ring alike. */
+  projector() {
+    if (this.is3D()) return this.proj3 || (this.proj3 = (b, o) => { const s = this.project3(b.x, b.y, b.z); if (!s || !this.apart3(b, s)) return false; o.x = s.x; o.y = s.y; o.r = this.radius3(b, s); return true; });
+    return this.proj2 || (this.proj2 = (b, o) => { const { ox, oy, z } = this.viewXf; if (!this.apart(b, z)) return false; o.x = b.x * z + ox; o.y = b.y * z + oy; o.r = this.drawR(b, z); return true; });
+  },
+  /* The body whose drawn disc comes nearest stage point p, within slack pixels of its edge. */
+  pickBody(p, project, slack) {
+    const o = SPOT; let best = null, bd = Infinity;
+    for (const b of this.bodies) { if (!project(b, o)) continue; const d = Math.hypot(o.x - p.x, o.y - p.y) - o.r; if (d < bd) { bd = d; best = b; } }
     return bd < slack ? best : null;
   },
+  bodyAt(p, slack = pickReach()) { return this.pickBody(p, this.projector(), slack); },
   eraseAt(p) {
-    if (this.is3D()) { this.eraseAt3(p); return; }
-    const before = this.bodies.length, { ox, oy, z } = this.viewXf;
-    this.bodies = this.bodies.filter(b => !this.apart(b, z) || Math.hypot(b.x * z + ox - p.x, b.y * z + oy - p.y) > Math.max(12, this.drawR(b, z) + 6));
+    const before = this.bodies.length, project = this.projector(), o = SPOT;
+    this.bodies = this.bodies.filter(b => !project(b, o) || Math.hypot(o.x - p.x, o.y - p.y) > Math.max(ERASE_PX, o.r + 6));
     if (this.bodies.length !== before) { this.accDirty = true; this.E0 = this.energy(); }
   },
-  cursorAt(p) {
-    if (this.p.tool === 'pan') return 'grab';
-    if (this.p.tool === 'erase') return this.bodyAt(p) ? 'pointer' : 'crosshair';
-    return this.bodyAt(p) ? 'pointer' : 'crosshair';
+  /* The body whose drawn orbit (and, for the Select tool, trail) passes within LINE_PX of stage point p, nearest
+     first: where only the lines show, the line is the way to the body. Orbits are measured on the very curve
+     orbitCurve draws, through the same projector, leaving out the moons that are not drawn apart and, in 3D, the
+     stretch nearest the camera that fades out; trails on the stretch each view draws. The answer is kept for 60 ms
+     at the same point, so the cursor, the hover ring and the press share one measurement. */
+  lineAt(p, trails, fresh) {
+    const L = LINE, now = performance.now();
+    if (!fresh && L.trails === trails && Math.abs(L.x - p.x) < 0.5 && Math.abs(L.y - p.y) < 0.5 && now - L.at < 60) return L.b && this.bodies.includes(L.b) ? L.b : null;
+    const best = NEAR; best.d = LINE_PX; best.b = null;
+    if (this.p.orbits) this.orbitNear(p, best);
+    if (trails && this.p.trails) this.trailNear(p, best);
+    L.x = p.x; L.y = p.y; L.at = now; L.trails = trails; L.b = best.b;
+    return best.b;
   },
-  wantsPan() { return this.p.tool === 'pan'; },
+  orbitNear(p, best) {
+    const three = this.is3D(), { ox, oy, z } = this.viewXf;
+    let cut = 0, f0 = 0, f1 = 1;
+    if (three) { const dist = this.c3().dist; cut = this.basis3().near * 3; f0 = dist * 0.06; f1 = dist * 0.2; }
+    const project = three ? q => { const s = this.project3(q[0], q[1], q[2]); return s && s.w > cut ? s : null; } : q => ({ x: q[0] * z + ox, y: q[1] * z + oy });
+    for (const b of this.orbiters()) {
+      if (b.host && !(three ? this.apart3(b) : this.apart(b, z))) continue;
+      const P = this.pullHost(b), f = P && this.orbitFrame(b, P); if (!f) continue;
+      let lx = 0, ly = 0, on = false;
+      this.orbitCurve(f, project, (q, s) => {
+        if (!q || (three && (s.w - f0) / (f1 - f0) < 0.35)) { on = false; return; }
+        if (on) { const d = segDist(p.x, p.y, lx, ly, s.x, s.y); if (d < best.d) { best.d = d; best.b = b; } }
+        lx = s.x; ly = s.y; on = true;
+      }, three ? { maxPx: 7, w: view.w, h: view.h, cap: 1400 } : { maxPx: 5, w: view.w, h: view.h });
+    }
+  },
+  trailNear(p, best) {
+    const three = this.is3D(), { ox, oy, z } = this.viewXf, o = SPOT, B = this.bodies, len0 = Math.round(this.p.trailLen), R = LINE_PX;
+    // The 3D view thins a crowded sky's trails and fades their oldest quarter away, so neither is a target there.
+    const keep = three && B.length > 40 ? Math.max(90, 3600 / Math.sqrt(B.length)) : Infinity, cut = three ? this.basis3().near * 3 : 0;
+    for (const b of B) {
+      const len = Math.min(b.tn, len0, keep); if (len < 2) continue;
+      let lx = 0, ly = 0, on = false;
+      for (let k = three ? Math.floor(len / 4) : 0; k < len; k++) {
+        const i = (b.th - len + k + TRAIL_CAP) % TRAIL_CAP;
+        let sx, sy;
+        if (three) { if (!this.projectTo3(b.trail[i * 2], b.trail[i * 2 + 1], b.trailZ[i], o) || o.w < cut) { on = false; continue; } sx = o.x; sy = o.y; }
+        else { sx = b.trail[i * 2] * z + ox; sy = b.trail[i * 2 + 1] * z + oy; }
+        if (on && !(Math.min(lx, sx) > p.x + R || Math.max(lx, sx) < p.x - R || Math.min(ly, sy) > p.y + R || Math.max(ly, sy) < p.y - R)) {
+          const d = segDist(p.x, p.y, lx, ly, sx, sy); if (d < best.d) { best.d = d; best.b = b; }
+        }
+        lx = sx; ly = sy; on = true;
+      }
+    }
+  },
+  /* What a click would take now, as the hover ring shows it: with Select, a body within its generous reach, else an
+     orbit or a trail; with Throw, a body within the tool's reach, else an orbit; with Delete, a body. */
+  hoverPick(p) {
+    if (ptr.selectMode) return this.bodyAt(p, PICK_PX) || this.lineAt(p, true);
+    return this.bodyAt(p, HIT_PX) || (this.p.tool === 'erase' ? null : this.lineAt(p, false));
+  },
+  cursorAt(p) {
+    if (this.p.tool === 'erase') return this.bodyAt(p, HIT_PX) ? 'pointer' : 'crosshair';
+    return this.hoverPick(p) ? 'pointer' : 'crosshair';
+  },
   offStage3() { return false; },
+  /* The followed body's ring, what a click would take, and the Delete brush: drawn alike over the flat and 3D views. */
+  drawMarks(g, w, h) {
+    const o = SPOT, project = this.projector(), tb = this.selected();
+    if (tb && project(tb, o)) followRing(g, o.x, o.y, o.r + 8);
+    if (!this.hover || this.aim) return;
+    const b = this.hoverPick(this.hover), del = this.p.tool === 'erase' && !ptr.selectMode;
+    if (b && project(b, o)) hoverTag(g, o.x, o.y, o.r, this.hoverText(b), w, h, del ? THEME.crit : THEME.text);
+    if (del) brushRing(g, this.hover, ERASE_PX, THEME.crit);
+  },
+  /* ---------- the selection contract (ARCHITECTURE.md): the followed body is the selection ---------- */
+  selected() { return this.track == null ? null : this.bodies.find(q => q.id === this.track) || null; },
+  selectedId() { return this.selected() ? this.track : null; },
+  /* Selecting a body follows it with the camera, as a click on it always has; null lets the camera go. */
+  select(id) {
+    if (id == null) { this.deselect(); return true; }
+    const b = this.bodies.find(q => q.id === id); if (!b) return false;
+    if (this.track !== b.id) { this.track = b.id; this.trackEase = 0; }
+    this.p.follow = false; updateNav();
+    return true;
+  },
+  pick(s) { const b = this.bodyAt(s, PICK_PX) || this.lineAt(s, true); return b ? b.id : null; },
+  /* Where a body is drawn, in stage pixels, in either view: for the head-up display's target box. */
+  spot(id, three) {
+    const b = id == null ? null : this.bodies.find(q => q.id === id); if (!b) return null;
+    if (three) { const s = this.project3(b.x, b.y, b.z); return s && { x: s.x, y: s.y, r: this.radius3(b, s) }; }
+    const { ox, oy, z } = this.viewXf; return { x: b.x * z + ox, y: b.y * z + oy, r: this.drawR(b, z) };
+  },
+  selectHint: 'click a body, or its orbit or trail, to follow it and inspect it',
+  // The Select tool's hover ring is Gravity's own (drawMarks), with the body's name, mass and speed beside it.
+  pickRing: true,
+  objectsName: 'Bodies',
+  objectsEmpty: 'An empty sky. Throw or drop a body with the Throw tool, and it is listed here.',
+  /* The list in Inspect: each body, heaviest first, with its mass and its distance from what it orbits. */
+  objectCols: [
+    { label: 'Mass', w: 1.5, text: v => (!(v > 0) ? '0' : unitSystem() === 'sim' ? sig(v) : gravity.massText(v, true, 2)) },
+    { label: 'Distance', w: 1, unit: () => unitOf(gravity, 'len')[1], text: v => sig(v * unitOf(gravity, 'len')[0]) },
+  ],
+  objects() {
+    return [...this.bodies].sort((a, b) => b.m - a.m || a.id - b.id).map(b => {
+      const P = this.pullHost(b);
+      return { id: b.id, name: nameOf(b), kind: KINDS[b.kind].short, v: [b.m, P ? Math.hypot(b.x - P.x, b.y - P.y, b.z - P.z) : NaN] };
+    });
+  },
   /* The followed body, for the Details card. Orbit figures are the two-body elements about the heaviest other body. */
   inspect() {
-    const b = this.track == null ? null : this.bodies.find(q => q.id === this.track); if (!b) return null;
+    const b = this.selected(); if (!b) return null;
     const P = this.pullHost(b), title = b.desc || KINDS[b.kind].label, name = nameOf(b);
     const rows = [b.m > 0 ? ['Mass of this body', this.massText(b.m), unitSystem() === 'sim' ? 'In simulation units. The star in most scenes has mass 1000.' : 'The star in most scenes is one solar mass; a planet of mass 1 is about Jupiter\'s.']
       : ['Mass of this body', 'too small to pull', 'A test body: it feels every pull and pulls on nothing, as the belts\' bodies do here.']];
@@ -772,7 +884,6 @@ export const gravity = {
       if (KINDS[b.kind].family && b.kind !== 'brown' && P.kind === 'star' && b.m * 25 >= P.m) rows.push(['Planet by IAU rules', `no: ${(b.m / P.m * 100).toFixed(1)} % of its star's mass`, 'The IAU\'s working definition of an exoplanet needs less than 1/25 of the mass of what it orbits; heavier, it is a binary companion.']);
     } else rows.push(...(ph ? [] : [['Radius of this body', fmtQ(this, 'len', b.r), 'The drawn and collision radius.']]), ['Speed through space', fmtQ(this, 'speed', Math.hypot(b.vx, b.vy, b.vz)), 'Nothing else is here to measure against.']);
     return { id: b.id, kicker: `${name} · camera following`, short: name, focus, title, color: this.bodyColor3(b), spot: true, rows, actions: [
-      { label: 'Release camera', run: () => this.deselect() },
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
     ] };
   },
@@ -815,11 +926,6 @@ export const gravity = {
   zoomPace() { return this.sky ? 2 : 1; },
   /* The head-up display: its readings, and the followed body in stage pixels, where the stage draws it. */
   hud: [['Bodies', 'BODIES'], ['Total energy E', 'ENERGY E'], ['Energy drift since last change', 'E DRIFT'], ['Virial ratio 2K / |U|', 'VIRIAL 2K/|U|']],
-  hudTarget(three) {
-    const b = this.track == null ? null : this.bodies.find(q => q.id === this.track); if (!b) return null;
-    if (three) { const s = this.project3(b.x, b.y, b.z); return s && { x: s.x, y: s.y, r: this.radius3(b, s) }; }
-    const { ox, oy, z } = this.viewXf; return { x: b.x * z + ox, y: b.y * z + oy, r: this.drawR(b, z) };
-  },
   /* Real-world units are astronomical here; Simulation keeps pixels and simulated seconds. */
   unitTable(sys) {
     if (sys === 'sim') return null;
@@ -837,32 +943,30 @@ export const gravity = {
     const d = new Date(SKY_EPOCH + t / AU_YR * 365.25 * 86400000);
     return Number.isFinite(d.getTime()) ? `${base} · ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}` : base;
   },
-  massText(m, short) {
+  /* A mass in solar, Jupiter or Earth masses, to n significant figures (the objects list takes two). */
+  massText(m, short, n = 3) {
     if (unitSystem() === 'sim') return short ? `m ${m < 10 ? m.toFixed(2) : m.toFixed(0)}` : fmtSI(m);
     const sun = m / 1000, jup = m / JUP, earth = m / EARTH;
     // Abbreviations in plain letters: the astronomical symbols for the Sun, Jupiter and Earth are missing from many fonts.
-    return sun >= 0.05 ? `${sig(sun)} ${short ? 'Msun' : 'solar masses'}` : jup >= 0.03 ? `${sig(jup)} ${short ? 'MJup' : 'Jupiter masses'}` : `${sig(earth)} ${short ? 'MEarth' : 'Earth masses'}`;
+    return sun >= 0.05 ? `${sig(sun, n)} ${short ? 'Msun' : 'solar masses'}` : jup >= 0.03 ? `${sig(jup, n)} ${short ? 'MJup' : 'Jupiter masses'}` : `${sig(earth, n)} ${short ? 'MEarth' : 'Earth masses'}`;
   },
-  inspectHint: 'Click a body to follow it and inspect it here.',
+  inspectHint: 'Click a body, or its orbit, to follow it and inspect it here.',
   stateSummary() { return { bodies: this.bodies.length }; },
   navExtras: [{ id: 'follow', label: 'Follow', icon: 'follow', title: 'Follow the centre of mass · click a body on the stage to follow it instead · click again to free the camera',
     pressed: () => gravity.p.follow || gravity.track != null,
     run() {
       const on = gravity.p.follow || gravity.track != null;
-      gravity.track = null; gravity.p.follow = !on; syncControl('follow');
+      gravity.track = null; gravity.p.follow = !on;
       announce(on ? 'Camera free' : 'Following the centre of mass');
     } }],
   camLocked() { return this.p.follow || this.track != null; },
-  onUserPan() { if (this.p.follow) { this.p.follow = false; syncControl('follow'); } this.track = null; },
-  onCamZoom() { if (Math.abs(this.p.zoom - this.cam.z) > 1e-9) { this.p.zoom = this.cam.z; syncControl('zoom'); } },
+  onUserPan() { this.p.follow = false; this.track = null; },
+  // The zoom is kept in p.zoom, so a saved state and a scene's own zoom come back as they were.
+  onCamZoom() { this.p.zoom = this.cam.z; },
+  /* A click on a body with Throw follows it, and a click on the followed body lets it go. */
   followBody(b) {
-    if (this.track === b.id) { this.track = null; announce('Camera released'); }
-    else {
-      this.track = b.id; this.trackEase = 0;
-      if (this.p.follow) { this.p.follow = false; syncControl('follow'); }
-      announce(`Following a body of mass ${b.m < 10 ? b.m.toFixed(2) : b.m.toFixed(0)}`);
-    }
-    updateNav();
+    if (this.track === b.id) { this.deselect(); announce('Camera released'); return; }
+    this.select(b.id); announce(`Following ${nameOf(b)}`);
   },
   extent() {
     const B = this.bodies; if (!B.length) return null;
@@ -886,12 +990,11 @@ export const gravity = {
      back when it stops. */
   releaseCam() {
     const held = { follow: !!this.p.follow, track: this.track };
-    if (this.p.follow) { this.p.follow = false; syncControl('follow'); }
-    this.track = null; updateNav();
+    this.p.follow = false; this.track = null; updateNav();
     return held;
   },
   retakeCam(h) {
-    if (h.follow !== !!this.p.follow) { this.p.follow = h.follow; syncControl('follow'); }
+    this.p.follow = h.follow;
     if (h.track != null && this.bodies.some(b => b.id === h.track)) { this.track = h.track; this.trackEase = 0; }
     updateNav();
   },
@@ -977,10 +1080,17 @@ export const gravity = {
   },
   pointerDown(p) {
     if (this.p.tool === 'erase') { this.erasing = true; this.eraseAt(p); return; }
-    this.aim = { sx: p.x, sy: p.y, x: p.x, y: p.y, moved: false };
+    // Whether this press is on a body (or its orbit) is decided now, where the bodies are at the press, with the
+    // hover ring's reach: by the time the button comes up a moving body has left the spot, and a click on it used to
+    // drop a new body there instead.
+    const on = this.bodyAt(p, HIT_PX) || this.lineAt(p, false, true);
+    this.aim = { sx: p.x, sy: p.y, x: p.x, y: p.y, moved: false, on: on ? on.id : null };
     // The body is drawn when the aim starts, so the preview shows the one that will fly.
     this.next = this.drawNew();
   },
+  /* A stage point on the orbital plane: the flat view's world point, or the 3D view's plane through the centre of
+     mass; null where the 3D view's ray misses it. */
+  planeAt(s) { if (this.is3D()) return this.pick3(s); const w = this.toWorld(s); return { x: w.x, y: w.y, z: 0 }; },
   next: null,
   pointerCancel() { this.aim = null; this.erasing = false; this.next = null; },
   pointerMove(p, e, down) {
@@ -990,20 +1100,24 @@ export const gravity = {
     this.aim.x = p.x; this.aim.y = p.y;
     if (Math.hypot(p.x - this.aim.sx, p.y - this.aim.sy) > 5) this.aim.moved = true;
   },
+  /* A click follows the body it was pressed on, or drops a new one into orbit; a drag throws one. Both views. */
   pointerUp() {
     if (this.erasing) { this.erasing = false; return; }
     const a = this.aim, nb = this.next || this.drawNew(); this.aim = null; this.next = null;
     if (!a) return;
-    if (this.is3D()) { this.pointerUp3(a, nb); return; }
-    const w = this.toWorld({ x: a.sx, y: a.sy });
     if (!a.moved) {
-      const hit = this.bodyAt({ x: a.sx, y: a.sy });
-      if (hit) this.followBody(hit); else this.dropOrbit(w.x, w.y, 0, nb);
+      const b = a.on != null && this.bodies.find(q => q.id === a.on);
+      if (b) { this.followBody(b); return; }
+      const w = this.planeAt({ x: a.sx, y: a.sy });
+      if (w) this.dropOrbit(w.x, w.y, w.z, nb); else announce('Aim at the orbital plane to drop a body.');
       return;
     }
-    const z = this.viewXf.z, dx = (a.x - a.sx) / z, dy = (a.y - a.sy) / z, o = this.throwFrom(w.x, w.y, 0, dx, dy, nb.m);
-    const t = this.throwVel(o.x, o.y, 0, dx, dy, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
-    this.addBody(this.body(o.x, o.y, t.vx, t.vy, nb.m, 0, 0, nb.kind));
+    const A = this.planeAt({ x: a.sx, y: a.sy }), B = this.planeAt({ x: a.x, y: a.y });
+    if (!A || !B) { announce('Aim at the orbital plane to throw a body.'); return; }
+    // The flat view throws in the plane z = 0; the 3D view from the height the throw starts at.
+    const o = this.throwFrom(A.x, A.y, A.z, B.x - A.x, B.y - A.y, nb.m), oz = this.is3D() ? o.z : 0;
+    const t = this.throwVel(o.x, o.y, oz, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
+    this.addBody(this.body(o.x, o.y, t.vx, t.vy, nb.m, oz, 0, nb.kind));
   },
   predict(x0, y0, vx0, vy0, z0 = 0, heights = null) {
     const B = this.bodies, n = B.length, dyn = n <= 30, G = G0 * this.p.G, e2 = this.p.soft ** 2, N = n + 1;
@@ -1282,25 +1396,7 @@ export const gravity = {
       }
     }
     if (names) this.drawNames(g, names);
-    if (tb) {
-      const X = tb.x * z + ox, Y = tb.y * z + oy, R = this.drawR(tb, z) + 8;
-      g.save(); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3; g.setLineDash([4, 4]); g.lineDashOffset = -performance.now() / 60;
-      g.beginPath(); g.arc(X, Y, R, 0, TAU); g.stroke(); g.restore();
-    }
-    if (this.hover && !this.aim) {
-      const b = this.bodyAt(this.hover, 10);
-      if (b) {
-        const X = b.x * z + ox, Y = b.y * z + oy, R = this.drawR(b, z) + 5;
-        g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
-        g.beginPath(); g.arc(X, Y, R, 0, TAU); g.stroke();
-        const label = this.hoverText(b);
-        g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
-        const lx = clamp(X + R + 6, 4, w - tw - 14), ly = clamp(Y - R - 6, 16, h - 6);
-        g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(lx - 5, ly - 13, tw + 10, 18);
-        g.fillStyle = THEME.text; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(label, lx, ly);
-      }
-    }
-    if (this.p.tool === 'erase' && this.hover) brushRing(g, this.hover, 12, THEME.crit);
+    this.drawMarks(g, w, h);
     if (this.aim && this.aim.moved) {
       const a = this.aim, wS = this.toWorld({ x: a.sx, y: a.sy });
       const m = (this.next || this.drawNew()).m, dx = (a.x - a.sx) / z, dy = (a.y - a.sy) / z, o = this.throwFrom(wS.x, wS.y, 0, dx, dy, m);
@@ -1352,7 +1448,8 @@ export const gravity = {
   },
   enabled(key) {
     if (key === 'field' && this.is3D()) return 'Drawn in the flat view only.';
-    if (key === 'zoom' && this.is3D()) return 'Use the mouse wheel or the view controls in 3D.';
+    if (key === 'marks' && !this.is3D()) return 'Drawn in the 3D view only.';
+    if (key === 'marks' && this.sky && this.p.orbits) return 'In Our Solar System the orbits show each tilt; turn Orbits off for the marks.';
     if (key === 'launchMass' && this.p.rand) return 'Random new bodies picks each mass.';
     return true;
   },
@@ -1503,7 +1600,7 @@ Object.assign(gravity, {
     Object.assign(this, { bodies: B, merged: s.merged, escaped: s.escaped, cam: { ...this.cam, ...s.cam }, stepCount: s.stepCount, aim: null, pan: null, accDirty: true });
     this.prepare();
     if (this.track != null && !B.some(b => b.id === this.track)) this.track = null;
-    this.p.zoom = this.cam.z; if (this === active) syncControl('zoom');
+    this.p.zoom = this.cam.z;
     this.energy(); this.E0 = s.E0;
     this.keepWarmth(s.warmth);
     for (const ser of Object.values(this.series)) ser.truncateAfter(this.t);
@@ -1521,6 +1618,8 @@ Object.assign(gravity, {
     this.merged = o.merged || 0; this.escaped = o.escaped || 0; this.stepCount = o.stepCount || 0;
     if (o.cam) this.cam = { x: +o.cam.x || 0, y: +o.cam.y || 0, z: clamp(+o.cam.z || this.p.zoom, this.zoomRange[0], this.zoomRange[1]) };
     this.p.zoom = this.cam.z; this.track = null;
+    // A state saved while Gravity still had a Pan tool comes back with Throw; panning is the view controls' hand.
+    if (this.p.tool === 'pan') this.p.tool = 'throw';
     this.accDirty = true; this.prepare(); this.E0 = this.energy(); if (Number.isFinite(o.E0)) this.E0 = o.E0;
     this.keepWarmth(o.bodies.map(d => d.warmth));
     for (const s of Object.values(this.series)) s.clear();

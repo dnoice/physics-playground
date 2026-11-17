@@ -1,24 +1,25 @@
 /*
 ✒ Metadata
-    - Title: Lab Rail (digiSpace Edition - v2.6)
+    - Title: Lab Rail (digiSpace Edition - v2.19)
     - File Name: workspace.js
     - Relative Path: js/shell/workspace.js
     - Artifact Type: javascript
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button: a lab change ends Select as it ends
+      Pan.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Selecting a
       lab scrolls its tab into view when the top bar is too narrow for every
       tab.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
       labs rebuilds the Library's capture cards.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
-      labs refreshes the Units menu's scale note.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -72,7 +73,7 @@ export function selectLab(id, opts = {}) {
   if (active) { active.hover = null; cancelLabPointer(); }
   if (active && vrec.mr) stopVideo();
   if (active && dataRec.on) stopData();
-  setPointerDown(false); ptr.drag = null; ptr.pinch = null; ptr.ids.clear(); ptr.panMode = false; navAnim.lab = null;
+  setPointerDown(false); ptr.drag = null; ptr.pinch = null; ptr.ids.clear(); ptr.panMode = false; ptr.selectMode = false; navAnim.lab = null;
   setActive(lab);
   store.set('lab', lab.id);
   tabs.forEach((t, i) => { const on = labs[i] === lab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
