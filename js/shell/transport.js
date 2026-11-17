@@ -13,7 +13,10 @@
 
 ✒ Changelog:
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call for a select button: Q turns Select on and off.
+      Dennis's call for a select button: Q turns Select on and off. On
+      Dennis's call for chips that do not look clickable: the Running pill on
+      the stage is gone, since the Play button already says whether the run
+      plays.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: Shift+S opens Settings, ahead of
       the tool letters so a lab whose tool is S keeps the plain key, and U and
@@ -32,7 +35,7 @@
     - 1–7 switch labs, letters pick tools, F focuses the stage, Shift+B
       hides the bay, Shift+S opens Settings, and U and ? open it at Units and
       at the keys.
-    - R resets, M records video, D records data, [ and ] change speed.
+    - R resets, M records a clip, D records data, [ and ] change speed.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -72,7 +75,6 @@ export function setSpeed(v) { state.speed = clamp(Number(v.toPrecision(3)), 0.1,
 export function updatePlay() {
   $('#btn-play-label').textContent = state.running ? 'Pause' : 'Play';
   $('#btn-play-icon').textContent = state.running ? 'pause' : 'play_arrow';
-  const pill = $('#hud-state'); pill.dataset.state = state.running ? 'run' : 'pause'; pill.textContent = state.running ? 'Running' : 'Paused';
 }
 export function play() { histBranch(active); state.running = true; perf.slow = 0; updatePlay(); announce('Running'); }
 export function pause() { state.running = false; updatePlay(); announce('Paused'); }

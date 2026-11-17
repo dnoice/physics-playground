@@ -14,7 +14,9 @@
 ✒ Changelog:
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for a select button: a lab change ends Select as it ends
-      Pan.
+      Pan. On Dennis's call for one timeline: a new lab updates the capture
+      buttons and the Capture section of Settings, which took over from the
+      Library's cards.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Selecting a
       lab scrolls its tab into view when the top bar is too narrow for every
       tab.
@@ -43,11 +45,11 @@ import { LAB_ICON } from '../core/icons.js';
 import { $, el, store } from '../core/util.js';
 import { labs, labsById } from '../labs/index.js';
 import { navAnim } from './camera.js';
-import { dataRec, stopData, stopVideo, updateRewind, vrec } from './capture.js';
+import { dataRec, stopData, stopVideo, syncCapture, updateCaptureSettings, updateRewind, vrec } from './capture.js';
 import { updateDetails } from './details.js';
 import { evaluateDiagnostics, insightCards } from './diagnostics.js';
 import { buildDock } from './dock.js';
-import { buildLibraryCapture, renderLibrary, updateTracksNote } from './library.js';
+import { renderLibrary } from './library.js';
 import { ensureReady } from './lifecycle.js';
 import { prepareLab, renderMode } from './mode.js';
 import { buildNav } from './navigator.js';
@@ -89,7 +91,7 @@ export function selectLab(id, opts = {}) {
   insightCards.forEach(c => c.el.remove()); insightCards.clear();
   perf.slow = 0; perf.rate = state.speed;
   evaluateDiagnostics();
-  updateRewind(); updateTracksNote(); renderLibrary(); buildLibraryCapture(lab); updateDetails(lab); renderUnits();
+  updateRewind(); updateCaptureSettings(); renderLibrary(); syncCapture(); updateDetails(lab); renderUnits();
   if (!opts.silent) announce(`${lab.title} lab`);
   if (location.hash.slice(1) !== lab.id) { try { location.replace('#' + lab.id); } catch (_) { /* hash routing unavailable */ } }
 }

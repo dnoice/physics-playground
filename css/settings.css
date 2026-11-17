@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Settings Dialog Styles (digiSpace Edition - v2.18)
+    - Title: Settings Dialog Styles (digiSpace Edition - v2.19)
     - File Name: settings.css
     - Relative Path: css/settings.css
     - Artifact Type: stylesheet
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the Capture section's column, the
+      director's switch and preview, and the fold of what a dataset holds. The
+      phone nav's tabs sit a little closer, so all five sections fit across a
+      phone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for one settings dialog: a centred panel on a desktop and
       a full-screen sheet on a phone, its section nav down the left or across
@@ -22,7 +27,8 @@
 ✒ Description:
     The look of the Settings dialog (settings.js): its frame, header and
     section nav, the Graphics section's tiers, verdicts and setting cards,
-    and the room the Units, head-up display and keyboard sections sit in.
+    the Capture section's column, and the room the Units, head-up display
+    and keyboard sections sit in.
 
 ✒ Key Features:
     - The tiles' own glass: one gradient layer and an inset sheen, over a
@@ -137,6 +143,29 @@ h4.set-sub { margin: 26px 0 10px; }
 .knob .seg button:disabled { opacity: 0.4; cursor: not-allowed; }
 .knob-note { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--muted); text-wrap: pretty; }
 
+/* ---------- capture: clips, the director, data ---------- */
+/* The Capture section's own column: a heading for each part, then its choices, switches and notes, kept to a reading
+   width. The player bar's capture settings button opens it. */
+.cap-set-body { display: grid; gap: 12px; justify-items: start; max-width: 620px; }
+.cap-set-body > h4.set-sub { margin: 14px 0 0; }
+.cap-set-body > h4.set-sub:first-child { margin-top: 0; }
+.cap-set-body .ctl-note { margin: -4px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+/* The director: its switch, then Preview direction, which shows amber while it runs rather than the recorders' red. */
+.dir-set { display: grid; gap: 8px; justify-items: start; }
+.dir-preview[hidden] { display: none; }
+.dir-preview[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: color-mix(in oklab, var(--amber) 10%, var(--ink)); }
+.dir-preview[aria-pressed="true"] .ms { animation: none; }
+/* What a dataset from this lab holds, folded under the data settings. */
+.cap-cols { font-size: 11.5px; color: var(--muted); }
+.cap-cols summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
+.cap-cols summary::-webkit-details-marker { display: none; }
+.cap-cols summary::before { content: "expand_more"; content: "expand_more" / ""; font-family: "Material Symbols Rounded"; font-size: 16px; line-height: 1; font-feature-settings: "liga"; transform: rotate(-90deg); transition: transform 0.15s; }
+.cap-cols[open] summary::before { transform: none; }
+html.no-icons .cap-cols summary::before { content: "›"; font-family: inherit; }
+.cap-cols summary:hover { color: var(--text); }
+.cap-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 2px; }
+.cap-chips code { font: 400 10.5px/1 var(--font-mono); padding: 4px 6px; border-radius: 5px; color: var(--text); background: color-mix(in oklab, var(--cyan) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 22%, transparent); }
+
 /* The top bar's Graphics button carries a dot while any setting is the person's own. */
 .gfx-btn.has-own { position: relative; }
 .gfx-btn.has-own::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 2px var(--bench); }
@@ -153,8 +182,8 @@ h4.set-sub { margin: 26px 0 10px; }
   .settings-nav { padding: 6px 8px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--hair); scrollbar-width: none; }
   .settings-nav::-webkit-scrollbar { display: none; }
   .settings-tabs { display: flex; gap: 2px; width: max-content; }
-  /* Words alone, so all four sections fit across a phone. */
-  .set-tab { min-height: 38px; padding: 0 9px; }
+  /* Words alone, a little closer set, so all five sections fit across a phone. */
+  .set-tab { min-height: 38px; padding: 0 7px; font-size: 12.5px; }
   .set-tab .ms { display: none; }
   .set-tab[aria-selected="true"] { box-shadow: inset 0 -2px 0 var(--amber); }
   .settings-body { padding: 16px 16px 28px; }

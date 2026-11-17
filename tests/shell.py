@@ -1,17 +1,24 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.18)
+    - Title: Shell Regression Test (digiSpace Edition - v2.19)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline and for chips that do not look clickable:
+      the capture settings button opens Settings at Capture, the nav's arrows
+      pass through it, all five sections fit across a phone, the status line's
+      readings are plain text while its buttons look like buttons, and the
+      player bar holds every control from a desktop to a phone. Chaos has no
+      duplicate restart, and quick actions still lead in a lab that has them.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: each opener opens its section
       with focus on its current choice; the nav's arrows, the focus trap, the
@@ -65,9 +72,13 @@
       Reset with focus kept, and a remembered fold.
     - The Chaos phase view: split layout, reach curve, hover preview, click
       to start, and a bob that still drags.
-    - Settings: every entry point at its section, the nav, the focus trap,
-      Escape, the backdrop and focus handed back; the workspace's keys held
-      behind it; centred on a desktop and the whole screen on a phone.
+    - Settings: every entry point at its section, the capture cluster's
+      included, the nav, the focus trap, Escape, the backdrop and focus
+      handed back; the workspace's keys held behind it; centred on a desktop
+      and the whole screen on a phone, all five sections across its top.
+    - The stage's status line: readings as plain text, only real buttons as
+      buttons. The player bar keeps every control inside it, the timeline
+      on top, from a desktop down to a phone.
 
 ✒ Usage Instructions:
     $ python tests/shell.py
@@ -393,7 +404,13 @@ with sync_playwright() as p:
     pg = fresh("chaos")
     groups = pg.evaluate("[...document.querySelectorAll('#params-body .pgroup')].map(s => s.dataset.group)")
     ok("sections_in_lab_order", groups == ["start", "physics", "display"], groups)
-    ok("quick_actions_first", pg.evaluate("document.querySelector('#params-body .params').firstElementChild.classList.contains('quick')"))
+    # Chaos has no quick actions: its starting angles restart the run as they change, and so does Reset, so "Restart from
+    # these angles" was a third way to do one thing. A lab that has them still shows them first.
+    dup = pg.evaluate("[document.querySelectorAll('#params-body .quick').length, [...document.querySelectorAll('#params-body button')].some(b => /Restart from/.test(b.textContent))]")
+    pg.evaluate(P + ".select('collisions')"); pg.wait_for_timeout(300)
+    first = pg.evaluate("document.querySelector('#params-body .params').firstElementChild.classList.contains('quick')")
+    pg.evaluate(P + ".select('chaos')"); pg.wait_for_timeout(300)
+    ok("quick_actions_first", first and dup == [0, False], (first, dup))
     ok("restart_note_once", pg.locator("#params-body .pgroup-note").count() == 1 and "restart" in pg.inner_text("[data-group='start'] .pgroup-note"))
     ok("no_restart_note_per_slider", pg.inner_text("#ctl-chaos-copies-note") == "", pg.inner_text("#ctl-chaos-copies-note"))
     reset = pg.locator("[data-group='physics'] .pgroup-reset")
@@ -462,18 +479,51 @@ with sync_playwright() as p:
     ok("hud_fps_shows_meter", abs(float(pg.inner_text("#hud-fps").split()[0]) - state("perf.fps")) < 8, pg.inner_text("#hud-fps"))
     pg.context.close()
 
+    # ---- The stage's status line: readings are plain text that takes no press (no pill, no ring, no pointer), and only
+    # real buttons look like buttons. The Running pill and the real-time chip repeated the Play button and Insights, so
+    # they are gone, and the recorders' stage chips became one recording light, whose stop is in the player bar.
+    pg = fresh("gravity")
+    look = """(sel => [...document.querySelectorAll(sel)].map(e => { const s = getComputedStyle(e);
+      return [e.tagName, s.cursor, s.pointerEvents, s.backgroundColor, s.boxShadow, s.borderRadius, e.tabIndex]; }))"""
+    readings = pg.evaluate(look + "('.hud-status, #hud-time, #hud-fps, #hud-rec')")
+    buttons = pg.evaluate(look + "('#hud-alert, #hud-dir')")
+    ok("status_readings_are_plain_text", len(readings) == 4 and all(r[0] != "BUTTON" and r[1] != "pointer" and r[2] == "none" and r[3] == "rgba(0, 0, 0, 0)"
+       and r[4] == "none" and r[5] == "0px" and r[6] < 0 for r in readings), readings)
+    ok("status_buttons_look_like_buttons", len(buttons) == 2 and all(r[0] == "BUTTON" and r[1] == "pointer" and r[2] == "auto" and r[5] == "999px" and r[6] == 0 for r in buttons), buttons)
+    ok("status_duplicates_gone", pg.locator("#hud-state, #hud-rate, #hud-data, .hud .pill").count() == 0)
+
+    # ---- The player bar is one transport for time: the timeline across its top, then play, step, reset, speed and the
+    # capture cluster with its settings. Every control and every name stays in view, inside the bar, from a desktop down
+    # to a phone, with nothing wider than the page.
+    BAR = """(() => { const r = s => document.querySelector(s).getBoundingClientRect(), bar = r('.player'), tl = r('.timeline');
+      const btns = ['#btn-play', '#btn-step', '#btn-reset', '#ctl-speed', '#btn-rec', '#btn-data', '#btn-state', '#btn-cap-settings'].map(r);
+      return { inBar: btns.every(b => b.width > 0 && b.left >= bar.left - 0.5 && b.right <= bar.right + 0.5 && b.top >= bar.top - 0.5 && b.bottom <= bar.bottom + 0.5),
+        timelineOnTop: btns.every(b => b.top >= tl.bottom - 0.5) && tl.top >= bar.top - 0.5, track: Math.round(r('.timeline .range-wrap').width),
+        names: [...document.querySelectorAll('.player .cap-name')].every(n => n.getClientRects().length && n.scrollWidth <= n.clientWidth + 1),
+        page: document.documentElement.scrollWidth - innerWidth, barH: Math.round(bar.height) }; })()"""
+    bars = {"desktop": pg.evaluate(BAR)}
+    pg.context.close()
+    for name, size in [("tablet", {"width": 760, "height": 900}), ("phone", {"width": 390, "height": 844})]:
+        ctx = b.new_context(viewport=size)
+        pg = open_page(ctx); pg.goto(URL + "#gravity")
+        pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(500)
+        bars[name] = pg.evaluate(BAR)
+        ctx.close()
+    ok("player_bar_holds_every_control", all(v["inBar"] and v["timelineOnTop"] and v["names"] and v["page"] <= 0 for v in bars.values())
+       and bars["desktop"]["track"] >= 600 and bars["phone"]["track"] >= 150 and bars["desktop"]["barH"] <= 72 and bars["phone"]["barH"] <= 120, bars)
+
     # ---- Settings: one modal dialog. Each entry point opens it at its own section with focus on that section's current
     # choice; Tab never leaves it; Escape, the close button and the backdrop close it and hand focus back to what opened
     # it; the workspace's keys wait behind it, and a phone gets the whole screen.
     SET = """(() => { const d = document.getElementById('settings'), a = document.activeElement, sec = PhysicsPlayground.settings.section();
-      const want = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', keys: '#st-keys' }[sec];
+      const want = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', capture: '#vq-standard', keys: '#st-keys' }[sec];
       return { open: d.open, modal: d.matches(':modal'), section: sec, panes: [...d.querySelectorAll('[role=tabpanel]')].filter(p => !p.hidden).map(p => p.id),
         tab: d.querySelector('[role=tab][aria-selected=true]').id, focus: a.id, inside: d.contains(a), onChoice: a === document.querySelector(want),
-        expanded: ['btn-settings', 'btn-gfx', 'btn-units', 'btn-hud', 'btn-keys'].filter(i => document.getElementById(i).getAttribute('aria-expanded') === 'true') }; })()"""
+        expanded: ['btn-settings', 'btn-gfx', 'btn-units', 'btn-hud', 'btn-keys', 'btn-cap-settings'].filter(i => document.getElementById(i).getAttribute('aria-expanded') === 'true') }; })()"""
     st = lambda: pg.evaluate(SET)
     pg = fresh("fluid")
     at = {}
-    for btn, sec in [("#btn-gfx", "graphics"), ("#btn-units", "units"), ("#btn-hud", "hud"), ("#btn-keys", "keys")]:
+    for btn, sec in [("#btn-gfx", "graphics"), ("#btn-units", "units"), ("#btn-hud", "hud"), ("#btn-cap-settings", "capture"), ("#btn-keys", "keys")]:
         pg.click(btn); pg.wait_for_timeout(200); s = st()
         good = (s["open"] and s["modal"] and s["section"] == sec and s["panes"] == ["sp-" + sec] and s["tab"] == "st-" + sec and s["inside"] and s["onChoice"]
                 and s["expanded"] == ["btn-settings", btn[1:]])
@@ -484,9 +534,10 @@ with sync_playwright() as p:
     ok("settings_button_opens_where_it_was_left", s["open"] and s["modal"] and s["section"] == "keys" and s["focus"] == "st-keys" and s["expanded"] == ["btn-settings", "btn-keys"], s)
     keys = pg.evaluate("[...document.querySelectorAll('#sp-keys .keys-list dt')].map(d => d.textContent.replace(/\\s+/g, ' ').trim())")
     ok("settings_lists_the_keys", len(keys) >= 19 and "Shift+S" in keys and "Shift+H" in keys and "? Esc" in keys and ". ," in keys, keys)
-    pg.keyboard.press("ArrowUp"); s1 = st(); pg.keyboard.press("Home"); s2 = st(); pg.keyboard.press("End"); s3 = st()
-    ok("settings_nav_arrows", s1["section"] == "hud" and s1["focus"] == "st-hud" and s1["panes"] == ["sp-hud"] and s2["section"] == "graphics" and s2["focus"] == "st-graphics"
-       and s3["section"] == "keys" and s3["panes"] == ["sp-keys"], (s1, s2, s3))
+    pg.keyboard.press("ArrowUp"); s0 = st(); pg.keyboard.press("ArrowUp"); s1 = st(); pg.keyboard.press("Home"); s2 = st(); pg.keyboard.press("End"); s3 = st()
+    ok("settings_nav_arrows", s0["section"] == "capture" and s0["focus"] == "st-capture" and s0["panes"] == ["sp-capture"]
+       and s1["section"] == "hud" and s1["focus"] == "st-hud" and s1["panes"] == ["sp-hud"] and s2["section"] == "graphics" and s2["focus"] == "st-graphics"
+       and s3["section"] == "keys" and s3["panes"] == ["sp-keys"], (s0, s1, s2, s3))
     # Tab and Shift+Tab go round the Graphics section's controls and come back to where they began, never outside.
     pg.click("#st-graphics"); pg.wait_for_timeout(150)
     fwd, back = [], []
@@ -537,14 +588,14 @@ with sync_playwright() as p:
     pg.context.close()
 
     # A phone: the Settings button in the top bar, and the dialog fills the screen with the sections across its top,
-    # all four in view, and nothing wider than the screen in any section.
+    # all five in view, and nothing wider than the screen in any section.
     ctx = b.new_context(viewport={"width": 390, "height": 844})
     pg = open_page(ctx); pg.goto(URL + "#gravity")
     pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(400)
     btn = pg.locator("#btn-settings").bounding_box()
     pg.click("#btn-settings"); pg.wait_for_timeout(250)
     phone = {}
-    for sec in ["graphics", "units", "hud", "keys"]:
+    for sec in ["graphics", "units", "hud", "capture", "keys"]:
         pg.click("#st-" + sec); pg.wait_for_timeout(120)
         phone[sec] = pg.evaluate("""(() => { const d = document.getElementById('settings').getBoundingClientRect(), b = document.getElementById('settings-body'), t = [...document.querySelectorAll('#settings-tabs [role=tab]')].map(e => e.getBoundingClientRect());
           return { d: [d.left, d.top, d.width, d.height].map(Math.round), over: b.scrollWidth - b.clientWidth, tabs: t.every(r => r.left >= 0 && r.right <= innerWidth && Math.abs(r.top - t[0].top) < 1),
@@ -570,7 +621,7 @@ with sync_playwright() as p:
     pg.evaluate("(() => { const L = PhysicsPlayground.active; L.track = L.bodies[1].id; })()"); pg.wait_for_timeout(600)
     for pane in ["inspect", "insights", "telemetry"]:
         pg.click("#dt-" + pane); pg.wait_for_timeout(300); sweep("deck_" + pane)
-    for btn, where in [("#btn-keys", "settings_keyboard"), ("#btn-units", "settings_units"), ("#btn-hud", "settings_hud"), ("#btn-gfx", "settings_graphics"), ("#btn-settings", "settings"), ("#scene-btn", "scene_menu")]:
+    for btn, where in [("#btn-keys", "settings_keyboard"), ("#btn-units", "settings_units"), ("#btn-hud", "settings_hud"), ("#btn-cap-settings", "settings_capture"), ("#btn-gfx", "settings_graphics"), ("#btn-settings", "settings"), ("#scene-btn", "scene_menu")]:
         pg.click(btn); pg.wait_for_timeout(300); sweep(where); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
     pg.click("#mode-3d"); settle(pg, "PhysicsPlayground.mode.is3D()", 30000); pg.wait_for_timeout(800); sweep("3d")
     ok("nothing_in_the_workspace_selects", not leaks, leaks)

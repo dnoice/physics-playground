@@ -17,6 +17,10 @@
       Inspect's list of every object and Pin to Telemetry, the three ways to
       select, a click that counts where a moving body was and a click on an
       orbit or trail, Q in the keyboard table, and Tilt marks under Display.
+      On Dennis's call for one timeline: the player bar as one control for
+      time, the timeline's marks, Record clip, Record data and Save state with
+      their live lines, the Capture section of Settings, the stage's status
+      line and recording light, and the Library as the saved items.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
       from starlight under Planet classes, with its table of climates; the
       climate in Our Solar System, in the 3D table's Gravity row and in the
@@ -603,7 +607,11 @@ The workspace is one large stage, an Instruments deck beneath it and a
 full-height Inspector beside them.
 
 - **Stage**: the simulation. The lab's name in the top left holds the scene
-  dropdown; loading a scene restarts the run.
+  dropdown; loading a scene restarts the run. Under it, a status line reads
+  the simulated time and the frame rate as plain text, and a red light
+  blinks with the time, size or rows so far while a clip or a dataset
+  records (cyan for data alone). Only what a press acts on there is a
+  button: the notices, which open Insights, and the director's chip.
 - **Stage rail**: hangs from the top-right corner, in the same place in every
   lab. **Camera** comes first (the axis ball in 3D, zoom, **Select**, pan
   and frame), then what belongs to this lab: its **Tools** (what a click
@@ -630,20 +638,34 @@ full-height Inspector beside them.
   The display never takes a click, and screen readers get the same figures
   from Telemetry, Insights and Inspect.
 - **Settings**: the gear at the right of the top bar, or **Shift+S**, opens
-  one dialog with four sections: Graphics, Units, Head-up display and
-  Keyboard. The Graphics, Units, HUD and keyboard buttons beside it open it
-  at their own section, as do **U** and **?**, which close it when pressed
-  again. Tab stays inside it, Esc closes it and puts you back
-  where you were, and on a phone it fills the screen. Everything in it is
-  kept in this browser.
-- **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
-  data and save buttons.
+  one dialog with five sections: Graphics, Units, Head-up display, Capture
+  and Keyboard. The Graphics, Units, HUD and keyboard buttons beside it, and
+  the capture settings button in the player bar, open it at their own
+  section, as do **U** and **?**, which close it when pressed again. Tab
+  stays inside it, Esc closes it and puts you back where you were, and on a
+  phone it fills the screen. Everything in it is kept in this browser.
+- **Player bar**: one control for time, laid out like a video player's.
+  - The rewind timeline runs across its top. While a clip or a dataset
+    records, a red or cyan span lies under it from where the recording
+    began, and each state saved in this run stands above it as a green
+    tick.
+  - Beneath it are play, step, reset and the speed, then **Record clip**,
+    **Record data** and **Save state**. Each shows its key and a line of
+    what it will keep (format and quality, columns and rate) or how far it
+    has got (time and size, rows). A recorder turns into its own stop
+    button, and Save state confirms that the Library has the state.
+  - The settings button at the end opens the Capture section of Settings.
+  - On a narrow screen the keys go first, then Play's word. Below about
+    780 px the capture buttons take a row of their own, and on a phone
+    their line shows only while it says something live.
 - **Instruments**: three panes over one header.
   - **Telemetry**: every reading as a live gauge beside the lab's chart; the
     first ones lead with larger figures. Click a gauge to plot it, up to four
     at once, each in its own lane on one time axis. Hover the plot to read any
     moment, click or drag along it to rewind to that moment (as far back as
     the rewind history reaches), and use the wheel to zoom the time window.
+    The plot shows the timeline's marks too: a running recording in its
+    colour, and a green tick at each saved state.
   - **Inspect**: the object you selected, with its live figures, read-only,
     each with a sparkline of its history since you selected it. A focus
     chart below them shows one figure over time (the one that matters most
@@ -688,9 +710,8 @@ full-height Inspector beside them.
     formula's prediction beside what the simulation measures, and, where it
     helps, a plot: the speed distribution against Maxwell–Boltzmann, the
     double slit's fringes against λL/d, the pendulums' separation.
-  - **Library**: a Capture bar of three buttons records a clip or a
-    dataset, or saves the state, in one press each; everything saved is
-    listed under it, with what to do with each item.
+  - **Library**: everything the player bar's capture buttons saved, with
+    what to do with each item.
 - **Selecting things**: three ways, in every lab. Click the object with the
   lab's own tool: a body in Gravity, a ball in Collisions (with Grab), a
   particle in Fields (with Move), a post in Fluid (with any tool but
@@ -798,17 +819,25 @@ that matter. The layout reflows to one column below 1180 px.
 
 ## Capturing runs
 
+Everything here lives in the player bar under the stage, one control for
+time.
+
 - **Rewind**: drag the timeline back to replay recent history. Playing
-  from the past starts a new branch.
-- **Video**: records the stage as a WebM clip. The clip keeps the size it
-  started at, so resizing the window or opening the deck never freezes it.
-- **Data**: records a CSV dataset of the lab's quantities, plus per-body
-  tracks where the lab has them.
+  from the past starts a new branch, and the states saved in the future it
+  discards lose their ticks.
+- **Record clip** (M): records the stage as a WebM clip. The clip keeps the
+  size it started at, so resizing the window or opening the deck never
+  freezes it.
+- **Record data** (D): records a CSV dataset of the lab's quantities, plus
+  per-body tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
+- **Capture settings**: the button at the end of the bar opens the Capture
+  section of Settings: clip quality, labels on the clip, the director, the
+  data's sample rate, tracks, and what a dataset from this lab holds.
 
 ### The director's camera
 
-Turn on **Direct clips like a film** in the Library's capture settings, and
+Turn on **Direct clips like a film** in the Capture section of Settings, and
 a clip is filmed for you. While it records, the director drives your own
 view the way a camera crew would:
 
@@ -846,8 +875,9 @@ Follow comes back with it. The amber chip on the stage names the shot.
 Press the chip to take the camera back for the rest of the clip.
 
 **Preview direction**, under the switch, runs the director without
-recording. Press it again, or the chip, to stop it. A clip started during a
-preview carries on with the same director.
+recording. Settings steps aside so you can watch it. The chip on the stage,
+or **Stop preview** in Settings, stops it. A clip started during a preview
+carries on with the same director.
 
 The director moves your own view. A background mode, filming a second
 camera while your view stays still, was considered and left out. It would
@@ -899,26 +929,24 @@ What each lab tracks, every object with a stable number:
 | Cloth | Every third point along each row and column, and every pinned point | The weave, its spacing, links and pins |
 | Fields | Up to 64 particles: position, velocity, charge-to-mass ratio | The world, k, B and E₀, the probe, every charge |
 
-The **Library** page gathers all of this in two sections.
+The capture buttons in the player bar each wear a mark in their kind's
+colour, the same colour the timeline uses.
 
-- **Capture** is a bar of three buttons.
-  - **Record clip** and **Record data** wear the familiar red record dot.
-    While recording, the dot turns into a stop square on a pulsing red disc,
-    and the button shows the time, size or rows so far.
-  - **Save state** saves at once, and says so.
-  - Each button shows its key.
-  - **Settings**, beside the heading, folds out the video quality, labels,
-    the director, sample rate and tracks.
-  - A fold under the bar lists what a dataset will hold.
-- **Saved** lists everything kept, for this lab or all of them, with where
-  it is stored.
-  - Each item's kind (video, dataset or saved state) shows in its colour
-    and tag.
-  - Its main action leads: **Preview**, **Details** or **Load**.
-  - Its downloads are named by format: **WEBM**, **CSV**, **Tracks CSV**,
-    **JSON**.
-  - The trash button in its corner deletes it, after asking.
-  - Press an item's name to rename it.
+- **Record clip** has the red record dot, and **Record data** a cyan one.
+  While recording, the dot turns into a stop square on a pulsing disc, and
+  the line under the name shows the time and size, or the rows, so far.
+- **Save state** saves at once, and says so.
+
+The **Library** page keeps what they saved, for this lab or all of them,
+with where it is stored.
+
+- Each item's kind (clip, dataset or saved state) shows in its colour and
+  tag.
+- Its main action leads: **Preview**, **Details** or **Load**.
+- Its downloads are named by format: **WEBM**, **CSV**, **Tracks CSV**,
+  **JSON**.
+- The trash button in its corner deletes it, after asking.
+- Press an item's name to rename it.
 
 The Library tab shows how many items are saved and marks new ones. When the
 page runs as a published artifact, the library syncs with the artifact;

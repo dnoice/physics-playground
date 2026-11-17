@@ -1,25 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Boot Sequence (digiSpace Edition - v2.18)
+    - Title: Boot Sequence (digiSpace Edition - v2.19)
     - File Name: main.js
     - Relative Path: js/main.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the capture settings are built by
+      capture.init, in the Capture section of Settings.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: settings.init joins the boot
       order after the head-up display.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fills the
       ENGINE tag beside the name from js/core/version.js, with its link to the
       changelog.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Boot wires
-      the head-up display's menu and remembered settings.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -50,7 +51,7 @@ import { readTheme } from './core/color.js';
 import { APP } from './core/version.js';
 import { clamp, store } from './core/util.js';
 import { updateCaptureUI } from './shell/capture.js';
-import { buildCaptureSettings, buildLibraryFilter } from './shell/library.js';
+import { buildLibraryFilter } from './shell/library.js';
 import { frame, setLast } from './shell/loop.js';
 import { buildOrbit } from './shell/navigator.js';
 import { active, measure, state } from './shell/state.js';
@@ -87,7 +88,7 @@ export function start(data) {
     l.sceneP = { ...l.p };
   }
   showSpeed(); updatePlay(); buildOrbit();
-  buildCaptureSettings(); buildLibraryFilter(); updateCaptureUI();
+  buildLibraryFilter(); updateCaptureUI();
   // The engine's release beside the name, from the one place it is kept.
   const ver = document.getElementById('brand-ver');
   if (ver) { ver.replaceChildren('Engine ', Object.assign(document.createElement('b'), { textContent: APP.version })); ver.href = `${APP.source}/blob/main/CHANGELOG.md`; ver.title = `Physics Playground engine ${APP.version}: what changed`; ver.hidden = false; }

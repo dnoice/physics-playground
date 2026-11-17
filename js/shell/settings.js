@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Settings Dialog (digiSpace Edition - v2.18)
+    - Title: Settings Dialog (digiSpace Edition - v2.19)
     - File Name: settings.js
     - Relative Path: js/shell/settings.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: a Capture section, opened by the player
+      bar's capture settings button at the checked clip quality.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for one settings dialog in place of four floating sheets:
       a true modal with a section nav (Graphics, Units, Head-up display,
@@ -24,8 +27,8 @@
 ✒ Description:
     The Settings dialog: the frame, its section nav and its keyboard. Each
     section's contents belong to the module that owns them (mode.js builds
-    Graphics, unitmenu.js Units, headsup.js the head-up display); this
-    module opens, closes and moves between them.
+    Graphics, unitmenu.js Units, headsup.js the head-up display, capture.js
+    Capture); this module opens, closes and moves between them.
 
 ✒ Key Features:
     - A native modal dialog: the workspace behind it is inert, Tab and
@@ -34,9 +37,10 @@
     - A section nav with the full tab contract: arrows move and select, Home
       and End jump. It stands down the left on a wide screen and across the
       top on a phone, where the dialog fills the screen.
-    - Quick openers: Graphics, Units, HUD and the keyboard button open it at
-      their section and focus its current choice; U and ? do the same, and
-      Shift+S opens it at the section last shown.
+    - Quick openers: Graphics, Units, HUD, the keyboard button and the player
+      bar's capture settings open it at their section and focus its current
+      choice; U and ? do the same, and Shift+S opens it at the section last
+      shown.
     - Inside, the workspace's shortcuts wait: U and ? move to their section,
       or close the dialog when it is already there, Shift+H still turns the
       head-up display on or off, and Shift+S closes.
@@ -53,9 +57,9 @@ import { toggleHud } from './headsup.js';
 
 /* The sections in nav order, each with what takes focus when the dialog opens at it: its current choice, or its first
    control. The keyboard list has none, so its tab takes focus. */
-const SECTIONS = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', keys: null };
-/* The top bar's quick openers, each for its own section. */
-const OPENERS = [['#btn-gfx', 'graphics'], ['#btn-units', 'units'], ['#btn-hud', 'hud'], ['#btn-keys', 'keys']];
+const SECTIONS = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', capture: '#sp-capture [role="radio"][aria-checked="true"]', keys: null };
+/* The quick openers, each for its own section: the top bar's four, and the capture cluster's settings in the player bar. */
+const OPENERS = [['#btn-gfx', 'graphics'], ['#btn-units', 'units'], ['#btn-hud', 'hud'], ['#btn-keys', 'keys'], ['#btn-cap-settings', 'capture']];
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';
 const dlg = $('#settings'), tabs = [...dlg.querySelectorAll('[role="tab"]')];
 let current = Object.hasOwn(SECTIONS, store.get('settingsTab')) ? store.get('settingsTab') : 'graphics', opener = null;

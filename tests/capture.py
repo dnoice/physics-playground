@@ -1,17 +1,24 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.18)
+    - Title: Capture Test (digiSpace Edition - v2.19)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the director's switch is reached through
+      the capture cluster's settings button and the Capture section of
+      Settings; the clip button counts time and size and its tooltip says how
+      to stop, saved states tick the timeline in order, Telemetry reads the
+      same marks, a new branch drops future ticks, and Preview direction
+      steps the dialog aside.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       track header now ends with temperature_K and instellation_earth, after
       the columns it had. On Dennis's call for recordings shot like a film:
@@ -171,6 +178,12 @@ with sync_playwright() as p:
     # A cold software encoder can take seconds to start, and stopping sooner saves nothing.
     settle(pg, "PhysicsPlayground.capture.vrec.bytes > 0", 30000)
     ok("rec_chip_counts", re.match(r"REC \d", pg.inner_text("#hud-rec")) is not None, pg.inner_text("#hud-rec"))
+    # The button that started the clip is its stop, and its line counts the time and size; its tooltip says so, and the
+    # timeline marks the clip.
+    ok("rec_button_counts", pg.get_attribute("#btn-rec", "aria-pressed") == "true" and pg.inner_text("#btn-rec-label") == "Stop clip"
+       and pg.get_attribute("#btn-rec", "title") == "Stop the clip and keep it in the Library (M)"
+       and re.fullmatch(r"(\d+:\d\d|[\d.]+ s) · [\d.]+ (B|kB|MB|GB)", pg.inner_text("#btn-rec-sub")) is not None
+       and pg.evaluate("!document.getElementById('tl-clip').hidden && document.getElementById('hud-rec').dataset.kind === 'clip'"), pg.inner_text("#btn-rec-sub"))
     # The clip keeps one size when the stage changes shape (here the window; the deck's charts do the same), and its
     # frames keep coming. Recording the stage canvas itself had frozen a clip at the first resize.
     # The frames are sampled through a small scratch canvas made for reading, so the clip's canvas is never read back.
@@ -245,6 +258,23 @@ with sync_playwright() as p:
     pg.keyboard.press("Space"); pg.wait_for_timeout(300)
     r = pg.inner_text("#rewind-out")
     ok("play_returns_to_live", r.startswith("live"), r)
+    # --- the timeline's marks. Each state saved in this run stands as a tick on the rewind track at its moment, in order;
+    # Telemetry's plot reads the same marks (timelineMarks), and playing on from the past drops the ticks of the future it
+    # discards.
+    pg.wait_for_timeout(1500); pg.evaluate("PhysicsPlayground.pause()")
+    tl = """(() => ({ ticks: [...document.querySelectorAll('#tl-marks .tl-tick')].filter(i => !i.hidden).map(i => parseFloat(i.style.left)),
+      marks: PhysicsPlayground.active.hist.marks.slice(), saved: document.getElementById('btn-state').classList.contains('is-saved') && document.getElementById('btn-state-label').textContent === 'Saved' }))()"""
+    pg.click("#btn-state"); pg.wait_for_timeout(500); m1 = pg.evaluate(tl)
+    pg.evaluate("() => document.activeElement && document.activeElement.blur()")
+    for _ in range(4): pg.keyboard.press(",")
+    pg.click("#btn-state"); pg.wait_for_timeout(500); m2 = pg.evaluate(tl)
+    shared = pg.evaluate("import(new URL('js/shell/capture.js', location.href).href).then(m => m.timelineMarks(PhysicsPlayground.active).states.slice())")
+    pg.evaluate("() => document.activeElement && document.activeElement.blur()"); pg.keyboard.press("Space"); pg.wait_for_timeout(500); m3 = pg.evaluate(tl)
+    ok("saved_state_ticks_the_timeline", m1["saved"] and len(m1["ticks"]) == 1 and m1["ticks"][0] > 95 and len(m2["ticks"]) == 2 and m2["ticks"][0] < m2["ticks"][1] < 100.01
+       and m2["marks"] == sorted(m2["marks"]), (m1, m2))
+    ok("telemetry_reads_the_same_marks", shared == m2["marks"], (shared, m2["marks"]))
+    ok("a_new_branch_drops_future_ticks", len(m3["ticks"]) == 1 and m3["marks"] == m2["marks"][:1], m3)
+    pg.evaluate("async () => { const C = PhysicsPlayground.capture; for (const i of C.vault.list().filter(i => i.kind === 'state')) await C.vault.remove(i); }")
 
     # --- the director's camera: with the Director on, a clip is filmed with eased moves inside fixed limits, the user's
     # hand on the camera pauses it, and the view comes back as it was when the clip stops. Its clock is the frame loop's,
@@ -263,9 +293,11 @@ with sync_playwright() as p:
         """Each directed frame's pan as a share of the stage's short side, and its change of ln zoom."""
         out = [(math.hypot(c[0] - a[0], c[1] - a[1]) * a[2] / a[4], abs(math.log(c[2] / a[2]))) for a, c in zip(rows, rows[1:]) if a[3] and c[3]]
         return [p for p, _ in out] or [0], [z for _, z in out] or [0]
-    pg.click("#nt-library")
-    if pg.evaluate("document.getElementById('capture-settings').hidden"):
-        pg.click("#btn-cap-settings")
+    # The director's switch is in the Capture section of Settings, which the capture cluster's own settings button opens
+    # at its current video quality.
+    pg.click("#btn-cap-settings"); pg.wait_for_timeout(250)
+    r = pg.evaluate("[document.getElementById('settings').open, PhysicsPlayground.settings.section(), document.activeElement.id, document.getElementById('btn-cap-settings').getAttribute('aria-expanded')]")
+    ok("capture_settings_open_in_settings", r == [True, "capture", "vq-standard", "true"], r)
     r = [pg.evaluate(D + ".on"), pg.get_attribute("#sw-director", "aria-checked"), pg.locator("#btn-dir-preview").is_hidden()]
     ok("director_off_by_default", r == [False, "false", True], r)
     # Off, a clip leaves the camera exactly where it is.
@@ -278,6 +310,8 @@ with sync_playwright() as p:
     pg.click("#sw-director")
     ok("director_switch_turns_on", pg.evaluate(D + ".on") is True and pg.get_attribute("#sw-director", "aria-checked") == "true"
        and pg.evaluate("localStorage.getItem('psp:director')") == "true" and pg.locator("#btn-dir-preview").is_visible())
+    ok("record_clip_line_says_directed", pg.inner_text("#btn-rec-sub").startswith("Directed"), pg.inner_text("#btn-rec-sub"))
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
     # On, a clip is filmed: the camera moves, never faster than the limits allow in a frame (the loop's frame is at most
     # 0.05 s), the chip shows the shot, and the view eases back to where it was.
     pg.evaluate("() => { const P = PhysicsPlayground; P.preset('pool'); P.play(); }"); pg.wait_for_timeout(800)
@@ -313,6 +347,14 @@ with sync_playwright() as p:
     ok("director_yields_to_the_user", yielded and (c1["x"], c1["y"], c1["z"]) == (c2["x"], c2["y"], c2["z"]), (c1, c2))
     ok("director_resumes_after_a_pause", resumed)
     settle(pg, "!PhysicsPlayground.capture.vrec.mr && !" + D + ".state().driving", 20000)
+    # Preview direction, pressed in Settings, steps the dialog aside so the stage can be watched, and hands focus back to
+    # the button that opened it; the director's chip on the stage, a real button, gives the camera back.
+    pg.click("#btn-cap-settings"); pg.wait_for_timeout(250); pg.click("#btn-dir-preview"); pg.wait_for_timeout(400)
+    pv = pg.evaluate("[document.getElementById('settings').open, document.activeElement.id, " + D + ".state().why, document.getElementById('hud-dir').tagName, !document.getElementById('hud-dir').hidden]")
+    pg.click("#hud-dir"); pg.wait_for_timeout(300)
+    ok("preview_steps_the_dialog_aside", pv == [False, "btn-cap-settings", "preview", "BUTTON", True] and pg.evaluate(D + ".state().why") is None
+       and pg.evaluate("document.getElementById('hud-dir').hidden"), pv)
+    settle(pg, "!PhysicsPlayground.view.get().moving", 10000)
     # Every lab names its areas of interest in its own world: finite points with a positive extent, a weight from 0 to 1,
     # a key and a label, inside the lab's world (Gravity's sky has no edge).
     found = {}
