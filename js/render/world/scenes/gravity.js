@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.18)
+    - Title: Gravity Scene (digiSpace Edition - v2.19)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for the tilted-orbit indicators under Display: the drop
+      lines and foot rings follow the Tilt marks switch.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for worlds shaped by their distance from their stars: each
       world's climate reaches its material and blends into its look: lava in a
@@ -23,11 +26,6 @@
       seen against its star shows a thin ring of forward-scattered light round
       its night side, as Earth's does seen from the Moon in an eclipse, so it
       reads as a sphere, not a hole; night sides are a touch less black.
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Calm
-      worlds (surface 3): faint bands under a cool haze for sub-Neptunes and
-      ice giants, Uranus and Neptune among them. A storm on about half the
-      banded giants and a third of the calm ones, in the planet's own colours.
-      Rings from the lab's ringed(), for gas giants of any mass.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -887,8 +885,9 @@ export function createScene(E, lab) {
         }
         // The belts' marks would hide the planets', and a moon's would reach from its planet to the ecliptic: only
         // bodies with mass or a name drop one, and never a moon. In the Solar System the orbits, when drawn, show
-        // each tilt better than marks would: a steep orbit's mark is a long stick across the view.
-        if ((b.m > 0 || b.label) && !b.host && !(lab.sky && lab.p.orbits)) dropMark(b, plane, depth, px, c, view.h);
+        // each tilt better than marks would: a steep orbit's mark is a long stick across the view. The Tilt marks switch
+        // under Display turns them all off.
+        if (lab.p.marks && (b.m > 0 || b.label) && !b.host && !(lab.sky && lab.p.orbits)) dropMark(b, plane, depth, px, c, view.h);
       }
       if (vectors) arrow(b, depth, px);
     }

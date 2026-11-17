@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Tool Dock (digiSpace Edition - v2.5)
+    - Title: Tool Dock (digiSpace Edition - v2.19)
     - File Name: dock.js
     - Relative Path: js/shell/dock.js
     - Artifact Type: javascript
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button: a rail tool ends Select as it ends
+      Pan, and the hint speaks for Select while it is on.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
       call for random placement, a lab that declares random gets a dice under
       its tools that turns it on and off; it stays in step with the Controls
@@ -23,9 +26,6 @@
       contract: the checked option is the one tab stop, arrows move and
       select, Home and End jump. A view changes only what is drawn, and V
       steps through a lab's views.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tool
-      changes refresh disabled controls; the 3D hint knows when middle-drag
-      orbits.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -42,8 +42,9 @@
       setting through setParam; syncDice() keeps it current.
     - selectView() never restarts or rewinds the run; nextView() backs the V
       key.
-    - The hint follows the tool, else the view, else the lab, with the pan and
-      3D notes added.
+    - The hint follows the tool, else the view, else the lab, with the Pan,
+      Select and 3D notes added; a tool picked on the rail ends Pan and
+      Select.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -120,7 +121,7 @@ export function selectDock(id) {
   if (!d || !d.options.some(o => o.id === id)) { selectView(id); return; }
   active.p[d.key] = id;
   if (active.onParam) active.onParam(d.key, id);
-  if (ptr.panMode) { ptr.panMode = false; updateNav(); }
+  if (ptr.panMode || ptr.selectMode) { ptr.panMode = ptr.selectMode = false; updateNav(); }
   updateDock(); refreshEnabled(); syncGuide();
   announce(`${d.options.find(x => x.id === id).label} tool`);
 }
@@ -149,6 +150,7 @@ export function updateDock() {
   // The hint speaks for what a click on the stage does now: the tool's, else the view's, else the lab's own.
   let hint = (tool && tool.hint) || (view && view.hint) || active.hint || '';
   if (ptr.panMode) hint = 'Pan mode: drag to move the view · click the hand in the view controls to use the tool again';
+  else if (ptr.selectMode) hint = `Select: ${active.selectHint || 'click an object to inspect it'} · empty space clears · Q or a tool ends it`;
   else if (is3D(active)) hint += coarsePointer ? ` · ${active.selfCam ? 'drag the axis ball' : 'drag around it'} to orbit` : ` · ${active.rightButton ? 'middle' : 'right'}-drag orbits · Shift-drag pans`;
   $('#stage-hint').textContent = hint;
 }

@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Solar System Tests (digiSpace Edition - v2.18)
+    - Title: Solar System Tests (digiSpace Edition - v2.19)
     - File Name: solar.py
     - Relative Path: tests/solar.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — A click on
+      a drawn orbit follows its body with Throw and with Select, in the flat
+      view and in 3D.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       planets' equilibrium temperatures within 10 % of the textbook values at
       their mean distances; Venus's, Earth's and Mars's surfaces and the
@@ -284,6 +287,24 @@ with sync_playwright() as p:
     fix = pg.evaluate(f"""(() => {{ {HELP} const f = L.perfFixes(); f[0].run(); L.computeAcc();
       return {{ labels: f.map(q => q.label), n: L.bodies.length, named: {NAMED!r}.every(n => by(n)), tests: L.tests.length, moons: L.moons.length }}; }})()""")
     ok("sol_speed_fix_keeps_every_named_body", fix == {"labels": ["Remove the 214 belt bodies"], "n": 33, "named": True, "tests": 2, "moons": 17}, fix)
+    # A click on a drawn orbit, away from its body, follows the body, with the Throw tool or with Select; empty sky
+    # beside it still drops a body.
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(600)
+    ORBIT = f"""(() => {{ const L = {G}, {{ ox, oy, z }} = L.viewXf, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect();
+      for (const nm of ['Saturn', 'Jupiter', 'Uranus']) {{ const b = L.bodies.find(q => q.name === nm), f = L.orbitFrame(b, L.pullHost(b)), bx = b.x * z + ox, by = b.y * z + oy;
+        for (let k = 10; k < 90; k++) {{ const E = f.E0 - 2 * Math.PI * k / 96, c = f.a * (Math.cos(E) - f.e), s = f.bb * Math.sin(E), x = (f.cx + f.Px * c + f.Qx * s) * z + ox, y = (f.cy + f.Py * c + f.Qy * s) * z + oy;
+          if (Math.hypot(x - bx, y - by) > 80 && x > 40 && y > 40 && document.elementFromPoint(r.left + x, r.top + y) === cv && !L.bodyAt({{ x, y }}, 24)) return [r.left + x, r.top + y, b.id, nm]; }} }}
+      return null; }})()"""
+    at = pg.evaluate(ORBIT); n_sol = pg.evaluate(f"{G}.bodies.length")
+    pg.click("#dock-gravity-throw"); pg.mouse.click(at[0], at[1]); pg.wait_for_timeout(300)
+    by_throw = [pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.bodies.length") - n_sol]
+    named = at[3] in pg.inner_text("#details-kicker")
+    # Following it moved the camera, so the line is found again where it now is.
+    pg.evaluate(f"{G}.select(null)"); pg.wait_for_timeout(300); at2 = pg.evaluate(ORBIT)
+    pg.keyboard.press("q"); pg.mouse.click(at2[0], at2[1]); pg.wait_for_timeout(300)
+    by_select = [pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.bodies.length") - n_sol]
+    pg.keyboard.press("q"); pg.evaluate(f"{G}.select(null)")
+    ok("sol_orbit_line_click_selects", at is not None and at2 is not None and by_throw == [at[2], 0] and by_select == [at2[2], 0] and named, (at, by_throw, at2, by_select))
     pg.evaluate(P + ".preset('sol')"); pg.wait_for_timeout(200)
     sw = pg.evaluate("""(() => ['orbits', 'labels'].map(k => document.getElementById('ctl-gravity-' + k)).map(e => e && [e.getAttribute('aria-checked'), e.textContent.trim()]))()""")
     pg.click("#ctl-gravity-orbits"); off = pg.evaluate(f"{G}.p.orbits"); pg.click("#ctl-gravity-orbits")
@@ -306,7 +327,7 @@ with sync_playwright() as p:
     ok("sol_3d_orbits_drawn_in_scene", tri[0] - tri[1] > 2000, tri)
     # Close enough to Jupiter that Io is on the stage and drawn apart, then all the way in.
     ZOOM = f"""async n => {{ {HELP} for (let k = 0; k < n; k++) {{ {P}.view.zoomBy(3); await new Promise(r => setTimeout(r, 120)); }}
-      await new Promise(r => setTimeout(r, 1500)); const J = by('Jupiter'), io = by('Io'), t = L.hudTarget(true), s = L.project3(J.x, J.y, J.z), si = L.project3(io.x, io.y, io.z), V = L.basis3();
+      await new Promise(r => setTimeout(r, 1500)); const J = by('Jupiter'), io = by('Io'), t = L.spot(L.selectedId(), true), s = L.project3(J.x, J.y, J.z), si = L.project3(io.x, io.y, io.z), V = L.basis3();
       return {{ near: V.near, dist: L.c3().dist, apart: L.apart3(io), ioOn: !!si && si.x > 0 && si.y > 0 && si.x < V.w && si.y < V.h,
         box: t && Math.hypot(t.x - s.x, t.y - s.y), r: t && t.r, px: J.px }}; }}"""
     pg.evaluate(f"(() => {{ const L = {G}, J = L.bodies.find(b => b.name === 'Jupiter'); L.track = J.id; L.trackEase = 0; }})()")
@@ -315,6 +336,15 @@ with sync_playwright() as p:
     ok("sol_3d_target_on_followed_planet", z["box"] is not None and z["box"] < 1 and z["r"] >= z["px"], z)
     z = pg.evaluate(ZOOM, 8)
     ok("sol_3d_near_plane_follows_in", z["near"] < 1e-2 and z["near"] <= z["dist"] * 0.0041, z)
+    # In 3D an orbit is picked on the very curve the scene draws: framed again, a click on Saturn's line follows Saturn.
+    pg.evaluate(f"{G}.select(null)"); pg.evaluate(P + ".view.frame()"); pg.wait_for_timeout(2500)
+    o3 = pg.evaluate(f"""(() => {{ const L = {G}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect();
+      for (const nm of ['Saturn', 'Jupiter']) {{ const b = L.bodies.find(q => q.name === nm), f = L.orbitFrame(b, L.pullHost(b)), sb = L.project3(b.x, b.y, b.z);
+        for (let k = 12; k < 84; k++) {{ const E = f.E0 - 2 * Math.PI * k / 96, c = f.a * (Math.cos(E) - f.e), s = f.bb * Math.sin(E), q = L.project3(f.cx + f.Px * c + f.Qx * s, f.cy + f.Py * c + f.Qy * s, f.cz + f.Pz * c + f.Qz * s);
+          if (q && sb && Math.hypot(q.x - sb.x, q.y - sb.y) > 80 && q.x > 40 && q.y > 40 && document.elementFromPoint(r.left + q.x, r.top + q.y) === cv && !L.bodyAt({{ x: q.x, y: q.y }}, 24) && L.lineAt({{ x: q.x, y: q.y }}, false, true) === b) return [r.left + q.x, r.top + q.y, b.id]; }} }}
+      return null; }})()""")
+    if o3: pg.keyboard.press("q"); pg.mouse.click(o3[0], o3[1]); pg.wait_for_timeout(300); pg.keyboard.press("q")
+    ok("sol_3d_orbit_line_click_selects", o3 is not None and pg.evaluate(f"{G}.track") == o3[2], o3)
     pg.close()
 
     # ---- Orbits stay smooth curves where the 3D view sits inside them: 10.7 years in, the camera turned as in the

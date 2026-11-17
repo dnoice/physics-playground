@@ -1,17 +1,24 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.18)
+    - Title: Architecture Guide (digiSpace Edition - v2.19)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for easier selection: the Selection section (lasting ids,
+      chooseObject, the Select tool, the reach constants, Gravity's one
+      pickBody and its orbit and trail picking, the objects list); the
+      selection contract and spot() in the hooks table in place of hudTarget;
+      the regions table, the Inspect paragraph, Tilt marks, and the contract
+      in the Add a lab recipe.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       climate: climate.js and each world's b.clim, when it updates, starlight,
       air, temperature, ice, spin and classes, the look in 2D and 3D, what
@@ -196,7 +203,7 @@ before anything else reads it. Then `boot()` runs:
    director's stage chip), `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
    (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
-   card), `unitmenu.init` (the Units section), `headsup.init` (the head-up
+   card and its objects list), `unitmenu.init` (the Units section), `headsup.init` (the head-up
    display's section and its remembered settings), `settings.init` (the
    Settings dialog: its nav, its keys and the top bar's openers),
    `automation.init` (`window.PhysicsPlayground`).
@@ -275,11 +282,13 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `interest(keep)` | The director's areas of interest: points `{ x, y, z?, r, w, key, label }` in the lab's world coordinates (`z` in Gravity only), with `r` the extent to frame, `w` a weight from 0 (routine) to 1 (do not miss; 0.85 and up may take over a routine shot), `key` a stable name so a moving subject can be followed, and `label` for the stage chip. `keep` is the key being filmed, which a lab whose subjects come and go (Gravity's bodies, a Collisions ball) still reports while it exists. Called four times a second while the director runs, never per frame; `js/core/interest.js` holds the shared measurements (the densest cell, the fastest group, the fastest cell) |
 | `releaseCam()`, `retakeCam(held)` | A lab that drives its own camera lets go while the director films and takes back what it let go when it stops: Gravity's Follow and followed body |
 | `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
+| `objects()`, `select(id)`, `selectedId()`, `pick(s)`, `spot(id, three)` | The selection contract, one shape in every lab (see Selection below). `objects()` lists what can be selected now as `{ id, name, kind, v }`, `v` holding the figures `objectCols` names; `select(id)` selects by id (null clears) and says whether it took; `selectedId()` is the selection's id or null; `pick(s)` turns a stage point into the nearest object's id within the Select tool's reach (`PICK_PX`), or null; `spot(id, three)` is where an object is drawn, `{ x, y, r }` in stage pixels for the current mode |
+| `objectCols[]`, `objectsName`, `objectsEmpty`, `selectHint`, `pickRing` | The objects list's figures as `{ label, unit(), text(v), w }` (the column's share of the width), its heading and its empty text; the stage hint while Select is on; and `pickRing` for a lab that rings what the Select tool would take itself (Gravity, with its hover tag) instead of the stage's plain ring |
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
 | `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
 | `primary` | The primary readouts, which lead with larger figures: a list of labels, or a count of leading rows (default 2). A readout row may also end with its tier, `'primary'` or `'derived'` |
 | `hudClear` | Boxes in stage pixels (`{ l, t, r, b }`) of what the lab drew this frame and the head-up display's callout should keep off, such as Gravity's names beside bodies; the callout counts covering one as it counts covering the tape |
-| `hud`, `hudTarget(three)` | The head-up display: `hud` lists the readouts its tape carries as `[label, short name]` pairs (default: the primary readouts under their own names); `hudTarget` returns the inspected object's `{ x, y, r }` in stage pixels for the current mode, or null, so the target box sits on it as drawn (see Head-up display below) |
+| `hud` | The head-up display: the readouts its tape carries as `[label, short name]` pairs (default: the primary readouts under their own names); its target box sits at `spot(selectedId())`, so it is on the object as drawn (see Head-up display below) |
 
 ## The 3D mode
 
@@ -476,18 +485,19 @@ rather than building interface.
 | Region | Responsibility | Lab capabilities it reads |
 | --- | --- | --- |
 | Stage | The simulation and direct manipulation | `draw`, pointer hooks, `cursorAt`, `overlay3` |
-| Rail: Camera | Viewport only: orbit, zoom, pan, frame; identical in every lab | `orbit3`, `snap3`, `frame3`, `zoomRange` |
+| Rail: Camera | Viewport only: orbit, zoom, pan, frame, and Select, the mode where a click only picks; identical in every lab | `orbit3`, `snap3`, `frame3`, `zoomRange`, `pick`, `spot` |
 | Rail: Tools | What a click on the stage does, and whether what it places is random | `dock`, `random` |
 | Rail: View | What the stage shows, never what the simulation does | `views` |
 | Rail: This scene | Contextual actions that belong to the stage | `navExtras` |
 | Player bar | Time: play, step, reset, speed, rewind, capture | `snapshot`, `restore`, datasets |
 | Deck: Telemetry | Readings over time | `readouts`, `chart`, `primary` |
-| Deck: Inspect | The selected object, read-only, plus actions on that object | `inspect`, `deselect`, `inspectHint` |
+| Deck: Inspect | The selected object, read-only, plus actions on that object, beside the list of every object | `inspect`, `inspectHint`, `objects`, `objectCols`, `select`, `selectedId` |
 | Deck: Insights | Now: diagnosis grounded in the run, with fixes; Story: the run's moments, narrated | `diagnose`, `perfFixes`, `drawFixes`, `narrate`, `storyHint` |
 | Inspector: Controls | Every setting; the only place parameters change | `controls`, `groups`, `actions` |
 
 The shared state stays small: the active lab, its `p` (parameters, including
-the tool and view keys), the lab's own selection (read through `inspect()`),
+the tool and view keys), the lab's own selection (read through `selectedId()`
+and `inspect()`),
 the deck's pane and size, the unit system and the camera. Each is owned by
 one module and read by the others; no region keeps a copy.
 
@@ -498,6 +508,61 @@ it becomes a bottom bar of icons, and a short stage drops the captions, then
 the axis ball. Tools and views are radio groups with the full keyboard
 contract: the checked option is the one tab stop, arrows move and select,
 Home and End jump, and V steps through a lab's views.
+
+## Selection
+
+Every lab selects through one contract, so the stage, the Select tool, the
+objects list, the head-up display and the narrators' Show me never read a
+lab's own fields:
+
+- **Ids that last.** An object's id outlives its slot in the lab's arrays:
+  Gravity's body ids, Collisions' ball numbers (`uid`), Fields' particle
+  numbers (`pid`), Fluid's post numbers (`addPost`, renumbered by
+  `numberPosts` for states saved before posts had them), Waves' source ids,
+  Chaos's copy index (fixed for a scene) and Cloth's pinned point index.
+- **One way in.** `chooseObject(lab, id)` in `js/shell/details.js` calls
+  `lab.select(id)`, announces the change and redraws Inspect at once; the
+  close button, the Select tool and the list all use it. A lab's own tool
+  may still select (Throw on a body, Grab on a ball), and the stage redraws
+  Inspect at once when the selection changed under a press or a release.
+- **The Select tool** (`#nav-select`, Q) is `ptr.selectMode` in
+  `js/shell/stage.js`, modelled on Pan mode, which it ends and which ends
+  it; a tool picked on the rail and a lab change end it too. While it is
+  on, a press calls `lab.pick(s)` and `chooseObject`, never the lab's
+  `pointerDown`, so nothing is thrown, dropped, painted or erased, and a
+  press on empty space clears the selection. The lab's `hover` is null
+  meanwhile, so no tool draws a preview, and `drawPickRing` rings
+  `spot(pick(s))` over either view, unless the lab sets `pickRing` and
+  rings its own.
+- **Reach.** `PICK_PX` (16) is the Select tool's reach from an object's
+  edge, `HIT_PX` (10) a tool's own click and its hover ring, and `LINE_PX`
+  (7) a drawn line's. `pickFrame(lab, s)` gives the lab's input point with
+  `k`, its own length per stage pixel there, so a plane lab hit-tests in its
+  own units with a reach measured on the screen, in 2D and 3D alike.
+- **Gravity** decides at the press, not the release, whether a Throw click
+  is on a body (or a drawn orbit), with the hover ring's reach, so a moving
+  body is followed rather than a new one dropped where it was. Its views
+  share one `pickBody(p, project, slack)`: `projector()` writes where a
+  body is drawn in the current view (flat, or `project3` with its `apart3`
+  rule), and picking, erasing, the follow ring (`followRing`) and the hover
+  tag (`hoverTag`, both in `js/core/draw.js`) all measure through it.
+  `lineAt(p, trails)` finds the drawn orbit within `LINE_PX` by rerunning
+  `orbitCurve` through the same projection and measuring each chord with
+  `segDist`, skipping moons not drawn apart and, in 3D, the stretch nearest
+  the camera that fades out; with Select it also takes the trails, on the
+  stretch each view draws. Bodies win over lines. Selecting a body follows
+  it with the camera.
+- **The objects list** (`js/shell/objects.js`) refreshes at panel rate while
+  Inspect shows. Only the rows in view exist (26 px each over a spacer as
+  tall as the list), reused as the list scrolls and rewritten only where
+  their text changed, so Collisions' 1500 balls cost what a screenful does.
+  The column heads sort (numbers largest first, names A to Z, again to
+  reverse); the order holds while the pointer is over the list, so a row
+  cannot move from under a click. It is a listbox with
+  `aria-activedescendant`, `aria-setsize` and `aria-posinset`: arrows, Page
+  keys, Home and End move, Enter or Space selects, and the keyboard's row
+  keeps its place on the screen as the order changes. A pick in the list
+  keeps Inspect open when the selection is later cleared.
 
 ## Instruments
 
@@ -511,12 +576,14 @@ its readings and drops the plot.
 
 Inspect (`js/shell/details.js`) renders `lab.inspect()` as a card of
 read-only figures. Each numeric figure keeps its history since the selection
-began, drawn as a sparkline, and a focus chart fills the rest of the pane with
-one figure over time: the one the lab's `focus` names, else the first that
-changes, until the user clicks another. A figure's plot button adds it to the
-Telemetry scope as that object's own series, keyed by its `short` name; those
-series are sampled at panel rate like the readings but are not remembered
-across visits. Insights has two views, a tablist beside the deck's tabs. Now
+began, drawn as a sparkline, and a focus chart below them shows one figure
+over time: the one the lab's `focus` names, else the first that changes,
+until the user clicks another. The whole figure is one button that focuses
+it; the chart's caption carries Pin to Telemetry, which adds the focused
+figure to the Telemetry scope as that object's own series, keyed by its
+`short` name; those series are sampled at panel rate like the readings but
+are not remembered across visits. Beside the card, the objects list
+(`js/shell/objects.js`) shows `lab.objects()` (see Selection below). Insights has two views, a tablist beside the deck's tabs. Now
 (`js/shell/diagnostics.js`) lists the lab's and the workspace's insights with
 their fixes beside the frame-timing strip. Story (`js/shell/story.js`) is the
 narrator's timeline.
@@ -587,7 +654,8 @@ the same figures) and never clickable.
 - **Caution lights**: the warnings and critical insights by title, two on a
   wide stage and one on a narrow one, with a count of the rest.
 - **Target box and callout**: each frame, after drawing, `trackHud` asks the lab
-  for `hudTarget(three)` and centres a corner-bracket box on it; an object off
+  for `spot(selectedId(), three)` and centres a corner-bracket box on it; an
+  object off
   the stage gets a dashed box waiting at the nearest edge. At panel rate the
   callout takes the inspected name, kind and three figures (the `focus` one
   first). Its corner is chosen from eight positions around the box, each
@@ -865,7 +933,13 @@ state of any scene can carry the same metadata.
   - In both, the line is brightest at the body and fades back round,
     showing which way the body goes.
   - In the Solar System, depth marks give way to the orbits while Orbits is
-    on, since a steep orbit's mark is a long stick across the view.
+    on, since a steep orbit's mark is a long stick across the view. The
+    marks (a drop line and a foot ring under each body with mass or a name)
+    follow `p.marks`, the Tilt marks switch under Display; `enabled()` says
+    it is drawn in the 3D view only, as it says of the potential field the
+    other way round.
+  - A click on a drawn orbit follows its body: `lineAt` measures the very
+    curve `orbitCurve` draws, through the same projection (see Selection).
   - Many merge flashes at once share their light, so the accretion disk's
     first seconds read as sparks.
   - `drawNames` places names by rank: the followed body, the Sun, planets,
@@ -1126,7 +1200,7 @@ The stylesheets load in this order, each building on the last:
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
 | `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and its section in Settings |
-| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, the Now and Story views and the Story's moments, grip), Live Math panels, Guide cards, tabs |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, Inspect's objects list, the Now and Story views and the Story's moments, grip), Live Math panels, Guide cards, tabs |
 | `library.css` | Library page |
 | `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, and its phone layout |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
@@ -1196,8 +1270,12 @@ otherwise see every file twice.
 5. Add its experiments under its id in `js/labs/experiments.js`, and its
    narrator as `js/labs/story/<id>.js`, registered in `js/labs/story/index.js`,
    with a glyph in `STORY_ICON` for each new kind of moment.
-6. Run `npm run verify` and `npm test`.
-7. Add it to the README: a row in the labs table and a gallery picture
+6. If it has objects to select, give each a lasting id and implement the
+   selection contract (`objects`, `objectCols`, `select`, `selectedId`,
+   `pick`, `spot`, `inspect`), so the Select tool, Inspect's list and the
+   head-up display work with it unchanged.
+7. Run `npm run verify` and `npm test`.
+8. Add it to the README: a row in the labs table and a gallery picture
    (see "Refresh the README pictures").
 
 ### Add an icon

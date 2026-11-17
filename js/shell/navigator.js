@@ -1,33 +1,37 @@
 /*
 ✒ Metadata
-    - Title: Stage Gizmo (digiSpace Edition - v2.10)
+    - Title: Stage Gizmo (digiSpace Edition - v2.19)
     - File Name: navigator.js
     - Relative Path: js/shell/navigator.js
     - Artifact Type: javascript
-    - Version: 2.10.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button in the gizmo area: #nav-select and
+      setSelectMode(), which ends Pan mode and is ended by it, and clears the
+      tool's preview as it starts.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
       zoom buttons, drag and keys take the lab's zoomPace, and the zoom
       reading puts deep zooms in short form (125k%, 7.14M%).
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Marks which
       ends of the scrolling rail have more tools beyond them, as it scrolls,
       resizes or changes lab, for the fade in stage.css.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
-      lab-scene group shows only when the lab has extras, and the scale bar is
-      labelled in the chosen unit system with a prefix to suit (cm, ft, AU).
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The view gizmo on the stage: zoom buttons and readout, pan mode, frame,
-    lab extras, the 3D axis ball, the overview map and the scale bar.
+    The view gizmo on the stage: zoom buttons and readout, the Select tool,
+    pan mode, frame, lab extras, the 3D axis ball, the overview map and the
+    scale bar.
 
 ✒ Key Features:
+    - Select and Pan: two modes for a press on the stage, each ending the
+      other; Select (Q) only ever picks an object.
     - Axis ball for 3D views: drag to orbit, click an axis to look along it.
     - Overview map with a draggable view box when zoomed in.
     - Scale bar in the chosen unit system: metric, US customary or the lab's
@@ -56,7 +60,7 @@ import { active, announce } from './state.js';
 /* The rail's zoom reading: whole percent in the usual range, a decimal below 10 %, and thousands and millions in
    short form, so the Solar System's deepest zoom still fits the rail. */
 export const zoomText = z => (z >= 1e6 ? `${sig(z / 1e6, 3)}M%` : z >= 1e4 ? `${sig(z / 1e3, 3)}k%` : z >= 9.95 ? `${Math.round(z)}%` : z >= 0.1 ? `${z.toFixed(1)}%` : `${sig(z, 2)}%`);
-export const navZoomEl = $('#nav-zoom'), navPanEl = $('#nav-pan'), navExtraEl = $('#nav-extra'), orbitEl = $('#nav-orbit');
+export const navZoomEl = $('#nav-zoom'), navPanEl = $('#nav-pan'), navSelectEl = $('#nav-select'), navExtraEl = $('#nav-extra'), orbitEl = $('#nav-orbit');
 export const miniEl = $('#minimap'), miniCanvas = $('#minimap-canvas'), scaleEl = $('#scalebar');
 export const mini = { k: 1, ox: 0, oy: 0 };
 export let navExtras = [], orbitAxes = [];
@@ -80,10 +84,20 @@ export function dragButton(btn, onDrag, onClick) {
   btn.addEventListener('pointerup', end); btn.addEventListener('pointercancel', end);
   btn.addEventListener('click', e => { if (btn.dataset.dragged === '1') { btn.dataset.dragged = ''; return; } onClick(e); updateNav(); });
 }
+/* Pan and Select are the gizmo's two modes for a press on the stage; each ends the other, and picking a tool on the
+   rail ends both (dock.js). */
 export function setPanMode(on) {
-  ptr.panMode = on; updateNav(); updateDock(); refreshCursor();
+  ptr.panMode = on; if (on) ptr.selectMode = false; updateNav(); updateDock(); refreshCursor();
   announce(on ? 'Pan mode on: drag the stage to move the view' : 'Pan mode off');
 }
+export function setSelectMode(on) {
+  ptr.selectMode = on; if (on) ptr.panMode = false;
+  // The lab's tool preview (a brush, a ball to drop) goes at once, not at the next move of the pointer.
+  if (on && active && !active.pickRing) active.hover = null;
+  updateNav(); updateDock(); refreshCursor();
+  announce(on ? 'Select on: click an object to inspect it, empty space to clear' : 'Select off');
+}
+export const toggleSelectMode = () => setSelectMode(!ptr.selectMode);
 export function buildNav(lab) {
   navExtraEl.replaceChildren();
   $('#nav-context').hidden = !(lab.navExtras && lab.navExtras.length);
@@ -136,7 +150,7 @@ export function updateNav() {
   const lab = active; if (!lab) return;
   const three = is3D(lab), z = zoomPct(lab), txt = zoomText(z);
   if (navZoomEl.textContent !== txt) { navZoomEl.textContent = txt; navZoomEl.setAttribute('aria-label', `Zoom ${txt}. Drag up or down to zoom, or press for 100%.`); }
-  navPanEl.setAttribute('aria-pressed', String(ptr.panMode));
+  navPanEl.setAttribute('aria-pressed', String(ptr.panMode)); navSelectEl.setAttribute('aria-pressed', String(ptr.selectMode));
   for (const x of navExtras) x.b.setAttribute('aria-pressed', String(!!x.o.pressed()));
   orbitEl.hidden = !three;
   if (three) updateOrbit();
@@ -195,6 +209,7 @@ export function init() {
     else if (e.key === 'ArrowDown') { e.preventDefault(); navZoomBy(0.8 ** zoomPace(), null); }
   });
   dragButton(navPanEl, (dx, dy) => navPan(dx, dy), () => setPanMode(!ptr.panMode));
+  navSelectEl.addEventListener('click', toggleSelectMode);
   miniCanvas.addEventListener('pointerdown', e => { miniDrag = e.pointerId; try { miniCanvas.setPointerCapture(e.pointerId); } catch (_) { /* best-effort */ } miniJump(e); });
   miniCanvas.addEventListener('pointermove', e => { if (miniDrag === e.pointerId) miniJump(e); });
   miniCanvas.addEventListener('pointerup', miniEnd); miniCanvas.addEventListener('pointercancel', miniEnd);

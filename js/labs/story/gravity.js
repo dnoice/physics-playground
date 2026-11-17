@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Gravity Narrator (digiSpace Edition - v2.18)
+    - Title: Gravity Narrator (digiSpace Edition - v2.19)
     - File Name: gravity.js
     - Relative Path: js/labs/story/gravity.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: Show me follows a body through the
+      lab's select(), now that Controls has no Follow switch to keep in step.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's report that twenty minutes of Empty sky told him only that
       a body had escaped: Gravity's narrator watches every body's orbit and
@@ -54,8 +57,6 @@
 import { fmtQ, sig } from '../../core/units.js';
 import { TAU, fmtSI } from '../../core/util.js';
 import { navFrame } from '../../shell/camera.js';
-import { updateNav } from '../../shell/navigator.js';
-import { syncControl } from '../../shell/panel.js';
 import { announce } from '../../shell/state.js';
 import { AU_PX, G0, KINDS, nameOf } from '../gravity.js';
 
@@ -109,7 +110,7 @@ function follow(L, b) {
     label: `Follow ${ref(b)}`, can: () => L.bodies.some(q => q.id === id),
     run() {
       const q = L.bodies.find(x => x.id === id); if (!q) return;
-      if (L.track !== id) { L.track = id; L.trackEase = 0; if (L.p.follow) { L.p.follow = false; syncControl('follow'); } updateNav(); }
+      L.select(id);
       announce(`Following ${nameOf(q)}`);
     },
   };

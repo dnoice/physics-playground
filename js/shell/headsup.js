@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Head-Up Display (digiSpace Edition - v2.18)
+    - Title: Head-Up Display (digiSpace Edition - v2.19)
     - File Name: headsup.js
     - Relative Path: js/shell/headsup.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one selection contract: the target box sits at the
+      lab's spot() for its selectedId(), and the callout reads the Inspect
+      card's own reading of the tick.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the display's settings are its
       Head-up display section, which the HUD button opens; the sheet's own
@@ -19,11 +23,6 @@
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The callout
       also keeps off what the lab drew and asks to keep visible, its hudClear
       boxes, such as Gravity's names beside bodies in the Solar System.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
-      Dennis's call for a cockpit-style head-up display, so the run's numbers
-      sit on the stage instead of pulling the eye away from it: a readings
-      tape, caution lights and a target box with a callout on the selected
-      object, at an opacity he chooses.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -40,16 +39,16 @@
       Telemetry samples, coloured by the reading's own state.
     - Caution lights: the two most severe notices by title, and a count of
       the rest, moved clear of an experiment's banner.
-    - Target box and callout, placed each frame from the lab's hudTarget(),
-      clamped to the stage edge with a dashed box when the object is off it,
-      and kept clear of the title, the rail and the tape.
+    - Target box and callout, placed each frame from the lab's spot() for
+      its selectedId(), clamped to the stage edge with a dashed box when the
+      object is off it, and kept clear of the title, the rail and the tape.
     - A Head-up display section in Settings, which the HUD button opens: on
       or off (Shift+H), opacity in four steps, and each part on or off,
       remembered per browser.
 
 ✒ Usage Instructions:
     In a lab:  hud: [['Total energy E', 'ENERGY E'], ...]   readout labels and their short HUD names
-               hudTarget(three) { return { x, y, r } }       the inspected object in stage pixels, or null
+               spot(id, three) { return { x, y, r } }        an object in stage pixels, or null (with selectedId())
     In the shell:  hudReadings(lab, rows) at panel rate, hudInspect(lab) at panel rate,
                    trackHud(lab) each frame after drawing, hudCautions(alerts) with the insights
 
@@ -65,6 +64,7 @@
 import { view } from '../core/view.js';
 import { $, clamp, el, store } from '../core/util.js';
 import { is3D } from './camera.js';
+import { inspected } from './details.js';
 import { readingSeries, setValue, sparkPath } from './instruments.js';
 import { radioGroup } from './panel.js';
 import { announce, stageEl } from './state.js';
@@ -149,9 +149,10 @@ function pickRows(inf) {
   const rows = inf.rows || [], first = rows.find(r => r[0] === inf.focus);
   return [...(first ? [first] : []), ...rows.filter(r => r !== first)].slice(0, 3);
 }
-/* Panel rate: what the callout says, its size, and the parts of the stage it must keep clear of. */
+/* Panel rate: what the callout says, its size, and the parts of the stage it must keep clear of. The card's own
+   reading of the selection at this tick, so the lab's inspect() runs once. */
 export function hudInspect(lab) {
-  info = cfg.on && cfg.target && lab && lab.hudTarget && lab.inspect ? lab.inspect() : null;
+  info = cfg.on && cfg.target && lab && lab.spot ? inspected(lab) : null;
   if (!info) { if (!card.hidden) card.hidden = true; return; }
   const rows = pickRows(info), name = info.short || info.kicker || '', kind = info.title || '';
   const key = `${name}|${kind}|${rows.map(r => `${r[0]}=${r[1]}`).join('|')}`;
@@ -200,9 +201,10 @@ function placeCard(x, y, half, clear) {
   }
   return best;
 }
-/* Each frame, after the stage is drawn, so the box sits on the object as it is shown. */
+/* Each frame, after the stage is drawn, so the box sits on the object as it is shown: where the lab draws its
+   selected object (spot), in stage pixels. */
 export function trackHud(lab) {
-  const t = cfg.on && cfg.target && lab && lab.hudTarget ? lab.hudTarget(is3D(lab)) : null;
+  const id = cfg.on && cfg.target && lab && lab.spot ? lab.selectedId() : null, t = id != null ? lab.spot(id, is3D(lab)) : null;
   if (!t || !Number.isFinite(t.x) || !Number.isFinite(t.y)) { hideTarget(); return; }
   const W = view.w, H = view.h, s = clamp(2 * (t.r || 0) + 16, 26, 180), half = s / 2;
   // On the stage the box stays centred on the object, even at the edge; off it, the box waits whole inside the edge

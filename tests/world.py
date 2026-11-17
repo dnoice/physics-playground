@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.18)
+    - Title: 3D Mode Test (digiSpace Edition - v2.19)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Select
+      picks a body a few pixels off in 3D and clears on empty sky without
+      throwing; the Tilt marks switch hides the drop lines and foot rings.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the Graphics checks drive
       Settings, and the machine's four verdicts mark the GPU. A setting of
@@ -301,6 +304,33 @@ with sync_playwright() as p:
     ok("portrait_is_drawn", pg.evaluate("""(() => { const d = document.getElementById('details-portrait').getContext('2d').getImageData(44, 44, 88, 88).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 90) lit++; return lit > 200; })()"""))
     pg.click("#details-close"); pg.wait_for_timeout(200)
     ok("close_clears_the_selection", pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") is None)
+    # Select in 3D: a click a few pixels off a body picks it, and a press on empty sky clears it; nothing is thrown.
+    pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(300)
+    # The body is one standing clear of the rest on the stage (a giant's moon drawn beside it would rightly win a click
+    # that lands on it), and the click lands 6 px outside its drawn disc.
+    spot = pg.evaluate(f"""(() => {{ const L = {P}.active, pr = L.projector(), o = {{ x: 0, y: 0, r: 0 }}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), drawn = [];
+      for (const b of L.bodies) if (pr(b, o)) drawn.push([b, o.x, o.y, o.r]);
+      const free = (x, y) => x > 40 && y > 60 && x < r.width - 220 && y < r.height - 140 && document.elementFromPoint(r.left + x, r.top + y) === cv;
+      let hit = null;
+      for (const [b, x, y, R] of drawn.filter(d => d[0].m > 0 && d[0].m < L.STAR_MASS).sort((a, c) => c[0].m - a[0].m)) {{
+        if (drawn.some(d => d[0] !== b && Math.hypot(d[1] - x, d[2] - y) - d[3] < R + 40)) continue;
+        for (let k = 0; k < 8 && !hit; k++) {{ const a = k * Math.PI / 4, px = x + (R + 6) * Math.cos(a), py = y + (R + 6) * Math.sin(a); if (free(px, py)) hit = {{ x: r.left + px, y: r.top + py, id: b.id }}; }}
+        if (hit) break;
+      }}
+      let ex = null, ey = null; for (let y = 60; y < r.height - 140 && ex == null; y += 13) for (let x = 60; x < r.width - 220 && ex == null; x += 13) if (free(x, y) && L.pick({{ x, y }}) == null) {{ ex = r.left + x; ey = r.top + y; }}
+      return hit && {{ ...hit, ex, ey }}; }})()""")
+    n3 = pg.evaluate(f"{P}.active.bodies.length"); picked = None
+    pg.keyboard.press("q")
+    if spot: pg.mouse.click(spot["x"], spot["y"]); pg.wait_for_timeout(300); picked = pg.evaluate(f"{P}.active.track"); pg.mouse.click(spot["ex"], spot["ey"]); pg.wait_for_timeout(300)
+    ok("select_tool_picks_in_3d", spot is not None and picked == spot["id"] and pg.evaluate(f"{P}.active.bodies.length") == n3 and pg.evaluate(f"{P}.active.track") is None, (spot, picked))
+    pg.keyboard.press("q")
+    # Tilt marks: the drop lines and foot rings have a switch of their own under Display; off, no body drops one.
+    pg.evaluate(f"{P}.preset('tilted')"); pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(1500)
+    MARKS = f"(() => {{ const m = {P}.mode.world.engine.sceneOf('gravity').scene.children.find(o => o.renderOrder === 5); return m ? (m.visible ? m.geometry.drawRange.count : 0) : -1; }})()"
+    on, enabled = pg.evaluate(MARKS), not pg.is_disabled("#ctl-gravity-marks")
+    pg.click("#ctl-gravity-marks"); pg.wait_for_timeout(700); off = pg.evaluate(MARKS)
+    pg.click("#ctl-gravity-marks"); pg.wait_for_timeout(700); back = pg.evaluate(MARKS)
+    ok("tilt_marks_switch_hides_marks", enabled and on > 0 and off == 0 and back > 0, (enabled, on, off, back))
     ctx.close()
 
     # Every apparatus can be walked around, front and back.

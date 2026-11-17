@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.19)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for easier selection: Select (Q) in the camera controls,
+      Inspect's list of every object and Pin to Telemetry, the three ways to
+      select, a click that counts where a moving body was and a click on an
+      orbit or trail, Q in the keyboard table, and Tilt marks under Display.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
       from starlight under Planet classes, with its table of climates; the
       climate in Our Solar System, in the 3D table's Gravity row and in the
@@ -343,7 +348,7 @@ To explore it:
   Click a moon to see its orbit about its planet, and the Roche limit it
   must keep clear of: Phobos is already inside Mars's.
 - **Orbits** and **Names**, under Display, draw each named body's ellipse
-  and name. Each orbit is brightest at its body and fades back round, so it
+  and name; a click on an orbit follows its body. Each orbit is brightest at its body and fades back round, so it
   shows which way the body goes. The orbits stay smooth even when the 3D
   camera sits inside them. They are drawn in depth, so a planet hides the
   far side of its moons' orbits. A planet's orbit is its whole system's,
@@ -540,6 +545,12 @@ The studio works like a photographer's:
 In space, a world seen against its star shows a thin ring of light round
 its night side, scattered forward through its air.
 
+In Gravity's 3D view each star and planet stands on a thin drop line to the
+orbital plane, with a ring at its foot, so a tilted orbit shows how far
+above or below the plane each body is. **Tilt marks**, under Display beside
+the trails and velocity vectors, turns them off; it waits in the flat view,
+which has no depth to mark.
+
 ### Graphics tiers
 
 The **Graphics** button beside the switch opens Settings at its Graphics
@@ -594,11 +605,16 @@ full-height Inspector beside them.
 - **Stage**: the simulation. The lab's name in the top left holds the scene
   dropdown; loading a scene restarts the run.
 - **Stage rail**: hangs from the top-right corner, in the same place in every
-  lab. **Camera** comes first (the axis ball in 3D, zoom, pan and frame), then
-  what belongs to this lab: its **Tools** (what a click does), its **View**
-  (what the stage shows, in Chaos and Waves) and its scene extras, such as
-  Gravity's Follow. Tools and views are radio groups: arrow keys move within
-  one, and a view never restarts or rewinds the run. In the labs that place
+  lab. **Camera** comes first (the axis ball in 3D, zoom, **Select**, pan
+  and frame), then what belongs to this lab: its **Tools** (what a click
+  does), its **View** (what the stage shows, in Chaos and Waves) and its
+  scene extras, such as Gravity's Follow. With **Select** on (the arrow
+  button, or **Q**), a click only ever picks the object nearest it, with a
+  ring showing what it would take, and a click on empty space clears the
+  selection: nothing is thrown, dropped, painted or erased, however fast the
+  run. The hand turns it off, as does Q or picking a tool. Tools and views
+  are radio groups: arrow keys move within one, and a view never restarts or
+  rewinds the run. In the labs that place
   things (Gravity, Collisions, Fluid, Waves and Fields), the **Random** dice
   under the tools makes each new object different: a random planet class and
   a mass in its range, ball size, post size, source frequency and phase, or
@@ -628,11 +644,17 @@ full-height Inspector beside them.
     at once, each in its own lane on one time axis. Hover the plot to read any
     moment, click or drag along it to rewind to that moment (as far back as
     the rewind history reaches), and use the wheel to zoom the time window.
-  - **Inspect**: the object you clicked on the stage, with its live figures,
-    read-only, each with a sparkline of its history since you selected it.
-    A focus chart fills the rest of the pane with one figure over time (the
-    one that matters most for that object, or whichever you click), and a
-    figure's chart button plots it under Telemetry beside the readings.
+  - **Inspect**: the object you selected, with its live figures, read-only,
+    each with a sparkline of its history since you selected it. A focus
+    chart below them shows one figure over time (the one that matters most
+    for that object, or whichever you click), and **Pin to Telemetry** on its
+    caption plots that figure under Telemetry beside the readings. Beside the
+    card, a list of every object in the scene (bodies, balls, posts,
+    sources, copies, pins or particles) gives each one's name, kind and the
+    two or three figures that matter in that lab, in your units. Click a
+    column to sort by it, and click a row, or move with the arrow keys and
+    press Enter, to select it; the selected row is marked in amber. The list
+    keeps up with the run and holds its order while the pointer is over it.
     Settings stay in Controls; the card offers only actions on the object
     itself, such as remove or follow.
   - **Insights**: two views, side by side in the header. **Story** is the
@@ -669,11 +691,18 @@ full-height Inspector beside them.
   - **Library**: a Capture bar of three buttons records a clip or a
     dataset, or saves the state, in one press each; everything saved is
     listed under it, with what to do with each item.
-- **Selecting things**: click a body in Gravity, a ball in Collisions (with
-  Grab), a particle in Fields (with Move), a post in Fluid (with any tool but
+- **Selecting things**: three ways, in every lab. Click the object with the
+  lab's own tool: a body in Gravity, a ball in Collisions (with Grab), a
+  particle in Fields (with Move), a post in Fluid (with any tool but
   Obstacle), a source in Waves, or a pendulum or a dot on the map in Chaos.
-  Inspect opens on its own and returns to where you were when you clear the
-  selection. Gravity shows a rendered portrait of the body and its orbit:
+  Or turn on **Select** (Q) in the camera controls, where every click picks
+  and nothing else happens; it also picks Cloth's pins. Or pick a row in
+  Inspect's list. In Gravity a click counts where the body was when you
+  pressed, so a fast planet is followed rather than a new body dropped where
+  it was, and a click on a drawn orbit (or, with Select, a trail) follows its
+  body, which helps when only the lines show. Inspect opens on its own and
+  returns to where you were when you clear the selection, unless you picked
+  in its list. Gravity shows a rendered portrait of the body and its orbit:
   distance, period, eccentricity and inclination.
 
 ### The story of a run
@@ -754,6 +783,7 @@ that matter. The layout reflows to one column below 1180 px.
 | 1–7 | Switch lab |
 | Z | Switch between 2D and 3D |
 | Letters | Pick a tool (shown on each tool button) |
+| Q | Select: a click on the stage only selects |
 | V | Next view, in Chaos and Waves |
 | U | Units, in Settings |
 | + − 0 | Zoom in, zoom out, frame the view |

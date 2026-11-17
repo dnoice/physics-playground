@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Head-Up Display Tests (digiSpace Edition - v2.18)
+    - Title: Head-Up Display Tests (digiSpace Edition - v2.19)
     - File Name: hud.py
     - Relative Path: tests/hud.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Selections
+      go through each lab's select(), and the target is checked against spot()
+      for selectedId().
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the menu checks drive the
       display's section of Settings, and Shift+H works inside it.
@@ -27,10 +30,10 @@
 ✒ Key Features:
     - Readings: every lab's tape carries the readings it names, with the same
       text Telemetry shows at the same tick, under the title and its chips.
-    - Target: the box is centred on hudTarget() in six labs in 2D and in
-      Gravity in 3D, the callout carries the inspected name and keeps off the
-      object, an object off the stage gets a dashed box at the edge, and
-      clearing the selection clears both.
+    - Target: the box is centred on spot() of selectedId() in six labs in 2D
+      and in Gravity in 3D, the callout carries the inspected name and keeps
+      off the object, an object off the stage gets a dashed box at the edge,
+      and clearing the selection clears both.
     - Cautions: an under-resolved wave lights a warning by its title.
     - Settings and keys: the display's section of Settings, its opacity
       steps and parts, Shift+H inside it, Escape, Shift+H (which leaves a
@@ -57,15 +60,15 @@ VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
 SELECT = {
     "gravity": "(() => { const L = PhysicsPlayground.labs.gravity, o = L.orbitOf(); L.track = o.b.id; })()",
-    "collisions": "(() => { PhysicsPlayground.labs.collisions.picked = 7; })()",
-    "fluid": "(() => { PhysicsPlayground.preset('posts'); const L = PhysicsPlayground.labs.fluid, o = L.obs[0]; L.selAt = { x: o.x, y: o.y }; })()",
+    "collisions": "(() => { const L = PhysicsPlayground.labs.collisions; L.select(L.uid[7]); })()",
+    "fluid": "(() => { PhysicsPlayground.preset('posts'); const L = PhysicsPlayground.labs.fluid; L.select(L.obs[0].id); })()",
     "waves": "(() => { PhysicsPlayground.preset('twosrc'); const L = PhysicsPlayground.labs.waves; L.selSrc = L.sources[0].id; })()",
     "chaos": "(() => { PhysicsPlayground.labs.chaos.sel = 3; })()",
     "fields": "(() => { PhysicsPlayground.preset('exb'); const L = PhysicsPlayground.labs.fields; L.picked = true; L.setTrack(L.pid[0]); })()",
 }
 # Where the box is, where the lab says the object is, the callout's box and name, and the inspected name.
 TARGET = """(() => {
-  const L = PhysicsPlayground.active, t = L.hudTarget(PhysicsPlayground.mode.is3D()), s = document.getElementById('stage').getBoundingClientRect();
+  const L = PhysicsPlayground.active, t = L.spot(L.selectedId(), PhysicsPlayground.mode.is3D()), s = document.getElementById('stage').getBoundingClientRect();
   const box = e => { if (e.hidden) return null; const r = e.getBoundingClientRect(); return { l: r.left - s.left, t: r.top - s.top, r: r.right - s.left, b: r.bottom - s.top }; };
   const g = box(document.getElementById('hu-tgt')), c = box(document.getElementById('hu-card')), info = L.inspect();
   return { t: t && { x: t.x, y: t.y }, g, c, name: document.getElementById('hu-card-name').textContent, want: info && (info.short || info.kicker),
@@ -127,7 +130,7 @@ with sync_playwright() as p:
     ok("target_clears_with_selection", pg.evaluate("document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden"))
     # An object panned off the stage waits at the edge, dashed.
     pg.evaluate(P + ".select('collisions')"); pg.wait_for_timeout(300); pg.evaluate(SELECT["collisions"]); pg.evaluate(P + ".pause()")
-    pg.evaluate("(() => { const L = PhysicsPlayground.active, i = L.picked; L.x[i] = 20; L.y[i] = 200; })()")
+    pg.evaluate("(() => { const L = PhysicsPlayground.active, i = L.slot(L.selectedId()); L.x[i] = 20; L.y[i] = 200; })()")
     pg.evaluate(P + ".view.zoomBy(3, 1000, 250)"); pg.wait_for_timeout(1200)
     r = pg.evaluate(TARGET)
     inside = r["g"] and r["g"]["l"] >= 0 and r["g"]["t"] >= 0 and r["g"]["r"] <= r["w"] and r["g"]["b"] <= r["h"]

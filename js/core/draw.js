@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Shaded Drawing (digiSpace Edition - v2.3)
+    - Title: Shaded Drawing (digiSpace Edition - v2.19)
     - File Name: draw.js
     - Relative Path: js/core/draw.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for easier selection: followRing, hoverTag and segDist, so
+      Gravity's flat and 3D views draw the followed body's ring and the hover
+      tag from one place and pick a drawn line by its distance.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added
       rrect(), a rounded-rectangle path with a plain fallback for Firefox
       before 112.
@@ -23,7 +27,8 @@
 
 ✒ Description:
     Canvas drawing for bodies with volume: lit spheres, cached sphere
-    sprites, star glows and brush rings.
+    sprites, star glows, brush rings, and the rings and tags that show what
+    is selected and what a click would take.
 
 ✒ Key Features:
     - drawSphere and drawLit shade discs as spheres from a fixed light
@@ -33,6 +38,8 @@
     - zoomOf reads the current canvas zoom so strokes stay one screen pixel
       wide.
     - rrect draws rounded rectangles wherever the browser lacks roundRect.
+    - followRing, hoverTag and segDist: the selected object's ring, the
+      hover ring with its tag, and the distance to a drawn line for picking.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -42,7 +49,7 @@
 ---------
 */
 import { THEME } from './color.js';
-import { TAU } from './util.js';
+import { TAU, clamp, reduceMotion } from './util.js';
 import { view } from './view.js';
 
 /* Screen pixels per world unit under the context's current transform. */
@@ -52,6 +59,26 @@ export function brushRing(g, p, r, color = THEME.text) {
   const k = 1 / zoomOf(g);
   g.save(); g.strokeStyle = color; g.globalAlpha = 0.55; g.lineWidth = k; g.setLineDash([3 * k, 4 * k]);
   g.beginPath(); g.arc(p.x, p.y, r, 0, TAU); g.stroke(); g.restore();
+}
+/* The selected object's ring: amber and dashed, its dashes running so it reads as live (still for reduced motion). */
+export function followRing(g, x, y, r) {
+  g.save(); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3; g.setLineDash([4, 4]); g.lineDashOffset = reduceMotion ? 0 : -performance.now() / 60;
+  g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke(); g.restore();
+}
+/* What a click would take: a ring round the object at (x, y), drawn r pixels across, and a one-line tag beside it,
+   kept on a stage w × h. Shared by Gravity's flat and 3D views. */
+export function hoverTag(g, x, y, r, label, w, h, color = THEME.text) {
+  const R = r + 5;
+  g.strokeStyle = color; g.lineWidth = 1.2; g.beginPath(); g.arc(x, y, R, 0, TAU); g.stroke();
+  g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
+  const lx = clamp(x + R + 6, 4, w - tw - 14), ly = clamp(y - R - 6, 16, h - 6);
+  g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(lx - 5, ly - 13, tw + 10, 18);
+  g.fillStyle = THEME.text; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(label, lx, ly);
+}
+/* How far a point lies from the segment a–b, all in stage pixels: the test for a click on a drawn line. */
+export function segDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy, t = L ? clamp(((px - ax) * dx + (py - ay) * dy) / L, 0, 1) : 0;
+  return Math.hypot(px - ax - dx * t, py - ay - dy * t);
 }
 export const WHITE = [255, 250, 240], BLACK = [4, 6, 10];
 export const mixRgb = (c, t, f) => [c[0] + (t[0] - c[0]) * f, c[1] + (t[1] - c[1]) * f, c[2] + (t[2] - c[2]) * f];
