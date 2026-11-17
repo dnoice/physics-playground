@@ -139,18 +139,19 @@ function drawFocus(lab) {
   g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillText(`t = ${t0.toFixed(1)} s`, x0, h - 3);
   g.textAlign = 'right'; g.fillText(`${t1.toFixed(1)} s`, x1, h - 3);
 }
-/* A figure pinned under Telemetry is marked in its object's series colour; the caption's button pins the focused one. */
+/* A figure pinned under Telemetry is marked in its object's series colour, and its button's name says so; the
+   caption's button pins the focused one. */
 function syncRow(lab, n) {
-  const on = !!n.key && objectPinned(lab, n.key);
+  const on = !!n.key && objectPinned(lab, n.key), name = `Follow ${n.label} over time${on ? ', pinned to Telemetry' : ''}`;
   n.root.classList.toggle('on', on);
   if (on) n.root.style.setProperty('--series', objectColor(lab, n.key)); else n.root.style.removeProperty('--series');
+  if (n.pick.getAttribute('aria-label') !== name) n.pick.setAttribute('aria-label', name);
 }
+/* A toggle with one name, Pin to Telemetry, whose pressed state says whether the focused figure is pinned. */
 function syncPin(lab) {
   const n = rows.find(r => r.label === focus), key = n && n.key, on = !!key && objectPinned(lab, key);
   pinBtn.hidden = !key;
   pinBtn.setAttribute('aria-pressed', String(on));
-  const txt = on ? 'Unpin from Telemetry' : 'Pin to Telemetry', lbl = pinBtn.querySelector('.lbl');
-  if (lbl.textContent !== txt) lbl.textContent = txt;
   pinBtn.title = on ? `${focus} is plotted under Telemetry · click to stop` : `Plot ${focus || 'this figure'} over time under Telemetry, as this object's own series`;
 }
 function empty(lab) {
@@ -179,7 +180,7 @@ export function updateDetails(lab) {
     n.root.title = r[2] || '';
     if (n.dd.textContent !== r[1]) n.dd.textContent = r[1];
     const key = objectKey(info, r), v = readingValue(r[1]), numeric = Number.isFinite(v);
-    if (n.label !== r[0] || n.key !== (numeric ? key : '')) { n.key = numeric ? key : ''; n.label = r[0]; n.pick.hidden = !numeric; n.pick.setAttribute('aria-label', `Follow ${r[0]} over time`); }
+    if (n.label !== r[0] || n.key !== (numeric ? key : '')) { n.key = numeric ? key : ''; n.label = r[0]; n.pick.hidden = !numeric; }
     const u = (/^\s*[-+−]?[\d.,]+(?:e[-+]?\d+)?\s*(.*)$/.exec(r[1]) || [, ''])[1];
     n.unit = /^[kMGT]?$/.test(u) ? '' : u;
     syncRow(lab, n);

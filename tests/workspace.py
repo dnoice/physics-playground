@@ -216,6 +216,36 @@ with sync_playwright() as p:
         out[id] = (took && sel === last.id && res.info && back === first.id && none && bogus && res.unique && res.shaped && o.length > 1) || res;
       } return out; })()""")
     ok("selection_contract_every_lab", all(v is True for v in rt.values()), rt)
+    # The order holds while the pointer is over the list. In the Star system (whose ids are not the list's indices),
+    # sorted by distance, the rows stay as they were through panel ticks while the run plays, even with a body dropped
+    # out past the rest that a fresh sort would put first; it joins at the end. Off the list, the rows re-sort.
+    pg.evaluate(P + ".select('gravity')"); pg.evaluate(P + ".preset('solar')"); pg.evaluate(P + ".pause()")
+    pg.click("#dt-inspect"); pg.wait_for_timeout(400)
+    pg.locator("#objects-cols .ocol").nth(3).click(); pg.wait_for_timeout(400)
+    ROWS = "[...document.querySelectorAll('#objects-list .orow:not([hidden])')].sort((a, b) => a.getAttribute('aria-posinset') - b.getAttribute('aria-posinset')).map(r => r.querySelector('.ocell').textContent)"
+    # The order a fresh sort by distance gives, largest first and the lab's own order breaking ties, as objects.js sorts.
+    FRESH = """(() => { const o = PhysicsPlayground.active.objects(), i = o.map((_, k) => k);
+      i.sort((a, b) => { const x = o[a].v[1], y = o[b].v[1], fx = Number.isFinite(x), fy = Number.isFinite(y); return fx && fy ? y - x || a - b : fx ? -1 : fy ? 1 : a - b; });
+      return i.map(k => o[k].name); })()"""
+    ids_apart = pg.evaluate("PhysicsPlayground.active.objects().some((o, i) => o.id !== i)")
+    lb = pg.locator("#objects-list").bounding_box(); pg.mouse.move(lb["x"] + lb["width"] / 2, lb["y"] + lb["height"] / 2); pg.wait_for_timeout(600)
+    before = pg.evaluate(ROWS)
+    # Dropped at 1.3 times the farthest distance, where the sky there is widest, so it orbits the star alone.
+    added = pg.evaluate("""(() => { const L = PhysicsPlayground.active, H = L.heaviest(), far = Math.max(...L.objects().map(o => o.v[1]).filter(Number.isFinite)) * 1.3;
+      let at = null, gap = -1;
+      for (let k = 0; k < 12; k++) { const x = H.x + far * Math.cos(k * Math.PI / 6), y = H.y + far * Math.sin(k * Math.PI / 6), d = Math.min(...L.bodies.map(b => Math.hypot(b.x - x, b.y - y))); if (d > gap) { gap = d; at = [x, y]; } }
+      L.dropOrbit(at[0], at[1]); const b = L.bodies[L.bodies.length - 1]; return L.objects().find(o => o.id === b.id).name; })()""")
+    pg.evaluate(P + ".play()"); pg.wait_for_timeout(1300)
+    during, fresh = pg.evaluate("[%s, %s]" % (ROWS, FRESH))
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 1e9"); pg.wait_for_timeout(400)
+    last = pg.evaluate(ROWS)[-1:]
+    pg.evaluate(P + ".pause()"); pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(300)
+    ok("objects_order_holds_under_pointer", ids_apart and len(before) >= 3 and during == before and fresh[0] == added and added not in during and last == [added],
+       (ids_apart, before, during, fresh[:len(during)], added, last))
+    pg.mouse.move(5, 5)
+    resorted = settle(pg, "(r => r.length > 0 && JSON.stringify(r) === JSON.stringify(%s.slice(0, r.length)))(%s)" % (FRESH, ROWS), 5000)
+    after = pg.evaluate(ROWS)
+    ok("objects_resort_off_the_list", resorted and after[:1] == [added], (after, pg.evaluate(FRESH)[:len(after)]))
     # A thousand balls: the list holds them all and draws only the rows in view, to the very last.
     pg.evaluate(P + ".select('collisions')"); pg.evaluate(P + ".setParam('count', 1200)"); pg.evaluate(P + ".pause()")
     pg.click("#dt-inspect"); pg.wait_for_timeout(600)
@@ -333,6 +363,22 @@ with sync_playwright() as p:
     pg.set_viewport_size({"width": 1000, "height": 800}); pg.wait_for_timeout(600)
     h0 = deck_h(); pg.focus("#deck-grip"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(200)
     ok("side_grip_hidden_when_stacked", pg.is_hidden("#side-grip") and pg.is_visible("#deck-grip") and abs(deck_h() - (h0 + 24)) < 3, (round(h0), round(deck_h())))
+    # Stacked, the grip's range is the stylesheet's: the deck may take 80 % of the screen, and the keys take it there.
+    for _ in range(12): pg.keyboard.press("PageUp")
+    pg.wait_for_timeout(300)
+    top = int(aria("#deck-grip", "valuemax"))
+    ok("deck_grip_max_when_stacked", top == round(800 * 0.8) and abs(deck_h() - top) < 2 and int(aria("#deck-grip", "valuenow")) <= top, (top, round(deck_h())))
+    # A short wide window holds the presets to the stage's 260 px as it holds a dragged height: the tall and standard
+    # decks stop there, the value stays within its range, and a step up never shrinks the deck.
+    pg.set_viewport_size({"width": 1400, "height": 620}); pg.wait_for_timeout(600)
+    held = []
+    for key in ("End", "Enter"):
+        pg.focus("#deck-grip"); pg.keyboard.press(key); pg.wait_for_timeout(400)
+        st_h, now, top, h1 = bb("#tile-stage")["height"], int(aria("#deck-grip", "valuenow")), int(aria("#deck-grip", "valuemax")), deck_h()
+        pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(300)
+        held.append((key, round(st_h), now, top, round(h1), round(deck_h())))
+        if not (st_h >= 259 and now <= top and deck_h() >= h1 - 1): held[-1] += ("bad",)
+    ok("short_window_presets_keep_the_stage", all(len(r) == 6 for r in held), held)
     ctx.close()
 
     # ---- inspecting a Waves source: a click on it selects instead of removing it
@@ -426,9 +472,10 @@ with sync_playwright() as p:
     pg.wait_for_timeout(400)
     ok("story_unread_on_tab", pg.is_visible("#dt-story-n") and int(pg.inner_text("#dt-story-n").split()[0]) > 0, pg.inner_text("#dt-story-n"))
     # The unseen count is neutral, in the text colour on no fill: colour on a tab is kept for a problem that stands.
+    # It is not a pill either, as the inspector's totals and progress are: no ring and no border.
     tone = pg.evaluate("""(() => { const n = getComputedStyle(document.getElementById('dt-story-n')), e = document.createElement('i'); e.style.color = 'var(--text)'; document.body.append(e);
-      const t = getComputedStyle(e).color; e.remove(); return { color: n.color, text: t, fill: n.backgroundColor }; })()""")
-    ok("story_unread_count_neutral", tone["color"] == tone["text"] and tone["fill"] == "rgba(0, 0, 0, 0)", tone)
+      const t = getComputedStyle(e).color; e.remove(); return { color: n.color, text: t, fill: n.backgroundColor, ring: n.boxShadow, border: n.borderTopStyle }; })()""")
+    ok("story_unread_count_neutral", tone["color"] == tone["text"] and tone["fill"] == "rgba(0, 0, 0, 0)" and tone["ring"] == "none" and tone["border"] == "none", tone)
     # The run is paused, so whether a warning stands cannot change between the look and the click.
     warned = pg.evaluate(WARNED)
     pg.click("#dt-insights")

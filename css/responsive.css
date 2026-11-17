@@ -59,8 +59,9 @@
   .tile-stage { height: min(68vh, 640px); min-height: 360px; }
   .bento.focus .tile-stage { height: calc(100vh - 76px); }
   .tile-inspector { max-height: 680px; }
-  .tile-deck { height: 320px; }
-  .bento.deck-tall .tile-deck { height: 460px; }
+  /* The presets, like a dragged height, stay within the 80 % of the screen the grip allows (a phone on its side). */
+  .tile-deck { height: min(320px, 80vh); }
+  .bento.deck-tall .tile-deck { height: min(460px, 80vh); }
   .bento.deck-compact .tile-deck { height: 136px; }
   /* A dragged height, even one kept from a wider window, stays within the 80 % of the screen the grip allows. */
   .bento.deck-sized .tile-deck { height: min(var(--bay-px), 80vh); }

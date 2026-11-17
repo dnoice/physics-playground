@@ -305,6 +305,19 @@ with sync_playwright() as p:
     by_select = [pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.bodies.length") - n_sol]
     pg.keyboard.press("q"); pg.evaluate(f"{G}.select(null)")
     ok("sol_orbit_line_click_selects", at is not None and at2 is not None and by_throw == [at[2], 0] and by_select == [at2[2], 0] and named, (at, by_throw, at2, by_select))
+    # Empty sky beside an orbit, 15 px or more from every orbit drawn and every body's disc, takes a Throw click as a
+    # drop: exactly one body more, and nothing followed.
+    SKY = f"""(() => {{ const L = {G}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), project = L.projector(), o = {{ x: 0, y: 0, r: 0 }};
+      const clear = p => {{ const best = {{ d: 15, b: null }}; L.orbitNear(p, best); return !best.b && L.bodies.every(b => !project(b, o) || Math.hypot(o.x - p.x, o.y - p.y) - o.r >= 15); }};
+      const line = {ORBIT}; if (!line) return null;
+      const x0 = line[0] - r.left, y0 = line[1] - r.top;
+      for (const d of [16, 20, 26, 34, 44]) for (let k = 0; k < 16; k++) {{ const p = {{ x: x0 + d * Math.cos(k * Math.PI / 8), y: y0 + d * Math.sin(k * Math.PI / 8) }};
+        if (p.x > 40 && p.y > 40 && p.x < r.width - 40 && p.y < r.height - 40 && document.elementFromPoint(r.left + p.x, r.top + p.y) === cv && clear(p)) return [r.left + p.x, r.top + p.y, d]; }}
+      return null; }})()"""
+    pg.wait_for_timeout(300); sky = pg.evaluate(SKY); n_sky = pg.evaluate(f"{G}.bodies.length")
+    if sky: pg.mouse.click(sky[0], sky[1]); pg.wait_for_timeout(300)
+    dropped = [pg.evaluate(f"{G}.bodies.length") - n_sky, pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.p.tool")]
+    ok("sol_sky_beside_orbit_drops_a_body", sky is not None and dropped == [1, None, "throw"], (sky, dropped))
     pg.evaluate(P + ".preset('sol')"); pg.wait_for_timeout(200)
     sw = pg.evaluate("""(() => ['orbits', 'labels'].map(k => document.getElementById('ctl-gravity-' + k)).map(e => e && [e.getAttribute('aria-checked'), e.textContent.trim()]))()""")
     pg.click("#ctl-gravity-orbits"); off = pg.evaluate(f"{G}.p.orbits"); pg.click("#ctl-gravity-orbits")

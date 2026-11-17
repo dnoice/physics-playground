@@ -91,7 +91,10 @@
 
 /* ---------- console: stage and deck beside a full-height inspector ---------- */
 .bento {
-  --bay: minmax(226px, 27vh);
+  /* The most height the deck may take: the stage keeps 260 px of it, though the deck never drops below 112 px. Each
+     preset and a dragged height are held to it, so a short window never squeezes the stage. */
+  --bay-room: max(112px, 100% - var(--gap) - 260px);
+  --bay: minmax(min(226px, var(--bay-room)), min(27vh, var(--bay-room)));
   --side: clamp(320px, 25vw, 400px);
   display: grid; gap: var(--gap); padding: 0 var(--gap) var(--gap); min-height: 0;
   grid-template-columns: minmax(0, 1fr) var(--side);
@@ -101,11 +104,11 @@
 .tile-stage { grid-area: stage; }
 .tile-deck { grid-area: deck; }
 .tile-inspector { grid-area: notes; }
-.bento.deck-tall { --bay: minmax(300px, 46vh); }
-.bento.deck-compact { --bay: 136px; }
+.bento.deck-tall { --bay: minmax(min(300px, var(--bay-room)), min(46vh, var(--bay-room))); }
+.bento.deck-compact { --bay: min(136px, var(--bay-room)); }
 /* A dragged height or width, clamped again here so a smaller window never squeezes the stage: it keeps 260 px of
    height under the deck and at least half the console's width beside the inspector. */
-.bento.deck-sized { --bay: min(var(--bay-px), max(112px, 100% - var(--gap) - 260px)); }
+.bento.deck-sized { --bay: min(var(--bay-px), var(--bay-room)); }
 .bento.side-sized { --side: clamp(320px, var(--side-px), 50% - var(--gap) / 2); }
 .bento.no-bay { grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage notes"; }
 .bento.no-bay .bay { display: none; }

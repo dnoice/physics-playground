@@ -105,15 +105,19 @@ function setSize(s) { size = s; applySize(); saveSize(); announce(`Instruments $
 const nextSize = () => (size === 'custom' ? 'standard' : SIZES[(SIZES.indexOf(size) + 1) % SIZES.length]);
 // Layout sizes, not drawn ones: the tiles' entrance animation scales them for a moment.
 const height = () => tile().offsetHeight;
-function resize(h) { px = clamp(h, MIN, maxHeight()); size = 'custom'; applySize(); }
+function resize(h) { px = clamp(h, MIN, ceiling()); size = 'custom'; applySize(); }
+/* The tallest the stylesheet lets the deck be. Beside the inspector (two grid columns) the stage keeps 260 px under it;
+   stacked in one column, the deck may take 80 % of the screen. */
 function maxHeight() {
-  const wide = getComputedStyle($('#bento')).gridTemplateAreas.includes('notes'), stage = $('#tile-stage').offsetHeight;
-  // Beside the inspector the stage keeps 260 px, as the stylesheet does; stacked, the deck may take most of the screen.
+  const wide = getComputedStyle($('#bento')).gridTemplateColumns.trim().split(/\s+/).length > 1, stage = $('#tile-stage').offsetHeight;
   return wide && stage > 0 ? Math.max(MIN, Math.floor(stage + height() - 260)) : Math.round(innerHeight * 0.8);
 }
+// The grip's top: never below the deck's own height (a pixel of rounding), so the value never passes the maximum and
+// a step up never shrinks the deck.
+const ceiling = () => Math.max(maxHeight(), Math.round(height()));
 function syncGrip() {
   const h = Math.round(height()), g = $('#deck-grip');
-  g.setAttribute('aria-valuemax', String(Math.round(maxHeight())));
+  g.setAttribute('aria-valuemax', String(ceiling()));
   g.setAttribute('aria-valuenow', String(h));
   g.setAttribute('aria-valuetext', `${h} pixels, ${size === 'custom' ? 'custom height' : size}`);
 }

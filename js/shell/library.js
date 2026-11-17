@@ -95,11 +95,16 @@ export function renderLibrary() {
   const count = $('#nt-library-count'), total = vault.list().length;
   if (count) { count.textContent = total ? String(total) : ''; count.hidden = !total; }
 }
-/* A capture saved while another notebook tab is open marks the Library tab,
-   so a new clip, dataset or state is never filed away out of sight. */
+/* A capture saved while another notebook tab is open marks the Library tab with the unseen count every tab uses
+   (+1, then +2) beside its total, so a new clip, dataset or state is never filed away out of sight. Opening the
+   Library takes has-new away, which hides the count (layout.js). */
 export function noteNewItem() {
   const tab = $('#nt-library');
-  if (tab && tab.getAttribute('aria-selected') !== 'true') { tab.classList.add('has-new'); tab.setAttribute('aria-description', 'New item saved'); }
+  if (!tab || tab.getAttribute('aria-selected') === 'true') return;
+  const mark = tab.querySelector('.tab-new') || tab.appendChild(el('span', { class: 'tab-new', 'aria-hidden': 'true' }));
+  const k = tab.classList.contains('has-new') ? (Number(mark.textContent) || 0) + 1 : 1;
+  mark.textContent = String(k);
+  tab.classList.add('has-new'); tab.setAttribute('aria-description', `${k} new item${k === 1 ? '' : 's'} saved`);
 }
 /* A saved item: its kind as a coloured tile and tag, its name (press to rename) and what it holds, and Delete as a
    quiet trash button in the corner, red on hover, which asks first. Then one row of actions: the main one leads,

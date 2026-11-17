@@ -291,7 +291,7 @@ export function buildPanel(lab) {
 }
 export function navHelp(lab) {
   const pan = lab.rightButton ? 'drag with the middle button, or hold <b>Space</b> and drag, to pan' : 'drag with the right or middle button, or hold <b>Space</b> and drag, to pan';
-  return `<b>View</b>: scroll to zoom at the cursor and ${pan}; pinch and two-finger drag on touch. The view controls on the right edge of the stage zoom, pan, frame the scene and open an overview. In <b>3D mode</b>, ${lab.rightButton ? 'middle-drag' : 'right-drag'} or the axis ball orbits and Shift-drag pans.`;
+  return `<b>View</b>: scroll to zoom at the cursor and ${pan}; pinch and two-finger drag on touch. The view controls on the right edge of the stage zoom, pan, frame the scene and open an overview; with their <b>Select</b> (Q) on, a click only picks an object to inspect and never uses the tool. In <b>3D mode</b>, ${lab.rightButton ? 'middle-drag' : 'right-drag'} or the axis ball orbits and Shift-drag pans.`;
 }
 export function markClip(f) {
   const clipped = f.scrollWidth - f.clientWidth - f.scrollLeft > 2, scrollable = f.scrollWidth - f.clientWidth > 2;

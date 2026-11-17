@@ -55,7 +55,8 @@
     - Objects list beside the card: column heads that sort, rows that exist
       only where they show, the selected row in amber and the keyboard's row
       ringed.
-    - Notebook tabs with counts and a new-item dot.
+    - Notebook tabs with totals in pills, and a bare "+n" for what is unseen,
+      as on the Insights tab.
     - KaTeX formula cards that scroll sideways instead of overflowing.
     - Live Math panels: the symbols' running values, the parameters as dials
       in equal cells side by side, the check line and the plot.
@@ -196,7 +197,7 @@ body.resizing-side { cursor: col-resize; }
 .ocol { appearance: none; position: relative; min-width: 0; display: grid; grid-template-columns: minmax(0, auto) auto; grid-template-rows: auto auto; justify-content: start; align-items: center; align-content: start; column-gap: 1px; padding: 2px 0; border: 0; border-radius: 6px; background: none; color: var(--muted); font: 500 11px/1.25 var(--font-body); text-align: left; cursor: pointer; }
 .ocol.num { justify-content: end; text-align: right; }
 .ocol-name, .ocol-unit { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ocol-unit { font: 400 9.5px/1.2 var(--font-mono); color: #6f7b8a; }
+.ocol-unit { font: 400 9.5px/1.2 var(--font-mono); color: var(--muted); }
 .ocol .ms { display: none; grid-column: 2; grid-row: 1 / span 2; font-size: 13px; }
 .ocol:hover, .ocol[aria-pressed="true"] { color: var(--text); }
 .ocol[aria-pressed="true"] .ms { display: block; }
@@ -310,9 +311,11 @@ body.resizing-side { cursor: col-resize; }
 .iv-n:empty, .iv-n[hidden] { display: none; }
 .iv-n[data-level="warn"] { color: var(--warn); }
 .iv-n[data-level="crit"] { color: var(--crit); }
-/* Unseen moments: a neutral count on the Insights tab and on the Story view, in the same make as the inspector's tab
-   counts. Colour is kept for problems. */
-.story-new, .iv-n[data-new] { padding: 2px 5px; border-radius: 999px; font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--text) 32%, transparent); }
+/* Unseen: what came since it was last looked at, as a bare "+n" in the text colour, with no pill, ring or fill, on the
+   Insights tab, the Story view and the Library tab alike (.tab-new). A pill holds a total or progress (the inspector's
+   tab counts), and colour is kept for problems. The plus is drawn, not read: the count's own words say "new". */
+.story-new, .iv-n[data-new], .tab-new { font: 600 10.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text); }
+.story-new::before, .iv-n[data-new]::before, .tab-new::before { content: "+"; content: "+" / ""; }
 .story-new[hidden] { display: none; }
 .ins-now[hidden], .ins-story[hidden] { display: none; }
 .ins-story { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
@@ -362,8 +365,10 @@ body.resizing-side { cursor: col-resize; }
 .tabs [role="tab"][aria-selected="true"] .ms { color: var(--amber); }
 .tabs [role="tab"] { position: relative; }
 .tab-count { position: absolute; top: 5px; left: calc(50% + 11px); font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 5px; }
-/* Something saved and not yet seen: the count itself brightens, neutral as every unseen count is. */
-.tabs [role="tab"].has-new .tab-count { color: var(--text); border-color: color-mix(in oklab, var(--text) 45%, var(--rule)); }
+/* Something saved and not yet seen: the unseen "+n" (above) on the other side of the glyph from the total, until the
+   tab is opened. */
+.tab-new { position: absolute; top: 8px; right: calc(50% + 12px); }
+.tabs [role="tab"]:not(.has-new) .tab-new { display: none; }
 .notes-body [role="tabpanel"] { display: grid; gap: 14px; align-content: start; }
 .notes-body [role="tabpanel"][hidden] { display: none; }
 .guide { display: grid; gap: 16px; }
