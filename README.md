@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.19)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: Settings and its two openers, the
+      Guide as a legend, an Insights tab marked only when something stands or
+      is unseen, Restart in the keys table, Fields' Move on G, Units without
+      its button, and the head-up display apart from the run's status.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
       from starlight under Planet classes, with its table of climates; the
       climate in Our Solar System, in the 3D table's Gravity row and in the
@@ -705,10 +710,10 @@ a capture or a warning, is also announced to screen readers.
 
 ### Units
 
-**U**, or the Units tab in Settings, opens the Units section, which picks what every reading, control, inspected figure and scale
-bar is shown in. The simulations always
-compute in their own units, so switching never changes a run; typed values
-are read in the units shown.
+**U**, or the Units tab in Settings, opens the Units section, which picks
+what every reading, control, inspected figure and scale bar is shown in. The
+simulations always compute in their own units, so switching never changes a
+run; typed values are read in the units shown.
 
 | System | Shows | Scale |
 | --- | --- | --- |

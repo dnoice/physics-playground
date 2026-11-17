@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck Workspace (digiSpace Edition - v2.6)
+    - Title: Instruments Deck Workspace (digiSpace Edition - v2.19)
     - File Name: deck.js
     - Relative Path: js/shell/deck.js
     - Artifact Type: javascript
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for honest tab marks: a selection no longer puts an amber
+      dot on the Inspect tab, which read as something to look at; a new
+      selection still opens the pane.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
       unused deckPane() export.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created

@@ -1,17 +1,21 @@
 """
 ✒ Metadata
-    - Title: Workspace Tests (digiSpace Edition - v2.18)
+    - Title: Workspace Tests (digiSpace Edition - v2.19)
     - File Name: workspace.py
     - Relative Path: tests/workspace.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for an honest Insights tab: the tab is bare when nothing
+      stands and nothing is unseen, a warning shows in its colour, and the
+      unseen count is neutral; units are read from the Units section.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Story's checks. A
       brown dwarf dropped at the Star system's edge moves the barycentre and

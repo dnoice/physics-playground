@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Guide Page (digiSpace Edition - v2.5)
+    - Title: Guide Page (digiSpace Edition - v2.19)
     - File Name: guide.js
     - Relative Path: js/shell/guide.js
     - Artifact Type: javascript
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the Guide becomes a static legend
+      of the tools, Random and views (glyph, name, key and hint) with a line
+      naming the scenes. Its tool, view, Random and scene buttons, which
+      repeated the rail and the scene menu, are removed with syncGuide().
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for a Guide wired to the simulation: the lab's tools,
       views and scenes as cards that pick them, beside the lab's own notes. A

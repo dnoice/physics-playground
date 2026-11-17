@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.18)
+    - Title: Fields Lab (digiSpace Edition - v2.19)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call to untangle look-alikes: the Move tool takes G, since V is
+      Next view in the keys list, and the Inspect hint names it.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for recordings shot like a film: interest() names the
       tracked particle, framed round its circle in a magnetic field, the swarm
@@ -21,10 +24,6 @@
       charge; the potential and tracked energies get their real units and SI
       factors (volts and J/kg), and the scale note says how the app shows
       potentials.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and particle tracks: each column's unit, meaning
-      and SI factor, and a note on coordinates, scale and the 64-particle
-      limit.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.18)
+    - Title: Tile Content Styles (digiSpace Edition - v2.19)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for an honest Insights tab: a tab's dot shows only while a
+      warning (amber) or critical problem (red) stands, unseen counts are
+      neutral with no amber fill, and Inspect's selection dot is gone. The
+      Guide's tool, view, Random and scene cards give way to a flat legend
+      with no hover or press.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Now and Story views
       beside the deck's tabs, the Story's moments with their time, actions and
@@ -20,10 +26,6 @@
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The deck
       resize drag's own user-select is gone: the workspace's one selection
       rule in tokens.css covers it.
-    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Math
-      page's parameter dials sit as the Controls page's do, in equal cells
-      side by side, each its symbol over its wheel, in place of full-width
-      rows of uneven wheels.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

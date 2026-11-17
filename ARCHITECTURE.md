@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.18)
+    - Title: Architecture Guide (digiSpace Edition - v2.19)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: what a tab's marks mean, the
+      truthful slow-run warning, the two Settings openers, the Guide as a
+      static legend, the dice kept in step by syncControl() and syncPanel(),
+      one glyph per meaning, and the head-up display's name.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       climate: climate.js and each world's b.clim, when it updates, starlight,
       air, temperature, ice, spin and classes, the look in 2D and 3D, what

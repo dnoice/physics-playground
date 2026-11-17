@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.18)
+    - Title: Frame Loop (digiSpace Edition - v2.19)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the panel tick no longer
+      refreshes the Guide's cards or the dice; syncControl() and syncPanel()
+      keep the dice current as each change happens.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the lab's narrator
       looks at the run four times a second (tickStory). On Dennis's call for
@@ -20,10 +24,6 @@
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Each frame,
       after drawing, the head-up display places its target box on the selected
       object; at panel rate it refreshes the callout.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — At panel
-      rate, the live formulas, the Guide's marks and the Library's capture
-      cards refresh with the readings. The rail's Random dice is kept current
-      at the same rate.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

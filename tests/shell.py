@@ -1,17 +1,22 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.18)
+    - Title: Shell Regression Test (digiSpace Edition - v2.19)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: two Settings openers and every
+      section reachable from the gear, tool keys apart from workspace keys,
+      one glyph per meaning, the Run status name, Chaos without a second
+      restart, and Fluid's quick actions first.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: each opener opens its section
       with focus on its current choice; the nav's arrows, the focus trap, the

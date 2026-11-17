@@ -1,24 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Responsive Styles (digiSpace Edition - v2.16)
+    - Title: Responsive Styles (digiSpace Edition - v2.19)
     - File Name: responsive.css
     - Relative Path: css/responsive.css
     - Artifact Type: stylesheet
-    - Version: 2.16.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the narrow-screen rules for the
+      removed Units, HUD and keyboard buttons are gone.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       tag steps aside below 1280 px, where the lab tabs need the room.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
       button keeps its glyph only below 1024 px, like Graphics and Units.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On phones
-      (560 px and below) the lab tabs take a row of their own, where all seven
-      fit with the selected lab's name; beside the actions they had 77 px.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

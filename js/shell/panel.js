@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.11)
+    - Title: Panel Builder (digiSpace Edition - v2.19)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: syncPanel() refreshes the Random
+      dice too, so a scene, a section's Reset or a rewind moves it at once,
+      and the Guide is no longer synced.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Dials show
       their value through the wheel's text(), unit set back; a degree sign
       sits against its number (120°), as the SI writes plane angles.
@@ -19,9 +23,6 @@
       on a log scale without a step shows three significant figures, where
       fixed decimals rounded its low end to nothing (Gravity's softening read
       0.00 AU).
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
-      updateReadouts reads the lab once per panel tick and gives the rows to
-      Telemetry and the head-up display's tape, so both show the same text.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

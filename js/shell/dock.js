@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Tool Dock (digiSpace Edition - v2.5)
+    - Title: Tool Dock (digiSpace Edition - v2.19)
     - File Name: dock.js
     - Relative Path: js/shell/dock.js
     - Artifact Type: javascript
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: a lab without Random clears the
+      hidden dice's name, tip and state, so Chaos no longer carries Waves'
+      Random sources, and the Guide's mirrors no longer need a sync.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
       call for random placement, a lab that declares random gets a dice under
       its tools that turns it on and off; it stays in step with the Controls
@@ -23,9 +27,6 @@
       contract: the checked option is the one tab stop, arrows move and
       select, Home and End jump. A view changes only what is drawn, and V
       steps through a lab's views.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tool
-      changes refresh disabled controls; the 3D hint knows when middle-drag
-      orbits.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

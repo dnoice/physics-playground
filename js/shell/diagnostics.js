@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.18)
+    - Title: Diagnostics (digiSpace Edition - v2.19)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for an honest Insights tab: tabMark() puts a dot and a few
+      words on the tab only while a warning or critical problem stands, and
+      nothing otherwise. The slow-run warning names the cause the meters show,
+      and Drawing is the bottleneck shows only when drawing takes most of each
+      frame.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the insights fill the
       pane's Now view, which counts them in the colour of the worst; the HUD's
@@ -20,9 +26,6 @@
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       warnings and critical notices also light the head-up display's caution
       lights.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Insights
-      render in the deck's Insights pane; the HUD alert opens that pane, and
-      the summary on its tab is short: a count, or how many need checking.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:

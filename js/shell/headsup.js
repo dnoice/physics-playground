@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Head-Up Display (digiSpace Edition - v2.18)
+    - Title: Head-Up Display (digiSpace Edition - v2.19)
     - File Name: headsup.js
     - Relative Path: js/shell/headsup.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the top bar's HUD button is gone,
+      so its label is no longer written; the Settings button's nav and Shift+H
+      reach the section.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the display's settings are its
       Head-up display section, which the HUD button opens; the sheet's own
@@ -19,11 +23,6 @@
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The callout
       also keeps off what the lab drew and asks to keep visible, its hudClear
       boxes, such as Gravity's names beside bodies in the Solar System.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
-      Dennis's call for a cockpit-style head-up display, so the run's numbers
-      sit on the stage instead of pulling the eye away from it: a readings
-      tape, caution lights and a target box with a callout on the selected
-      object, at an opacity he chooses.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
