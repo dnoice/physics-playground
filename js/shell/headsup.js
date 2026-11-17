@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Head-Up Display (digiSpace Edition - v2.8)
+    - Title: Head-Up Display (digiSpace Edition - v2.18)
     - File Name: headsup.js
     - Relative Path: js/shell/headsup.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the display's settings are its
+      Head-up display section, which the HUD button opens; the sheet's own
+      opening and closing went with it.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The callout
       also keeps off what the lab drew and asks to keep visible, its hudClear
       boxes, such as Gravity's names beside bodies in the Solar System.
@@ -39,8 +43,9 @@
     - Target box and callout, placed each frame from the lab's hudTarget(),
       clamped to the stage edge with a dashed box when the object is off it,
       and kept clear of the title, the rail and the tape.
-    - A Head-up display menu in the top bar: on or off (Shift+H), opacity in
-      four steps, and each part on or off, remembered per browser.
+    - A Head-up display section in Settings, which the HUD button opens: on
+      or off (Shift+H), opacity in four steps, and each part on or off,
+      remembered per browser.
 
 ✒ Usage Instructions:
     In a lab:  hud: [['Total energy E', 'ENERGY E'], ...]   readout labels and their short HUD names
@@ -225,10 +230,9 @@ export function trackHud(lab) {
   if (k) { lead.style.width = `${len.toFixed(1)}px`; lead.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) rotate(${Math.atan2(ey - sy, ex - sx).toFixed(4)}rad)`; }
 }
 
-/* ---------- settings: the top-bar menu, Shift+H and the automation surface ---------- */
+/* ---------- settings: the Settings dialog's section, Shift+H and the automation surface ---------- */
 let alphaUpdate = () => {};
 const partSwitches = new Map();
-const sheetOpen = () => !$('#hud-sheet').hidden;
 function apply() {
   root.hidden = !cfg.on;
   root.style.setProperty('--hu-a', String(cfg.alpha / 100));
@@ -252,12 +256,6 @@ export function configureHud(o) {
   if (LEVELS.some(l => l[0] === o.alpha)) cfg.alpha = o.alpha;
   save(); apply();
 }
-export function setHudSheet(on) {
-  $('#hud-sheet').hidden = !on;
-  $('#btn-hud').setAttribute('aria-expanded', String(on));
-  if (on) $('#hud-on').focus();
-}
-export function closeHudSheet() { if (!sheetOpen()) return false; setHudSheet(false); $('#btn-hud').focus(); return true; }
 /* The tape starts under the title and its chips, however they wrap. */
 function placeTape() {
   const top = $('.stage-top');
@@ -280,11 +278,6 @@ export function init() {
     b.addEventListener('click', () => { cfg[k] = !cfg[k]; save(); apply(); announce(`${label} ${cfg[k] ? 'shown' : 'hidden'} on the head-up display`); });
     partSwitches.set(k, b); parts.append(b);
   }
-  $('#btn-hud').addEventListener('click', () => setHudSheet(!sheetOpen()));
-  $('#hud-close').addEventListener('click', closeHudSheet);
-  document.addEventListener('pointerdown', e => {
-    if (sheetOpen() && !$('#hud-sheet').contains(e.target) && !$('#btn-hud').contains(e.target)) setHudSheet(false);
-  });
   new ResizeObserver(placeTape).observe($('.stage-top'));
   placeTape(); apply();
 }

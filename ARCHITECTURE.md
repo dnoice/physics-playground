@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.17)
+    - Title: Architecture Guide (digiSpace Edition - v2.18)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,21 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      climate: climate.js and each world's b.clim, when it updates, starlight,
+      air, temperature, ice, spin and classes, the look in 2D and 3D, what
+      rewind, saved states and tracks keep, and the Solar System's real airs;
+      engine.sceneOf for the tests. On Dennis's call for Insights that narrate
+      the run: the narrate() and storyHint hooks, the Story under Instruments
+      (moments, folding, one story per lab, Gravity's frames and caps), the
+      loop's story tick, and narrators in the Add a lab recipe. On Dennis's
+      call for one settings dialog: the Settings section (settings.js),
+      graphics settings of one's own over the tier, settings.css in the
+      styles, and :modal in the selection rule. On Dennis's call for
+      recordings shot like a film: the director in Capture and storage, its
+      place in the frame loop and boot order, the interest(), releaseCam() and
+      retakeCam() hooks, aim3() and home3(), and the measurements in
+      js/core/interest.js.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       dataContext() returns facts and tables, rendered in the README and kept
       in the data package.
@@ -155,16 +170,17 @@ flowchart TB
 
 | Layer | Folder | Depends on | Holds |
 | --- | --- | --- | --- |
-| Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems |
+| Core | `js/core/` | nothing outside core | DOM helpers, colour ramps, series, chart and sphere drawing, 3D maths, state codec, icon names, KaTeX loader, unit systems, the measurements behind areas of interest |
 | Render | `js/render/` | core | The 2D SPH liquid surface |
 | World | `js/render/world/` | core, three.js | The 3D mode: engine, studio, materials, shapes, ribbons, and one scene per lab |
-| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the experiments curriculum, the registry |
-| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, units menu, capture, storage, layout, experiments |
+| Labs | `js/labs/` | core, render, a few shell services | One module per lab, the plane camera, the gravity camera, the Solar System's data (`solarsystem.js`), the planets' climate (`climate.js`), the labs' narrators (`story/`), the experiments curriculum, the registry |
+| Shell | `js/shell/` | core, labs; loads World on demand | Everything around a lab: panel and its dials, rail (tools, Random and views), camera, input, loop, modes, deck (instruments, inspect, insights), head-up display, live math, guide, the Settings dialog and its sections, capture and its director, storage, layout, experiments |
 
 Labs may call shell services that are part of their job: `announce`,
 `sticky`, `setParam`, `rebuild`, `restart`, `syncControl`, `refreshEnabled`,
 `updateDock`, `updateNav`, and the camera readers `camOf`, `camXf` and
-`toScreen`.
+`toScreen`. A narrator's Show me may also frame the view (`navFrame`) or pick
+a view (`selectView`).
 They never build shell UI themselves.
 
 ## Boot order
@@ -173,14 +189,17 @@ They never build shell UI themselves.
 before anything else reads it. Then `boot()` runs:
 
 1. `layout.init` restores focus mode, the bay and the notebook tab.
-2. `diagnostics.init`, `transport.init` (buttons and every keyboard
+2. `diagnostics.init` (with the Story's views), `transport.init` (buttons
+   and every keyboard
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
-   `loop.init` (resize observer), `capture.init`, `workspace.init` (lab
+   `loop.init` (resize observer), `capture.init` (which also wires the
+   director's stage chip), `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
    (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
-   card), `unitmenu.init` (Units menu), `headsup.init` (the head-up
-   display's menu and its remembered settings), `automation.init`
-   (`window.PhysicsPlayground`).
+   card), `unitmenu.init` (the Units section), `headsup.init` (the head-up
+   display's section and its remembered settings), `settings.init` (the
+   Settings dialog: its nav, its keys and the top bar's openers),
+   `automation.init` (`window.PhysicsPlayground`).
 3. `start()` reads the theme, sizes the stage, applies saved parameters
    and presets, builds the orbit ball and library controls, selects the
    lab from the address hash or the last visit, starts the frame loop and
@@ -194,6 +213,9 @@ lab:
 - **Simulation**: an accumulator feeds `lab.step(lab.dt())` in fixed steps,
   capped by `lab.maxSteps` and by a frame-time budget, then calls
   `lab.after(simulatedSeconds)`.
+- **Direction**: while the director films (see Capture and storage),
+  `tickDirector` sets the camera's values and targets alike, just before
+  the camera's own easing, which then has nothing left to do.
 - **Drawing**: in 2D, `drawStage` applies the camera and calls `lab.draw`.
   In 3D, `drawWorld` renders the lab's scene and composites it into the
   stage canvas, then calls `lab.overlay3`, so video capture and pointer input
@@ -202,7 +224,7 @@ lab:
 - **Rates**: the status chips (time, rate, frame rate) and gizmo every 0.1 s;
   readouts, chart, capture chips, the head-up display's tape and callout, and
   the experiment check every 0.25 s; diagnostics and the caution lights every
-  0.5 s.
+  0.5 s; the lab's narrator every 0.25 s (see Instruments).
 
 ## The lab contract
 
@@ -240,15 +262,18 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `enabled(key)` | `true`, or a sentence saying why a control is disabled right now |
 | `onParam(key, value)`, `onResize(w, h, ow, oh)`, `after(simDt)` | React to changes |
 | `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, and the lab's own length per stage pixel for the scale bar |
-| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units menu; `timeNote` adds to the HUD clock |
+| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units section of Settings; `timeNote` adds to the HUD clock |
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
 | `zoomPace()`, `zoomLimits3()` | How strongly the user's zoom controls act (the wheel, the rail's buttons and drag, the keys raise their factor to this power; Gravity's Solar System, eight decades of scale, returns 2), and Gravity's 3D zoom limits as multiples of the framing distance. Pinch and scripted zooms keep their exact factor |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
+| `narrate(N)`, `storyHint` | The lab's narrator, mixed in by the registry from `js/labs/story/<id>.js`: called four times a second while the run moves, it adds moments to the Story with `N.add({ kind, title, body, tone, group, key, show, fixes })`; `N.fresh` says the story just began (rebuild the watch), `N.said(key)` whether a once-only moment was told. `storyHint` is the empty Story's text |
 | `snapshot()`, `restore(s)`, `histBudget`, `histInterval` | Rewind history |
 | `serialize()`, `deserialize(o)` | Saved states (`genericState` from `core/codec.js` derives them from snapshot and restore) |
 | `dataColumns[]`, `dataRow()`, `trackColumns[]`, `trackRows(out)`, `trackLabel` | Datasets and per-object tracks; the first column is always simulated time |
 | `dataInfo`, `dataNote`, `dataContext()` | What a dataset means to someone who never saw the run. `dataInfo` maps every data and track column to `[unit, meaning, SI unit, factor]`, and the capture suite fails if any column lacks one. `dataNote` explains the coordinates and scale. `dataContext()` returns what the rows cannot say: `facts` (label and value pairs) and `tables` (title, note, head, rows), such as Gravity's bodies or Fields' charges at the start, which the README renders and the data package keeps. `js/shell/dataset.js` builds each dataset's README and Frictionless data package from them |
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
+| `interest(keep)` | The director's areas of interest: points `{ x, y, z?, r, w, key, label }` in the lab's world coordinates (`z` in Gravity only), with `r` the extent to frame, `w` a weight from 0 (routine) to 1 (do not miss; 0.85 and up may take over a routine shot), `key` a stable name so a moving subject can be followed, and `label` for the stage chip. `keep` is the key being filmed, which a lab whose subjects come and go (Gravity's bodies, a Collisions ball) still reports while it exists. Called four times a second while the director runs, never per frame; `js/core/interest.js` holds the shared measurements (the densest cell, the fastest group, the fastest cell) |
+| `releaseCam()`, `retakeCam(held)` | A lab that drives its own camera lets go while the director films and takes back what it let go when it stops: Gravity's Follow and followed body |
 | `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
 | `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
@@ -282,7 +307,10 @@ A lab that simulates on a plane declares where the plane stands with `rig3`,
 and `js/labs/stage3d.js` is mixed in by the registry to give it the camera
 hooks the shell calls: `c3()`, `basis3()`, `pick3(screenPoint)`,
 `orbit3(dx, dy)`, `pan3(dx, dy)`, `zoom3(f, screenPoint, instant)`, `frame3()`,
-`actual3()`, `zoomPct3()`, `snap3(axisId)` and `tick3(realSeconds)`.
+`actual3()`, `zoomPct3()`, `snap3(axisId)` and `tick3(realSeconds)`. For
+the director it adds `aim3(x, y)`, which turns a world point into an orbit
+target in the scene with the scene units per world unit there, and it
+offers `home3()`, the framing that `frame3()` goes to.
 
 The long side of every world is 10 scene units, so lights and materials read
 the same in every lab at every window size. `plane3()` maps world (x, y) into
@@ -292,7 +320,7 @@ and pointer tools need no 3D code. `project3` goes the other way for
 overlays.
 
 Gravity is really three-dimensional, so it keeps its own camera in
-`js/labs/gravity3d.js` with the same hooks.
+`js/labs/gravity3d.js` with the same hooks, `aim3` and `home3` among them.
 
 ### A scene
 
@@ -337,7 +365,8 @@ Every apparatus can be walked all the way round, so backs are finished:
 A shader that draws what lies past an apparatus, as the Fluid tank's water
 does, shows the room there (`room()`), never the softboxes. They light the
 studio but stand nowhere in it. `engine.studioOf(labId)` hands a scene's
-studio to the tests.
+studio to the tests, and `engine.sceneOf(labId)` the scene itself, so a
+test can read what the scene hands its materials.
 
 A scene can reuse the lab's own 2D drawing instead of rebuilding it in
 three.js. The Chaos phase view paints `drawPhase` onto a screen whose face
@@ -370,11 +399,35 @@ cheapest of four verdicts from `suggestTier`:
 - the memory the browser reports;
 - the largest texture the GPU takes.
 
-The Graphics sheet names the part that set it. `tickWorld` runs the
+The Graphics section of Settings shows the four verdicts and marks the part
+that set it. `tickWorld` runs the
 Auto mode from the frame loop: three-second windows, a step down above 25 ms
 per frame, a step up after twelve seconds under 17.6 ms. A step down that does
 not improve the frame time by 8% is undone and adapting stops, because the
 limit is then the solver or the display.
+
+### Settings of one's own
+
+Any part of the budget the engine honours can be set apart from the tier.
+
+- **`KNOBS`** in `tiers.js` lists them: resolution, MSAA, mesh detail, bloom,
+  grade, the shadow map and its penumbra, fill, haze, contact shadows, the
+  environment, texture size and filtering, and the floor's reflection. Each
+  names the values it offers, its section, a `cap` (the GPU limit that bounds
+  it) and `needs` (a setting it means nothing without).
+- **`mode.js`** keeps them in `world.over`, stored under `psp:gfxOverrides`
+  and read back through `cleanOverrides`, so a stored value is only ever data.
+  The budget is the tier in use (Auto's too) with them laid over it
+  (`layered`), then the GPU's caps. A value above a cap is neither offered
+  nor accepted.
+- **`setOverride`** drops a value equal to the tier's own, so a setting is
+  either the tier's or the person's. `resetOverride` and `resetOverrides`
+  hand settings back.
+- **A change goes through `engine.setTier`**, the path a change of tier
+  takes, which frees what the last budget made. Two fixes keep that true:
+  shadows switched off free their map, and the floor's mirror pass gives the
+  contact pools and the haze back as it found them, so one switched off stays
+  off. Fluid's field follows `detail` rather than the tier's name.
 
 ### When 3D cannot run
 
@@ -430,7 +483,7 @@ rather than building interface.
 | Player bar | Time: play, step, reset, speed, rewind, capture | `snapshot`, `restore`, datasets |
 | Deck: Telemetry | Readings over time | `readouts`, `chart`, `primary` |
 | Deck: Inspect | The selected object, read-only, plus actions on that object | `inspect`, `deselect`, `inspectHint` |
-| Deck: Insights | Diagnosis grounded in the run, with fixes | `diagnose`, `perfFixes`, `drawFixes` |
+| Deck: Insights | Now: diagnosis grounded in the run, with fixes; Story: the run's moments, narrated | `diagnose`, `perfFixes`, `drawFixes`, `narrate`, `storyHint` |
 | Inspector: Controls | Every setting; the only place parameters change | `controls`, `groups`, `actions` |
 
 The shared state stays small: the active lab, its `p` (parameters, including
@@ -463,8 +516,53 @@ one figure over time: the one the lab's `focus` names, else the first that
 changes, until the user clicks another. A figure's plot button adds it to the
 Telemetry scope as that object's own series, keyed by its `short` name; those
 series are sampled at panel rate like the readings but are not remembered
-across visits. Insights (`js/shell/diagnostics.js`) lists the lab's and the
-workspace's insights with their fixes beside the frame-timing strip.
+across visits. Insights has two views, a tablist beside the deck's tabs. Now
+(`js/shell/diagnostics.js`) lists the lab's and the workspace's insights with
+their fixes beside the frame-timing strip. Story (`js/shell/story.js`) is the
+narrator's timeline.
+
+### The Story
+
+Each lab's narrator lives in `js/labs/story/<id>.js` and is mixed into the lab
+by the registry as `narrate(N)` and `storyHint`, so it reads the lab's state
+and helpers without crowding the lab's own file. The frame loop calls
+`tickStory` four times a second; the narrator runs only when simulated time
+has moved, so a pause holds the story still. It keeps its own records between
+looks in module scope, rebuilds them when `N.fresh` says the story began, and
+allocates nothing per frame. Gravity's narrator caps its work at any body count: it
+follows at most 40 bodies (named ones and those placed by hand first) and tests
+the 12 heaviest as hosts and perturbers.
+
+A moment is `{ kind, title, body, tone, group, key, show, fixes, t }`:
+
+- `kind` picks its glyph from `STORY_ICON` in `js/core/icons.js`; `tone` is
+  `event`, `key` (announced) or `warn` (announced, amber edge).
+- `group`, a plural noun, folds a repeat into the newest entry of its kind
+  when that entry is among the newest three or came within 5 s of simulated
+  time; the entry keeps up to twelve earlier ones in a disclosure.
+- `key` makes a moment once-only for this story; `t` stamps it with the time
+  it happened when that is not now.
+- `show` is `{ label, run, can }`: Show me follows, selects or frames what the
+  moment is about, and hides once `can()` is false (the body merged away).
+
+`js/shell/story.js` keeps one story per lab, newest first and at most 60
+entries. `rebuild()` resets it, a rewind trims what came after the new time,
+and an unread count rides on the Insights tab until the Story is on screen.
+Important moments go to `announce()`, at most one every four seconds.
+`PhysicsPlayground.story` lists the story, its unread count and its view, and
+`story.tick()` lets a test look after `advance()`.
+
+Gravity's narrator measures every orbit as the lab does, about what holds it:
+a body's primary is its planet while it stays bound inside that planet's Hill
+sphere, else the heaviest body, or a bound binary's barycentre for whatever
+circles both. A distant body's orbit is taken about the heaviest body and the
+planets well inside it together (Jacobi's coordinates), so the star's own
+wobble does not read as a perturbation. Once a companion forms a bound pair
+with the star, a planet well inside 0.35 of their separation is measured about
+the star it circles: its drift, resonances, crossings, packing and Hill sphere
+are taken in that star's frame, with the other star ranked as a perturber.
+Orbits are said to cross only when the ellipses, laid in one plane, really
+intersect, not merely when their distance ranges overlap.
 
 `js/shell/instruments.js` is the Telemetry pane: a lab's readings. It reads the
 formatted rows from `lab.readouts()`, so a lab gets stat tiles, sparklines and
@@ -496,9 +594,46 @@ the same figures) and never clickable.
   clamped into the free part of the stage and scored by what it would cover:
   the object most, then the tape, the lights, the overview map, and the
   lab's `hudClear` boxes, such as Gravity's names.
-- **Settings**: the HUD menu in the top bar and Shift+H. On or off, opacity in
+- **Settings**: its section of the Settings dialog, which the top bar's HUD
+  button opens, and Shift+H. On or off, opacity in
   four steps (40, 60, 80, 100 %) and each part on or off, kept per browser
   under `psp:hud`; `PhysicsPlayground.hud` reads and sets them for tests.
+
+## Settings
+
+`js/shell/settings.js` is one native modal `<dialog>` (`#settings`) with a
+section for each part of the workspace a person sets once and keeps:
+Graphics, Units, Head-up display and Keyboard. It owns the frame, not the
+contents. `mode.js` builds Graphics (tiers, verdicts and the settings of one's
+own), `unitmenu.js` Units and `headsup.js` the head-up display. The keyboard
+list is markup in `index.html`.
+
+- **Opening.** `openSettings(id, from)` opens at a section and focuses its
+  current choice (the checked tier or unit system, the display's switch), or
+  its tab for the keyboard list. The top bar's Graphics, Units, HUD and
+  keyboard buttons open their own section, and so do U and ?. The Settings
+  button and Shift+S open the section last shown, remembered as
+  `psp:settingsTab`. Each opener's `aria-expanded` says whether the dialog
+  is open at its section.
+- **Inside.** The workspace behind is inert. Tab and Shift+Tab go round the
+  dialog's own controls. The nav is a tablist with the full keyboard
+  contract. `settingsKey` takes the dialog's keys: Escape and Shift+S close
+  it, U and ? move to their own section (or close the dialog when it is
+  already there, as a second press closed the old sheets), and Shift+H still
+  turns the display on or off. Every other key stops at the dialog, and `transport.js` leaves the
+  workspace's shortcuts alone while it is open, and hands it keys that reach
+  the page because focus dropped there.
+- **Closing.** Escape, the close button, Shift+S or a click on the backdrop
+  close it, and focus goes back to whatever opened it.
+- **Missing sections.** `allowSection` takes a section out of the nav when
+  the workspace cannot offer it, as Graphics when 3D cannot run.
+- **Layout.** A centred panel on a desktop, over a plain dimmed backdrop with
+  no blur, so the stage behind stays at its frame rate while a change is
+  judged against it. A full-screen sheet on a phone, with the nav across the
+  top.
+- **Automation.** `PhysicsPlayground.settings` opens, closes and reads it, and
+  `PhysicsPlayground.gfx` reads and sets the settings of one's own and the
+  budget the engine gets.
 
 ## Units
 
@@ -626,7 +761,8 @@ The Library page has two sections in `index.html`, each headed by an
   - `syncLibraryCapture` keeps each button's two lines current: what it
     will keep, or how far it has got.
   - `#btn-cap-settings` folds out `#capture-settings`, and the fold is
-    remembered.
+    remembered. The director's switch and Preview direction come from
+    `directorSettings()` in `director.js`.
   - A `<details>` lists the dataset's columns.
 - **Saved** has the count, the filter and the storage line, then the items
   from `renderItem`.
@@ -825,6 +961,69 @@ give Jupiter and Earth in those units, from the IAU mass ratios.
   massless, as Halley's is in the Solar System: at a third of a moon's mass
   its close passes knocked a moon into its planet in about one run in forty.
 
+## Gravity's climate
+
+`js/labs/climate.js` holds the physics as plain functions and tables;
+`js/labs/gravity.js` keeps each world's climate (`b.clim`) up to date, and
+the 2D view and the 3D scene only read it.
+
+- **When.** `after()` calls `climate(simDt)`, which runs `climateAll` every
+  frame, every second frame past 40 bodies and every fourth past 120, with
+  all the simulated time since. `build`, `restore` and `deserialize` snap
+  every world to its target; `climateOf(b)` works out a world seen for the
+  first time (just thrown, dropped or merged into being). Once a body has its
+  climate, an update allocates nothing.
+- **Starlight.** `climStars` and `climLum` list the stars and their
+  luminosities (`luminosity(M)`, the piecewise main-sequence relation). A
+  world's `S` sums L/d² in AU over every star, so binaries and added or
+  deleted stars just work. `Sbar` follows `S` over about a year (`AU_YR`).
+- **Air** (`AIRS`): a giant's or brown dwarf's `envelope`; a real world's
+  own (`meta.air`); else, from `atmosphere(vesc, Sbar, planet)`, `none` past
+  the cosmic shoreline (25 times Earth's starlight at Earth's escape speed,
+  scaling as v_esc⁴), `thin` within four times it, `thick` for a rocky
+  planet past the runaway limit (1.06), else `air`. Each kind carries its
+  greenhouse depth τ, its rocky Bond albedo, its ε for spinning and locked
+  worlds, its freezing point, its latitude gradient and its lag.
+- **Temperature.** `Teq` = 278.6 K × S^¼ × (1 − A)^¼, with A from
+  `meta.albedo`, `KIND_ALBEDO` or the air. The target is
+  ((T_eq⁴ + T_int⁴)(1 + ¾τ))^¼, with `internalTemp` for giants (Jupiter about
+  100 K) and brown dwarfs; `T` relaxes toward it with the air's lag, from a
+  week to half a year. Day and night: T⁴ ∝ ε + 4(1 − ε)μ by day and ε by
+  night, so `Tss`, `Tday` and `Tn` conserve the absorbed light.
+- **Ice.** `iceLine(T, freeze, k)` is where a one-dimensional energy-balance
+  profile, T (1 − 0.482 k P₂(x))^¼, crosses freezing: the sine of a latitude,
+  1.3 for no ice, 0 for a snowball. A world locked to its star has no ice
+  line; its ice lies wherever its local temperature is below freezing.
+- **Spin.** The tidal partner is a moon's planet, else the star whose tides
+  (m/d³) are strongest. `lockYears` is Gladman et al. (1996) in its
+  simplified form on `abar`, the orbit's semi-major axis over about a year,
+  so a world moved inward locks as it settles: under 460 million years it is
+  `locked` (or `resonant`, 3:2, on an orbit with e ≥ 0.1), under 4.6 billion
+  `slowed`, else `free`.
+- **Class.** `classify` reads the temperatures and air: `molten` (day side
+  above 1000 K), `hothouse`, `hot`, `bare`, `frigid`, `dry`, `eyeball`,
+  `temperate`, `cold` and `frozen` for rocky and small worlds; for giants,
+  after Sudarsky et al. (2000), `hotGiant`, `warmGiant`, `waterGiant`,
+  `coldGiant` or `iceGiant`, and `brown`. `CLIMATES` names each for Inspect.
+- **Look.** `b.clim` carries what drawing needs: `type` (a rocky planet with
+  liquid water renders as an ocean world, one that lost it as rock), `haze`
+  (a runaway greenhouse), `rim`, and `rgb` and `css` for the flat view,
+  rebuilt only when the colour changes. In 2D, `draw` shades the climate's
+  colour and `drawHeat` adds a night side's glow past the Draper point and
+  a molten day side's lava. In 3D, `climateInto` fills two instanced
+  attributes, `aK` (T, ε, ice line, locked to its star) and `aH` (freezing
+  point, haze, rim, and the turn that keeps a locked world's +x toward what
+  it is locked to, about its orbit's pole). The planet shader computes the
+  local temperature from them and blends frost, ice caps, lava, haze, the
+  giants' cloud decks and thermal glow into the existing looks.
+- **Records.** Rewind snapshots and saved states carry each world's `T`,
+  `Sbar` and `abar` (`warmth`), so a world part-way to its target carries
+  on; per-body tracks carry `temperature_K` and `instellation_earth`.
+- **The Solar System.** `CLIMATE` in `solarsystem.js` gives the real Bond
+  albedos and the airs size alone would not (Venus thick, Earth's air,
+  Mars thin, the Galilean moons bare, Titan's air). Inspect's rows are
+  `climRows(b)`.
+
 ## Guided experiments
 
 `js/labs/experiments.js` holds the curriculum, keyed by lab id:
@@ -854,6 +1053,67 @@ the stage canvas, samples datasets at a fixed rate, and saves states.
 published artifact, IndexedDB in a plain browser, memory as a last resort.
 `js/shell/library.js` lists them in the notebook.
 
+### The director
+
+`js/shell/director.js` films a clip when the Director switch is on
+(`psp:director`). `startVideo` calls `directorRec(true)` and `finishVideo`
+calls `directorRec(false)`; Preview direction runs the same director with
+no clip. It drives the user's own view, which is the Live mode the request
+named. A Background mode, a second camera drawn into the recording canvas
+while the view stays put, was left out: it would draw every recorded frame
+twice, and Gravity's flat `draw` moves its camera and notes what it drew,
+while Fluid's liquid surface renders for the stage's own camera and size.
+
+- **One camera vector in both modes.** Six numbers: the point looked at, ln
+  of the view's width there, and in 3D yaw and pitch. In 2D the width is
+  the stage's short side in world units, and `write` keeps `clampCam`'s
+  limits itself. In 3D it is the frame's height at the orbit target. Value
+  and target are set alike, so `tick3` and `navStep` have nothing to do.
+- **Shots.** `nextShot` opens on an establishing wide shot, then picks
+  points from `interest()` by weight, discounting the last three keys shown,
+  with a wide shot after two subjects or when nothing scores above 0.3.
+  Within a shot the frame dollies in a few per cent, a wide 2D shot drifts
+  a little sideways, and in 3D the camera orbits at 0.07 rad/s. A shot's
+  clock starts once the camera has arrived. A subject still weighing 0.7 or
+  more is held up to four seconds past its length, a lost one ends the shot
+  after a second, and a weight of 0.85 or more takes over a routine shot
+  that has held three seconds.
+- **Framing.** `look` turns a point into the camera's terms (in 3D through
+  the lab's `aim3`, then `clampTarget`) and smooths successive looks at one
+  subject by Holt's linear method: the level over 0.7 s, the trend over
+  1.2 s, the width over 1.5 s. A steady mover is followed without lag, while
+  a swinging pendulum tip or a hopping densest patch barely moves the
+  camera. A new subject takes its speed from the previous look. The frame
+  widens until the subject crosses less than 0.45 of the pan limit a
+  second, and a push in stops 2.2 e-folds past the wide framing (more in a
+  lab that spans decades).
+- **Moves.** Between shots, `plan` lays van Wijk and Nuij's smooth zoom and
+  pan path from the camera to the subject as last seen, carried on at its
+  speed for about two seconds ahead (a damped trend). A quintic ease times
+  it, and the camera's own speed at the start dies away over the move, so
+  no move starts or ends with a jolt. `plan` rehearses the move in 48
+  samples and lengthens it until its fastest moment stays under 70 % of
+  the limits. While it runs, how far the subject strays from that course
+  is followed by a spring and eased in, so a wandering subject stays in
+  frame. If it has strayed a fifth of a view by the end, up to two shorter
+  moves catch up. Within a shot, `hold` runs a critically damped spring on
+  each number, solved exactly for a goal moving at constant speed.
+- **Limits.** `cap` holds every frame to `DIRECTOR_CAP` per second: 0.55 of
+  a view of pan, 0.6 e-folds of zoom (times the square of `zoomPace()`, for
+  the Solar System's decades), 0.4 rad of yaw and 0.25 rad of pitch. The
+  loop's frame is at most 0.05 s, so no frame moves more than a twentieth
+  of these. Reduced motion halves them and makes shots 1.4 times longer.
+- **The user's hand.** `touched` compares the camera with what the director
+  last set. Any difference (a drag, the wheel, a key, Frame, a scene that
+  re-fits) hands the camera over until it has been still for four seconds,
+  six with reduced motion. A 3D resize that only rescales the distance does
+  not count.
+- **Giving it back.** The camera's targets as they were when the director
+  took it are restored, eased by the camera's own easing. A lab switched
+  away from mid-take gets its camera back at once, and the director starts
+  afresh on the new lab or mode. The stage chip `#hud-dir` names the shot
+  and gives the camera back when pressed.
+
 ## Styles
 
 The stylesheets load in this order, each building on the last:
@@ -862,12 +1122,13 @@ The stylesheets load in this order, each building on the last:
 | --- | --- |
 | `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass tokens (opaque tiles in one plain-colour gradient with the sheen as an inset shadow; see Conventions) |
 | `icons.css` | Material Symbols styling and tab glyph animations |
-| `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, Graphics and Units menus, mode switch, colophon |
+| `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, the tier and unit lists, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
-| `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and the HUD menu |
-| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, grip), Live Math panels, Guide cards, tabs |
+| `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and its section in Settings |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, the Now and Story views and the Story's moments, grip), Live Math panels, Guide cards, tabs |
 | `library.css` | Library page |
+| `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, and its phone layout |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 
 Tiles are inline-size containers, so their contents adapt with container
@@ -932,7 +1193,9 @@ otherwise see every file twice.
    (sorted).
 4. Declare its zoom range on the lab object, `zoomRange: [lo, hi]`, unless
    the default of 0.5× to 8× suits it.
-5. Add its experiments under its id in `js/labs/experiments.js`.
+5. Add its experiments under its id in `js/labs/experiments.js`, and its
+   narrator as `js/labs/story/<id>.js`, registered in `js/labs/story/index.js`,
+   with a glyph in `STORY_ICON` for each new kind of moment.
 6. Run `npm run verify` and `npm test`.
 7. Add it to the README: a row in the labs table and a gallery picture
    (see "Refresh the README pictures").
@@ -975,7 +1238,9 @@ up, the checks, the house style and the header rules in full.
   lines; the full history is in [CHANGELOG.md](CHANGELOG.md).
 - Dates are written MM/DD/YYYY.
 - **Selection is one rule.** `css/tokens.css` makes the whole document
-  unselectable, so no drag or double-click paints a highlight. Text fields
+  unselectable, so no drag or double-click paints a highlight. The rule names
+  `:modal` beside the root, because the browser's own sheet makes a modal
+  dialog's text selectable. Text fields
   select again, and a block meant to be copied opts in with `.selectable`,
   inside which buttons, tabs and icons still do not select. No element sets
   `user-select` of its own. `tests/shell.py` sweeps every page, pane, sheet

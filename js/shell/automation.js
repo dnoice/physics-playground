@@ -1,26 +1,33 @@
 /*
 ✒ Metadata
-    - Title: Automation Surface (digiSpace Edition - v2.7)
+    - Title: Automation Surface (digiSpace Edition - v2.18)
     - File Name: automation.js
     - Relative Path: js/shell/automation.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: PhysicsPlayground.story
+      lists the Story's moments, its unread count and its view, and ticks the
+      narrator after advance() for tests. On Dennis's call for one settings
+      dialog: settings opens, closes and reads the dialog, and gfx reads and
+      sets the graphics settings of one's own and the budget the engine gets.
+      On Dennis's call for recordings shot like a film:
+      PhysicsPlayground.director turns the director on or off, previews and
+      stops it, reports what it is filming and its limits, and lists the
+      active lab's areas of interest.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
       PhysicsPlayground.hud reads and sets the head-up display (on, opacity,
       parts) for tests.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — view.get()
       reports moving while a zoom, frame or recentre is still easing in, so
       tests can wait for the view to come to rest instead of a fixed time.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds
-      viewMode() for a lab's view and units.get() and units.set() for the unit
-      system.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -31,6 +38,9 @@
     - Read lab state and drive the transport from the console or a test.
     - view.get/zoomBy/toWorld expose the camera.
     - capture exposes the vault and recorders.
+    - story lists the Insights pane's Story and ticks the narrator.
+    - settings opens and reads the Settings dialog; gfx reads and sets the
+      graphics settings of one's own and the budget the engine gets.
 
 ✒ Usage Instructions:
     In the browser console: PhysicsPlayground.select('fields');
@@ -48,17 +58,20 @@ import { globalInsights } from './diagnostics.js';
 import { labsById } from '../labs/index.js';
 import { camOf, is3D, navActual, navAnim, navFrame, navPan, navZoomBy, toWorld, zoomPct } from './camera.js';
 import { dataRec, hist, histSeek, loadState, rewindStep, saveState, toggleData, toggleVideo, vrec } from './capture.js';
+import { DIRECTOR_CAP, director, directorState, previewDirector, setDirector, stopDirector } from './director.js';
 import { selectDock, selectView } from './dock.js';
 import { setUnitSystem, unitSystem } from '../core/units.js';
 import { applyPreset, setParam } from './lifecycle.js';
 import { advance } from './loop.js';
 import { ptr } from './stage.js';
-import { pickTier, setMode, world } from './mode.js';
+import { gfxBudget, pickTier, resetOverride, resetOverrides, setMode, setOverride, world } from './mode.js';
 import { active, perf, state } from './state.js';
 import { pause, play, resetActive, setSpeed, stepOnce } from './transport.js';
 import { vault } from './vault.js';
 import { selectLab } from './workspace.js';
 import { configureHud, hudState } from './headsup.js';
+import { showView, storyOf, storyUnread, tickStory } from './story.js';
+import { closeSettings, openSettings, settingsOpen, settingsSection } from './settings.js';
 
 /* ---------- automation surface ---------- */
 
@@ -75,10 +88,18 @@ export function init() {
     viewMode: id => selectView(id),
     units: { get: () => unitSystem(), set: id => setUnitSystem(id) },
     hud: { get: () => hudState(), set: o => configureHud(o || {}) },
+    settings: { open: id => openSettings(id), close: () => closeSettings(), isOpen: () => settingsOpen(), section: () => settingsSection() },
+    // The person's own graphics settings over the tier: what is set, the budget the engine gets, and the resets.
+    gfx: { own: () => ({ ...world.over }), budget: () => gfxBudget(), set: (key, value) => setOverride(key, value), reset: key => (key ? resetOverride(key) : resetOverrides()) },
     diagnose: () => [...globalInsights(), ...(active.diagnose ? active.diagnose() : [])].map(({ id, level, title }) => ({ id, level, title })),
+    // The Story: its moments as data, the unread count, the view, and one look by the narrator now (after advance()).
+    story: { list: () => storyOf(active), unread: () => storyUnread(active), view: id => showView(id), tick: () => tickStory(active) },
     play, pause, step: stepOnce, reset: resetActive, setSpeed,
     advance: seconds => advance(active, seconds, Infinity),
     capture: { toggleVideo, toggleData, saveState, loadState, vault, dataRec, vrec },
+    // The director's camera: its switch, a preview, what it is filming, and the active lab's areas of interest.
+    director: { get on() { return director.on; }, set: on => setDirector(on), preview: () => previewDirector(), stop: () => stopDirector(), state: () => directorState(),
+      interest: () => (active.interest ? active.interest(null) : []), caps: DIRECTOR_CAP },
     history: { seek: k => histSeek(active, k), size: () => hist(active).snaps.length, back: () => rewindStep(-1) },
     renderer: () => active.renderer || 'cpu',
     mode: { get: () => world.mode, set: setMode, tier: pickTier, world, is3D: () => is3D(active), info: () => world.engine && world.engine.info() },

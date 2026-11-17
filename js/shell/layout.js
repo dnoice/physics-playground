@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Workspace Layout (digiSpace Edition - v2.1)
+    - Title: Workspace Layout (digiSpace Edition - v2.18)
     - File Name: layout.js
     - Relative Path: js/shell/layout.js
     - Artifact Type: javascript
-    - Version: 2.1.0
-    - Date: 11/06/2026
-    - Update: Friday, November 06, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the keyboard sheet became the
+      Keyboard section of Settings, so its opening and closing left this
+      module.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       scene dropdown; Controls is the first Inspector tab.
     - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -20,14 +24,14 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Focus mode, the bottom bay, the notebook tabs and the keyboard sheet,
+    Focus mode, the bottom bay, the notebook tabs and the scene dropdown,
     with their state remembered between visits.
 
 ✒ Key Features:
     - setFocus and setBay toggle the bento modes and their buttons.
     - revealTile brings a tile into view, leaving focus mode if needed.
-    - Notebook tabs as a roving-tabindex tablist; the keys sheet closes on
-      Escape or an outside click.
+    - Notebook tabs as a roving-tabindex tablist; the scene dropdown closes
+      on Escape or an outside click.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -76,14 +80,6 @@ export function selectNote(id, focus = false) {
   store.set('notesTab', id);
 }
 
-/* ---------- keyboard sheet: the single floating panel ---------- */
-export function setKeys(open) {
-  const sheet = $('#keys-sheet');
-  sheet.hidden = !open;
-  $('#btn-keys').setAttribute('aria-expanded', String(open));
-  if (open) $('#keys-close').focus();
-}
-
 /* ---------- scene dropdown ---------- */
 export function setSceneMenu(open) {
   const menu = $('#scene-menu');
@@ -106,12 +102,6 @@ export function init() {
   });
   $('#btn-focus').addEventListener('click', () => { setFocus(!isFocus()); announce(isFocus() ? 'Stage focused' : 'Workspace restored'); });
   $('#btn-bay').addEventListener('click', () => { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); });
-  $('#btn-keys').addEventListener('click', () => setKeys($('#keys-sheet').hidden));
-  $('#keys-close').addEventListener('click', () => { setKeys(false); $('#btn-keys').focus(); });
-  document.addEventListener('pointerdown', e => {
-    const sheet = $('#keys-sheet');
-    if (!sheet.hidden && !sheet.contains(e.target) && !$('#btn-keys').contains(e.target)) setKeys(false);
-  });
   const tabs = [...document.querySelectorAll('#notes-tabs [role="tab"]')];
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => selectNote(t.id.slice(3)));

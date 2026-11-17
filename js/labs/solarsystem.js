@@ -1,17 +1,22 @@
 /*
 ✒ Metadata
-    - Title: Our Solar System (digiSpace Edition - v2.9)
+    - Title: Our Solar System (digiSpace Edition - v2.18)
     - File Name: solarsystem.js
     - Relative Path: js/labs/solarsystem.js
     - Artifact Type: javascript
-    - Version: 2.9.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for worlds shaped by their distance from the Sun: the real
+      Bond albedos, and the air each world really has where size and distance
+      alone would not say (Venus's runaway greenhouse, Earth's air, Mars's
+      thin air, a bare Mercury, Moon and Galilean moons, Titan's air).
     - 2.9.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The planets
       and moons take the research reference's classes: Mercury, Venus, Earth
       and Mars terrestrial (Earth keeping its ocean surface), the large moons
@@ -84,6 +89,16 @@ const PLANETS = [
   { name: 'Neptune', el: [30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574], m: 5.1514e-5, R: 24622, kind: 'ice', tint: [84, 124, 230], desc: 'Ice giant', px: 3.4, pole: [299.36, 43.46] },
   { name: 'Pluto', el: [39.48211675, 0.24882730, 17.14001206, 238.92903833, 224.06891629, 110.30393684], m: 1.303e22 / SUN_KG, R: 1188.3, kind: 'dwarf', tint: [212, 188, 158], desc: 'Dwarf planet, with Charon', px: 2.2, pole: [132.993, -6.163] },
 ];
+/* The real worlds' climates, for Gravity's climate model: Bond albedo, the share of sunlight reflected (NASA's
+   planetary fact sheets; Venus's from Haus et al. 2016, Pluto's from Buratti et al. 2017, Titan's from Li et al.
+   2011), and the air each really has, where its size and distance alone would not say. Venus keeps its runaway
+   greenhouse wherever it is moved, Earth its oceans' air, and the Galilean moons only the faintest traces of gas. The
+   giants' envelopes follow from their kind. */
+const CLIMATE = {
+  Mercury: { albedo: 0.068, air: 'none' }, Venus: { albedo: 0.76, air: 'thick' }, Earth: { albedo: 0.306, air: 'air' }, Mars: { albedo: 0.25, air: 'thin' },
+  Jupiter: { albedo: 0.343 }, Saturn: { albedo: 0.342 }, Uranus: { albedo: 0.3 }, Neptune: { albedo: 0.29 }, Pluto: { albedo: 0.72, air: 'thin' },
+  Moon: { albedo: 0.11, air: 'none' }, Io: { air: 'none' }, Europa: { air: 'none' }, Ganymede: { air: 'none' }, Callisto: { air: 'none' }, Titan: { albedo: 0.265, air: 'air' },
+};
 
 /* Moons by host: a (km), e, mass (kg), radius (km). sense -1 goes round against the host's IAU north pole. The Moon
    carries its own elements [i, node, arg. perigee, mean anomaly] against the ecliptic, and they are osculating ones:
@@ -186,9 +201,9 @@ export function buildSolarSystem(lab, { G, AU, SUN }) {
     const cr = [0, 0, 0], cv = [0, 0, 0];
     rel.forEach((q, k) => { for (let j = 0; j < 3; j++) { cr[j] += mm[k] * q.r[j] / mSys; cv[j] += mm[k] * q.v[j] / mSys; } });
     const pr = s.r.map((x, j) => x - cr[j]), pv = s.v.map((x, j) => x - cv[j]);
-    const host = add(pr, pv, mp, pl.kind, { name: pl.name, desc: pl.desc, tint: pl.tint, r: pl.R * km, px: pl.px, real: true, label: true, ring: !!pl.ring, ...(pl.surface != null ? { surface: pl.surface } : {}) });
+    const host = add(pr, pv, mp, pl.kind, { name: pl.name, desc: pl.desc, tint: pl.tint, r: pl.R * km, px: pl.px, real: true, label: true, ring: !!pl.ring, ...(pl.surface != null ? { surface: pl.surface } : {}), ...CLIMATE[pl.name] });
     moons.forEach((mo, k) => add(rel[k].r.map((x, j) => pr[j] + x), rel[k].v.map((x, j) => pv[j] + x), mm[k], mo.R > 600 ? 'moon' : 'icy',
-      { name: mo.name, desc: `Moon of ${pl.name}`, tint: mo.tint, r: mo.R * km, px: mo.R > 1000 ? 1.9 : 1.5, real: true, label: true, noTrail: true, hostId: host.id }));
+      { name: mo.name, desc: `Moon of ${pl.name}`, tint: mo.tint, r: mo.R * km, px: mo.R > 1000 ? 1.9 : 1.5, real: true, label: true, noTrail: true, hostId: host.id, ...CLIMATE[mo.name] }));
   }
   for (const d of DWARFS) {
     const [a, e, i, node, w, M] = d.el, m = kg(d.kg);

@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.17)
+    - Title: 3D Mode Test (digiSpace Edition - v2.18)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the Graphics checks drive
+      Settings, and the machine's four verdicts mark the GPU. A setting of
+      one's own reaches the engine, holds over a change of tier and across a
+      reload, resets on its own and with Reset to tier, frees what it made and
+      stays within the GPU's limits.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
       back-view check waits for the camera to finish turning, as the Fluid one
       does, before it reads the yaw; on a busy machine the turn had not ended
@@ -64,6 +70,9 @@
     - Rewind and video capture work on the 3D stage.
     - All five tiers apply; Auto lands on Lite under software rendering and
       steps down from a tier the machine cannot hold.
+    - Graphics settings of one's own reach the engine, hold over a change of
+      tier and a reload, reset one by one and all at once, free what they
+      made and stay within the GPU's limits.
     - No three.js, no WebGL 2, a lost context and a scene that throws each
       leave a working workspace.
     - A soak through every scene of every lab, twice, finds growth in GPU
@@ -339,13 +348,62 @@ with sync_playwright() as p:
             pg.evaluate(f"{P}.mode.tier('{tier}')"); pg.wait_for_timeout(600)
         counts.append(pg.evaluate(f"{P}.mode.info().textures"))
     ok("tier_changes_free_their_targets", counts[0] == counts[1], counts)
+    # The Graphics section of Settings, opened from the top bar's Graphics button: the tiers, the machine's four verdicts
+    # with the one that set the suggestion marked, and a setting of one's own laid over the tier (here Lite).
     pg.click("#btn-gfx")
-    ok("menu_opens", not pg.evaluate("document.getElementById('gfx-sheet').hidden"))
+    ok("menu_opens", pg.evaluate(f"document.getElementById('settings').matches(':modal') && {P}.settings.section() === 'graphics'") and pg.is_visible("#sp-graphics")
+       and pg.evaluate("document.activeElement === document.querySelector('#gfx-list [aria-checked=true]')"))
     dev = pg.inner_text("#gfx-device")
-    ok("menu_reads_the_whole_machine", "threads at" in dev and ("GB memory" in dev or "memory not reported" in dev) and "suggests Lite, set by the GPU" in dev, dev)
+    rows = pg.evaluate("[...document.querySelectorAll('#gfx-device .dev-row')].map(r => [r.querySelector('dt').textContent, r.dataset.sets])")
+    ok("menu_reads_the_whole_machine", "threads at" in dev and ("GB memory" in dev or "memory not reported" in dev) and "suggests Lite, set by the GPU" in dev
+       and rows == [["GPU", "true"], ["CPU", "false"], ["Memory", "false"], ["Texture limit", "false"]], (dev, rows))
     ok("menu_lists_all_tiers", pg.evaluate("document.querySelectorAll('#gfx-list [role=radio]').length") == 6)
+    OWN = f"""(() => {{ const E = {P}.mode.world.engine, t = E.tier, st = E.studioOf('chaos'), row = k => document.querySelector(`.knob[data-key="${{k}}"]`);
+      return {{ id: t.id, shadow: t.shadow, bloom: t.bloom, cast: st.key.castShadow, map: st.key.shadow.mapSize.x, freed: !st.key.shadow.map, radius: st.key.shadow.radius,
+        contact: st.contacts.some(c => c.visible), own: {P}.gfx.own(), kept: JSON.parse(localStorage.getItem('psp:gfxOverrides') || 'null'), focus: document.activeElement.id,
+        marked: [...document.querySelectorAll('.knob[data-own="true"]')].map(r => r.dataset.key), resets: [...document.querySelectorAll('.knob-reset:not([hidden])')].map(b => b.id),
+        dot: document.getElementById('btn-gfx').classList.contains('has-own'), all: !document.getElementById('gfx-reset').hidden, now: document.getElementById('gfx-now').textContent }}; }})()"""
+    pg.click("#ov-shadow-2048"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_reaches_the_engine", g["id"] == "lite" and g["shadow"] == 2048 and g["cast"] and g["map"] == 2048 and abs(g["radius"] - 5) < 1e-9 and g["kept"] == {"shadow": 2048}
+       and g["marked"] == ["shadow"] and g["resets"] == ["ov-shadow-reset"] and g["dot"] and g["all"] and "Lite with 1 setting of your own" in g["now"] and "2048 shadows" in g["now"], g)
+    pg.click("#ov-bloom"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_switch_reaches_the_engine", g["bloom"] and g["shadow"] == 2048 and g["kept"] == {"shadow": 2048, "bloom": True} and sorted(g["marked"]) == ["bloom", "shadow"], g)
     pg.keyboard.press("Escape")
-    ok("escape_closes_menu", pg.evaluate("document.getElementById('gfx-sheet').hidden") and pg.evaluate("document.activeElement.id") == "btn-gfx")
+    ok("escape_closes_menu", not pg.evaluate("document.getElementById('settings').open") and pg.evaluate("document.activeElement.id") == "btn-gfx")
+    pg.reload()
+    settle(pg, IS3D, 30000); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("overrides_kept_across_a_reload", g["id"] == "lite" and g["shadow"] == 2048 and g["cast"] and g["bloom"] and g["own"] == {"shadow": 2048, "bloom": True} and sorted(g["marked"]) == ["bloom", "shadow"], g)
+    # A setting held over a change of tier: contact shadows off stay off on High, whose own are on.
+    pg.evaluate(f"{P}.gfx.set('contact', false); {P}.mode.tier('high')"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_holds_over_a_change_of_tier", g["id"] == "high" and not g["contact"] and g["shadow"] == 2048 and g["own"] == {"shadow": 2048, "bloom": True, "contact": False}, g)
+    pg.evaluate(f"{P}.gfx.reset('contact'); {P}.mode.tier('lite')"); pg.wait_for_timeout(600)
+    pg.click("#btn-gfx"); pg.wait_for_timeout(200)
+    pg.click("#ov-shadow-reset"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_resets_on_its_own", g["shadow"] == 0 and not g["cast"] and g["freed"] and g["bloom"] and g["kept"] == {"bloom": True} and g["marked"] == ["bloom"] and g["focus"] == "ov-shadow-0", g)
+    pg.click("#gfx-reset"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("reset_to_tier", not g["bloom"] and g["shadow"] == 0 and g["own"] == {} and g["kept"] == {} and not g["marked"] and not g["dot"] and not g["all"]
+       and pg.evaluate("document.activeElement === document.querySelector('#gfx-list [aria-checked=true]')"), g)
+    # Settings of one's own free what they made through the tier's path: two laps leave the same textures.
+    counts = []
+    for _ in range(2):
+        for k, v in [("env", 1024), ("shadow", 4096), ("reflect", 0.75), ("bloom", "true"), ("tex", 2048), ("msaa", 2)]:
+            pg.evaluate(f"{P}.gfx.set('{k}', {v})"); pg.wait_for_timeout(500)
+        pg.evaluate(f"{P}.gfx.reset()"); pg.wait_for_timeout(1500)
+        counts.append(pg.evaluate(f"{P}.mode.info().textures"))
+    ok("overrides_free_their_targets", counts[0] == counts[1], counts)
+    # The GPU's limits still hold: nothing above them is offered, and a value above them is refused.
+    lim = pg.evaluate(f"""(() => {{ const d = {P}.mode.world.device, msaa = [...document.querySelectorAll('.knob[data-key=msaa] [role=radio]')].map(b => +b.id.slice(8));
+      return {{ s: d.maxSamples, a: d.maxAniso, msaa, eight: {P}.gfx.set('msaa', 8), sixteen: {P}.gfx.set('aniso', 16), aniso: {P}.gfx.budget().aniso }}; }})()""")
+    pg.evaluate(f"{P}.gfx.reset()")
+    ok("gpu_limits_hold_over_overrides", lim["msaa"] == [m for m in [0, 2, 4, 8] if m <= lim["s"]] and lim["eight"] == (8 <= lim["s"]) and lim["sixteen"] == (16 <= lim["a"])
+       and lim["aniso"] == (16 if 16 <= lim["a"] else 1), lim)
+    pg.keyboard.press("Escape")
     pg.evaluate(f"{P}.mode.tier('auto')")
     pg.evaluate(f"{P}.mode.world.autoTier = 'ultra'; {P}.mode.world.engine.setTier({{ ...{P}.mode.world.engine.tier, id: 'ultra', scale: 2, msaa: 4, shadow: 4096, reflect: 0.75, bloom: true, grade: true, detail: 1 }})")
     ok("auto_steps_down_when_slow", settle(pg, f"{P}.mode.world.autoTier !== 'ultra'", 30000), pg.evaluate(f"{P}.mode.world.autoTier"))
@@ -385,6 +443,11 @@ with sync_playwright() as p:
     pg.add_init_script("const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, o) { return t === 'webgl2' ? null : g.call(this, t, o); };")
     pg.goto(URL + "#chaos"); pg.wait_for_timeout(1200)
     ok("no_webgl2_stays_2d", pg.evaluate(f"{P}.mode.get()") == "2d" and pg.evaluate("document.getElementById('mode-3d').disabled"))
+    # With no 3D there is nothing to set under Graphics: its section leaves Settings, which opens at the next one.
+    hid = pg.evaluate("document.getElementById('st-graphics').hidden")
+    pg.click("#btn-settings"); pg.wait_for_timeout(200)
+    r = pg.evaluate(f"({{ open: document.getElementById('settings').open, section: {P}.settings.section(), pane: document.getElementById('sp-graphics').hidden }})")
+    ok("no_webgl2_no_graphics_section", hid and r["open"] and r["section"] == "units" and r["pane"], (hid, r))
     ctx.close()
 
     ctx = b.new_context(viewport=VIEW)

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Library Styles (digiSpace Edition - v2.16)
+    - Title: Library Styles (digiSpace Edition - v2.18)
     - File Name: library.css
     - Relative Path: css/library.css
     - Artifact Type: stylesheet
-    - Version: 2.16.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the director's settings,
+      and Preview direction in amber while it runs.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The unit
       column in a dataset's Details.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
@@ -20,8 +23,6 @@
       column chips, compact storage line, item cards coloured by kind with a
       filled main action and a corner trash button, and CSS glyphs with empty
       alt text.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
-      cards for clips, datasets and states at the head of the Library.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -113,6 +114,11 @@ html.no-icons .cap-cols summary::before { content: "›"; font-family: inherit; 
 .cap-chips code { font: 400 10.5px/1 var(--font-mono); padding: 4px 6px; border-radius: 5px; color: var(--text); background: color-mix(in oklab, var(--cyan) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 22%, transparent); }
 .capture-settings { display: grid; gap: 14px; padding: 12px 12px 4px; border-radius: 10px; background: color-mix(in oklab, var(--well) 60%, transparent); box-shadow: inset 0 0 0 1px var(--hair); animation: rise 0.2s var(--ease) both; }
 .capture-settings[hidden] { display: none; }
+/* The director: its switch, then Preview direction, which shows amber while it runs rather than the recorders' red. */
+.dir-set { display: grid; gap: 8px; justify-items: start; }
+.dir-preview[hidden] { display: none; }
+.dir-preview[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: color-mix(in oklab, var(--amber) 10%, var(--ink)); }
+.dir-preview[aria-pressed="true"] .ms { animation: none; }
 
 /* ---------- saved: storage status, then the items ---------- */
 .lib-store { display: grid; gap: 6px; }

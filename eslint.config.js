@@ -1,17 +1,19 @@
 /*
 ✒ Metadata
-    - Title: Lint Configuration (digiSpace Edition - v2.2)
+    - Title: Lint Configuration (digiSpace Edition - v2.18)
     - File Name: eslint.config.js
     - Relative Path: eslint.config.js
     - Artifact Type: config
-    - Version: 2.2.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Ignores
+      .claude/, where agents keep their working copies of the project.
     - 2.2.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Ignores
       the staged Pages copy in _site/.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Corrected
@@ -39,7 +41,7 @@
 import globals from 'globals';
 
 export default [
-  { ignores: ['vendor/**', 'node_modules/**', '_site/**'] },
+  { ignores: ['vendor/**', 'node_modules/**', '_site/**', '.claude/**'] },
   {
     files: ['js/**/*.js', 'eslint.config.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: { ...globals.browser } },

@@ -1,36 +1,41 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.7)
+    - Title: Diagnostics (digiSpace Edition - v2.18)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the insights fill the
+      pane's Now view, which counts them in the colour of the worst; the HUD's
+      alert, or opening the pane while a warning stands, shows Now, and
+      init() wires the Story's views.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       warnings and critical notices also light the head-up display's caution
       lights.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Insights
       render in the deck's Insights pane; the HUD alert opens that pane, and
       the summary on its tab is short: a count, or how many need checking.
-    - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — Recovery
-      from a blown-up run restarts the scene clean through restart().
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Evaluates each lab's diagnose() and the frame budget, and shows insights
-    with one-click fixes in the Diagnostics tile and a HUD alert chip.
+    with one-click fixes in the Insights pane's Now view and a HUD alert
+    chip. The pane's other view, the Story, is js/shell/story.js.
 
 ✒ Key Features:
     - Severity levels with glyphs; insights appear and leave without
       flicker.
     - Frame-time strip and solver, drawing and real-time numbers.
-    - The HUD alert reveals and flashes the Diagnostics tile.
+    - The HUD alert opens the Insights pane on its Now view, as opening the
+      pane does while a warning or critical notice stands.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -53,11 +58,14 @@ import { showPane } from './deck.js';
 import { showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
 import { hudCautions } from './headsup.js';
+import { initStory, openInsights, showView } from './story.js';
 
 /* ---------- diagnostics ---------- */
 export const insightsEl = $('#insights'), insightCards = new Map();
 export const LEVEL_RANK = { crit: 0, warn: 1, info: 2 }, LEVEL_TAG = { crit: 'Critical', warn: 'Warning', info: 'Insight' };
 export let lastAlertIds = new Set();
+// Whether a warning or critical notice stands, as the Insights tab's summary says ("2 critical", "3 to check").
+let alerting = false;
 export function sticky(ins, seconds = 10) { stickies.push({ ...ins, until: performance.now() + seconds * 1000, lab: active && active.id }); }
 export function globalInsights() {
   const out = [];
@@ -70,7 +78,7 @@ export function globalInsights() {
   if (perf.fps < 40 && perf.draw > 12) out.push({ id: 'perf-draw', level: 'info', title: 'Drawing is the bottleneck', body: `Each frame spends <b>${perf.draw.toFixed(1)} ms</b> drawing, so the display rather than the physics limits the frame rate. Large windows and dense scenes cost the most.`, fixes: active.drawFixes ? active.drawFixes() : [] });
   if (in3D(active) && perf.fps < 30 && cheaperTier()) {
     const next = cheaperTier();
-    out.push({ id: 'gfx-slow', level: 'info', title: 'This graphics tier is heavy here', body: `The 3D view is running at about <b>${Math.round(perf.fps)} fps</b>. A cheaper tier, or Auto in the Graphics menu, keeps it smooth.`, fixes: [{ label: `Use ${next[0].toUpperCase()}${next.slice(1)}`, run() { pickTier(next); } }, { label: 'Use Auto', run() { pickTier('auto'); } }] });
+    out.push({ id: 'gfx-slow', level: 'info', title: 'This graphics tier is heavy here', body: `The 3D view is running at about <b>${Math.round(perf.fps)} fps</b>. A cheaper tier, or Auto in the Graphics section of Settings, keeps it smooth.`, fixes: [{ label: `Use ${next[0].toUpperCase()}${next.slice(1)}`, run() { pickTier(next); } }, { label: 'Use Auto', run() { pickTier('auto'); } }] });
   }
   const now = performance.now();
   for (let i = stickies.length - 1; i >= 0; i--) if (stickies[i].until < now) stickies.splice(i, 1);
@@ -88,6 +96,7 @@ export function evaluateDiagnostics() {
   list.sort((a, b) => LEVEL_RANK[a.level] - LEVEL_RANK[b.level]);
   renderInsights(list);
   const alerts = list.filter(i => i.level !== 'info'), worst = alerts.length ? alerts[0].level : null;
+  alerting = alerts.length > 0;
   const btn = $('#hud-alert'), sum = $('#diag-sum');
   btn.hidden = !alerts.length;
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
@@ -98,6 +107,8 @@ export function evaluateDiagnostics() {
   sum.textContent = worst === 'crit' ? `${alerts.length} critical` : worst === 'warn' ? `${alerts.length} to check` : list.length ? String(list.length) : '';
   sum.title = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable, no insights';
   $('#dt-insights').setAttribute('aria-description', sum.title);
+  // The Now view counts what it holds, in the colour of the worst.
+  const nowN = $('#iv-now-n'); nowN.textContent = list.length ? String(list.length) : ''; nowN.dataset.level = worst || 'ok';
   const ids = new Set(alerts.map(a => a.id));
   for (const a of alerts) if (!lastAlertIds.has(a.id)) { announce(`${LEVEL_TAG[a.level]}: ${a.title}`); break; }
   lastAlertIds = ids;
@@ -165,5 +176,13 @@ export function updatePerfNums() {
 
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
-  $('#hud-alert').addEventListener('click', () => showPane('insights', { reveal: true }));
+  // The alert chip is about the run's state now, so it opens the Now view.
+  $('#hud-alert').addEventListener('click', () => { showView('now', { remember: false }); showPane('insights', { reveal: true }); });
+  // So does opening Insights by its tab, the keys or any other way while a warning stands: Now is where it is. That is
+  // not remembered as the view to open on, so with nothing to check Insights opens on the Story (or the view chosen).
+  const deck = $('#tile-deck');
+  new MutationObserver(recs => {
+    if (deck.dataset.pane === 'insights' && recs.some(r => r.oldValue !== 'insights')) openInsights(alerting);
+  }).observe(deck, { attributes: true, attributeFilter: ['data-pane'], attributeOldValue: true });
+  initStory();
 }

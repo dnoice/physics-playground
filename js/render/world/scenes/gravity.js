@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Scene (digiSpace Edition - v2.15)
+    - Title: Gravity Scene (digiSpace Edition - v2.18)
     - File Name: gravity.js
     - Relative Path: js/render/world/scenes/gravity.js
     - Artifact Type: javascript
-    - Version: 2.15.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,13 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for worlds shaped by their distance from their stars: each
+      world's climate reaches its material and blends into its look: lava in a
+      dark crust, a hothouse's pale deck, frost and ice caps that spread to a
+      snowball, an eyeball world's ice and dry noon, giants from ammonia bands
+      to white water clouds, clear blue skies and a dark envelope, and a glow
+      past the Draper point. A locked world keeps one face to what holds it.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A world
       seen against its star shows a thin ring of forward-scattered light round
       its night side, as Earth's does seen from the Moon in an eclipse, so it
@@ -21,11 +28,6 @@
       ice giants, Uranus and Neptune among them. A storm on about half the
       banded giants and a third of the calm ones, in the planet's own colours.
       Rings from the lab's ringed(), for gas giants of any mass.
-    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Orbits
-      from the lab's orbitCurve: smooth however near the camera passes, faded
-      where nearest it and back round from each body. In the Solar System
-      depth marks give way to orbits. Merge flashes are about half the size,
-      and many at once share their light.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,6 +46,11 @@
       dwarfs banded, sub-Neptunes and ice giants calm under a cool haze), in
       each body's own colour; a storm on some giants only, in the planet's own
       colours; close bodies move to a finer sphere in a second batch.
+    - Climate from the lab, in two instanced attributes: the local
+      temperature under the main star, lava and a dark crust, a hothouse's
+      pale deck, frost and ice caps to a snowball, an eyeball world's ice,
+      giants' cloud decks by temperature and a glow past the Draper point; a
+      locked world turns with its orbit to keep one face toward its star.
     - Up to three star lights, a soft terminator, a real night side, an
       atmospheric rim, a shell of air on close worlds and rings where the
       lab's ringed() gives them (on Saturn alone in the Solar System).
@@ -220,17 +227,18 @@ function createStarfield() {
 
 /* ---------- planets ---------- */
 const PLANET_VS = `
-  attribute vec4 aA, aB, aD; attribute vec3 aC;
+  attribute vec4 aA, aB, aD, aK, aH; attribute vec3 aC;
   uniform float uSpin;
   varying vec3 vW, vN, vO;
-  flat varying vec3 vTint, vX, vY, vZ; flat varying vec4 vA, vD; flat varying float vPx;
+  flat varying vec3 vTint, vX, vY, vZ; flat varying vec4 vA, vD, vK, vH; flat varying float vPx;
   void main() {
     vec3 n = position, Y = aB.xyz, X0 = normalize(cross(Y, abs(Y.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0))), Z0 = cross(X0, Y);
-    float a = aA.x * 6.2831853 + uSpin * aA.w, c = cos(a), s = sin(a);
+    // A world locked to what it orbits turns with its orbit: aH.w is the turn that keeps its +x toward it.
+    float a = aH.w > -50.0 ? aH.w : aA.x * 6.2831853 + uSpin * aA.w, c = cos(a), s = sin(a);
     vX = c * X0 - s * Z0; vY = Y; vZ = s * X0 + c * Z0;
     vO = vec3(dot(n, vX), dot(n, vY), dot(n, vZ));
     vec4 w = instanceMatrix * vec4(position, 1.0);
-    vW = w.xyz; vN = n; vTint = aC; vA = aA; vD = aD; vPx = aB.w;
+    vW = w.xyz; vN = n; vTint = aC; vA = aA; vD = aD; vK = aK; vH = aH; vPx = aB.w;
     gl_Position = projectionMatrix * viewMatrix * w;
   }`;
 const LIGHTING = `
@@ -275,11 +283,13 @@ const SURFACES = `
     alb += rock * 0.5 * rays;
     G = grad; spec = 0.03; gloss = 24.0;
   }
-  void ocean(vec3 p, float seed, vec3 tint, float oct, float px, float clock, inout vec3 alb, inout vec3 G, inout float spec, inout float gloss, inout float land, inout float cloud) {
+  /* xi is the sine of the latitude where the lab's climate puts the ice line (1.3 for none), lockIce the ice of a world
+     locked to its star, which lies where its local temperature is below freezing. */
+  void ocean(vec3 p, float seed, vec3 tint, float oct, float px, float clock, float xi, float lockIce, inout vec3 alb, inout vec3 G, inout float spec, inout float gloss, inout float land, inout float cloud) {
     vec4 h = fbmd(p * 1.5 + seed * 53.0, oct + 0.6);
     float e = h.x - 0.1 - 0.12 * fract(seed * 7.0), lat = abs(p.y), rough = noise(p * 3.0 + seed);
     land = smoothstep(0.0, 0.025, e);
-    float shelf = smoothstep(-0.16, 0.0, e), ice = smoothstep(0.78, 0.9, lat + 0.2 * fbm(p * 3.4 + seed * 11.0, min(oct, 4.0)));
+    float shelf = smoothstep(-0.16, 0.0, e), ice = max(smoothstep(xi - 0.1, xi + 0.02, lat + 0.2 * fbm(p * 3.4 + seed * 11.0, min(oct, 4.0))), lockIce);
     vec3 deep = tint * vec3(0.09, 0.15, 0.26) + vec3(0.002, 0.005, 0.016), shallow = tint * 0.3 + vec3(0.0, 0.025, 0.03);
     vec3 soil = mix(vec3(0.3, 0.23, 0.15), mix(vec3(0.07, 0.13, 0.08), tint * 0.22, 0.25), smoothstep(0.15, 0.6, 1.0 - lat - 0.5 * rough));
     soil = mix(soil, vec3(0.32, 0.29, 0.27), smoothstep(0.22, 0.42, e));
@@ -321,22 +331,72 @@ const SURFACES = `
     alb *= 1.0 - 0.3 * pow(abs(p.y), 3.0);
     spec = 0.02; gloss = 12.0;
   }`;
+const CLIMATE = `
+  /* Visible light from a surface at T kelvin: none below the Draper point (798 K), then a dull red that turns orange
+     and yellow and brightens steeply, as a blackbody's visible light does. */
+  vec3 heat(float T) {
+    float x = max(T - 798.0, 0.0) * 0.001;
+    return mix(vec3(1.0, 0.16, 0.03), vec3(1.0, 0.62, 0.3), smoothstep(0.2, 1.4, x)) * min(x * x * 1.2, 3.0);
+  }`;
 const PLANET_FS = `
   uniform float uOct, uSpin;
   varying vec3 vW, vN, vO;
-  flat varying vec3 vTint, vX, vY, vZ; flat varying vec4 vA, vD; flat varying float vPx;
+  flat varying vec3 vTint, vX, vY, vZ; flat varying vec4 vA, vD, vK, vH; flat varying float vPx;
   ${LIGHTING}
   ${NOISE}
   ${SURFACES}
+  ${CLIMATE}
   void main() {
     vec3 p = normalize(vO), Ng = normalize(vN), V = normalize(cameraPosition - vW), tint = vTint;
     float seed = vA.x, type = vA.y, px = vPx, oct = clamp(1.2 + log2(max(px, 1.0) / 4.0), 0.0, uOct), mu = max(dot(Ng, V), 0.0);
     vec3 alb = tint, G = vec3(0.0); float spec = 0.04, gloss = 24.0, land = 0.0, cloud = 0.0, atm = 0.08;
     vec3 atmC = mix(tint, vec3(0.5, 0.7, 1.0), 0.35);
+    // The lab's climate (its climate.js): the mean temperature vK.x, carried to the local one under the main star by
+    // T⁴ ∝ ε + 4(1 − ε)μ by day and ε by night (ε = vK.y); ice past the ice line vK.z, or below freezing (vH.x) on a
+    // world with one face to its star (vK.w); a runaway greenhouse's haze (vH.y) and the air on a rocky limb (vH.z).
+    float Tm = vK.x, eps = vK.y, face = vK.w, haze = vH.y, melt = 0.0;
+    float Tloc = Tm * pow(eps + 4.0 * (1.0 - eps) * max(dot(Ng, normalize(uL[0].xyz - vW)), 0.0), 0.25);
     if (px > 2.5) {
-      if (type < 0.5) { rocky(p, seed, tint, oct, px, alb, G, spec, gloss); atm = 0.06; }
-      else if (type < 1.5) { ocean(p, seed, tint, oct, px, uSpin, alb, G, spec, gloss, land, cloud); atm = 0.8; atmC = mix(vec3(0.3, 0.62, 1.0), tint, 0.3); }
-      else { float calm = step(2.5, type); giant(p, seed, tint, oct, uSpin, calm, alb, spec, gloss); atm = mix(0.5, 0.7, calm); atmC = mix(mix(tint, vec3(0.95, 0.82, 0.62), 0.4), mix(tint, vec3(0.7, 0.86, 1.0), 0.35), calm); }
+      float lockIce = vH.x > 0.0 && face > 0.5 ? smoothstep(vH.x + 4.0, vH.x - 4.0, Tloc + 14.0 * noise(p * 4.7 + seed * 13.0)) : 0.0;
+      if (type < 0.5) {
+        rocky(p, seed, tint, oct, px, alb, G, spec, gloss); atm = max(0.06, vH.z); atmC = mix(vec3(0.55, 0.72, 1.0), tint, 0.5);
+        // Frost and ice caps on a rocky planet too cold or too dry for open water.
+        if (vH.x > 0.0) {
+          float frost = face > 0.5 ? lockIce : smoothstep(vK.z - 0.1, vK.z + 0.02, abs(p.y) + 0.12 * noise(p * 5.3 + seed * 13.0));
+          alb = mix(alb, vec3(0.8, 0.84, 0.9), frost); G *= 1.0 - 0.7 * frost;
+        }
+      }
+      else if (type < 1.5) {
+        ocean(p, seed, tint, oct, px, uSpin, vK.z, lockIce, alb, G, spec, gloss, land, cloud); atm = 0.8; atmC = mix(vec3(0.3, 0.62, 1.0), tint, 0.3);
+        // Under a star that never sets, the middle of the day side is too hot for open water.
+        float dry = smoothstep(335.0, 375.0, Tloc) * face;
+        alb = mix(alb, vec3(0.44, 0.34, 0.24), dry); spec = mix(spec, 0.03, dry); cloud *= 1.0 - 0.7 * dry; land = max(land, dry);
+      }
+      else {
+        // A giant's look follows its cloud tops: ammonia bands when cold, paler the colder; white water clouds when
+        // temperate; a clear, deep sky with faint bands when warm; a dark, cloudless envelope when hot.
+        float calm = step(2.5, type), hotG = smoothstep(650.0, 1100.0, Tm), warmG = smoothstep(280.0, 420.0, Tm) * (1.0 - hotG), waterG = smoothstep(135.0, 175.0, Tm) * (1.0 - smoothstep(300.0, 400.0, Tm));
+        giant(p, seed, tint, oct, uSpin, max(calm, max(0.8 * warmG, hotG)), alb, spec, gloss);
+        alb = mix(alb, mix(alb, vec3(0.9, 0.9, 0.88), 0.55), waterG);
+        alb = mix(alb, mix(alb, vec3(0.86, 0.85, 0.78), 0.5), 0.35 * smoothstep(140.0, 70.0, Tm) * (1.0 - calm));
+        alb = mix(alb, mix(alb * 0.6, vec3(0.16, 0.3, 0.62), 0.6), 0.7 * warmG);
+        alb = mix(alb, alb * vec3(0.3, 0.25, 0.25) + vec3(0.015, 0.008, 0.008), hotG);
+        atm = mix(0.5, 0.7, calm); atmC = mix(mix(mix(tint, vec3(0.95, 0.82, 0.62), 0.4), mix(tint, vec3(0.7, 0.86, 1.0), 0.35), calm), vec3(1.0, 0.5, 0.25), hotG);
+      }
+      // Molten rock: the crust darkens where its star's heat passes about 1000 K, lava shows in its cracks where the
+      // rock melts and pools where it is hottest.
+      if (type < 1.5 && Tm > 450.0) {
+        float r1 = abs(noise(p * 4.3 + seed * 7.0)), r2 = abs(noise(p * 10.7 + seed * 3.0)), crust = smoothstep(650.0, 1000.0, Tm * pow(4.0 - 3.0 * eps, 0.25));
+        float crack = max(1.0 - smoothstep(0.015, 0.07, r1), 0.7 * (1.0 - smoothstep(0.015, 0.05, r2)));
+        melt = clamp(smoothstep(950.0, 1250.0, Tloc) * crack + smoothstep(1350.0, 1700.0, Tloc), 0.0, 1.0);
+        alb = mix(alb, alb * vec3(0.3, 0.28, 0.27), crust) * (1.0 - 0.85 * melt); G *= 1.0 - melt; spec = mix(spec, 0.08, melt);
+      }
+      // A runaway greenhouse hides the ground under a pale, faintly banded deck of cloud, as Venus's does.
+      if (haze > 0.0) {
+        float sw = noise(vec3(p.x * 1.6, p.y * 5.5, p.z * 1.6) + seed * 5.0 + vec3(uSpin * 0.15, 0.0, 0.0));
+        alb = mix(alb, mix(tint, vec3(0.93, 0.85, 0.66), 0.6) * (0.9 + 0.1 * sw), haze); G *= 1.0 - haze; spec = mix(spec, 0.01, haze); gloss = mix(gloss, 8.0, haze);
+        atm = mix(atm, 0.9, haze); atmC = mix(atmC, vec3(1.0, 0.86, 0.6), haze);
+      }
       alb = mix(tint * 0.75, alb, smoothstep(2.5, 7.0, px));
     }
     vec3 No = normalize(p - 0.9 * (G - dot(G, p) * p)), N = normalize(vX * No.x + vY * No.y + vZ * No.z);
@@ -373,7 +433,9 @@ const PLANET_FS = `
       col += surface; day = max(day, lit);
     }
     // The night side: dark, but for city light on land under oceanic skies.
-    if (land > 0.0 && px > 30.0) { float c = smoothstep(0.42, 0.62, noise(p * 44.0 + seed)) * smoothstep(-0.05, 0.3, noise(p * 7.0 + seed * 5.0)); col += vec3(1.0, 0.62, 0.26) * 0.09 * c * land * (1.0 - cloud) * (1.0 - day); }
+    if (land > 0.0 && px > 30.0 && Tm > 250.0 && Tm < 330.0) { float c = smoothstep(0.42, 0.62, noise(p * 44.0 + seed)) * smoothstep(-0.05, 0.3, noise(p * 7.0 + seed * 5.0)); col += vec3(1.0, 0.62, 0.26) * 0.09 * c * land * (1.0 - cloud) * (1.0 - day); }
+    // Its own heat: the night side of a very hot world glows, and lava brighter than the crust about it.
+    col += (heat(Tloc) + heat(Tloc + 350.0) * melt) * (1.0 - 0.8 * haze);
     // At a few pixels a body is a coloured point: its tint must survive any phase.
     float tiny = 1.0 - smoothstep(3.0, 9.0, px);
     col = max(col, (tint * 1.15 + 0.03) * (0.5 + 0.8 * day) * tiny);
@@ -382,25 +444,26 @@ const PLANET_FS = `
   }`;
 /* A shell of lit air outside the silhouette of close worlds, its depth found from the ray's height above the surface. */
 const ATMO_VS = `
-  attribute vec4 aA, aB; attribute vec3 aC;
-  varying vec3 vW, vN; flat varying vec3 vTint; flat varying vec4 vA;
+  attribute vec4 aA, aB, aH; attribute vec3 aC;
+  varying vec3 vW, vN; flat varying vec3 vTint; flat varying vec4 vA; flat varying float vHaze;
   void main() {
-    float k = aA.y < 0.5 ? 1.0 : aA.y < 1.5 ? 1.05 : 1.035;
+    float k = aA.y < 0.5 ? 1.04 : aA.y < 1.5 ? 1.05 : 1.035;
     vec4 w = instanceMatrix * vec4(position * k, 1.0);
-    vW = w.xyz; vN = position; vTint = aC; vA = aA;
+    vW = w.xyz; vN = position; vTint = aC; vA = aA; vHaze = aH.y;
     gl_Position = projectionMatrix * viewMatrix * w;
   }`;
 const ATMO_FS = `
-  varying vec3 vW, vN; flat varying vec3 vTint; flat varying vec4 vA;
+  varying vec3 vW, vN; flat varying vec3 vTint; flat varying vec4 vA; flat varying float vHaze;
   ${LIGHTING}
   void main() {
     float type = vA.y;
-    if (type < 0.5) discard;
-    float K = type < 1.5 ? 1.05 : 1.035;
+    // Bare rock has no shell; a runaway greenhouse's thick, pale air has one.
+    if (type < 0.5 && vHaze < 0.5) discard;
+    float K = type < 0.5 ? 1.04 : type < 1.5 ? 1.05 : 1.035;
     vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
     float mu = abs(dot(N, V)), h = K * sqrt(max(1.0 - mu * mu, 0.0)), t = clamp((h - 1.0) / (K - 1.0), 0.0, 1.0);
     float dens = exp(-t * 4.2) * (1.0 - t) * (1.0 - t);
-    vec3 atmC = type < 1.5 ? mix(vec3(0.3, 0.62, 1.0), vTint, 0.3) : type < 2.5 ? mix(vTint, vec3(0.95, 0.82, 0.62), 0.4) : mix(vTint, vec3(0.7, 0.86, 1.0), 0.35), col = vec3(0.0);
+    vec3 atmC = type < 0.5 ? mix(vTint, vec3(1.0, 0.86, 0.6), 0.65) : type < 1.5 ? mix(vec3(0.3, 0.62, 1.0), vTint, 0.3) : type < 2.5 ? mix(vTint, vec3(0.95, 0.82, 0.62), 0.4) : mix(vTint, vec3(0.7, 0.86, 1.0), 0.35), col = vec3(0.0);
     for (int i = 0; i < uLN; i++) {
       vec3 Lv = uL[i].xyz - vW; float dist = length(Lv); vec3 L = Lv / dist, lc = uLC[i].rgb * uL[i].w / (1.0 + dist / uFall);
       float ng = dot(N, L), lit = smoothstep(-0.32, 0.3, ng), edge = exp(-ng * ng * 12.0), fwd = pow(max(dot(V, -L), 0.0), 7.0);
@@ -587,6 +650,8 @@ export function createScene(E, lab) {
   };
   const withAxis = batch => {
     for (const k of ['B', 'D']) { batch[k] = new THREE.InstancedBufferAttribute(new Float32Array(batch.cap * 4), 4).setUsage(THREE.DynamicDrawUsage); batch.g.setAttribute('a' + k, batch[k]); }
+    // Each world's climate: aK its temperature, ε, ice line and lock to its star; aH its freezing point, haze, air and turn.
+    for (const k of ['K', 'H']) { batch[k] = new THREE.InstancedBufferAttribute(new Float32Array(batch.cap * 4), 4).setUsage(THREE.DynamicDrawUsage); batch.g.setAttribute('a' + k, batch[k]); }
     return batch;
   };
   const put = (b, x, y, z, s) => {
@@ -601,6 +666,7 @@ export function createScene(E, lab) {
     b.A.clearUpdateRanges(); b.A.addUpdateRange(0, b.n * 4); b.A.needsUpdate = true;
     b.C.clearUpdateRanges(); b.C.addUpdateRange(0, b.n * 3); b.C.needsUpdate = true;
     if (b.B) { b.B.clearUpdateRanges(); b.B.addUpdateRange(0, b.n * 4); b.B.needsUpdate = true; }
+    if (b.K) { b.K.clearUpdateRanges(); b.K.addUpdateRange(0, b.n * 4); b.K.needsUpdate = true; b.H.clearUpdateRanges(); b.H.addUpdateRange(0, b.n * 4); b.H.needsUpdate = true; }
     if (b === nearPlanets) { b.D.clearUpdateRanges(); b.D.addUpdateRange(0, b.n * 4); b.D.needsUpdate = true; }
   };
   const planetMat = new THREE.ShaderMaterial({ uniforms: L, vertexShader: PLANET_VS, fragmentShader: PLANET_FS });
@@ -637,6 +703,33 @@ export function createScene(E, lab) {
     m[o] = qx * s2; m[o + 1] = qy * s2; m[o + 2] = qz * s2; m[o + 4] = ax * s2; m[o + 5] = ay * s2; m[o + 6] = az * s2; m[o + 8] = wx * s2; m[o + 9] = wy * s2; m[o + 10] = wz * s2;
     batch.A.array[j * 4] = f.seed; batch.A.array[j * 4 + 3] = rPx; batch.C.array[j * 3] = c[0]; batch.C.array[j * 3 + 1] = c[1]; batch.C.array[j * 3 + 2] = c[2];
   };
+  /* A world's climate into its batch, as the lab keeps it (see its climate.js): the look it renders with, how fast it
+     turns, its temperatures, ice line, freezing point, haze and air, and for one locked to what it orbits, the axis and
+     turn that keep one face toward it. AXIS gets the axis used, so its rings share it. */
+  const AXIS = { seed: 0, ax: 0, ay: 1, az: 0 };
+  function climateInto(batch, i, b, f) {
+    const C = lab.climateOf(b), P = C.lock, o = i * 4, A = batch.A.array, Bx = batch.B.array, K = batch.K.array, H = batch.H.array;
+    let ax = f.ax, ay = f.ay, az = f.az, turn = -100;
+    if (P) {
+      // Its pole is its orbit's about what holds it, and the turn points its +x at that body, built on the same X0 and
+      // Z0 as the vertex shader.
+      const rx = P.x - b.x, ry = P.z - b.z, rz = P.y - b.y, ux = P.vx - b.vx, uy = P.vz - b.vz, uz = P.vy - b.vy;
+      const nx = ry * uz - rz * uy, ny = rz * ux - rx * uz, nz = rx * uy - ry * ux, nl = Math.hypot(nx, ny, nz);
+      if (nl > 0) {
+        ax = nx / nl; ay = ny / nl; az = nz / nl;
+        const up = Math.abs(ay) < 0.9, cx = up ? -az : 0, cy = up ? 0 : az, cz = up ? ax : -ay, cl = Math.hypot(cx, cy, cz) || 1, qx = cx / cl, qy = cy / cl, qz = cz / cl;
+        const zx = qy * az - qz * ay, zy = qz * ax - qx * az, zz = qx * ay - qy * ax;
+        turn = Math.atan2(-(rx * zx + ry * zy + rz * zz), rx * qx + ry * qy + rz * qz);
+      }
+    }
+    // A rocky world that holds oceans takes their blue, so its seas are not the colour of its rock.
+    if (C.type === 1 && lab.surfaceOf(b) === 0) { const T = batch.C.array, sea = tintOf('rgb(74,138,222)'); for (let j = 0; j < 3; j++) T[i * 3 + j] += (sea[j] - T[i * 3 + j]) * 0.6; }
+    A[o + 1] = C.type; A[o + 3] = f.rate * (C.spin === 'free' ? 1 : 0.25);
+    Bx[o] = ax; Bx[o + 1] = ay; Bx[o + 2] = az;
+    K[o] = C.T; K[o + 1] = C.eps; K[o + 2] = C.xIce; K[o + 3] = C.toStar ? 1 : 0;
+    H[o] = C.planet ? C.freeze : 0; H[o + 1] = C.haze; H[o + 2] = C.rim; H[o + 3] = turn;
+    AXIS.seed = f.seed; AXIS.ax = ax; AXIS.ay = ay; AXIS.az = az;
+  }
   /* Three-quarter lit by the brightest star, so the terminator shows. */
   function portrait(l) {
     const b = l.bodies.find(q => q.id === l.track); if (!b) return null;
@@ -652,7 +745,8 @@ export function createScene(E, lab) {
       P.A.array[0] = f.seed; P.A.array[1] = type; P.A.array[2] = ringed ? 1 : 0; P.A.array[3] = f.rate;
       P.B.array[0] = f.ax; P.B.array[1] = f.ay; P.B.array[2] = f.az; P.B.array[3] = RPX;
       P.C.array[i * 3] = c[0]; P.C.array[i * 3 + 1] = c[1]; P.C.array[i * 3 + 2] = c[2];
-      if (ringed) writeRing(solo.ring, X, Y, Z, r, f, c, RPX);
+      climateInto(P, i, b, f);
+      if (ringed) writeRing(solo.ring, X, Y, Z, r, AXIS, c, RPX);
     }
     flush(solo.planet); flush(solo.star); flush(solo.ring);
     solo.atmo.count = solo.planet.n; solo.atmo.visible = solo.planet.n > 0;
@@ -787,8 +881,9 @@ export function createScene(E, lab) {
         A[i * 4] = f.seed; A[i * 4 + 1] = type; A[i * 4 + 2] = ring; A[i * 4 + 3] = f.rate;
         Bx[i * 4] = f.ax; Bx[i * 4 + 1] = f.ay; Bx[i * 4 + 2] = f.az; Bx[i * 4 + 3] = rPx;
         C[i * 3] = c[0]; C[i * 3 + 1] = c[1]; C[i * 3 + 2] = c[2];
+        climateInto(batch, i, b, f);
         if (ring) {
-          writeRing(rings, X, Y, Z, s, f, c, rPx);
+          writeRing(rings, X, Y, Z, s, AXIS, c, rPx);
         }
         // The belts' marks would hide the planets', and a moon's would reach from its planet to the ecliptic: only
         // bodies with mass or a name drop one, and never a moon. In the Solar System the orbits, when drawn, show

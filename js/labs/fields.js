@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.17)
+    - Title: Fields Lab (digiSpace Edition - v2.18)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      tracked particle, framed round its circle in a magnetic field, the swarm
+      and the charges for the director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
       records the world, k, B and its gradient, E₀, the probe and every
       charge; the potential and tracked energies get their real units and SI
@@ -21,10 +25,6 @@
       dictionary for datasets and particle tracks: each column's unit, meaning
       and SI factor, and a note on coordinates, scale and the 64-particle
       limit.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: probe field and potential, particles and E × B drift on its
-      tape, and the charted particle as its target, riding the field's relief
-      in 3D.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -230,6 +230,21 @@ export const fields = {
     return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, focus: 'Kinetic energy per mass', title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', fmtQ(this, 'speed', Math.hypot(this.vx[i], this.vy[i])), 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? fmtQ(this, 'len', Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)) : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
   deselect() { this.picked = false; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the tracked particle, framed round the
+     circle a magnetic field bends it into (centred on its guiding centre, which drifts slowly while the particle
+     whirls), then the swarm of test particles and the charges that drive them. */
+  interest() {
+    const out = [], n = this.n, i = this.indexOf(this.track), C = this.charges;
+    const spread = (len, at) => { let x = 0, y = 0, r = 0; for (let k = 0; k < len; k++) { const p = at(k); x += p[0] / len; y += p[1] / len; } for (let k = 0; k < len; k++) { const p = at(k); r = Math.max(r, Math.hypot(p[0] - x, p[1] - y)); } return { x, y, r }; };
+    if (i >= 0) {
+      // The Boris step turns v by qm·B·(vy, −vx), so the centre of the circle lies (vy, −vx) / (qm·B) away.
+      const vx = this.vx[i], vy = this.vy[i], v = Math.hypot(vx, vy), qB = this.qm[i] * this.Bz(this.y[i]), turns = Math.abs(qB) > 1e-9 && v / Math.abs(qB) < Math.max(this.w, this.h);
+      out.push({ x: clamp(this.x[i] + (turns ? vy / qB : 0), 0, this.w), y: clamp(this.y[i] - (turns ? vx / qB : 0), 0, this.h), r: Math.max(40, turns ? v / Math.abs(qB) * 1.6 : v * 0.8), w: 0.7, key: `p:${this.track}`, label: 'The tracked particle' });
+    }
+    if (n > 2) { const c = spread(n, k => [this.x[k], this.y[k]]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.2, 60), w: 0.35, key: 'swarm', label: 'The particles' }); }
+    if (C.length) { const c = spread(C.length, k => [C[k].x, C[k].y]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.3, 80), w: 0.3, key: 'charges', label: C.length > 1 ? 'The charges' : 'The charge' }); }
+    return out;
+  },
   /* The head-up display: its readings, and the charted particle in stage pixels, riding the field's relief in 3D. */
   hud: [['Probe |E|', 'PROBE |E|'], ['Probe potential V', 'PROBE V'], ['Test particles', 'PARTICLES'], ['E × B drift speed E/B', 'DRIFT E/B']],
   hudTarget(three) {

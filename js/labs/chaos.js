@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.17)
+    - Title: Chaos Lab (digiSpace Edition - v2.18)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      pendulum tips, where the copies part and the copies on the phase map for
+      the director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
       records the arms, bobs, g, the spread between copies as the code applies
       it (each lower angle δ₀ beyond the last) and every copy's starting
@@ -19,10 +23,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and per-copy tracks: each column's unit, meaning
       and SI factor, and a note on the pendulum's units.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: energy, drift, Lyapunov estimate and divergence on its tape,
-      and the selected copy as its target: its lower bob, or its dot in the
-      Phase map view.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -342,6 +342,26 @@ export const pendulum = {
       actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
   },
   deselect() { this.sel = -1; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the front pendulum's tip, where every
+     copy's tip is (strong once the copies have parted), and in the views with the map, the copies' dots on it. */
+  interest() {
+    const out = [], N = this.N, s = this.s, v = this.p.view, S = this.scale;
+    if (!N) return out;
+    const spread = (xs, ys) => { let x = 0, y = 0, r = 0; for (let i = 0; i < N; i++) { x += xs[i] / N; y += ys[i] / N; } for (let i = 0; i < N; i++) r = Math.max(r, Math.hypot(xs[i] - x, ys[i] - y)); return { x, y, r }; };
+    const xs = new Float64Array(N), ys = new Float64Array(N);
+    if (v !== 'phase') {
+      for (let i = 0; i < N; i++) { const b = this.bobs(i); xs[i] = b.x2; ys[i] = b.y2; }
+      out.push({ x: xs[0], y: ys[0], r: S * (0.35 + 0.5 * this.p.len), w: 0.4, key: 'tip', label: 'The pendulum tips' });
+      if (N > 1) { const c = spread(xs, ys); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.25, S * 0.3), w: Number.isFinite(this.divergeAt) ? 0.7 : 0.25, key: 'spread', label: 'Where the copies part' }); }
+    }
+    if (v !== 'pend') {
+      const q = this.sq;
+      for (let i = 0; i < N; i++) { xs[i] = q.x0 + (wrapAngle(s[i * 4]) + Math.PI) / TAU * q.S; ys[i] = q.y0 + (Math.PI - wrapAngle(s[i * 4 + 1])) / TAU * q.S; }
+      const c = spread(xs, ys);
+      out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.3, q.S * 0.15), w: v === 'phase' ? 0.55 : 0.45, key: 'map', label: 'The copies on the phase map' });
+    }
+    return out;
+  },
   /* The head-up display: its readings, and the selected copy in stage pixels: its lower bob where the pendulums
      show, its dot on the map in the Phase map view. */
   hud: [['Energy E (front pendulum)', 'ENERGY E'], ['Energy drift', 'E DRIFT'], ['Lyapunov estimate λ', 'LYAPUNOV λ'], ['Copies diverged (δ ≥ 0.1)', 'DIVERGED']],

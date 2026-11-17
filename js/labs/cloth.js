@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.17)
+    - Title: Cloth Lab (digiSpace Edition - v2.18)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the tear
+      or the most strained weave and the free edge the wind blows for the
+      director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tracks
       follow every third point along each row and column of the weave and
       every pinned point (column, row, pin, position, velocity), where Cloth
@@ -20,9 +24,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets: each column's unit, meaning and SI factor, and
       a note on coordinates and scale.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: mean and peak stretch, torn links and tearing rate on its tape;
-      with nothing to select, no target.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -354,6 +355,31 @@ export const cloth = {
     for (let i = 0; i < this.n; i++) g.fillRect(this.x[i] - r, this.y[i] - r, 2 * r, 2 * r);
   },
   pins() { let p = 0; for (let i = 0; i < this.n; i++) p += this.pin[i]; return p; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the most strained part of the weave
+     (the tear, while links are giving way) and the free edge that moves most, the wind-blown edge when there is wind. */
+  interest() {
+    const out = [], X = this.x, Y = this.y, la = this.la, lb = this.lb, rest = this.rest, alive = this.alive, sp = this.sp0, L = this.L;
+    let top = 0;
+    for (let k = 0; k < L; k++) if (alive[k]) { const q = Math.hypot(X[lb[k]] - X[la[k]], Y[lb[k]] - Y[la[k]]) / rest[k]; if (q > top) top = q; }
+    if (top > 1) {
+      const cut = 1 + (top - 1) * 0.8, lim = this.p.tearable ? this.p.tear : 3, tearing = this.tearRate > 0;
+      const hot = k => alive[k] && Math.hypot(X[lb[k]] - X[la[k]], Y[lb[k]] - Y[la[k]]) / rest[k] >= cut;
+      let n = 0, x = 0, y = 0, r = 0;
+      for (let k = 0; k < L; k++) if (hot(k)) { n++; x += (X[la[k]] + X[lb[k]]) / 2; y += (Y[la[k]] + Y[lb[k]]) / 2; }
+      if (n) { x /= n; y /= n; }
+      for (let k = 0; k < L; k++) if (hot(k)) r = Math.max(r, Math.hypot((X[la[k]] + X[lb[k]]) / 2 - x, (Y[la[k]] + Y[lb[k]]) / 2 - y));
+      if (n) out.push({ x, y, r: Math.max(r * 1.4, sp * 4), w: tearing ? 0.9 : clamp((top - 1) / (lim - 1) * 0.8, 0.05, 0.7), key: 'strain', label: tearing ? 'The tear' : 'The most strained weave' });
+    }
+    const cols = this.cols, rows = this.rows, OX = this.ox, OY = this.oy;
+    let best = null;
+    for (const [i0, step, count] of [[(rows - 1) * cols, 1, cols], [cols - 1, cols, rows], [0, cols, rows], [0, 1, cols]]) {
+      let pin = 0, m = 0, x = 0, y = 0;
+      for (let j = 0, i = i0; j < count; j++, i += step) { pin += this.pin[i]; m += Math.hypot(X[i] - OX[i], Y[i] - OY[i]) / count; x += X[i] / count; y += Y[i] / count; }
+      if (!pin && count > 1 && (!best || m > best.m)) best = { m, x, y, r: count * sp * 0.45 };
+    }
+    if (best) out.push({ x: best.x, y: best.y, r: Math.max(best.r, sp * 4), w: this.p.wind ? 0.5 : clamp(best.m / this.dt() / 300, 0.05, 0.4), key: 'edge', label: this.p.wind ? 'The wind-blown edge' : 'The free edge' });
+    return out;
+  },
   // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
   primary: ['Mean stretch', 'Peak stretch'],
   // The head-up display's readings; Cloth has nothing to select, so it has no target.

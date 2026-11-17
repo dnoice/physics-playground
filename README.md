@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.17)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.17.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,18 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
+      from starlight under Planet classes, with its table of climates; the
+      climate in Our Solar System, in the 3D table's Gravity row and in the
+      per-body tracks. On Dennis's call for Insights that narrate the run: the
+      Story under What you can do and in the Instruments, the narrator in the
+      labs' summary, and The story of a run, what each lab's narrator tells.
+      On Dennis's call for one settings dialog: Settings and its openers under
+      Using the workspace, Shift+S in the keyboard table, and graphics
+      settings of one's own under Graphics tiers. On Dennis's call for
+      recordings shot like a film: The director's camera under Capturing runs,
+      with what it films in each lab, what your hand on the camera does,
+      Preview direction, and why there is no background mode.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0: what each lab tracks and what its README records of the scene.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -130,8 +142,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.17.0-0e7490?style=flat-square&labelColor=0c1118"
-      alt="Release 2.17.0">
+    <img src="https://img.shields.io/badge/release-v2.18.0-0e7490?style=flat-square&labelColor=0c1118"
+      alt="Release 2.18.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -199,12 +211,17 @@ capture what happens.
 - **Measure and inspect the run.** Plot readings, select objects to see
   their live figures, and use insights to understand unusual settings and
   apply suggested fixes.
+- **Follow the story of the run.** Each lab narrates what happens as it
+  happens, in plain physics with real numbers: a giant pulling the star off
+  centre, a close pass and its slingshot, a gas relaxing to
+  Maxwell–Boltzmann, fringes forming, copies of a pendulum parting.
 - **See key information on the stage.** The head-up display shows readings,
   warnings and details for the selected object without covering the
   simulation controls.
 - **Run guided experiments** with live checks of the claims they test.
 - **Capture and revisit results** with rewind, WebM video, CSV datasets and
-  saved states in the library.
+  saved states in the library. A director's camera can film a clip for you,
+  with wide shots, slow pans, dollies and orbits onto what is happening.
 - **Choose your units**: metric, US customary or the simulation’s own
   units.
 
@@ -212,7 +229,8 @@ Gravity also includes **Our Solar System**, a scene with real planetary
 masses, sizes and orbits, plus moons, dwarf planets, Halley’s comet and
 samples from the asteroid and Kuiper belts. The run begins at noon on
 1 January 2000. Every world in Gravity belongs to one of the five
-[planet classes](#planet-classes) of its research reference.
+[planet classes](#planet-classes) of its research reference, and takes its
+[climate](#climate-from-starlight) from the starlight it receives.
 
 ## The labs
 
@@ -277,8 +295,9 @@ pictured below; each image is a 3D capture from the playground.
 | 6 | Cloth | Verlet cloth that stretches, tears and can be cut | Curtain, Hammock, Flag in wind, Fragile net |
 | 7 | Fields | Point charges, electric potential, field lines and the Lorentz force | Dipole, Quadrupole, Parallel plates, Cyclotron motion, E × B drift, Grad-B drift |
 
-Every lab includes live readings, diagnostics with suggested fixes, and a
-Math page that connects its formulas to the simulation. Each also has
+Every lab includes live readings, a narrator that tells the story of the
+run, diagnostics with suggested fixes, and a Math page that connects its
+formulas to the simulation. Each also has
 guided experiments with live progress checks. All labs except Cloth have
 a running chart.
 
@@ -319,9 +338,10 @@ To explore it:
 - **Click a planet** to follow it, then zoom in. Its moons appear as soon
   as the zoom draws them clear of the planet. Inspect gives the planet's
   distance from the Sun, its period and its tilt from the ecliptic, and its
-  real radius, density, gravity, escape speed and Hill sphere. Click a moon
-  to see its orbit about its planet, and the Roche limit it must keep clear
-  of: Phobos is already inside Mars's.
+  real radius, density, gravity, escape speed and Hill sphere, then its
+  climate: the sunlight it gets, its temperatures, its air and its spin.
+  Click a moon to see its orbit about its planet, and the Roche limit it
+  must keep clear of: Phobos is already inside Mars's.
 - **Orbits** and **Names**, under Display, draw each named body's ellipse
   and name. Each orbit is brightest at its body and fades back round, so it
   shows which way the body goes. The orbits stay smooth even when the 3D
@@ -406,13 +426,61 @@ reference adds brown dwarfs and stars above them:
   are calm and hazy like Uranus and Neptune. Gas giants are banded, some
   carry a storm in their own colours, and about two in five wear rings.
 - **The Star system** shows every class at once: a grey rock on an eccentric
-  orbit, a rust super-Earth, an ocean world at 1 AU, a lavender sub-Neptune,
+  orbit, a super-Earth inside the runaway limit whose oceans have boiled into
+  a pale, Venus-like sky, an ocean world at 1 AU, a lavender sub-Neptune,
   a banded giant, a ringed pale giant and a deep blue ice giant. Each giant
   has a moon, and a comet dives through the inner system.
 
 The stage still draws every world larger than life, so it can be seen;
 Inspect gives the size it would really have. `tests/planets.py` checks
 each class and figure against the reference's own data.
+
+### Climate from starlight
+
+A world's climate comes from where it stands. Every star shines by its mass,
+as the main-sequence mass–luminosity relation gives it (the Sun is 1), and
+each world receives the sum of every star's light over the square of its
+distance: binaries and crowded skies work. From that:
+
+- **Equilibrium temperature**, 278.6 K × S^¼ × (1 − A)^¼, with S the
+  starlight in Earth's units and A the share it reflects. Our Solar System
+  lands on the textbook values: Mercury 440 K, Venus 230, Earth 255, Mars
+  210, Jupiter 110 and Neptune 47 at their mean distances.
+- **Air.** A rocky world keeps its air while its starlight stays inside the
+  cosmic shoreline for its escape speed, so Mercury and the Moon are bare
+  and Mars barely clothed. Past 1.06 times Earth's starlight, oceans boil
+  into a runaway greenhouse.
+- **Surface temperature.** Air traps heat as a grey greenhouse: Earth sits
+  at 288 K and Venus at 737 K. Giants add the heat they still give off, so
+  Jupiter's cloud tops are at about 124 K. A surface follows a change of
+  starlight over a week (bare rock) to half a year (Venus), so an eccentric
+  orbit has seasons and a world pushed toward its star warms over time.
+- **Day and night.** Air and spin carry heat round to the night side. A
+  world with neither, like the Moon, swings from 380 K at noon to 100 K at
+  night.
+- **Spin.** Tides lock a world when they would stop its spin within a tenth
+  of the Solar System's age (Gladman et al. 1996): the Moon to Earth, a
+  close-in planet to its star. Mercury, on its eccentric orbit, keeps a
+  3:2 resonance instead.
+
+The climates it adds up to, in 2D and 3D alike:
+
+| Climate | Where | What you see |
+| --- | --- | --- |
+| Molten | Day side above 1000 K | A dark crust, lava glowing in its cracks |
+| Hothouse | Inside the runaway limit, with air | A pale, Venus-like deck of cloud |
+| Temperate | Liquid water, about 260 to 330 K | Oceans, clouds and small ice caps |
+| Cold, then frozen | Ice line spreading toward the equator | Ice caps that grow until the world is a snowball |
+| Eyeball | One face locked to its star | Open water under the star, ice across the night side |
+| Hot, bare or dry | Too hot, too small or too thin-aired for water | Bare rock, or polar frost under thin air like Mars's |
+| Giants | Cold to hot | Ammonia bands, white water clouds, a clear blue sky, then a dark envelope with a glowing night side |
+
+Follow any world to read its starlight (in Earth's units and W/m²), its
+equilibrium and surface temperatures (in K, with °C or °F), its air, its
+climate and its spin in Inspect, each with a line on why. The per-body
+tracks of a dataset carry its temperature and starlight. `tests/planets.py`
+and `tests/solar.py` check the climates, the lag and the Solar System's
+temperatures.
 
 ## Quick start
 
@@ -449,7 +517,7 @@ load, the workspace stays in 2D and says why.
 
 | Lab | In 3D |
 | --- | --- |
-| Gravity | Open space: a nebula, plasma stars, and worlds that vary within their planet class: rocky terrestrials and super-Earths, ocean worlds, calm hazy sub-Neptunes and ice giants, banded gas giants in several hues, some ringed, some stormy |
+| Gravity | Open space: a nebula, plasma stars, and worlds that vary within their planet class: rocky terrestrials and super-Earths, ocean worlds, calm hazy sub-Neptunes and ice giants, banded gas giants in several hues, some ringed, some stormy; each dressed by its climate, from glowing lava and pale hothouse skies to oceans, ice caps, snowballs and eyeball worlds locked to their stars |
 | Collisions | A slate air table in walnut and brass, which tilts when gravity is on |
 | Fluid | A glass aquarium of real-looking liquid, with refraction and caustics |
 | Waves | A walnut ripple tank with projected caustics and a screen graphing the fringes |
@@ -474,8 +542,8 @@ its night side, scattered forward through its air.
 
 ### Graphics tiers
 
-The **Graphics** button beside the switch sets how much the 3D mode asks of
-your machine.
+The **Graphics** button beside the switch opens Settings at its Graphics
+section, which sets how much the 3D mode asks of your machine.
 
 | Tier | Resolution | Antialiasing | Shadows | Reflections | Textures | Studio light | Meant for |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -497,11 +565,26 @@ cheapest of four verdicts on
 - the memory the browser reports;
 - the largest texture the GPU takes.
 
-The Graphics menu names the part that set it. Auto then adjusts to the frame
-rate. It steps down when frames run long and back up when there is room. If a step
-down buys nothing, it undoes it and stops adapting, because the limit is then
-the solver or the display rather than the GPU. The Insights pane says when
+The Graphics section shows each verdict and names the part that set it. Auto
+then adjusts to the frame rate. It steps down when frames run long and back up
+when there is room. If a step down buys nothing, it undoes it and stops
+adapting, because the limit is then the solver or the display rather than the
+GPU. The Insights pane says when
 Auto changes tier, and offers a cheaper tier when a fixed one runs slowly.
+
+**Settings of your own.** Under the tiers, any part of the budget can be set
+apart from the tier: resolution, antialiasing, mesh detail, bloom, film
+grade, the shadow map and its softness, fill and bounce light, haze, contact
+shadows, environment light, texture size and filtering, and floor
+reflections.
+
+- Each card shows the tier's own value beside your choice.
+- A setting of your own is marked **Yours** and has its own reset;
+  **Reset to tier** clears them all.
+- Your settings hold whichever tier is in use, Auto's included, and apply at
+  once.
+- They are kept in this browser.
+- Nothing above what your GPU reports is offered.
 
 ## Using the workspace
 
@@ -524,11 +607,19 @@ full-height Inspector beside them.
   lines over the simulation. A tape down the left edge carries the lab's key
   readings, each with its trend and a short trace; caution lights near the
   top carry the warnings; and selecting an object puts a target box on it,
-  following it in 2D and 3D, with a callout of its figures. The **HUD** menu
-  in the top bar sets its opacity (40 %, 60 %, 80 % or 100 %) and turns each
-  part on or off; **Shift+H** shows or hides it. Your choice is remembered.
+  following it in 2D and 3D, with a callout of its figures. The **HUD**
+  button in the top bar opens its section of Settings, which sets its opacity
+  (40 %, 60 %, 80 % or 100 %) and turns each part on or off; **Shift+H**
+  shows or hides it. Your choice is remembered.
   The display never takes a click, and screen readers get the same figures
   from Telemetry, Insights and Inspect.
+- **Settings**: the gear at the right of the top bar, or **Shift+S**, opens
+  one dialog with four sections: Graphics, Units, Head-up display and
+  Keyboard. The Graphics, Units, HUD and keyboard buttons beside it open it
+  at their own section, as do **U** and **?**, which close it when pressed
+  again. Tab stays inside it, Esc closes it and puts you back
+  where you were, and on a phone it fills the screen. Everything in it is
+  kept in this browser.
 - **Player bar**: play, step, reset, speed, the rewind timeline, and the video,
   data and save buttons.
 - **Instruments**: three panes over one header.
@@ -544,9 +635,15 @@ full-height Inspector beside them.
     figure's chart button plots it under Telemetry beside the readings.
     Settings stay in Controls; the card offers only actions on the object
     itself, such as remove or follow.
-  - **Insights**: what the run is doing and why a setting misbehaves, each
-    with its fix, beside the frame-timing strip. Its tab shows the count, and
-    the top alert and its fix stay in the header whichever pane is open.
+  - **Insights**: two views, side by side in the header. **Story** is the
+    lab's narrator: the moments it has noticed, newest first and stamped with
+    simulated time, each saying what happened and why, with the numbers, and
+    a **Show me** that follows, selects or frames what it is about (see The
+    story of a run below). **Now** is what the run is doing and why a setting
+    misbehaves, each with its fix, beside the frame-timing strip. The tab
+    shows the count of insights and, in amber, how many moments are new; the
+    top alert and its fix stay in the header whichever pane is open, and the
+    HUD's alert opens Now.
 
   The button at the right of the header steps the deck through compact,
   standard and tall, and the grip on its top edge drags it to any height
@@ -579,10 +676,32 @@ full-height Inspector beside them.
   selection. Gravity shows a rendered portrait of the body and its orbit:
   distance, period, eccentricity and inclination.
 
+### The story of a run
+
+Each lab has a narrator. Four times a second it looks at the run, compares it
+with its last look and, when something happens, adds a moment to the Story:
+what happened, why, and the numbers that show it, set beside the law it
+follows. The story begins again when a scene loads or restarts, waits while
+the run is paused, is kept for each lab when you switch, and drops whatever a
+rewind undid. A repeat folds into a recent entry of its kind ("3 more close
+passes"), the newest sixty entries are kept, and an important moment, such as
+a capture or a warning, is also announced to screen readers.
+
+| Lab | What its narrator tells |
+| --- | --- |
+| Gravity | Each throw or drop and the orbit it starts, measured against the escape speed; a giant pulling the barycentre out of the star, the star's wobble speed and period, and how little that tide disturbs the planets close in; orbits that drift, naming the likely perturber by its tide; passes through a Hill sphere with their slingshot, flybys and their bending angle; captured and lost moons, binaries forming; mergers and what they formed, falls into the star, ejections; mean-motion resonances, crossing orbits and pairs packed closer than 2√3 mutual Hill radii; ellipses turning; first orbits timed against Kepler's law; a disk clearing; energy holding; and, once a scene, why the drawn sizes are larger than life |
+| Collisions | The gas relaxing to Maxwell–Boltzmann; kinetic energy halving and falling to a tenth, against Haff's law; a pile forming and how tightly it packs; the wall pressure against Henderson's hard-disc equation; the break; the tracer's random walk |
+| Fluid | The dam-break front against Ritter's 2√(gh₀), and its run-up against v²/2g; the bottom layers squashing; a drop's free fall and its spray; surges meeting in a jet; zero-g blobs meeting and coming to rest; the flow round a post; the liquid settling |
+| Waves | The wavelength measured crest to crest against c/f; double-slit fringes against the slit law; the phased array's beam angle; standing waves off reflecting edges; what the absorbing edges let back; the Doppler squeeze and the Mach cone; the lens's focus |
+| Chaos | The Lyapunov time and the forecast it makes; the copies parting; flips over the top against the energy they need; energy holding; regular motion; the two normal modes; damping |
+| Cloth | The first tear and where it starts; a rip running; the cloth coming to rest; its lean in the wind against tan θ = 0.62·wind/g; its sway against the gusts; a free fall when the last pin lets go |
+| Fields | Each gyration timed against 2πm/\|q\|B, and the same time round at every speed; the E × B and grad-B drifts measured against theory; particles trapped by a charge or falling into one; the beam pulled into a plate |
+
 ### Units
 
-The **Units** button in the top bar, or **U**, picks what every reading,
-control, inspected figure and scale bar is shown in. The simulations always
+The **Units** button in the top bar, or **U**, opens the Units section of
+Settings, which picks what every reading, control, inspected figure and scale
+bar is shown in. The simulations always
 compute in their own units, so switching never changes a run; typed values
 are read in the units shown.
 
@@ -592,7 +711,7 @@ are read in the units shown.
 | US customary | feet, ft/s, ft/s², ft²/s² | The same scales, in feet and inches (miles per second in Gravity). |
 | Simulation | px, px/s, cells | The labs' own units, exactly as computed. |
 
-The menu states the current lab's scale. Datasets keep the lab's own units
+The section states the current lab's scale. Datasets keep the lab's own units
 and record that scale beside them. Masses, energies and charges in
 Collisions and Fields stay in simulation units, since those labs define them
 for the computation rather than from real materials.
@@ -636,14 +755,16 @@ that matter. The layout reflows to one column below 1180 px.
 | Z | Switch between 2D and 3D |
 | Letters | Pick a tool (shown on each tool button) |
 | V | Next view, in Chaos and Waves |
-| U | Units menu |
+| U | Units, in Settings |
 | + − 0 | Zoom in, zoom out, frame the view |
 | Arrow keys | Pan, or orbit in 3D mode |
 | [ and ] | Halve or double the speed |
 | M and D | Record a video clip, record a dataset |
 | F and Shift+B | Focus the stage, hide the Instruments |
 | Shift+H | Show or hide the head-up display |
-| ? | Keyboard reference |
+| Shift+S | Settings |
+| ? | Keyboard reference, in Settings |
+| Esc | Close a menu or Settings |
 
 ## Capturing runs
 
@@ -654,6 +775,56 @@ that matter. The layout reflows to one column below 1180 px.
 - **Data**: records a CSV dataset of the lab's quantities, plus per-body
   tracks where the lab has them.
 - **Save state**: stores the exact state of the scene to restore later.
+
+### The director's camera
+
+Turn on **Direct clips like a film** in the Library's capture settings, and
+a clip is filmed for you. While it records, the director drives your own
+view the way a camera crew would:
+
+- **It opens on an establishing shot.** The whole scene, with a slow push
+  in, and in 3D a slow orbit.
+- **It films what is happening.** Each lab names its areas of interest, and
+  the director picks among them by how much each stands out, preferring
+  what it has not shown lately. A strong moment is held for a few seconds
+  more; one not to miss, such as a merger, takes over a routine shot.
+- **It returns to a wide shot** after two subjects in a row, and whenever
+  nothing stands out.
+- **It never cuts.** Between shots the camera pulls out, travels and pushes
+  in along one smooth, eased path. Within a shot it follows the subject on
+  a critically damped spring, and a fast subject gets a wider frame, so the
+  camera never has to race. Pan, zoom and turn speeds have fixed limits
+  that hold in every frame.
+- **With reduced motion**, every limit is halved and every shot is longer.
+
+| Lab | What the director films |
+| --- | --- |
+| Gravity | Close encounters, mergers, the fastest body, a body being ejected, the heaviest body and its system; in Our Solar System, each world with its moons |
+| Collisions | The Brownian tracer, the densest cluster, the fastest ball |
+| Fluid | The splash front and the fastest flow |
+| Waves | The sources, the interference pattern, the detector line, the brightest spot |
+| Chaos | The pendulum tips, where the copies part, the copies on the phase map |
+| Cloth | The tear or the most strained weave, the wind-blown edge |
+| Fields | The tracked particle, the swarm of particles, the charges |
+
+**Your hand comes first.** If you move the camera during a take, the
+director stops moving it. It carries on once you have left the camera alone
+for four seconds (six with reduced motion), starting from where you left
+it. In Gravity, the director sets Follow and the followed body aside while
+it films. When the clip stops, your view eases back to where it was, and
+Follow comes back with it. The amber chip on the stage names the shot.
+Press the chip to take the camera back for the rest of the clip.
+
+**Preview direction**, under the switch, runs the director without
+recording. Press it again, or the chip, to stop it. A clip started during a
+preview carries on with the same director.
+
+The director moves your own view. A background mode, filming a second
+camera while your view stays still, was considered and left out. It would
+draw every recorded frame twice, on a machine already busy encoding the
+clip. Some labs are also not made to be drawn twice. Gravity's flat view
+moves its camera and notes what it drew as it draws. Fluid's liquid
+surface is rendered for the stage's own view and size.
 
 ### Datasets that explain themselves
 
@@ -676,7 +847,7 @@ Some points about the files:
   - Both files carry `t_years`, the time in years. `t_s` is the engine's
     clock, and at G = 1× a year is 4.41 of its seconds.
   - Each track row also names its body, its class and the body it orbits
-    at that moment.
+    at that moment, its temperature and the starlight it receives.
 - **Tracks always span the whole run.** On a long run with many bodies
   they thin evenly, keeping every other sample each time they fill.
   Before, they stopped without a word. The README says how far they were
@@ -690,7 +861,7 @@ What each lab tracks, every object with a stable number:
 
 | Lab | Tracks | The scene in the README |
 | --- | --- | --- |
-| Gravity | Every body: position, velocity, mass, name, class and what it orbits | The bodies at the start, G, softening |
+| Gravity | Every body: position, velocity, mass, name, class, what it orbits, temperature and starlight | The bodies at the start, G, softening |
 | Collisions | Every ball: position, velocity, radius, mass, spin, and whether it is the tracer | The box, the radii, gravity, e and μ |
 | Fluid | One particle in eight, chosen by number: position, velocity, density | The tank, the spacing, gravity and tilt, every post |
 | Waves | The detector line's intensity profile | The grid, the detector line, the slits, every source |
@@ -707,7 +878,7 @@ The **Library** page gathers all of this in two sections.
   - **Save state** saves at once, and says so.
   - Each button shows its key.
   - **Settings**, beside the heading, folds out the video quality, labels,
-    sample rate and tracks.
+    the director, sample rate and tracks.
   - A fold under the bar lists what a dataset will hold.
 - **Saved** lists everything kept, for this lab or all of them, with where
   it is stored.
@@ -885,7 +1056,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-b45309?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&color=15803d&labelColor=0c1118&logo=githubactions&logoColor=6fcf97
-[badge-release]: https://img.shields.io/badge/release-v2.17.0-0e7490?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.18.0-0e7490?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df

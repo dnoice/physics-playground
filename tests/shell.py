@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.14)
+    - Title: Shell Regression Test (digiSpace Edition - v2.18)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.14.0
+    - Version: 2.18.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,12 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: each opener opens its section
+      with focus on its current choice; the nav's arrows, the focus trap, the
+      workspace's keys held behind it, its own keys, Shift+S beside Fluid's S
+      tool, the close button and the backdrop; a centred panel on a desktop
+      and the whole screen on a phone. The selection sweep opens each section.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Nothing in
       the workspace selects, on any page, pane, sheet or menu in 2D or 3D;
       real drags and double-clicks select nothing, short labels included; text
@@ -59,6 +65,9 @@
       Reset with focus kept, and a remembered fold.
     - The Chaos phase view: split layout, reach curve, hover preview, click
       to start, and a bob that still drags.
+    - Settings: every entry point at its section, the nav, the focus trap,
+      Escape, the backdrop and focus handed back; the workspace's keys held
+      behind it; centred on a desktop and the whole screen on a phone.
 
 ✒ Usage Instructions:
     $ python tests/shell.py
@@ -453,6 +462,96 @@ with sync_playwright() as p:
     ok("hud_fps_shows_meter", abs(float(pg.inner_text("#hud-fps").split()[0]) - state("perf.fps")) < 8, pg.inner_text("#hud-fps"))
     pg.context.close()
 
+    # ---- Settings: one modal dialog. Each entry point opens it at its own section with focus on that section's current
+    # choice; Tab never leaves it; Escape, the close button and the backdrop close it and hand focus back to what opened
+    # it; the workspace's keys wait behind it, and a phone gets the whole screen.
+    SET = """(() => { const d = document.getElementById('settings'), a = document.activeElement, sec = PhysicsPlayground.settings.section();
+      const want = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', keys: '#st-keys' }[sec];
+      return { open: d.open, modal: d.matches(':modal'), section: sec, panes: [...d.querySelectorAll('[role=tabpanel]')].filter(p => !p.hidden).map(p => p.id),
+        tab: d.querySelector('[role=tab][aria-selected=true]').id, focus: a.id, inside: d.contains(a), onChoice: a === document.querySelector(want),
+        expanded: ['btn-settings', 'btn-gfx', 'btn-units', 'btn-hud', 'btn-keys'].filter(i => document.getElementById(i).getAttribute('aria-expanded') === 'true') }; })()"""
+    st = lambda: pg.evaluate(SET)
+    pg = fresh("fluid")
+    at = {}
+    for btn, sec in [("#btn-gfx", "graphics"), ("#btn-units", "units"), ("#btn-hud", "hud"), ("#btn-keys", "keys")]:
+        pg.click(btn); pg.wait_for_timeout(200); s = st()
+        good = (s["open"] and s["modal"] and s["section"] == sec and s["panes"] == ["sp-" + sec] and s["tab"] == "st-" + sec and s["inside"] and s["onChoice"]
+                and s["expanded"] == ["btn-settings", btn[1:]])
+        pg.keyboard.press("Escape"); pg.wait_for_timeout(200); back = st()
+        at[sec] = True if good and not back["open"] and back["focus"] == btn[1:] and not back["expanded"] else (s, back)
+    ok("settings_openers_open_their_section", all(v is True for v in at.values()), at)
+    pg.click("#btn-settings"); pg.wait_for_timeout(200); s = st()
+    ok("settings_button_opens_where_it_was_left", s["open"] and s["modal"] and s["section"] == "keys" and s["focus"] == "st-keys" and s["expanded"] == ["btn-settings", "btn-keys"], s)
+    keys = pg.evaluate("[...document.querySelectorAll('#sp-keys .keys-list dt')].map(d => d.textContent.replace(/\\s+/g, ' ').trim())")
+    ok("settings_lists_the_keys", len(keys) >= 19 and "Shift+S" in keys and "Shift+H" in keys and "? Esc" in keys and ". ," in keys, keys)
+    pg.keyboard.press("ArrowUp"); s1 = st(); pg.keyboard.press("Home"); s2 = st(); pg.keyboard.press("End"); s3 = st()
+    ok("settings_nav_arrows", s1["section"] == "hud" and s1["focus"] == "st-hud" and s1["panes"] == ["sp-hud"] and s2["section"] == "graphics" and s2["focus"] == "st-graphics"
+       and s3["section"] == "keys" and s3["panes"] == ["sp-keys"], (s1, s2, s3))
+    # Tab and Shift+Tab go round the Graphics section's controls and come back to where they began, never outside.
+    pg.click("#st-graphics"); pg.wait_for_timeout(150)
+    fwd, back = [], []
+    for _ in range(40):
+        pg.keyboard.press("Tab"); s = st(); fwd.append((s["inside"], s["focus"] or "?"))
+    for _ in range(40):
+        pg.keyboard.press("Shift+Tab"); s = st(); back.append((s["inside"], s["focus"] or "?"))
+    stops = len({f for _, f in fwd})
+    ok("settings_traps_focus", all(i for i, _ in fwd + back) and 12 <= stops < 40 and fwd[stops][1] == fwd[0][1] and back[stops][1] == back[0][1], (stops, fwd[:3], back[:3]))
+    # The workspace's keys wait: no restart, no lab, mode or focus change, and Space presses the focused button.
+    t0, run0, mode0 = state("active.t"), running(), state("mode.get()")
+    pg.focus("#st-graphics")
+    for k in ["r", "2", "z", "f", "Space", "m"]:
+        pg.keyboard.press(k)
+    pg.wait_for_timeout(200)
+    ok("settings_holds_the_workspace_keys", st()["open"] and state("active.id") == "fluid" and state("active.t") >= t0 and running() == run0 and state("mode.get()") == mode0
+       and not in_focus() and not state("capture.vrec.mr"), (state("active.t"), t0, running(), state("mode.get()")))
+    # Its own keys: U and ? move to their section, and a second press there closes the dialog, as the sheets they
+    # opened used to; from the workspace they open it again. Shift+S closes, and each close hands focus back to the
+    # Settings button, which opened it.
+    pg.keyboard.press("u"); s1 = st(); pg.keyboard.press("?"); s2 = st(); pg.keyboard.press("?"); pg.wait_for_timeout(150); s3 = st()
+    pg.keyboard.press("u"); pg.wait_for_timeout(150); s4 = st(); pg.keyboard.press("u"); pg.wait_for_timeout(150); s5 = st()
+    pg.keyboard.press("?"); pg.wait_for_timeout(150); s6 = st(); pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s7 = st()
+    ok("settings_own_keys", s1["open"] and s1["section"] == "units" and s1["onChoice"] and s2["open"] and s2["section"] == "keys" and s2["focus"] == "st-keys"
+       and not s3["open"] and s3["focus"] == "btn-settings" and s4["open"] and s4["section"] == "units" and s4["onChoice"] and not s5["open"] and s5["focus"] == "btn-settings"
+       and s6["open"] and s6["section"] == "keys" and s6["focus"] == "st-keys" and not s7["open"] and s7["focus"] == "btn-settings", (s1, s2, s3, s4, s5, s6, s7))
+    # Shift+S opens it from anywhere and leaves Fluid's S tool (Stir) on the plain key; U and ? open their own sections.
+    pg.evaluate(P + ".tool('push')"); blur()
+    pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s = st()
+    shift_s = s["open"] and s["section"] == "keys" and s["focus"] == "st-keys" and tool() == "push"
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    pg.keyboard.press("s")
+    ok("shift_s_opens_settings", shift_s and tool() == "stir" and not st()["open"], (s, tool()))
+    pg.keyboard.press("u"); pg.wait_for_timeout(150); s1 = st(); pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    pg.keyboard.press("?"); pg.wait_for_timeout(150); s2 = st(); pg.keyboard.press("Escape"); pg.wait_for_timeout(150); s3 = st()
+    ok("u_and_question_open_their_sections", s1["open"] and s1["section"] == "units" and s1["onChoice"] and s2["open"] and s2["section"] == "keys" and not s3["open"] and s3["focus"] == "", (s1, s2, s3))
+    # The close button and a click on the backdrop close it too; on a desktop it is a centred panel, not the whole page.
+    pg.click("#btn-hud"); settle(pg, "document.getElementById('settings').getAnimations().length === 0", 3000)
+    geo = pg.evaluate("(() => { const r = document.getElementById('settings').getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height, vw: innerWidth, vh: innerHeight }; })()")
+    pg.click("#settings-close"); pg.wait_for_timeout(150); s1 = st()
+    pg.click("#btn-units"); pg.wait_for_timeout(150)
+    # A press that begins inside the panel and is let go over the backdrop is a drag off, not a click outside.
+    pg.mouse.move(geo["l"] + geo["w"] / 2, geo["t"] + 20); pg.mouse.down(); pg.mouse.move(geo["l"] / 2, geo["vh"] / 2, steps=4); pg.mouse.up(); pg.wait_for_timeout(150); s0 = st()
+    pg.mouse.click(geo["l"] / 2, geo["vh"] / 2); pg.wait_for_timeout(150); s2 = st()
+    ok("settings_close_and_backdrop", not s1["open"] and s1["focus"] == "btn-hud" and not s2["open"] and s2["focus"] == "btn-units", (s1, s2))
+    ok("settings_drag_off_stays_open", s0["open"] and s0["section"] == "units", s0)
+    ok("settings_centred_on_desktop", geo["w"] < geo["vw"] - 40 and geo["h"] < geo["vh"] - 40 and abs(geo["l"] - (geo["vw"] - geo["w"]) / 2) < 2 and abs(geo["t"] - (geo["vh"] - geo["h"]) / 2) < 2, geo)
+    pg.context.close()
+
+    # A phone: the Settings button in the top bar, and the dialog fills the screen with the sections across its top,
+    # all four in view, and nothing wider than the screen in any section.
+    ctx = b.new_context(viewport={"width": 390, "height": 844})
+    pg = open_page(ctx); pg.goto(URL + "#gravity")
+    pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(400)
+    btn = pg.locator("#btn-settings").bounding_box()
+    pg.click("#btn-settings"); pg.wait_for_timeout(250)
+    phone = {}
+    for sec in ["graphics", "units", "hud", "keys"]:
+        pg.click("#st-" + sec); pg.wait_for_timeout(120)
+        phone[sec] = pg.evaluate("""(() => { const d = document.getElementById('settings').getBoundingClientRect(), b = document.getElementById('settings-body'), t = [...document.querySelectorAll('#settings-tabs [role=tab]')].map(e => e.getBoundingClientRect());
+          return { d: [d.left, d.top, d.width, d.height].map(Math.round), over: b.scrollWidth - b.clientWidth, tabs: t.every(r => r.left >= 0 && r.right <= innerWidth && Math.abs(r.top - t[0].top) < 1),
+            orient: document.getElementById('settings-tabs').getAttribute('aria-orientation'), page: document.documentElement.scrollWidth - innerWidth }; })()""")
+    ok("settings_phone_fills_the_screen", btn is not None and btn["x"] + btn["width"] <= 390 and all(v["d"] == [0, 0, 390, 844] and v["over"] <= 0 and v["tabs"] and v["orient"] == "horizontal" and v["page"] <= 0 for v in phone.values()), phone)
+    ctx.close()
+
     # ---- Selection: the workspace is an instrument, not a document. A click, drag or double-click never paints a
     # highlight over its words, on any page, pane, sheet or menu, in 2D or 3D; text fields still select, as typing
     # needs; and .selectable is the one way to let a block be copied.
@@ -471,7 +570,7 @@ with sync_playwright() as p:
     pg.evaluate("(() => { const L = PhysicsPlayground.active; L.track = L.bodies[1].id; })()"); pg.wait_for_timeout(600)
     for pane in ["inspect", "insights", "telemetry"]:
         pg.click("#dt-" + pane); pg.wait_for_timeout(300); sweep("deck_" + pane)
-    for btn, where in [("#btn-keys", "keyboard_sheet"), ("#btn-units", "units_menu"), ("#btn-hud", "hud_sheet"), ("#btn-gfx", "graphics_menu"), ("#scene-btn", "scene_menu")]:
+    for btn, where in [("#btn-keys", "settings_keyboard"), ("#btn-units", "settings_units"), ("#btn-hud", "settings_hud"), ("#btn-gfx", "settings_graphics"), ("#btn-settings", "settings"), ("#scene-btn", "scene_menu")]:
         pg.click(btn); pg.wait_for_timeout(300); sweep(where); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
     pg.click("#mode-3d"); settle(pg, "PhysicsPlayground.mode.is3D()", 30000); pg.wait_for_timeout(800); sweep("3d")
     ok("nothing_in_the_workspace_selects", not leaks, leaks)

@@ -1,32 +1,36 @@
 /*
 ✒ Metadata
-    - Title: Units Menu (digiSpace Edition - v2.4)
+    - Title: Units Menu (digiSpace Edition - v2.18)
     - File Name: unitmenu.js
     - Relative Path: js/shell/unitmenu.js
     - Artifact Type: javascript
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the unit systems are its Units
+      section, which the Units button and U open; the sheet's own opening and
+      closing went with it.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       with the unit systems Dennis asked for: the top-bar Units menu and the
       refresh that follows a change of system.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The Units button and its menu: Metric, US customary or Simulation. A
-    change of system rebuilds the controls in the new units, restarts the
-    plotted series (they would otherwise mix units), and redraws every
-    figure, without touching the simulation.
+    The Units section of Settings and the top bar's Units button: Metric,
+    US customary or Simulation. A change of system rebuilds the controls in
+    the new units, restarts the plotted series (they would otherwise mix
+    units), and redraws every figure, without touching the simulation.
 
 ✒ Key Features:
-    - A radio group with arrow keys, like the Graphics menu beside it; U
-      opens it from anywhere.
-    - The menu states the current lab's scale, so a metre is never a
+    - A radio group with arrow keys, like the tiers in the Graphics section;
+      the Units button and U open Settings at it from anywhere.
+    - The section states the current lab's scale, so a metre is never a
       mystery: what one pixel or one cell stands for, and why.
 
 ✒ Other Important Information:
@@ -44,13 +48,6 @@ import { updateNav } from './navigator.js';
 import { buildPanel, updateReadouts } from './panel.js';
 import { active, announce } from './state.js';
 
-const open = () => !$('#units-sheet').hidden;
-export function setUnits(on) {
-  $('#units-sheet').hidden = !on;
-  $('#btn-units').setAttribute('aria-expanded', String(on));
-  if (on) { renderUnits(); const cur = $('#units-list [aria-checked="true"]'); if (cur) cur.focus(); }
-}
-export function closeUnits() { if (!open()) return false; setUnits(false); $('#btn-units').focus(); return true; }
 export function renderUnits() {
   const sys = unitSystem(), S = SYSTEMS.find(s => s.id === sys);
   $('#btn-units-label').textContent = S.label;
@@ -80,10 +77,5 @@ export function init() {
     list.append(b);
   });
   onUnits(refresh);
-  $('#btn-units').addEventListener('click', () => setUnits(!open()));
-  $('#units-close').addEventListener('click', closeUnits);
-  document.addEventListener('pointerdown', e => {
-    if (open() && !$('#units-sheet').contains(e.target) && !$('#btn-units').contains(e.target)) setUnits(false);
-  });
   renderUnits();
 }
