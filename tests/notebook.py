@@ -19,7 +19,10 @@
       counts rows and its tooltip follows, the stage's light is status and the
       timeline marks it, and the Library keeps the dataset with no capture
       cards of its own. On Dennis's call for drag handles: the deck goes tall
-      from its grip's End key, the size button being gone.
+      from its grip's End key, the size button being gone. On Dennis's call
+      for a duplication sweep: the Guide holds no buttons, its legend matches
+      the rail glyph for glyph and key for key, and the scene menu loads
+      scenes.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created for
       release 2.5.0: the Math page's live panels, the Guide's cards, the
       Library's capture cards and the Inspect pane's focus chart. The Guide's
@@ -60,7 +63,7 @@
 """
 import re
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, settle
+from harness import URL, finish, launch, ok, open_page, scene, settle
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
@@ -113,18 +116,27 @@ with sync_playwright() as p:
     ok("gravity_live_has_plot_free_panels", pg.locator("#math .f-live").count() == 5)
     pg.context.close()
 
-    # ---- Guide: cards pick tools, follow the keyboard and load scenes
+    # ---- Guide: a static legend of what the rail picks; the rail, its keys and the scene menu do the picking
     pg = fresh("waves")
     pg.click("#nt-guide"); pg.wait_for_timeout(300)
-    cards = pg.locator("#guide .g-card")
-    # Five tools, the Random switch that sits with them, and two views.
-    ok("guide_has_tool_and_view_cards", cards.count() == 8 and pg.locator("#guide .g-switch").count() == 1, cards.count())
-    cards.nth(1).click(); pg.wait_for_timeout(300)
-    ok("tool_card_selects_tool", state("active.p.tool") == "wall" and cards.nth(1).get_attribute("aria-pressed") == "true")
-    pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("e"); pg.wait_for_timeout(600)
-    ok("guide_follows_keyboard", cards.nth(2).get_attribute("aria-pressed") == "true" and cards.nth(1).get_attribute("aria-pressed") == "false")
-    pg.locator("#guide .g-scene", has_text="Two sources").click(); pg.wait_for_timeout(500)
-    ok("scene_card_loads_scene", state("active.presetId") == "twosrc" and pg.locator("#guide .g-scene[aria-pressed=true]").inner_text().strip().endswith("Two sources"))
+    # Nothing in the Guide is a control: no scene, tool or Random buttons, nothing pressed, nothing to tab to.
+    live = pg.evaluate("[...document.querySelectorAll('#guide button, #guide [role=button], #guide [aria-pressed], #guide [tabindex], #guide a[href], #guide input')].length")
+    ok("guide_has_no_buttons", live == 0 and pg.locator("#guide .g-card, #guide .g-scene, #guide .g-switch").count() == 0, live)
+    # Five tools, the Random row that sits with them, and two views: each the rail's glyph, its name and its key.
+    rows = pg.evaluate("[...document.querySelectorAll('#guide .g-row')].map(r => [r.querySelector('.ms').textContent, r.querySelector('.g-name').textContent, (r.querySelector('kbd') || {}).textContent || '', r.querySelector('.g-hint').textContent.length > 0])")
+    rail = pg.evaluate("[...document.querySelectorAll('#dock .dock-btn, #views .view-btn')].map(b => [b.querySelector('.ms').textContent, b.dataset.tip.split(' · ')[1]])")
+    legend = [r for r in rows if r[1] != "Random"]
+    ok("guide_legend_matches_rail", len(rows) == 8 and [[r[0], r[2]] for r in legend] == rail and all(r[3] for r in rows)
+       and [r[1] for r in rows if r[1] == "Random"] == ["Random"] and rows[5][0] == "casino", (rows, rail))
+    # The rail and the keys pick; the legend stays as it was, since it marks nothing.
+    before = pg.inner_html("#guide")
+    pg.click("#dock-waves-wall"); pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("e"); pg.wait_for_timeout(600)
+    ok("rail_and_keys_pick_tools", state("active.p.tool") == "erase" and pg.inner_html("#guide") == before, state("active.p.tool"))
+    # The Scenes line names every scene and points to the menu, which loads one.
+    names = pg.evaluate("PhysicsPlayground.active.presets.map(p => p.label)")
+    line = pg.inner_text("#guide .g-sec:nth-of-type(3) .g-lead")
+    scene(pg, "#preset-waves-twosrc"); pg.wait_for_timeout(500)
+    ok("scene_menu_loads_scene", state("active.presetId") == "twosrc" and all(n in line for n in names) and "menu" in line and pg.inner_text("#stage-scene").strip() == "Two sources", line)
     pg.context.close()
 
     # ---- Capture: one cluster in the player bar records and saves; the Library keeps only what was saved. Record data

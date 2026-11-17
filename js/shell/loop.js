@@ -15,7 +15,10 @@
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one timeline: at panel rate syncCapture() keeps the
       capture buttons' lines and the recording light current, in place of the
-      Library's cards and the stage chips.
+      Library's cards and the stage chips. On Dennis's call for a duplication
+      sweep: the panel tick no longer refreshes the Guide's cards or the dice;
+      syncControl() and syncPanel() keep the dice current as each change
+      happens.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the lab's narrator
       looks at the run four times a second (tickStory). On Dennis's call for
@@ -51,8 +54,7 @@ import { tickDirector } from './director.js';
 import { tickExperiment } from './experiments.js';
 import { updateDetails } from './details.js';
 import { updateLiveMath } from './livemath.js';
-import { syncGuide } from './guide.js';
-import { syncDice, updateDock } from './dock.js';
+import { updateDock } from './dock.js';
 import { resizeLab } from './lifecycle.js';
 import { updateNav, updateOrbit } from './navigator.js';
 import { tickWorld } from './mode.js';
@@ -112,7 +114,7 @@ export function frame(now) {
       $('#hud-fps').textContent = `${Math.round(perf.fps)} fps`;
       updateNav();
     }
-    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); hudInspect(active); updateLiveMath(active); syncGuide(); syncDice(); syncCapture(); drawPerf(); updatePerfNums(); tickExperiment(); if (stepping) updateRewind(); }
+    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); hudInspect(active); updateLiveMath(active); syncCapture(); drawPerf(); updatePerfNums(); tickExperiment(); if (stepping) updateRewind(); }
     if ((diagClock += real) >= 0.5) { diagClock = 0; evaluateDiagnostics(); }
     if ((storyClock += real) >= 0.25) { storyClock = 0; tickStory(active); }
   }

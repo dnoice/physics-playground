@@ -14,7 +14,10 @@
 ✒ Changelog:
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one timeline: a Capture section, opened by the player
-      bar's capture settings button at the checked clip quality.
+      bar's capture settings button at the checked clip quality. On Dennis's
+      call for a duplication sweep: the Settings button and the Graphics
+      button, which shows the tier, are the only openers; U, ?, Shift+H and
+      Shift+S keep working.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for one settings dialog in place of four floating sheets:
       a true modal with a section nav (Graphics, Units, Head-up display,
@@ -37,10 +40,11 @@
     - A section nav with the full tab contract: arrows move and select, Home
       and End jump. It stands down the left on a wide screen and across the
       top on a phone, where the dialog fills the screen.
-    - Quick openers: Graphics, Units, HUD, the keyboard button and the player
-      bar's capture settings open it at their section and focus its current
-      choice; U and ? do the same, and Shift+S opens it at the section last
-      shown.
+    - Openers: the Settings button (and Shift+S) opens it at the section
+      last shown; the Graphics button, which shows the tier and whether any
+      setting is your own, opens Graphics with its current choice focused;
+      the player bar's capture settings button opens Capture; U and ? open
+      Units and the keyboard list.
     - Inside, the workspace's shortcuts wait: U and ? move to their section,
       or close the dialog when it is already there, Shift+H still turns the
       head-up display on or off, and Shift+S closes.
@@ -58,8 +62,10 @@ import { toggleHud } from './headsup.js';
 /* The sections in nav order, each with what takes focus when the dialog opens at it: its current choice, or its first
    control. The keyboard list has none, so its tab takes focus. */
 const SECTIONS = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', capture: '#sp-capture [role="radio"][aria-checked="true"]', keys: null };
-/* The quick openers, each for its own section: the top bar's four, and the capture cluster's settings in the player bar. */
-const OPENERS = [['#btn-gfx', 'graphics'], ['#btn-units', 'units'], ['#btn-hud', 'hud'], ['#btn-keys', 'keys'], ['#btn-cap-settings', 'capture']];
+/* The quick openers besides the Settings button: Graphics, which earns its place by showing the tier in use and whether
+   any setting is the person's own, and the player bar's capture settings, beside the buttons they set. Units, the
+   head-up display and the keys are in the Settings button's nav, and U and ? open Units and the keys from anywhere. */
+const OPENERS = [['#btn-gfx', 'graphics'], ['#btn-cap-settings', 'capture']];
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';
 const dlg = $('#settings'), tabs = [...dlg.querySelectorAll('[role="tab"]')];
 let current = Object.hasOwn(SECTIONS, store.get('settingsTab')) ? store.get('settingsTab') : 'graphics', opener = null;

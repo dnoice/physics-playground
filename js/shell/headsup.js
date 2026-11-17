@@ -15,7 +15,9 @@
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one selection contract: the target box sits at the
       lab's spot() for its selectedId(), and the callout reads the Inspect
-      card's own reading of the tick.
+      card's own reading of the tick. On Dennis's call for a duplication
+      sweep: the top bar's HUD button is gone, so its label is no longer
+      written; the Settings button's nav and Shift+H reach the section.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the display's settings are its
       Head-up display section, which the HUD button opens; the sheet's own
@@ -42,9 +44,9 @@
     - Target box and callout, placed each frame from the lab's spot() for
       its selectedId(), clamped to the stage edge with a dashed box when the
       object is off it, and kept clear of the title, the rail and the tape.
-    - A Head-up display section in Settings, which the HUD button opens: on
-      or off (Shift+H), opacity in four steps, and each part on or off,
-      remembered per browser.
+    - A Head-up display section in Settings, reached from the Settings
+      button: on or off (Shift+H), opacity in four steps, and each part on
+      or off, remembered per browser.
 
 ✒ Usage Instructions:
     In a lab:  hud: [['Total energy E', 'ENERGY E'], ...]   readout labels and their short HUD names
@@ -242,9 +244,6 @@ function apply() {
   if (!cfg.read) { tapeLab = null; tape.replaceChildren(); }
   if (!cfg.target) { info = null; hideTarget(); card.hidden = true; }
   lightKey = null; hudCautions(lastAlerts);
-  const pct = `${cfg.alpha}%`;
-  $('#btn-hud-label').textContent = cfg.on ? `HUD ${pct}` : 'HUD off';
-  $('#btn-hud').title = `Head-up display: ${cfg.on ? `on, ${pct}` : 'off'} (Shift+H)`;
   $('#hud-on').setAttribute('aria-checked', String(cfg.on));
   for (const [k, b] of partSwitches) { b.setAttribute('aria-checked', String(cfg[k])); b.disabled = !cfg.on; }
   alphaUpdate();

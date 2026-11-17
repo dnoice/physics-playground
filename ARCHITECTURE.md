@@ -25,7 +25,11 @@
       model, Settings and styles. On Dennis's call for drag handles: the grips
       and dragHandle() under Instruments, the inspector's width in the boot
       order, and the styles that draw and place the grips. On his call for a
-      duplication sweep: the deck's size button and top alert are gone.
+      duplication sweep: the deck's size button and top alert are gone. On
+      Dennis's call for a duplication sweep: what a tab's marks mean, the
+      truthful slow-run warning, the two Settings openers, the Guide as a
+      static legend, the dice kept in step by syncControl() and syncPanel(),
+      one glyph per meaning, and the head-up display's name.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       climate: climate.js and each world's b.clim, when it updates, starlight,
       air, temperature, ice, spin and classes, the look in 2D and 3D, what
@@ -254,7 +258,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | --- | --- |
 | `id`, `name`, `title`, `aria` | Identity, rail label, scene heading, stage label for screen readers |
 | `eq`, `eqTex` | Equation for the rail (HTML) and the Scene tile (TeX) |
-| `blurb`, `interact[]` | Guide page text: what the lab shows and how to interact |
+| `blurb`, `interact[]` | Guide page text: what the lab shows and how to interact; the Guide's legend reads `dock`, `views`, `random` and `presets` too |
 | `p`, `presetId`, `presets[]` | Parameters, the current scene, and scenes as `{ id, label, params }` |
 | `controls[]` | `range`, `seg` and `toggle` controls bound to keys of `p`; each names its section with `group`, and a switch may add a `short` name |
 | `dt()`, `maxSteps` | Fixed time step and the per-frame step cap |
@@ -279,7 +283,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `enabled(key)` | `true`, or a sentence saying why a control is disabled right now |
 | `onParam(key, value)`, `onResize(w, h, ow, oh)`, `after(simDt)` | React to changes |
 | `worldRect()`, `mini(g, k)`, `unit()` | Camera world size, overview map, and the lab's own length per stage pixel for the scale bar |
-| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units section of Settings; `timeNote` adds to the HUD clock |
+| `units`, `unitTable(sys)`, `scaleNote`, `timeNote(t)` | Real-world units: `units = { len, m }` names the lab's length unit and its size in metres; `unitTable` replaces the conversions outright (Gravity's AU and km/s); `scaleNote` explains the scale in the Units section of Settings; `timeNote` adds to the run's clock on the stage (`#hud-time`) and to the Story's time stamps |
 | `selfCam`, `camLocked()`, `onUserPan()`, `onCamZoom()`, `frameView()`, `navExtras[]` | Labs with their own camera (gravity) and extra gizmo buttons |
 | `zoomPace()`, `zoomLimits3()` | How strongly the user's zoom controls act (the wheel, the rail's buttons and drag, the keys raise their factor to this power; Gravity's Solar System, eight decades of scale, returns 2), and Gravity's 3D zoom limits as multiples of the framing distance. Pinch and scripted zooms keep their exact factor |
 | `diagnose()`, `perfFixes()`, `drawFixes()`, `sane()`, `watchDraw(perf)` | Insights with fixes, frame-budget and drawing fixes, a NaN guard, and a twice-a-second look at drawing cost |
@@ -294,7 +298,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
 | `objects()`, `select(id)`, `selectedId()`, `pick(s)`, `spot(id, three)` | The selection contract, one shape in every lab (see Selection below). `objects()` lists what can be selected now as `{ id, name, kind, v }`, `v` holding the figures `objectCols` names; `select(id)` selects by id (null clears) and says whether it took; `selectedId()` is the selection's id or null; `pick(s)` turns a stage point into the nearest object's id within the Select tool's reach (`PICK_PX`), or null; `spot(id, three)` is where an object is drawn, `{ x, y, r }` in stage pixels for the current mode |
 | `objectCols[]`, `objectsName`, `objectsEmpty`, `selectHint`, `pickRing` | The objects list's figures as `{ label, unit(), text(v), w }` (the column's share of the width), its heading and its empty text; the stage hint while Select is on; and `pickRing` for a lab that rings what the Select tool would take itself (Gravity, with its hover tag) instead of the stage's plain ring |
-| `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools, a Random card in the Guide, and the lab adds the matching switch to its controls |
+| `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools and a Random row in the Guide's legend, and the lab adds the matching switch to its controls |
 | `mathLive` | The Math page's live panels, keyed by the `data-live` name of a formula in `math`: `{ params, vars(lab), check(lab), plot(c, lab), plotLabel, note }` (see Live Math below) |
 | `primary` | The primary readouts, which lead with larger figures: a list of labels, or a count of leading rows (default 2). A readout row may also end with its tier, `'primary'` or `'derived'` |
 | `hudClear` | Boxes in stage pixels (`{ l, t, r, b }`) of what the lab drew this frame and the head-up display's callout should keep off, such as Gravity's names beside bodies; the callout counts covering one as it counts covering the tape |
@@ -614,6 +618,27 @@ are not remembered across visits. Beside the card, the objects list
 their fixes beside the frame-timing strip. Story (`js/shell/story.js`) is the
 narrator's timeline.
 
+A tab's marks mean one thing on every tab, in the deck and the inspector
+alike:
+
+- **A coloured dot, with a few words,** only while a warning (amber) or a
+  critical problem (red) stands: `#diag-sum` on Insights, written by
+  `tabMark()` in `diagnostics.js` from the same list as the stage's alert.
+  Insights that are only informative are counted inside the pane, on the Now
+  view, never on the tab.
+- **A neutral count,** in the text colour on no fill, for what has not been
+  seen: the Story's unread moments (`#dt-story-n`, from `story.js`) and a
+  Library item saved while another tab showed.
+- **Nothing otherwise.** A selection puts no mark on Inspect (it is in plain
+  view on the stage, and a new one opens the pane), and a calm run leaves
+  Insights bare.
+
+The slow-run warning names the cause the meters show: the solver over its
+budget, frames too far apart (each carries the run at most 50 ms), or more
+steps than the lab takes in a frame. "Drawing is the bottleneck" shows only
+when drawing takes over 12 ms, more than the solver, and over half of each
+frame.
+
 ### The Story
 
 Each lab's narrator lives in `js/labs/story/<id>.js` and is mixed into the lab
@@ -690,10 +715,13 @@ the same figures) and never clickable.
   clamped into the free part of the stage and scored by what it would cover:
   the object most, then the tape, the lights, the overview map, and the
   lab's `hudClear` boxes, such as Gravity's names.
-- **Settings**: its section of the Settings dialog, which the top bar's HUD
-  button opens, and Shift+H. On or off, opacity in
+- **Settings**: its section of the Settings dialog, in the Settings button's
+  nav, and Shift+H. On or off, opacity in
   four steps (40, 60, 80, 100 %) and each part on or off, kept per browser
   under `psp:hud`; `PhysicsPlayground.hud` reads and sets them for tests.
+- **Its name.** The head-up display (`#hu`) is the only thing called that.
+  The chips at the top of the stage (`.hud`, `#hud-*`, ids kept from before)
+  are the run's status, named "Run status" for assistive technology.
 
 ## Settings
 
@@ -706,12 +734,14 @@ of one's own), `unitmenu.js` Units, `headsup.js` the head-up display and
 
 - **Opening.** `openSettings(id, from)` opens at a section and focuses its
   current choice (the checked tier or unit system, the display's switch), or
-  its tab for the keyboard list. The top bar's Graphics, Units, HUD and
-  keyboard buttons, and the player bar's capture settings button, open
-  their own section, and so do U and ?. The Settings button and Shift+S
-  open the section last shown, remembered as
-  `psp:settingsTab`. Each opener's `aria-expanded` says whether the dialog
-  is open at its section.
+  its tab for the keyboard list. The Settings button and Shift+S open the
+  section last shown, remembered as `psp:settingsTab`. The Graphics button
+  opens Graphics; it stays because it carries live state, the tier in use and
+  a dot when a setting is the person's own. The player bar's capture settings
+  button opens Capture, beside the buttons it sets. U and ? open Units and the
+  keyboard list. Units, the head-up display and the keys had top-bar buttons
+  of their own until 2.19, which only repeated the Settings button. Each
+  opener's `aria-expanded` says whether the dialog is open at its section.
 - **Inside.** The workspace behind is inert. Tab and Shift+Tab go round the
   dialog's own controls. The nav is a tablist with the full keyboard
   contract. `settingsKey` takes the dialog's keys: Escape and Shift+S close
@@ -801,12 +831,14 @@ Panels refresh at panel rate, and only while the Math page is showing.
 
 ## Guide and Library
 
-`js/shell/guide.js` builds the Guide page from the lab's `dock`, `views` and
-`presets`: cards that select a tool or view, scene cards that load a scene,
-a Random card beside the tools when the lab declares `random`, then the lab's
-`interact` notes and the navigation help. `syncGuide()` marks the current
-choices at panel rate and after every setting change, however they were
-made.
+`js/shell/guide.js` builds the Guide page from the lab's `dock`, `views`,
+`random` and `presets`: a static legend of the tools and views (the rail's
+glyph, the name, the key and the hint), a Random row beside the tools when
+the lab declares `random`, a line naming the scenes and pointing to the
+scene menu, then the lab's `interact` notes and the navigation help. The
+Guide explains and picks nothing, so it holds no buttons and keeps nothing
+in step: the rail, the keys, the scene menu and Controls are the only places
+a tool, view, scene or Random is chosen.
 
 ## Random placement
 
@@ -843,9 +875,12 @@ Gravity places bodies relative to what holds the point:
   read it out with `throwText`: the speed against the host, the multiple of
   the circular speed, and "escapes" from √2 up.
 
-The dice in the rail, the switch in Controls and the Guide's card are three
-views of one parameter: each changes it through `setParam`, and
-`syncControl()` refreshes the others.
+The dice in the rail and the switch in Controls are two views of one
+parameter: each changes it through `setParam`, and `syncControl()` refreshes
+the other. Anything else that changes parameters (a scene, a section's
+Reset, a fix, a rewind, a saved state) calls `syncPanel()`, which refreshes
+the dice with every control, so the two never disagree for a frame. A lab
+without `random` leaves the hidden dice unnamed and unpressed.
 
 The Library page keeps what was captured; capturing is the player bar's
 (see Capture and storage). Its one section in `index.html` is headed by an
@@ -1255,7 +1290,7 @@ The stylesheets load in this order, each building on the last:
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, the status line and its two buttons, the player bar (timeline and its marks, transport, speed, capture cluster), experiment banner, stage rail and its Random dice |
 | `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and its section in Settings |
-| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, Inspect's objects list, the Now and Story views and the Story's moments), the grips' look, Live Math panels, Guide cards, tabs |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, Inspect's objects list, the Now and Story views and the Story's moments), the grips' look, the tabs' marks, Live Math panels, the Guide's legend, tabs |
 | `library.css` | Library page: storage status, filter and the saved items |
 | `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, the Capture section, and its phone layout |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
@@ -1339,6 +1374,12 @@ Name it once in `js/core/icons.js` (or write it into markup with the `ms`
 class), add it to the sorted `icon_names` list in the Material Symbols
 link in `index.html`, and run `npm run check`. The checker fails if a
 glyph the code uses is missing from the font subset.
+
+A glyph means one thing. `replay` restarts the run (Reset, R); `restart_alt`
+sets a value back (a dial, the speed, a section, a graphics setting);
+`view_in_ar` is Graphics, in the top bar and in Settings; `tune` is the
+Controls tab. Choose a glyph no other control wears, and a tool key no
+workspace key uses (`tests/shell.py` checks both against the keyboard list).
 
 ### Add or upgrade a third-party library
 

@@ -15,7 +15,9 @@
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one way to select: the selection contract for the test
       particles, which Inspect lists with q/m, speed and kinetic energy;
-      Select (Q) charts one without the Move tool.
+      Select (Q) charts one without the Move tool. On Dennis's call to
+      untangle look-alikes: the Move tool takes G, since V is Next view in the
+      keys list, and the Inspect hint names it.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for recordings shot like a film: interest() names the
       tracked particle, framed round its circle in a magnetic field, the swarm
@@ -105,7 +107,7 @@ export const fields = {
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'plus', label: 'Add +', key: 'p', icon: 'plus', hint: 'Click to place a positive charge · click a charge to add one unit' },
     { id: 'minus', label: 'Add −', key: 'n', icon: 'minus', hint: 'Click to place a negative charge · click a charge to remove one unit' },
-    { id: 'move', label: 'Move', key: 'v', icon: 'move', hint: 'Drag a charge to move it · click a particle to chart its energy' },
+    { id: 'move', label: 'Move', key: 'g', icon: 'move', hint: 'Drag a charge to move it · click a particle to chart its energy' },
     { id: 'launch', label: 'Launch', key: 'l', icon: 'launch', hint: 'Press and drag to fire a test particle · a click releases one at rest' },
     { id: 'probe', label: 'Probe', key: 'i', icon: 'probe', hint: 'Click or drag to place the field meter' },
     { id: 'erase', label: 'Erase', key: 'x', icon: 'erase', hint: 'Brush over charges and particles to remove them' },
@@ -274,7 +276,7 @@ export const fields = {
     if (three) { const s = this.project3(x, y, this.lift3(x, y) + 0.04); return s && { x: s.x, y: s.y, r: 7 }; }
     const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: 6 };
   },
-  inspectHint: 'Click a test particle with Move or with Select (Q) to chart and inspect it here.',
+  inspectHint: 'Click a test particle with Move (G) or with Select (Q) to chart and inspect it here.',
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
   retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },
   energyOf(i) { const ke = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2), pe = this.qm[i] * this.Vat(this.x[i], this.y[i]); return { ke, pe, et: ke + pe }; },

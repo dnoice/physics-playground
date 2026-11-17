@@ -15,7 +15,9 @@
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for drag handles: in one column the inspector's grip is
       hidden, and a dragged deck, even one kept from a wider window, stays
-      within 80 % of the screen.
+      within 80 % of the screen. On Dennis's call for a duplication sweep: the
+      narrow-screen rules for the removed Units, HUD and keyboard buttons are
+      gone.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       tag steps aside below 1280 px, where the lab tabs need the room.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
@@ -30,8 +32,7 @@
       keeps its name.
     - Below 1180 px the console becomes one scrolling column: stage,
       instruments, then the inspector, which has no grip there.
-    - Below 760 px the top bar compacts: no title, a narrow mode switch, and
-      no keyboard button.
+    - Below 760 px the top bar compacts: no title and a narrow mode switch.
     - Below 620 px the colophon stacks its two credits.
     - Reduced motion shortens every animation and transition.
 
@@ -66,10 +67,10 @@
   /* One column has no inner edge to drag: the inspector takes the full width under the deck. */
   .bento .grip-side { display: none; }
 }
-/* The lab rail needs the top bar's room first: the Graphics and Units buttons keep their glyphs and titles only. */
+/* The lab rail needs the top bar's room first: the Graphics button keeps its glyph and title only. */
 @media (max-width: 1024px) {
   .gfx-btn { padding: 0 8px; }
-  #btn-gfx-label, #btn-units-label, #btn-hud-label { display: none; }
+  #btn-gfx-label { display: none; }
 }
 @media (max-width: 760px) {
   .bento { padding: 0 6px 6px; gap: 6px; }
@@ -81,7 +82,6 @@
   .top-actions { gap: 3px; }
   .mode-switch button { min-width: 28px; padding: 0 5px; font-size: 11.5px; }
   .gfx-btn { padding: 0 7px; }
-  #btn-keys { display: none; }
 }
 @media (max-width: 620px) {
   .colophon { flex-direction: column; }

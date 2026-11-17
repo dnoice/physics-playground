@@ -30,7 +30,13 @@
       inspector gets one on its inner edge, both separators that give their
       size in pixels. On his call for a duplication sweep: the deck size
       button and the header's top alert are gone, with the button's two
-      glyphs.
+      glyphs. On Dennis's call for a duplication sweep: the top bar keeps two
+      Settings openers, the gear and Graphics, which shows the tier and now
+      wears its own view_in_ar glyph; the Units, HUD and keyboard buttons,
+      which only repeated the gear, are gone. Restarting the run wears replay
+      and is named so. The status chips form a group named Run status, apart
+      from the head-up display. The Insights tab starts bare, the Inspect tab
+      has no dot, and the keys list says no tool takes a workspace key.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Insights pane's Now
       and Story views with their tablist in the deck's header, the Story's
@@ -65,9 +71,9 @@
       Insights has two views, Now and the Story of the run. The inspector
       has a grip on its inner edge for its width.
     - One Settings dialog (Shift+S) with Graphics, Units (U), Head-up
-      display, Capture and Keyboard (?) sections; the top bar's Graphics,
-      Units, HUD and keyboard buttons, and the player bar's capture settings
-      button, open it at their own.
+      display, Capture and Keyboard (?) sections, opened by the top bar's
+      Settings button; the Graphics button beside it shows the tier and opens
+      it at Graphics, and the player bar's capture settings button at Capture.
     - A player bar laid out as a video player's: the timeline across its
       top with the run's marks, then play, step, reset, speed, and Record
       clip, Record data and Save state with their live lines.
@@ -108,7 +114,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,vertical_split,video_library,video_settings,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,replay,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,vertical_split,video_library,video_settings,view_column,view_in_ar,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -145,13 +151,10 @@
       <button type="button" role="radio" id="mode-2d" aria-checked="false" title="Flat 2D view (Z)">2D</button>
       <button type="button" role="radio" id="mode-3d" aria-checked="true" title="3D world (Z)">3D</button>
     </div>
-    <button type="button" class="btn gfx-btn" id="btn-gfx" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Graphics"><span class="ms" aria-hidden="true">tune</span><span id="btn-gfx-label">Auto</span></button>
-    <button type="button" class="btn gfx-btn" id="btn-units" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Units (U)"><span class="ms" aria-hidden="true">straighten</span><span id="btn-units-label">Metric</span></button>
-    <button type="button" class="btn gfx-btn" id="btn-hud" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Head-up display (Shift+H)"><span class="ms" aria-hidden="true">center_focus_strong</span><span id="btn-hud-label">HUD</span></button>
+    <button type="button" class="btn gfx-btn" id="btn-gfx" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Graphics"><span class="ms" aria-hidden="true">view_in_ar</span><span id="btn-gfx-label">Auto</span></button>
     <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the instruments (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Instruments</span></button>
     <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
-    <button type="button" class="icon-btn" id="btn-keys" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
-    <button type="button" class="icon-btn" id="btn-settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Settings (Shift+S)"><span class="ms" aria-hidden="true">settings</span><span class="sr-only">Settings</span></button>
+    <button type="button" class="icon-btn" id="btn-settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Settings: graphics, units, the head-up display and the keys (Shift+S)"><span class="ms" aria-hidden="true">settings</span><span class="sr-only">Settings</span></button>
   </div>
 </header>
 
@@ -181,7 +184,7 @@
         <!-- The stage's status line. Readings are plain text: the clock and the frame rate, and the recording light
              while a clip or a dataset records (its stop is in the player bar). Only what a press acts on is a button:
              the notices open Insights, and the director's chip gives the camera back. -->
-        <div class="hud">
+        <div class="hud" role="group" aria-label="Run status">
           <p class="hud-status"><span id="hud-time">t = 0.00 s</span><span id="hud-fps">60 fps</span></p>
           <span class="hud-rec" id="hud-rec" hidden></span>
           <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
@@ -242,7 +245,7 @@
       <div class="transport" role="group" aria-label="Simulation transport">
         <button type="button" class="btn btn-primary" id="btn-play" title="Play or pause (Space)"><span class="ms fill" id="btn-play-icon" aria-hidden="true">pause</span><span id="btn-play-label">Pause</span></button>
         <button type="button" class="btn btn-ghost" id="btn-step" title="Pause and advance one frame (.)"><span class="ms" aria-hidden="true">skip_next</span><span class="sr-only">Step</span></button>
-        <button type="button" class="btn btn-ghost" id="btn-reset" title="Restart the current scene with the current settings (R)"><span class="ms" aria-hidden="true">restart_alt</span><span class="sr-only">Reset</span></button>
+        <button type="button" class="btn btn-ghost" id="btn-reset" title="Restart the run: the current scene with the current settings (R)"><span class="ms" aria-hidden="true">replay</span><span class="sr-only">Restart the run</span></button>
       </div>
       <div class="speed" role="group" aria-label="Simulation speed">
         <span class="ms" aria-hidden="true">speed</span>
@@ -271,8 +274,8 @@
     <header class="tile-head deck-head">
       <div class="deck-tabs" role="tablist" aria-label="Instruments" id="deck-tabs">
         <button type="button" role="tab" class="deck-tab" id="dt-telemetry" aria-controls="dp-telemetry" aria-selected="true"><span class="ms" aria-hidden="true">show_chart</span><span class="deck-tab-name">Telemetry</span></button>
-        <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span><span class="deck-tab-dot" id="dt-inspect-dot" hidden></span></button>
-        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum">Stable</span><span class="story-new" id="dt-story-n" hidden></span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum" hidden></span><span class="story-new" id="dt-story-n" hidden></span></button>
       </div>
       <!-- Insights has two views: Now, the run's state with fixes, and Story, the moments the lab's narrator has found. -->
       <div class="ins-views" role="tablist" aria-label="Insights view" id="ins-views">
@@ -373,14 +376,14 @@
 </footer>
 
 <!-- Settings (settings.js): one modal dialog, a section for each part of the workspace a person sets once and keeps.
-     The top bar's Graphics, Units, HUD and keyboard buttons, and the player bar's capture settings button, open it at
-     their own section; each section's contents belong to the module that owns them (mode.js, unitmenu.js,
-     headsup.js, capture.js). -->
+     The top bar's Settings button opens it where it was left, the Graphics button, which shows the tier, at Graphics,
+     and the player bar's capture settings button at Capture; each section's contents belong to the module that owns
+     them (mode.js, unitmenu.js, headsup.js, capture.js). -->
 <dialog class="settings" id="settings" aria-labelledby="settings-title" tabindex="-1">
   <header class="settings-head"><span class="ms settings-ico" aria-hidden="true">settings</span><h2 id="settings-title">Settings</h2><span class="settings-kept">Kept in this browser</span><button type="button" class="icon-btn" id="settings-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close settings</span></button></header>
   <div class="settings-nav">
     <div class="settings-tabs" id="settings-tabs" role="tablist" aria-orientation="vertical" aria-label="Settings sections">
-      <button type="button" role="tab" class="set-tab" id="st-graphics" aria-controls="sp-graphics" aria-selected="true"><span class="ms" aria-hidden="true">tune</span>Graphics</button>
+      <button type="button" role="tab" class="set-tab" id="st-graphics" aria-controls="sp-graphics" aria-selected="true"><span class="ms" aria-hidden="true">view_in_ar</span>Graphics</button>
       <button type="button" role="tab" class="set-tab" id="st-units" aria-controls="sp-units" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">straighten</span>Units</button>
       <button type="button" role="tab" class="set-tab" id="st-hud" aria-controls="sp-hud" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">center_focus_strong</span>Head-up display</button>
       <button type="button" role="tab" class="set-tab" id="st-capture" aria-controls="sp-capture" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">video_settings</span>Capture</button>
@@ -397,7 +400,7 @@
   <dl class="keys-list">
     <dt><kbd>Space</kbd></dt><dd>Play or pause; hold it and drag to pan</dd>
     <dt><kbd>.</kbd> <kbd>,</kbd></dt><dd>Step forward one frame · step back through history</dd>
-    <dt><kbd>R</kbd></dt><dd>Restart the scene</dd>
+    <dt><kbd>R</kbd></dt><dd>Restart the run, with the current settings</dd>
     <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Halve or double the speed</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, frame the scene</dd>
     <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Pan (orbit in 3D views; Shift pans)</dd>
@@ -406,7 +409,7 @@
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
     <dt><kbd>Shift</kbd>+<kbd>H</kbd></dt><dd>Show or hide the head-up display on the stage</dd>
-    <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
+    <dt>Letters</dt><dd>The key shown on each tool selects it; no tool takes a plain key listed here</dd>
     <dt><kbd>Q</kbd></dt><dd>Select: a click on the stage only selects, never throws, paints or erases</dd>
     <dt><kbd>V</kbd></dt><dd>Next view, in a lab with more than one (Chaos, Waves)</dd>
     <dt><kbd>U</kbd></dt><dd>Units in Settings: metric, US customary or simulation pixels</dd>

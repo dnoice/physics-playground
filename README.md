@@ -24,7 +24,11 @@
       Dennis's call for drag handles: the deck's and the inspector's grips,
       their keys and their limits, under the workspace, mouse and touch, and
       the keyboard. On his call for a duplication sweep: the deck size button
-      and the header's top alert are gone.
+      and the header's top alert are gone. On Dennis's call for a duplication
+      sweep: Settings and its two openers, the Guide as a legend, an Insights
+      tab marked only when something stands or is unseen, Restart in the keys
+      table, Fields' Move on G, Units without its button, and the head-up
+      display apart from the run's status.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
       from starlight under Planet classes, with its table of climates; the
       climate in Our Solar System, in the 3D table's Gravity row and in the
@@ -635,19 +639,22 @@ full-height Inspector beside them.
   lines over the simulation. A tape down the left edge carries the lab's key
   readings, each with its trend and a short trace; caution lights near the
   top carry the warnings; and selecting an object puts a target box on it,
-  following it in 2D and 3D, with a callout of its figures. The **HUD**
-  button in the top bar opens its section of Settings, which sets its opacity
-  (40 %, 60 %, 80 % or 100 %) and turns each part on or off; **Shift+H**
-  shows or hides it. Your choice is remembered.
+  following it in 2D and 3D, with a callout of its figures. Its section of
+  Settings sets its opacity (40 %, 60 %, 80 % or 100 %) and turns each part
+  on or off; **Shift+H** shows or hides it. Your choice is remembered. The
+  run's status readings along the top of the stage (time, speed and frame
+  rate) are separate from it.
   The display never takes a click, and screen readers get the same figures
   from Telemetry, Insights and Inspect.
 - **Settings**: the gear at the right of the top bar, or **Shift+S**, opens
   one dialog with five sections: Graphics, Units, Head-up display, Capture
-  and Keyboard. The Graphics, Units, HUD and keyboard buttons beside it, and
-  the capture settings button in the player bar, open it at their own
-  section, as do **U** and **?**, which close it when pressed again. Tab
-  stays inside it, Esc closes it and puts you back where you were, and on a
-  phone it fills the screen. Everything in it is kept in this browser.
+  and Keyboard, where you left it. The **Graphics** button beside it shows
+  the tier in use, with a dot when a setting is your own, and opens it at
+  Graphics; the capture settings button in the player bar opens it at
+  Capture; **U** and **?** open it at Units and the keys, and close it when
+  pressed again. Tab stays inside it, Esc closes it and puts you back where
+  you were, and on a phone it fills the screen. Everything in it is kept in
+  this browser.
 - **Player bar**: one control for time, laid out like a video player's.
   - The rewind timeline runs across its top. While a clip or a dataset
     records, a red or cyan span lies under it from where the recording
@@ -688,9 +695,12 @@ full-height Inspector beside them.
     simulated time, each saying what happened and why, with the numbers, and
     a **Show me** that follows, selects or frames what it is about (see The
     story of a run below). **Now** is what the run is doing and why a setting
-    misbehaves, each with its fix, beside the frame-timing strip. The tab
-    shows the count of insights and, in amber, how many moments are new, and
-    the HUD's alert opens Now.
+    misbehaves, each with its fix, beside the frame-timing strip. A tab
+    carries a mark only when there is something to see: a dot in amber or
+    red, with a few words, while a warning or a critical problem stands, and
+    a plain count of the Story's moments you have not read yet. With neither,
+    the tab is bare, and Inspect's tab never carries a mark for a selection.
+    The stage's alert opens Now.
 
   The grip in the gap above the deck sets its height: drag it, or focus it
   and use the arrow keys (the Page keys step further). Home, Enter and End
@@ -709,9 +719,10 @@ full-height Inspector beside them.
     return it to the scene's values; a section whose changes restart the run
     says so once. A disabled control says why underneath.
   - **Experiments**: guided experiments with live progress checks.
-  - **Guide**: the lab's tools, views and scenes as cards that pick them,
-    marked as they change, with the Random switch beside the tools, the lab's
-    notes and how to move around.
+  - **Guide**: a legend of the lab's tools and views (the rail's glyph, the
+    name, the key and what it does), what Random changes, which scenes there
+    are, the lab's notes and how to move around. It explains and picks
+    nothing: the rail, the keys and the scene menu do that.
   - **Math**: the formulas behind the lab, wired to the run. A formula shows
     the live values of its symbols, dials for the parameters it contains
     (the same settings as Controls, kept in step), a check that sets the
@@ -723,6 +734,7 @@ full-height Inspector beside them.
 - **Selecting things**: three ways, in every lab. Click the object with the
   lab's own tool: a body in Gravity, a ball in Collisions (with Grab), a
   particle in Fields (with Move), a post in Fluid (with any tool but
+  particle in Fields (with Move, G), a post in Fluid (with any tool but
   Obstacle), a source in Waves, or a pendulum or a dot on the map in Chaos.
   Or turn on **Select** (Q) in the camera controls, where every click picks
   and nothing else happens; it also picks Cloth's pins. Or pick a row in
@@ -757,11 +769,10 @@ a capture or a warning, is also announced to screen readers.
 
 ### Units
 
-The **Units** button in the top bar, or **U**, opens the Units section of
-Settings, which picks what every reading, control, inspected figure and scale
-bar is shown in. The simulations always
-compute in their own units, so switching never changes a run; typed values
-are read in the units shown.
+**U**, or the Units tab in Settings, opens the Units section, which picks
+what every reading, control, inspected figure and scale bar is shown in. The
+simulations always compute in their own units, so switching never changes a
+run; typed values are read in the units shown.
 
 | System | Shows | Scale |
 | --- | --- | --- |
@@ -812,10 +823,10 @@ and the inspector's width, set with their grips, are remembered.
 | --- | --- |
 | Space | Play or pause (hold and drag to pan) |
 | . and , | Step forward one frame, step back through the rewind history |
-| R | Reset the scene |
+| R | Restart the run (the scene with the current settings) |
 | 1–7 | Switch lab |
 | Z | Switch between 2D and 3D |
-| Letters | Pick a tool (shown on each tool button) |
+| Letters | Pick a tool (shown on each tool button; no tool takes a key in this table) |
 | Q | Select: a click on the stage only selects |
 | V | Next view, in Chaos and Waves |
 | U | Units, in Settings |

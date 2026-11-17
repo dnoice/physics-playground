@@ -18,7 +18,10 @@
       gap above the deck; a drag or the arrow keys set any height, Home, Enter
       and End pick the compact, standard and tall presets, and a double-click
       steps through them as the button did. It runs on dragHandle(), and its
-      value is the deck's height in pixels between its limits.
+      value is the deck's height in pixels between its limits. On Dennis's
+      call for honest tab marks: a selection no longer puts an amber dot on
+      the Inspect tab, which read as something to look at; a new selection
+      still opens the pane.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
       unused deckPane() export.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -72,16 +75,15 @@ export function showPane(id, { focus = false, auto = false, reveal = false } = {
     if (on && focus) t.focus();
   }
   tile().dataset.pane = id;
-  if (id === 'inspect') $('#dt-inspect-dot').hidden = true;
   if (reveal) revealTile(tile());
   if (id === 'telemetry') requestAnimationFrame(() => drawChart());
 }
-/* Called by the Inspect pane whenever the selection changes: a new one opens Inspect, a cleared one goes back. */
+/* Called by the Inspect pane whenever the selection changes: a new one opens Inspect, a cleared one goes back. A
+   selection puts no mark on the Inspect tab: a tab's mark means a problem stands or something is unseen, and the
+   selection is in plain view on the stage. */
 export function noteSelection(had, has) {
   if (has && !had) { if (pane !== 'inspect') showPane('inspect', { auto: true }); }
   else if (!has && had) { if (pane === 'inspect' && before) { const b = before; before = null; showPane(b); } else before = null; }
-  else if (has && pane !== 'inspect') $('#dt-inspect-dot').hidden = false;
-  if (!has) $('#dt-inspect-dot').hidden = true;
 }
 
 /* ---------- size ---------- */
