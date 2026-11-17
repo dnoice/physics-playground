@@ -46,7 +46,7 @@
     - The player bar keeps every name and live line from a desktop to a
       phone: keys go below 1000 px of tile, Play's word below 860 px, and
       below 780 px the capture cluster takes a row of its own.
-    - Experiment banner below the HUD row.
+    - Experiment banner below the run's status chips.
     - The rail sits at a fixed offset from the top-right corner; Camera first,
       then Tools with the Random dice, View and This scene.
     - View options carry their names; at 720 px and below the rail becomes a

@@ -661,9 +661,10 @@ full-height Inspector beside them.
     began, and each state saved in this run stands above it as a green
     tick.
   - Beneath it are play, step, reset and the speed, then **Record clip**,
-    **Record data** and **Save state**. Each shows its key and a line of
-    what it will keep (format and quality, columns and rate) or how far it
-    has got (time and size, rows). A recorder turns into its own stop
+    **Record data** and **Save state**. The two recorders show their keys
+    (**M**, **D**) where the stage is wide enough; each button shows a line
+    of what it will keep (format and quality, columns and rate) or how far
+    it has got (time and size, rows). A recorder turns into its own stop
     button, and Save state confirms that the Library has the state.
   - The settings button at the end opens the Capture section of Settings.
   - On a narrow screen the keys go first, then Play's word. Below about
@@ -689,7 +690,7 @@ full-height Inspector beside them.
     press Enter, to select it; the selected row is marked in amber. The list
     keeps up with the run and holds its order while the pointer is over it.
     Settings stay in Controls; the card offers only actions on the object
-    itself, such as remove or follow.
+    itself, such as delete, remove or free a pin.
   - **Insights**: two views, side by side in the header. **Story** is the
     lab's narrator: the moments it has noticed, newest first and stamped with
     simulated time, each saying what happened and why, with the numbers, and
@@ -826,7 +827,7 @@ and the inspector's width, set with their grips, are remembered.
 | R | Restart the run (the scene with the current settings) |
 | 1–7 | Switch lab |
 | Z | Switch between 2D and 3D |
-| Letters | Pick a tool (shown on each tool button; no tool takes a key in this table) |
+| Letters | Pick a tool (shown on each tool button; no tool takes a plain key in this table, and Shift chords are separate) |
 | Q | Select: a click on the stage only selects |
 | V | Next view, in Chaos and Waves |
 | U | Units, in Settings |

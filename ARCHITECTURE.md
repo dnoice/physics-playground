@@ -295,7 +295,7 @@ A lab is an object registered in `js/labs/index.js`. The registry adds
 | `stateSummary()` | Extra fields shown on a saved state in the Library |
 | `interest(keep)` | The director's areas of interest: points `{ x, y, z?, r, w, key, label }` in the lab's world coordinates (`z` in Gravity only), with `r` the extent to frame, `w` a weight from 0 (routine) to 1 (do not miss; 0.85 and up may take over a routine shot), `key` a stable name so a moving subject can be followed, and `label` for the stage chip. `keep` is the key being filmed, which a lab whose subjects come and go (Gravity's bodies, a Collisions ball) still reports while it exists. Called four times a second while the director runs, never per frame; `js/core/interest.js` holds the shared measurements (the densest cell, the fastest group, the fastest cell) |
 | `releaseCam()`, `retakeCam(held)` | A lab that drives its own camera lets go while the director films and takes back what it let go when it stops: Gravity's Follow and followed body |
-| `inspect()`, `deselect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab |
+| `inspect()`, `inspectHint` | The selected object for the Inspect pane, or null: `{ id, kicker, short, title, color or rgb, rows, actions, spot, focus }`, where `short` names the object in plotted series, `spot` asks the scene for a portrait and `focus` names the figure the focus chart follows first; `inspectHint` tells an empty pane how to select in this lab. There is no separate deselect hook: `select(null)` clears the selection |
 | `objects()`, `select(id)`, `selectedId()`, `pick(s)`, `spot(id, three)` | The selection contract, one shape in every lab (see Selection below). `objects()` lists what can be selected now as `{ id, name, kind, v }`, `v` holding the figures `objectCols` names; `select(id)` selects by id (null clears) and says whether it took; `selectedId()` is the selection's id or null; `pick(s)` turns a stage point into the nearest object's id within the Select tool's reach (`PICK_PX`), or null; `spot(id, three)` is where an object is drawn, `{ x, y, r }` in stage pixels for the current mode |
 | `objectCols[]`, `objectsName`, `objectsEmpty`, `selectHint`, `pickRing` | The objects list's figures as `{ label, unit(), text(v), w }` (the column's share of the width), its heading and its empty text; the stage hint while Select is on; and `pickRing` for a lab that rings what the Select tool would take itself (Gravity, with its hover tag) instead of the stage's plain ring |
 | `random` | Random placement: `{ key, label, tip }`, naming a boolean parameter (by convention `rand`) that the lab's placing tools read. The shell shows a dice under the tools and a Random row in the Guide's legend, and the lab adds the matching switch to its controls |
@@ -623,7 +623,8 @@ alike:
 
 - **A coloured dot, with a few words,** only while a warning (amber) or a
   critical problem (red) stands: `#diag-sum` on Insights, written by
-  `tabMark()` in `diagnostics.js` from the same list as the stage's alert.
+  `tabMark()` in `diagnostics.js` from the same list as the stage's alert
+  chip, and in the same words ("2 critical", "3 to check").
   Insights that are only informative are counted inside the pane, on the Now
   view, never on the tab.
 - **A neutral count,** in the text colour on no fill, for what has not been
@@ -633,11 +634,15 @@ alike:
   view on the stage, and a new one opens the pane), and a calm run leaves
   Insights bare.
 
-The slow-run warning names the cause the meters show: the solver over its
-budget, frames too far apart (each carries the run at most 50 ms), or more
-steps than the lab takes in a frame. "Drawing is the bottleneck" shows only
-when drawing takes over 12 ms, more than the solver, and over half of each
-frame.
+The slow-run warning names the cause the meters show, read from them
+directly: the step cap when the frames take every step, or nearly, that the
+lab allows (`lab.maxSteps`, else `STEP_CAP` from `loop.js`); the budget only
+when the solver's time reaches `BUDGET_MS`; frames too far apart when fewer
+than 20 a second arrive, each carrying the run at most `FRAME_MAX_S` (50 ms)
+of real time, which is more simulated time at a higher speed. With none of
+these it blames nothing and gives the numbers. "Drawing is the bottleneck"
+shows only when drawing takes over 12 ms, more than the solver, and over half
+of each frame.
 
 ### The Story
 
@@ -1203,7 +1208,9 @@ capture cluster. Capture lives nowhere else.
   after the new time, and those older than the oldest snapshot go with it.
   `timelineMarks(lab)` fills one record in place with them and the time each
   running recording began (`vrec.from`, which reaches back when a clip goes
-  on through a rewind; a dataset's first row). `updateRewind` places them on
+  on through a rewind; a dataset's first row). `histReset` starts both again
+  at the lab's time when a rebuild or a loaded state starts a new history,
+  so a recording that runs on keeps its span. `updateRewind` places them on
   the track: a span under it for each recording, a tick above it for each
   state, at their moment between the snapshots either side.
 - **The stage's light.** `#hud-rec` is status, not a control: plain text

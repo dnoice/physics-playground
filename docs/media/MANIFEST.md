@@ -1,17 +1,23 @@
 <!--
 ✒ Metadata
-    - Title: README Media Manifest (digiSpace Edition - v2.12)
+    - Title: README Media Manifest (digiSpace Edition - v2.19)
     - File Name: MANIFEST.md
     - Relative Path: docs/media/MANIFEST.md
     - Artifact Type: docs
-    - Version: 2.12.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the hero is marked for a
+      recapture, since it predates the release and shows the top bar's Units,
+      HUD and keyboard buttons, the Running and real-time chips, the deck's
+      size button and the player bar's Video, Data and Save, all removed or
+      renamed since.
     - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The hero
       and the banner are recaptured from release 2.12.0 with the redesigned
       Star system: a world of every class, each in its own colour.
@@ -112,6 +118,14 @@ world, a lavender sub-Neptune, two golden giants, a blue ice giant and the
 comet's white trail. The hero also shows the head-up display's readings
 tape, the planet-class buttons under New bodies, and the dials: open cells,
 the value unframed with its unit set back, and each row's wheels level.
+The hero is due for a recapture (`--only hero`): it predates release
+2.19.0, so it still shows controls that release removed or renamed. Its top
+bar has the Units, HUD and keyboard buttons, which the gear and Graphics
+replaced; its status line has the Running pill and the real-time chip,
+gone, beside readings now plain text; its deck header has the size button,
+replaced by the grip; and its player bar has Video, Data and Save beside
+the rewind slider, where the timeline now runs across the bar's top over
+Record clip, Record data and Save state.
 The Collisions picture was captured from release 2.7.0 on 11/10/2026 in the
 same way, and shows the target box and callout on the selected cue ball. The Fluid,
 Waves and Fields pictures and the 2D and 3D pair stand from release 2.5.0,
@@ -124,7 +138,7 @@ and Chaos and Cloth, whose rails have no dice, from release 2.4.0.
 | File | Size (px) | Shows | Used in |
 | --- | --- | --- | --- |
 | `banner.webp` | 2560 × 800 | The title, tagline and the seven labs over a live 3D render of Gravity's Star system, its worlds of every planet class in their own colours | README title |
-| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's Star system after 8 simulated seconds (about 1.8 years), a world of every planet class in its own colour, a moon on each giant and a comet, with the head-up display's readings tape and the HUD button, the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and planet-class buttons, and the colophon | README, under the badges |
+| `hero-workspace.webp` | 2244 × 1517 | The whole workspace in 3D at the Ultra tier: Gravity's Star system after 8 simulated seconds (about 1.8 years), a world of every planet class in its own colour, a moon on each giant and a comet, with the head-up display's readings tape and the HUD button, the stage rail and its Random dice, the instruments deck on Telemetry, the Controls page's dials and planet-class buttons, and the colophon. From release 2.12.0 and due for a recapture: see above | README, under the badges |
 | `lab-collisions.webp` | 1106 × 610 | Collisions, Billiard break, 1.6 s in, with the cue ball selected: the head-up display's target box and callout on it, and its readings tape | Lab gallery |
 | `lab-fluid.webp` | 1106 × 610 | Fluid, Dam break, 1.4 s in | Lab gallery |
 | `lab-waves.webp` | 1106 × 610 | Waves, Double slit, 6 s in | Lab gallery |
