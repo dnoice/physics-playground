@@ -130,7 +130,7 @@ with sync_playwright() as p:
         if not res[lab]: res[lab] = r
         pg.evaluate(P + ".play()")
     ok("target_on_object_2d", all(v is True for v in res.values()), res)
-    pg.evaluate(P + ".active.deselect()")
+    pg.evaluate(P + ".active.select(null)")
     settle(pg, "document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden", 5000)
     ok("target_clears_with_selection", pg.evaluate("document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden"))
     # An object panned off the stage waits at the edge, dashed.

@@ -252,7 +252,6 @@ export const fields = {
     const en = this.energyOf(i), q = this.qm[i], B = this.p.B;
     return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, focus: 'Kinetic energy per mass', title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', fmtQ(this, 'speed', Math.hypot(this.vx[i], this.vy[i])), 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? fmtQ(this, 'len', Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)) : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
-  deselect() { this.picked = false; },
   /* The director's areas of interest (js/shell/director.js), in stage pixels: the tracked particle, framed round the
      circle a magnetic field bends it into (centred on its guiding centre, which drifts slowly while the particle
      whirls), then the swarm of test particles and the charges that drive them. */

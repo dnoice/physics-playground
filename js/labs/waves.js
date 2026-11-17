@@ -426,7 +426,6 @@ export const waves = {
     return { id: `src-${s.id}`, focus: 'Driving now', kicker: point ? `Source ${k + 1} of ${pts.length}` : 'Line source', short: point ? `Source ${k + 1}` : 'Line source', title: point ? 'Point oscillator' : 'Plane-wave paddle', color: '#f2a541', rows,
       actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
   },
-  deselect() { this.selSrc = null; },
   /* The director's areas of interest (js/shell/director.js), in stage pixels: the point sources (a moving one most of
      all), the interference pattern beyond the slits or ahead of two or more sources, the detector line where a line
      source's fringes land, and the brightest spot of the time-averaged intensity (a lens's focus, a bright fringe). */

@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Waves Narrator (digiSpace Edition - v2.18)
+    - Title: Waves Narrator (digiSpace Edition - v2.19)
     - File Name: waves.js
     - Relative Path: js/labs/story/waves.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: Show me selects a source through
+      the lab's select().
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for Insights that narrate the run: the wavelength
       measured crest to crest against c/f, fringe spacing against the slit
@@ -134,7 +137,7 @@ export const wavesStory = {
       if (M < 1) {
         const ahead = crestSpacing(L, s.y, Math.round(s.x) + 3 * s.dir, s.dir > 0 ? Nx - L.Ls - 3 : L.Ls + 3, s.dir), behind = crestSpacing(L, s.y, Math.round(s.x) - 3 * s.dir, s.dir > 0 ? L.Ls + 3 : Nx - L.Ls - 3, -s.dir);
         const ta = lam * (1 - M), tb = lam * (1 + M);
-        if (hold('doppler', Math.abs(ahead / ta - 1) < 0.2 && Math.abs(behind / tb - 1) < 0.2, 2)) N.add({ kind: 'doppler', group: 'Doppler shifts', key: `doppler|${M}|${f}`, show: { label: 'Select the source', can: () => L.sources.includes(s), run() { L.selSrc = s.id; } }, title: 'Waves bunch ahead, stretch behind',
+        if (hold('doppler', Math.abs(ahead / ta - 1) < 0.2 && Math.abs(behind / tb - 1) < 0.2, 2)) N.add({ kind: 'doppler', group: 'Doppler shifts', key: `doppler|${M}|${f}`, show: { label: 'Select the source', can: () => L.sources.includes(s), run() { L.select(s.id); } }, title: 'Waves bunch ahead, stretch behind',
           body: `Moving at ${M.toFixed(2)} c, the source chases the waves it sends forward and runs from those it sends back. Ahead they measure <b>${len(L, ahead)}</b> crest to crest, against λ(1 − M) = ${len(L, ta)}; behind, <b>${len(L, behind)}</b> against λ(1 + M) = ${len(L, tb)}. A listener ahead hears f/(1 − M) = ${(f / (1 - M)).toFixed(2)} Hz: the rising pitch of an approaching siren.` });
       } else if (!N.said(`mach|${M}`)) {
         N.add({ kind: 'doppler', group: 'Doppler shifts', key: `mach|${M}`, tone: 'key', title: `A Mach cone at ${M.toFixed(2)} c`,

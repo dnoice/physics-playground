@@ -347,7 +347,6 @@ export const pendulum = {
     return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, short: i === 0 ? 'Front copy' : `Copy ${i + 1}`, focus: 'Lower angle θ₂', title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
       actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
   },
-  deselect() { this.sel = -1; },
   /* ---------- the selection contract (ARCHITECTURE.md): a copy by its place in the row, 0 the front pendulum ---------- */
   selectedId() { return this.sel >= 0 && this.sel < this.N ? this.sel : null; },
   select(id) { if (id == null) { this.sel = -1; return true; } if (!(id >= 0 && id < this.N)) return false; this.sel = id; return true; },

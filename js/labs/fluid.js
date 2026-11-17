@@ -429,7 +429,6 @@ export const fluid = {
       ['Flow speed around it', nf ? fmtQ(this, 'speed', sp / nf) : '—', 'The mean speed of the particles within about one and a half spacings of its surface.'],
     ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selId = null; } }] };
   },
-  deselect() { this.selId = null; },
   /* The director's areas of interest (js/shell/director.js), in stage pixels: the splash front, where the particles
      moving faster than twice the mean are (a breaking dam, a landing drop, two blobs meeting), and the fastest patch
      of the tank, each weighted by its speed in px/s, so water at rest offers nothing. */

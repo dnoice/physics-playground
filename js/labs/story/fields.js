@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Fields Narrator (digiSpace Edition - v2.18)
+    - Title: Fields Narrator (digiSpace Edition - v2.19)
     - File Name: fields.js
     - Relative Path: js/labs/story/fields.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: Show me selects a particle through
+      the lab's select().
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for Insights that narrate the run: each gyration
       timed against 2πm/|q|B, the period's indifference to speed, the E × B
@@ -49,7 +52,7 @@ const secs = t => `${sig(t, 3)} s`;
 const spd = (L, v) => fmtQ(L, 'speed', v, { prefix: true });
 const pc = x => `${sig(x * 100, 2)} %`;
 const TRACK = 24;
-const choose = (L, pid) => ({ label: `Select particle ${pid}`, can: () => L.indexOf(pid) >= 0, run() { L.setTrack(pid); L.picked = true; } });
+const choose = (L, pid) => ({ label: `Select particle ${pid}`, can: () => L.indexOf(pid) >= 0, run() { L.select(pid); } });
 
 function start(L, t) { S = { t0: t, t, look: 0, recs: new Map(), absorbed: L.absorbed, escaped: L.escaped, periods: [], same: false, drifted: false, bent: false, hits: [] }; }
 /* A particle's record: its velocity in the frame drifting at E/B (so a cycloid from rest still turns evenly), where

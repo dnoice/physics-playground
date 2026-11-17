@@ -332,7 +332,7 @@ export const gravity = {
     { label: 'Add an orbiting body', run() { gravity.addRandom(); } },
     { label: 'Clear trails', run() { for (const b of gravity.bodies) { b.tn = 0; b.th = 0; } } },
   ],
-  bodies: [], cam: { x: 0, y: 0, z: 1 }, aim: null, pan: null, erasing: false, viewXf: { ox: 0, oy: 0, z: 1 }, track: null, trackEase: 0,
+  bodies: [], cam: { x: 0, y: 0, z: 1 }, aim: null, erasing: false, viewXf: { ox: 0, oy: 0, z: 1 }, track: null, trackEase: 0,
   selfCam: true, screenInput: true,
   E0: 0, E: 0, KE: 0, PE: 0, Kint: 0, Eint: 0, merged: 0, escaped: 0, stepCount: 0, uid: 0, accDirty: true, lastSample: -1,
   series: { ke: new Series(400), pe: new Series(400), e: new Series(400), kint: new Series(400) }, fld: null, fldClock: 0,
@@ -382,7 +382,7 @@ export const gravity = {
   },
   build(preset) {
     const B = this.bodies = [];
-    this.merged = 0; this.escaped = 0; this.aim = null; this.pan = null; this.lastSample = -1;
+    this.merged = 0; this.escaped = 0; this.aim = null; this.lastSample = -1;
     for (const s of Object.values(this.series)) s.clear();
     if (preset === 'solar') {
       // A system of every class, each world its own: a hot grey rock on an eccentric orbit, a super-Earth inside the runaway limit (a
@@ -727,10 +727,13 @@ export const gravity = {
   /* ---------- picking: one way in both views ---------- */
   /* The view's projector: it writes where body b is drawn on the stage, and how large, into o, and says false when b
      is not drawn (behind the camera, or a moon still inside its planet's disc). Every test below measures on the
-     stage through it, so the flat and 3D views pick, erase and ring alike. */
-  projector() {
-    if (this.is3D()) return this.proj3 || (this.proj3 = (b, o) => { const s = this.project3(b.x, b.y, b.z); if (!s || !this.apart3(b, s)) return false; o.x = s.x; o.y = s.y; o.r = this.radius3(b, s); return true; });
-    return this.proj2 || (this.proj2 = (b, o) => { const { ox, oy, z } = this.viewXf; if (!this.apart(b, z)) return false; o.x = b.x * z + ox; o.y = b.y * z + oy; o.r = this.drawR(b, z); return true; });
+     stage through it, so the flat and 3D views pick, erase and ring alike. With all, a moon inside its planet's disc
+     is placed too: the follow ring marks the followed body wherever it is, while picking keeps to what is drawn. */
+  projector(all = false) {
+    const P = this.projs || (this.projs = {}), k = (this.is3D() ? '3' : '2') + (all ? 'all' : '');
+    if (P[k]) return P[k];
+    if (this.is3D()) return (P[k] = (b, o) => { const s = this.project3(b.x, b.y, b.z); if (!s || (!all && !this.apart3(b, s))) return false; o.x = s.x; o.y = s.y; o.r = this.radius3(b, s); return true; });
+    return (P[k] = (b, o) => { const { ox, oy, z } = this.viewXf; if (!all && !this.apart(b, z)) return false; o.x = b.x * z + ox; o.y = b.y * z + oy; o.r = this.drawR(b, z); return true; });
   },
   /* The body whose drawn disc comes nearest stage point p, within slack pixels of its edge. */
   pickBody(p, project, slack) {
@@ -807,7 +810,7 @@ export const gravity = {
   /* The followed body's ring, what a click would take, and the Delete brush: drawn alike over the flat and 3D views. */
   drawMarks(g, w, h) {
     const o = SPOT, project = this.projector(), tb = this.selected();
-    if (tb && project(tb, o)) followRing(g, o.x, o.y, o.r + 8);
+    if (tb && this.projector(true)(tb, o)) followRing(g, o.x, o.y, o.r + 8);
     if (!this.hover || this.aim) return;
     const b = this.hoverPick(this.hover), del = this.p.tool === 'erase' && !ptr.selectMode;
     if (b && project(b, o)) hoverTag(g, o.x, o.y, o.r, this.hoverText(b), w, h, del ? THEME.crit : THEME.text);
@@ -818,7 +821,7 @@ export const gravity = {
   selectedId() { return this.selected() ? this.track : null; },
   /* Selecting a body follows it with the camera, as a click on it always has; null lets the camera go. */
   select(id) {
-    if (id == null) { this.deselect(); return true; }
+    if (id == null) { this.track = null; updateNav(); return true; }
     const b = this.bodies.find(q => q.id === id); if (!b) return false;
     if (this.track !== b.id) { this.track = b.id; this.trackEase = 0; }
     this.p.follow = false; updateNav();
@@ -887,7 +890,6 @@ export const gravity = {
       { label: 'Delete body', run: () => { const m = this.bodies; this.bodies = m.filter(q => q !== b); this.track = null; this.accDirty = true; this.E0 = this.energy(); updateNav(); } },
     ] };
   },
-  deselect() { this.track = null; updateNav(); },
   /* What a world is like up close: its radius (real, or estimated from its mass and class by the reference's Model
      4.4.3) and from that its bulk density, gravity and escape speed (Model 4.1.2), in SI. Null for a body with no
      mass, or with no radius to go on (a brown dwarf or star of the sandbox). */
@@ -965,7 +967,7 @@ export const gravity = {
   onCamZoom() { this.p.zoom = this.cam.z; },
   /* A click on a body with Throw follows it, and a click on the followed body lets it go. */
   followBody(b) {
-    if (this.track === b.id) { this.deselect(); announce('Camera released'); return; }
+    if (this.track === b.id) { this.select(null); announce('Camera released'); return; }
     this.select(b.id); announce(`Following ${nameOf(b)}`);
   },
   extent() {
@@ -1597,7 +1599,7 @@ Object.assign(gravity, {
       b.id = s.ids[i]; b.kind = storedKind(s.kinds && s.kinds[i], b.m, meta); B.push(b);
     }
     linkHosts(B);
-    Object.assign(this, { bodies: B, merged: s.merged, escaped: s.escaped, cam: { ...this.cam, ...s.cam }, stepCount: s.stepCount, aim: null, pan: null, accDirty: true });
+    Object.assign(this, { bodies: B, merged: s.merged, escaped: s.escaped, cam: { ...this.cam, ...s.cam }, stepCount: s.stepCount, aim: null, accDirty: true });
     this.prepare();
     if (this.track != null && !B.some(b => b.id === this.track)) this.track = null;
     this.p.zoom = this.cam.z;

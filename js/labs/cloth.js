@@ -392,7 +392,6 @@ export const cloth = {
   pinR() { return clamp(this.p.spacing * 0.28, 3, 5.5); },
   selectedId() { return this.sel != null && this.sel < this.n && this.pin[this.sel] ? this.sel : null; },
   select(id) { if (id == null) { this.sel = null; return true; } if (!(id >= 0 && id < this.n && this.pin[id])) return false; this.sel = id; return true; },
-  deselect() { this.sel = null; },
   /* The pin nearest a stage point, within the Select tool's reach of its edge. */
   pick(s) {
     const f = pickFrame(this, s); if (!f) return null;

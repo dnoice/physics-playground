@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Chaos Narrator (digiSpace Edition - v2.18)
+    - Title: Chaos Narrator (digiSpace Edition - v2.19)
     - File Name: chaos.js
     - Relative Path: js/labs/story/chaos.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: Show me selects a copy through the
+      lab's select().
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for Insights that narrate the run: the copies'
       exponential parting with a measured Lyapunov time, the forecast that
@@ -47,7 +50,7 @@ let S = null;
 const secs = t => `${sig(t, 3)} s`;
 const spec = (L, e) => fmtQ(L, 'spec', e, { digits: 2 });
 const turns = a => Math.floor((a + Math.PI) / TAU);
-const select = (L, i, label) => ({ label, can: () => i < L.N, run() { L.sel = i; } });
+const select = (L, i, label) => ({ label, can: () => i < L.N, run() { L.select(i); } });
 const POWERS = { 2: 'a hundred', 3: 'a thousand', 4: 'ten thousand', 5: 'a hundred thousand', 6: 'a million', 7: 'ten million', 8: 'a hundred million' };
 const times = k => { const p = Math.round(Math.log10(k)); return POWERS[p] || `10^${p}`; };
 

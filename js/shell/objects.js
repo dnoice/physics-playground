@@ -80,13 +80,14 @@ function syncHead() {
     if (h.b.getAttribute('aria-label') !== lbl) h.b.setAttribute('aria-label', lbl);
   }
 }
-/* The rows' order: the lab's own, or by a column. While the pointer is over the list the order holds, and only
-   objects that came or went change it. */
-function sortList() {
+/* The rows' order, as indices into list: the lab's own, or by a column. While the pointer is over the list the order
+   holds: heldIds is the order shown before this refresh, by object id (indices move as the lab's own order changes),
+   and only objects that came (at the end) or went change it. */
+function sortList(heldIds) {
   const n = list.length;
-  if (held && order.length) {
+  if (heldIds && heldIds.length) {
     const at = new Map(list.map((o, i) => [o.id, i])), kept = [], seen = new Set();
-    for (const id of order) { const i = at.get(id); if (i != null) { kept.push(i); seen.add(i); } }
+    for (const id of heldIds) { const i = at.get(id); if (i != null && !seen.has(i)) { kept.push(i); seen.add(i); } }
     for (let i = 0; i < n; i++) if (!seen.has(i)) kept.push(i);
     return kept;
   }
@@ -140,7 +141,8 @@ function reveal(i, centre) {
 function refresh(lab, now) {
   if (!lab) return;
   const prev = activeId == null ? -1 : order.findIndex(i => list[i] && list[i].id === activeId);
-  list = lab.objects(); order = sortList();
+  const heldIds = held ? order.map(i => list[i] && list[i].id) : null;
+  list = lab.objects(); order = sortList(heldIds);
   const n = list.length, sel = lab.selectedId();
   host.classList.toggle('none', !n);
   emptyEl.hidden = !!n; listEl.hidden = !n;

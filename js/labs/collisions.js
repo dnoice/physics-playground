@@ -345,7 +345,6 @@ export const collisions = {
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
     return { id: `ball-${this.uid[i]}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${this.uid[i]}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
-  deselect() { this.sel = null; },
   /* The director's areas of interest (js/shell/director.js), in stage pixels: the Brownian tracer, the densest
      cluster (the pile, a jam) and the fastest ball, each weighted by how far it stands out from the rest. keep is the
      ball being filmed, reported while it lasts. */

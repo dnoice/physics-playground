@@ -1,24 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Icon Glyphs (digiSpace Edition - v2.18)
+    - Title: Icon Glyphs (digiSpace Edition - v2.19)
     - File Name: icons.js
     - Relative Path: js/core/icons.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the pan entry, left over from
+      Gravity's removed Pan tool, is gone; the view controls' hand keeps its
+      glyph.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: STORY_ICON, the glyph
       of each kind of moment, all from glyphs the font subset already carries.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Glyphs for
       the Library's actions: download, rename, preview, details and load.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Adds the
-      dice glyph for random placement.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,7 +46,7 @@ import { el } from './util.js';
    font is subset by the icon_names list in index.html; tools/check.mjs keeps
    that list and these names in step. */
 export const ICON = {
-  throw: 'arrow_outward', erase: 'delete', pan: 'pan_tool', grab: 'back_hand', heat: 'local_fire_department', cool: 'ac_unit',
+  throw: 'arrow_outward', erase: 'delete', grab: 'back_hand', heat: 'local_fire_department', cool: 'ac_unit',
   stir: 'cyclone', push: 'open_in_full', pull: 'close_fullscreen', pour: 'water_drop', obstacle: 'radio_button_checked',
   drain: 'format_color_reset', pulse: 'radar', wall: 'view_column', eraser: 'ink_eraser', source: 'adjust', glass: 'lens_blur',
   pend: 'linear_scale', phase: 'scatter_plot', both: 'vertical_split', disp: 'waves', int: 'blur_on', cut: 'content_cut', pin: 'keep', ball: 'sports_baseball',
