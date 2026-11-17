@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Head-Up Display Styles (digiSpace Edition - v2.7)
+    - Title: Head-Up Display Styles (digiSpace Edition - v2.18)
     - File Name: headsup.css
     - Relative Path: css/headsup.css
     - Artifact Type: stylesheet
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the display's options sit in its
+      section of Settings, the parts two abreast where there is room.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
       Dennis's call for a cockpit-style head-up display over the stage: the
       readings tape, caution lights, target box, leader and callout, and the
@@ -21,7 +24,8 @@
 ✒ Description:
     The look of the head-up display (headsup.js): thin phosphor-cyan lines
     and monospaced figures laid straight onto the stage, legible over a dark
-    sky or a bright 3D room, at the opacity chosen in the HUD menu.
+    sky or a bright 3D room, at the opacity chosen in its section of
+    Settings.
 
 ✒ Key Features:
     - One opacity for the whole display, from the --hu-a custom property.
@@ -142,8 +146,7 @@
   .hu-trace { display: none; }
 }
 
-/* ---------- the HUD menu in the top bar ---------- */
-.hud-opts { display: grid; gap: 14px; padding: 12px 16px 10px; }
+/* ---------- its section in Settings ---------- */
+.hud-opts { display: grid; gap: 16px; max-width: 560px; }
 .hud-field { display: grid; gap: 8px; }
-.hud-parts { display: grid; gap: 10px; }
-.hud-sheet .gfx-note:last-child { font-family: inherit; font-size: 12px; overflow-wrap: normal; }
+.hud-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; }

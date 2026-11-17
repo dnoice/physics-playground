@@ -1,17 +1,25 @@
 """
 ✒ Metadata
-    - Title: Head-Up Display Tests (digiSpace Edition - v2.7)
+    - Title: Head-Up Display Tests (digiSpace Edition - v2.19)
     - File Name: hud.py
     - Relative Path: tests/hud.py
     - Artifact Type: test
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Selections
+      go through each lab's select(), and the target is checked against spot()
+      for selectedId(). On Dennis's call for a duplication sweep: the head-up
+      display's section opens from the Settings button, and the checks read
+      the setting where the removed button's label showed it.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the menu checks drive the
+      display's section of Settings, and Shift+H works inside it.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for release 2.7.0: the head-up display over the stage.
 
@@ -24,13 +32,15 @@
 ✒ Key Features:
     - Readings: every lab's tape carries the readings it names, with the same
       text Telemetry shows at the same tick, under the title and its chips.
-    - Target: the box is centred on hudTarget() in six labs in 2D and in
-      Gravity in 3D, the callout carries the inspected name and keeps off the
-      object, an object off the stage gets a dashed box at the edge, and
-      clearing the selection clears both.
+    - Target: the box is centred on spot() of selectedId() in six labs in 2D
+      and in Gravity in 3D, the callout carries the inspected name and keeps
+      off the object, an object off the stage gets a dashed box at the edge,
+      and clearing the selection clears both.
     - Cautions: an under-resolved wave lights a warning by its title.
-    - Menu and keys: opacity steps, parts, Escape, Shift+H (which leaves a
-      lab's H tool alone), the keys sheet, and settings kept across a reload.
+    - Settings and keys: the display's section of Settings, its opacity
+      steps and parts, Shift+H inside it, Escape, Shift+H (which leaves a
+      lab's H tool alone), the keyboard section, and settings kept across a
+      reload.
     - Phone: one caution light and two callout figures on a 390 px stage.
 
 ✒ Usage Instructions:
@@ -50,17 +60,20 @@ from harness import URL, finish, launch, ok, open_page, settle
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
+# The head-up display's setting as the page holds it and its Settings section shows it: on, opacity, the switch, and
+# whether the matching opacity step is the checked one.
+SETTING = "(() => { const h = PhysicsPlayground.hud.get(), a = document.getElementById('hud-alpha-' + h.alpha); return [h.on, h.alpha, document.getElementById('hud-on').getAttribute('aria-checked'), a && a.getAttribute('aria-checked')]; })()"
 SELECT = {
     "gravity": "(() => { const L = PhysicsPlayground.labs.gravity, o = L.orbitOf(); L.track = o.b.id; })()",
-    "collisions": "(() => { PhysicsPlayground.labs.collisions.picked = 7; })()",
-    "fluid": "(() => { PhysicsPlayground.preset('posts'); const L = PhysicsPlayground.labs.fluid, o = L.obs[0]; L.selAt = { x: o.x, y: o.y }; })()",
+    "collisions": "(() => { const L = PhysicsPlayground.labs.collisions; L.select(L.uid[7]); })()",
+    "fluid": "(() => { PhysicsPlayground.preset('posts'); const L = PhysicsPlayground.labs.fluid; L.select(L.obs[0].id); })()",
     "waves": "(() => { PhysicsPlayground.preset('twosrc'); const L = PhysicsPlayground.labs.waves; L.selSrc = L.sources[0].id; })()",
     "chaos": "(() => { PhysicsPlayground.labs.chaos.sel = 3; })()",
     "fields": "(() => { PhysicsPlayground.preset('exb'); const L = PhysicsPlayground.labs.fields; L.picked = true; L.setTrack(L.pid[0]); })()",
 }
 # Where the box is, where the lab says the object is, the callout's box and name, and the inspected name.
 TARGET = """(() => {
-  const L = PhysicsPlayground.active, t = L.hudTarget(PhysicsPlayground.mode.is3D()), s = document.getElementById('stage').getBoundingClientRect();
+  const L = PhysicsPlayground.active, t = L.spot(L.selectedId(), PhysicsPlayground.mode.is3D()), s = document.getElementById('stage').getBoundingClientRect();
   const box = e => { if (e.hidden) return null; const r = e.getBoundingClientRect(); return { l: r.left - s.left, t: r.top - s.top, r: r.right - s.left, b: r.bottom - s.top }; };
   const g = box(document.getElementById('hu-tgt')), c = box(document.getElementById('hu-card')), info = L.inspect();
   return { t: t && { x: t.x, y: t.y }, g, c, name: document.getElementById('hu-card-name').textContent, want: info && (info.short || info.kicker),
@@ -87,7 +100,7 @@ with sync_playwright() as p:
 
     # ---- Readings: on by default, under the title, the same text as Telemetry, never in the way of a click
     pg = fresh("gravity")
-    ok("hud_on_by_default", pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD 80%" and pg.get_attribute("#hu", "aria-hidden") == "true")
+    ok("hud_on_by_default", pg.is_visible("#hu") and pg.evaluate(SETTING) == [True, 80, "true", "true"] and pg.get_attribute("#hu", "aria-hidden") == "true", pg.evaluate(SETTING))
     same = {}
     for lab in ["gravity", "collisions", "fluid", "waves", "chaos", "cloth", "fields"]:
         pg.evaluate(P + ".select('%s')" % lab)
@@ -117,12 +130,12 @@ with sync_playwright() as p:
         if not res[lab]: res[lab] = r
         pg.evaluate(P + ".play()")
     ok("target_on_object_2d", all(v is True for v in res.values()), res)
-    pg.evaluate(P + ".active.deselect()")
+    pg.evaluate(P + ".active.select(null)")
     settle(pg, "document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden", 5000)
     ok("target_clears_with_selection", pg.evaluate("document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden"))
     # An object panned off the stage waits at the edge, dashed.
     pg.evaluate(P + ".select('collisions')"); pg.wait_for_timeout(300); pg.evaluate(SELECT["collisions"]); pg.evaluate(P + ".pause()")
-    pg.evaluate("(() => { const L = PhysicsPlayground.active, i = L.picked; L.x[i] = 20; L.y[i] = 200; })()")
+    pg.evaluate("(() => { const L = PhysicsPlayground.active, i = L.slot(L.selectedId()); L.x[i] = 20; L.y[i] = 200; })()")
     pg.evaluate(P + ".view.zoomBy(3, 1000, 250)"); pg.wait_for_timeout(1200)
     r = pg.evaluate(TARGET)
     inside = r["g"] and r["g"]["l"] >= 0 and r["g"]["t"] >= 0 and r["g"]["r"] <= r["w"] and r["g"]["b"] <= r["h"]
@@ -151,29 +164,38 @@ with sync_playwright() as p:
     # ---- Menu, keys and memory
     ctx = b.new_context(viewport=VIEW)
     pg = fresh("gravity", ctx=ctx)
-    pg.click("#btn-hud"); pg.wait_for_timeout(200)
-    ok("menu_opens_on_switch", pg.is_visible("#hud-sheet") and pg.evaluate("document.activeElement.id") == "hud-on" and pg.get_attribute("#btn-hud", "aria-expanded") == "true")
+    # The section opens from the Settings button's nav; the top bar has no HUD button of its own any more.
+    pg.click("#btn-settings"); pg.wait_for_timeout(200); pg.click("#st-hud"); pg.wait_for_timeout(150); pg.keyboard.press("Tab")
+    ok("menu_opens_on_switch", pg.is_visible("#sp-hud") and pg.evaluate("document.getElementById('settings').matches(':modal')") and pg.evaluate(P + ".settings.section()") == "hud"
+       and pg.evaluate("document.activeElement.id") == "hud-on" and pg.get_attribute("#btn-settings", "aria-expanded") == "true" and not pg.evaluate("document.getElementById('btn-hud')"))
     pg.click("#hud-alpha-40"); pg.wait_for_timeout(150)
-    ok("menu_opacity_step", pg.evaluate("getComputedStyle(document.getElementById('hu')).getPropertyValue('--hu-a').trim()") == "0.4" and pg.inner_text("#btn-hud-label") == "HUD 40%"
-       and pg.get_attribute("#hud-alpha-40", "aria-checked") == "true")
+    ok("menu_opacity_step", pg.evaluate("getComputedStyle(document.getElementById('hu')).getPropertyValue('--hu-a').trim()") == "0.4" and pg.evaluate(SETTING) == [True, 40, "true", "true"]
+       and pg.get_attribute("#hud-alpha-80", "aria-checked") == "false")
     pg.click("#hud-part-read"); pg.wait_for_timeout(150)
     ok("menu_part_readings", not pg.is_visible("#hu-tape") and pg.get_attribute("#hud-part-read", "aria-checked") == "false")
     pg.click("#hud-part-read"); pg.click("#hud-part-target"); pg.wait_for_timeout(150)
     pg.evaluate(SELECT["gravity"]); pg.wait_for_timeout(900)
     ok("menu_part_target", pg.evaluate("document.getElementById('hu-tgt').hidden && document.getElementById('hu-card').hidden"))
     pg.click("#hud-part-target")
+    # Shift+H still works inside Settings, and the switch there follows it.
+    pg.keyboard.press("Shift+H"); pg.wait_for_timeout(150)
+    inside = [pg.is_visible("#hu"), pg.get_attribute("#hud-on", "aria-checked")]
+    pg.keyboard.press("Shift+H"); pg.wait_for_timeout(150)
+    inside += [pg.is_visible("#hu"), pg.get_attribute("#hud-on", "aria-checked"), pg.evaluate("document.getElementById('settings').open")]
+    ok("shift_h_inside_settings", inside == [False, "false", True, "true", True], inside)
     pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
-    ok("menu_escape_returns_focus", pg.evaluate("document.getElementById('hud-sheet').hidden") and pg.evaluate("document.activeElement.id") == "btn-hud")
+    ok("menu_escape_returns_focus", not pg.evaluate("document.getElementById('settings').open") and not pg.is_visible("#sp-hud") and pg.evaluate("document.activeElement.id") == "btn-settings"
+       and pg.get_attribute("#btn-settings", "aria-expanded") == "false")
     tool = pg.evaluate(P + ".active.p.tool")
     pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("Shift+H"); pg.wait_for_timeout(200)
-    ok("shift_h_hides", not pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD off")
+    ok("shift_h_hides", not pg.is_visible("#hu") and pg.evaluate(SETTING) == [False, 40, "false", "true"], pg.evaluate(SETTING))
     ok("shift_h_leaves_h_tool", pg.evaluate(P + ".active.p.tool") == tool, (tool, pg.evaluate(P + ".active.p.tool")))
     pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(400)
     ok("settings_kept_on_reload", not pg.is_visible("#hu") and pg.evaluate(P + ".hud.get()")["alpha"] == 40)
     pg.keyboard.press("Shift+H"); pg.wait_for_timeout(200)
-    ok("shift_h_shows", pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD 40%")
+    ok("shift_h_shows", pg.is_visible("#hu") and pg.evaluate(SETTING) == [True, 40, "true", "true"], pg.evaluate(SETTING))
     pg.keyboard.press("?"); pg.wait_for_timeout(150)
-    ok("keys_sheet_lists_shift_h", "head-up display" in pg.inner_text("#keys-sheet"))
+    ok("keys_sheet_lists_shift_h", pg.is_visible("#sp-keys") and pg.evaluate(P + ".settings.section()") == "keys" and "head-up display" in pg.inner_text("#sp-keys"))
     ctx.close()
 
     # ---- Phone: one light and its count, two callout figures

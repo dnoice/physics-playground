@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Tool Dock (digiSpace Edition - v2.5)
+    - Title: Tool Dock (digiSpace Edition - v2.19)
     - File Name: dock.js
     - Relative Path: js/shell/dock.js
     - Artifact Type: javascript
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button: a rail tool ends Select as it ends
+      Pan, and the hint speaks for Select while it is on. On Dennis's call for
+      a duplication sweep: a lab without Random clears the hidden dice's name,
+      tip and state, so Chaos no longer carries Waves' Random sources, and the
+      Guide's mirrors no longer need a sync.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
       call for random placement, a lab that declares random gets a dice under
       its tools that turns it on and off; it stays in step with the Controls
@@ -23,9 +29,6 @@
       contract: the checked option is the one tab stop, arrows move and
       select, Home and End jump. A view changes only what is drawn, and V
       steps through a lab's views.
-    - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tool
-      changes refresh disabled controls; the 3D hint knows when middle-drag
-      orbits.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -39,11 +42,13 @@
     - Arrow keys, Home and End select within a group; only the checked option
       takes a tab stop.
     - The Random dice, shown when the lab declares random, toggles that
-      setting through setParam; syncDice() keeps it current.
+      setting through setParam; syncDice() keeps it current, and a lab
+      without Random leaves it hidden, unnamed and unpressed.
     - selectView() never restarts or rewinds the run; nextView() backs the V
       key.
-    - The hint follows the tool, else the view, else the lab, with the pan and
-      3D notes added.
+    - The hint follows the tool, else the view, else the lab, with the Pan,
+      Select and 3D notes added; a tool picked on the rail ends Pan and
+      Select.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -56,7 +61,6 @@ import { icon } from '../core/icons.js';
 import { $, coarsePointer, el } from '../core/util.js';
 import { is3D } from './camera.js';
 import { updateNav } from './navigator.js';
-import { syncGuide } from './guide.js';
 import { setParam } from './lifecycle.js';
 import { refreshEnabled } from './panel.js';
 import { ptr } from './stage.js';
@@ -93,19 +97,19 @@ export function buildDock(lab) {
     html: `${icon(o.icon)}<span class="view-name">${o.label}</span>` }), selectView) : (viewsEl.replaceChildren(), []);
   if (d) { dockEl.setAttribute('aria-label', d.label); ui.sync.set(d.key, updateDock); }
   if (v) ui.sync.set(v.key, updateDock);
-  // A lab that places things can randomize what it places; the dice under its tools turns that on and off.
+  // A lab that places things can randomize what it places; the dice under its tools turns that on and off. Its name,
+  // tip and state are this lab's or none: a lab without Random leaves no other lab's name on the hidden dice.
   const R = lab.random;
   diceEl.hidden = !R;
   // An odd number of tools leaves a cell free in their last row; the dice takes it (see .nav-tools.odd).
   $('#nav-tools').classList.toggle('odd', !!(d && d.options.length % 2));
-  if (R) { diceEl.setAttribute('aria-label', R.label); diceEl.dataset.tip = R.tip || R.label; }
+  if (R) { diceEl.setAttribute('aria-label', R.label); diceEl.dataset.tip = R.tip || R.label; } else { diceEl.removeAttribute('aria-label'); delete diceEl.dataset.tip; }
   updateDock(); syncDice();
 }
-/* Panel rate and on every press: the dice shows the lab's setting, whether it was changed here, in Controls or
-   in the Guide. */
+/* The dice shows the lab's setting, whether it was changed here or in Controls, by a scene, a Reset or a rewind:
+   setParam's syncControl() and syncPanel() call it, so it never waits for a later tick. */
 export function syncDice() {
-  const R = active && active.random; if (!R) return;
-  const on = String(!!active.p[R.key]);
+  const R = active && active.random, on = String(!!(R && active.p[R.key]));
   if (diceEl.getAttribute('aria-pressed') !== on) diceEl.setAttribute('aria-pressed', on);
 }
 export function toggleRandom() {
@@ -120,8 +124,8 @@ export function selectDock(id) {
   if (!d || !d.options.some(o => o.id === id)) { selectView(id); return; }
   active.p[d.key] = id;
   if (active.onParam) active.onParam(d.key, id);
-  if (ptr.panMode) { ptr.panMode = false; updateNav(); }
-  updateDock(); refreshEnabled(); syncGuide();
+  if (ptr.panMode || ptr.selectMode) { ptr.panMode = ptr.selectMode = false; updateNav(); }
+  updateDock(); refreshEnabled();
   announce(`${d.options.find(x => x.id === id).label} tool`);
 }
 /* A view changes only what is drawn: the run, its history and its trails carry on. */
@@ -130,7 +134,7 @@ export function selectView(id) {
   if (active.p[v.key] === id) { updateDock(); return; }
   active.p[v.key] = id;
   if (active.onParam) active.onParam(v.key, id);
-  updateDock(); refreshEnabled(); updateNav(); syncGuide();
+  updateDock(); refreshEnabled(); updateNav();
   announce(`${o.label} view`);
 }
 /* V steps through a lab's views; a lab with none leaves the key to its tools. */
@@ -149,6 +153,7 @@ export function updateDock() {
   // The hint speaks for what a click on the stage does now: the tool's, else the view's, else the lab's own.
   let hint = (tool && tool.hint) || (view && view.hint) || active.hint || '';
   if (ptr.panMode) hint = 'Pan mode: drag to move the view · click the hand in the view controls to use the tool again';
+  else if (ptr.selectMode) hint = `Select: ${active.selectHint || 'click an object to inspect it'} · empty space clears · Q or a tool ends it`;
   else if (is3D(active)) hint += coarsePointer ? ` · ${active.selfCam ? 'drag the axis ball' : 'drag around it'} to orbit` : ` · ${active.rightButton ? 'middle' : 'right'}-drag orbits · Shift-drag pans`;
   $('#stage-hint').textContent = hint;
 }

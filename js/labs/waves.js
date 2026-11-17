@@ -1,26 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.17)
+    - Title: Waves Lab (digiSpace Edition - v2.19)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: the selection contract for the
+      sources, which Inspect lists with their frequency, wavelength and phase.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      sources, the interference pattern, the detector line and the brightest
+      spot for the director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
       records the grid, the detector line, the slits, the edges, c, f and
       every source.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and the detector profile: each column's unit,
-      meaning and SI factor, and a note on the grid and the profile rows.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: wavelength, sources, Courant number and beam angle on its tape,
-      and the selected source as its target, a line source at its middle.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -47,12 +48,13 @@ import { genericState } from '../core/codec.js';
 import { RAMP_GLOW, RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing } from '../core/draw.js';
 import { FOV3 } from '../core/math3d.js';
-import { fmtPos, fmtQ, unitSystem } from '../core/units.js';
+import { fmtPos, fmtQ, sig, unitOf, unitSystem } from '../core/units.js';
 import { TAU, clamp, rand } from '../core/util.js';
 import { view } from '../core/view.js';
 import { camOf, toScreen } from '../shell/camera.js';
 import { setParam } from '../shell/lifecycle.js';
 import { refreshEnabled } from '../shell/panel.js';
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 import { active } from '../shell/state.js';
 
 /* ================================================================== */
@@ -377,12 +379,32 @@ export const waves = {
     this.drawing = true; this.last = null; this.applyTool(p, true);
   },
   srcId: 0, selSrc: null,
-  hitSource(p) {
+  /* The source at a point, within reach cells of a point source (a line source, which spans the tank, within 0.6 of
+     it). */
+  hitSource(p, reach = 4) {
     const c = this.toCell(p);
-    return this.sources.find(s => s.type === 'point' ? Math.hypot(s.x - c.x, s.y - c.y) < 4 : Math.abs(Math.round(s.x) - c.x) < 2.5) || null;
+    return this.sources.find(s => s.type === 'point' ? Math.hypot(s.x - c.x, s.y - c.y) < reach : Math.abs(Math.round(s.x) - c.x) < reach * 0.625) || null;
   },
   source() { return this.selSrc == null ? null : this.sources.find(s => s.id === this.selSrc) || null; },
-  inspectHint: 'Click a source with any tool to inspect it here.',
+  /* ---------- the selection contract (ARCHITECTURE.md): a source by its id ---------- */
+  selectedId() { return this.source() ? this.selSrc : null; },
+  select(id) { if (id == null) { this.selSrc = null; return true; } if (!this.sources.some(s => s.id === id)) return false; this.selSrc = id; return true; },
+  pick(s) { const f = pickFrame(this, s), q = f && this.hitSource(f.p, Math.max(4, PICK_PX * f.k / this.cs)); return q ? q.id : null; },
+  objectsName: 'Sources',
+  objectsEmpty: 'No sources in the tank. Add one with the Source tool.',
+  objectCols: [
+    { label: 'Frequency', unit: () => 'Hz', text: v => v.toFixed(2) },
+    { label: 'Wavelength', unit: () => unitOf(waves, 'len')[1], text: v => sig(v * unitOf(waves, 'len')[0]) },
+    { label: 'Phase', unit: () => '°', text: v => v.toFixed(0) },
+  ],
+  objects() {
+    const pts = this.sources.filter(q => q.type === 'point'), p = this.p;
+    return this.sources.map(s => {
+      const point = s.type === 'point', k = pts.indexOf(s), f = p.f * (s.fm || 1), ph = point ? s.phase - k * p.phaseStep * Math.PI / 180 : s.phase;
+      return { id: s.id, name: point ? `Source ${k + 1}` : 'Line source', kind: point ? 'Point oscillator' : 'Plane-wave paddle', v: [f, p.c / f, ((ph * 180 / Math.PI) % 360 + 360) % 360] };
+    });
+  },
+  inspectHint: 'Click a source with any tool, or with Select (Q), to inspect it here.',
   /* Read-only figures of the selected source. Frequency and phase step are shared settings, so they stay in Controls;
      a source placed with Random sources on runs at its own multiple of the shared frequency. */
   inspect() {
@@ -404,11 +426,36 @@ export const waves = {
     return { id: `src-${s.id}`, focus: 'Driving now', kicker: point ? `Source ${k + 1} of ${pts.length}` : 'Line source', short: point ? `Source ${k + 1}` : 'Line source', title: point ? 'Point oscillator' : 'Plane-wave paddle', color: '#f2a541', rows,
       actions: [{ label: 'Remove this source', run: () => { this.sources = this.sources.filter(q => q !== s); this.selSrc = null; refreshEnabled(); } }] };
   },
-  deselect() { this.selSrc = null; },
-  /* The head-up display: its readings, and the selected source in stage pixels; a line source at its middle. */
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the point sources (a moving one most of
+     all), the interference pattern beyond the slits or ahead of two or more sources, the detector line where a line
+     source's fringes land, and the brightest spot of the time-averaged intensity (a lens's focus, a bright fringe). */
+  interest() {
+    const out = [], cs = this.cs, Nx = this.Nx, Ny = this.Ny, Ls = this.Ls, I = this.inten, lam = this.p.c / this.p.f, P = this.sources.filter(s => s.type === 'point');
+    if (P.length) {
+      let x = 0, y = 0, r = 0;
+      for (const s of P) { x += s.x / P.length; y += s.y / P.length; }
+      for (const s of P) r = Math.max(r, Math.hypot(s.x - x, s.y - y));
+      const moving = this.p.srcSpeed > 0;
+      out.push({ x: x * cs, y: y * cs, r: (r + lam * (moving ? 3 : 2)) * cs, w: moving ? 0.7 : 0.45, key: 'sources', label: moving ? 'The moving source' : P.length > 1 ? 'The sources' : 'The source' });
+      const x0 = x + lam, x1 = Nx - Ls;
+      if (P.length > 1 && x1 > x0) out.push({ x: (x0 + x1) / 2 * cs, y: Ny / 2 * cs, r: (x1 - x0) / 2 * cs, w: 0.5, key: 'pattern', label: 'The interference pattern' });
+    }
+    if (this.slits && !out.some(p => p.key === 'pattern')) { const x0 = this.slits.x, x1 = this.detectorX(); out.push({ x: (x0 + x1) / 2 * cs, y: Ny / 2 * cs, r: (x1 - x0) * 0.55 * cs, w: 0.55, key: 'pattern', label: 'The interference pattern' }); }
+    if (this.sources.some(s => s.type === 'line')) {
+      const xd = this.detectorX();
+      let py = Ny >> 1, pv = 0;
+      for (let y = Ls; y < Ny - Ls; y++) { const v = I[y * Nx + xd]; if (v > pv) { pv = v; py = y; } }
+      if (pv > 0) out.push({ x: xd * cs, y: py * cs, r: Ny * 0.2 * cs, w: 0.5, key: 'detector', label: 'The detector' });
+    }
+    let bi = -1, bv = 0;
+    for (let y = Ls; y < Ny - Ls; y += 2) for (let x = Ls; x < Nx - Ls; x += 2) { const v = I[y * Nx + x]; if (v > bv) { bv = v; bi = y * Nx + x; } }
+    if (bi >= 0) out.push({ x: (bi % Nx) * cs, y: Math.floor(bi / Nx) * cs, r: lam * 3 * cs, w: 0.4, key: 'bright', label: 'The brightest spot' });
+    return out;
+  },
+  /* The head-up display: its readings, and a source in stage pixels; a line source at its middle. */
   hud: [['Wavelength λ = c/f', 'WAVELENGTH λ'], ['Sources', 'SOURCES'], ['Courant number cΔt/Δx', 'COURANT'], ['Beam steering angle', 'BEAM θ']],
-  hudTarget(three) {
-    const s = this.source(); if (!s) return null;
+  spot(id, three) {
+    const s = id == null ? null : this.sources.find(q => q.id === id); if (!s) return null;
     const cs = this.cs, x = s.x * cs, y = (s.type === 'point' ? s.y : this.Ny / 2) * cs;
     if (three) { const c = this.project3(x, y, 0.05), e = c && this.project3(x + 5.5 * cs, y, 0.05); return c && e && { x: c.x, y: c.y, r: Math.hypot(e.x - c.x, e.y - c.y) }; }
     const p = toScreen(this, x, y); return { x: p.x, y: p.y, r: 9 };

@@ -1,17 +1,34 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.17)
+    - Title: Capture Test (digiSpace Edition - v2.19)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the director's switch is reached through
+      the capture cluster's settings button and the Capture section of
+      Settings; the clip button counts time and size and its tooltip says how
+      to stop, saved states tick the timeline in order, Telemetry reads the
+      same marks, a new branch drops future ticks, and Preview direction
+      steps the dialog aside.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      track header now ends with temperature_K and instellation_earth, after
+      the columns it had. On Dennis's call for recordings shot like a film:
+      the director is off by default and then leaves the camera alone; its
+      switch turns it on and is remembered; a directed clip moves the camera
+      within the per-frame limits in 2D and 3D, shows its chip and gives the
+      view back; a hand on the camera pauses it until the camera is left
+      alone; every lab names areas of interest inside its world, and Gravity's
+      mergers, encounters and ejections are found; reduced motion halves every
+      limit.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
       lab's dataset stands alone: tracks with unique ids that hold from first
       sample to last, a scene section, and every column described.
@@ -54,10 +71,43 @@
 ---------
 """
 import json
+import math
 import re
 import zipfile
 from playwright.sync_api import sync_playwright
 from harness import URL, finish, launch, ok, open_page, settle, shot
+# The Telemetry plot as it is drawn, for the timeline's marks on it: which columns of the rows just below its lanes
+# (where the scope draws a saved state's tick and a recording's underline) carry the ok or the critical colour, and the
+# column each given simulated time falls on in the scope's window (at: null outside it; from: held to its edges, as a
+# recording's underline begins). The scope insets its lanes 2 px each side and ends
+# them 16 px above the bottom. The plot is copied once into a scratch canvas made for reading, so its own canvas is
+# never read back.
+PLOT = """async times => { const { THEME } = await import(new URL('js/core/color.js', location.href).href);
+  const c = document.getElementById('chart'), w = c.clientWidth, h = c.clientHeight, k = c.width / w, bottom = h - 16;
+  const s = window.__plot || (window.__plot = document.createElement('canvas')), g = s.getContext('2d', { willReadFrequently: true });
+  s.width = c.width + 2; s.height = c.height; g.clearRect(0, 0, s.width, s.height); g.drawImage(c, 0, 0);
+  const tone = (v, x) => { g.fillStyle = v; g.fillRect(c.width + 1, x, 1, 1); return [...g.getImageData(c.width + 1, x, 1, 1).data]; };
+  const okC = tone(THEME.ok, 0), critC = tone(THEME.crit, 1), d = g.getImageData(0, 0, c.width, c.height).data;
+  const at = (x, y) => { const i = (Math.floor(y * k) * c.width + Math.floor(x * k)) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; };
+  const is = (p, q) => p[3] > 240 && [0, 1, 2].every(j => Math.abs(p[j] - q[j]) <= 6);
+  const cols = (q, rows) => { const out = []; for (let x = 0; x < w; x++) if (rows.some(dy => is(at(x + 0.5, bottom + dy + 0.5), q))) out.push(x); return out; };
+  const L = PhysicsPlayground.active, I = L.inst, list = [...I.pins].map(l => I.series.get(l)).filter(s => s && s.n);
+  const end = Math.max(...list.map(s => s.t[s.idx(s.n - 1)])), first = Math.min(...list.map(s => s.t[s.idx(0)])), beg = I.span ? Math.max(first, end - I.span) : first;
+  const x = t => Math.round(2 + (Math.min(Math.max(t, beg), end) - beg) / (end - beg) * (w - 4));
+  return { w, ok: cols(okC, [1, 2, 3, 4]), crit: cols(critC, [1]), at: times.map(t => (t < beg - 1e-9 || t > end + 1e-9 ? null : x(t))), from: times.map(x) }; }"""
+
+
+def runs(xs):
+    """Columns grouped into runs of neighbours, as (first, last) pairs."""
+    out = []
+    for x in xs:
+        if out and x == out[-1][1] + 1:
+            out[-1][1] = x
+        else:
+            out.append([x, x])
+    return [tuple(r) for r in out]
+
+
 with sync_playwright() as p:
     b = launch(p)
     ctx = b.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
@@ -117,8 +167,9 @@ with sync_playwright() as p:
     e = r["summary0"]
     ok("dataset_summary_column", e["column"] == "total_energy" and e["min"] <= e["mean"] <= e["max"], e["column"])
     ok("dataset_energy_conserved", abs((e["max"] - e["min"]) / e["mean"]) < 1e-4, abs((e["max"] - e["min"]) / e["mean"]))
-    # Gravity's files carry their own context: physical time in both, and who each tracked body is and what it orbits.
-    ok("dataset_gravity_context_columns", columns[-1] == "t_years" and r["trackHeader"].endswith("t_years,name,kind,orbits_id"), (columns[-1], r["trackHeader"]))
+    # Gravity's files carry their own context: physical time in both, who each tracked body is and what it orbits, and
+    # since 2.18 its temperature and the starlight it receives.
+    ok("dataset_gravity_context_columns", columns[-1] == "t_years" and r["trackHeader"].endswith("t_years,name,kind,orbits_id,temperature_K,instellation_earth"), (columns[-1], r["trackHeader"]))
     # Every column of every lab is in its dictionary, so no README ever says "not described".
     gaps = pg.evaluate("""Object.values(PhysicsPlayground.labs).flatMap(L => [...(L.dataColumns || []), ...(L.trackColumns || [])]
       .filter(c => !(L.dataInfo && L.dataInfo[c] && L.dataInfo[c][0] && L.dataInfo[c][1])).map(c => `${L.id}.${c}`))""")
@@ -159,6 +210,12 @@ with sync_playwright() as p:
     # A cold software encoder can take seconds to start, and stopping sooner saves nothing.
     settle(pg, "PhysicsPlayground.capture.vrec.bytes > 0", 30000)
     ok("rec_chip_counts", re.match(r"REC \d", pg.inner_text("#hud-rec")) is not None, pg.inner_text("#hud-rec"))
+    # The button that started the clip is its stop, and its line counts the time and size; its tooltip says so, and the
+    # timeline marks the clip.
+    ok("rec_button_counts", pg.get_attribute("#btn-rec", "aria-pressed") == "true" and pg.inner_text("#btn-rec-label") == "Stop clip"
+       and pg.get_attribute("#btn-rec", "title") == "Stop the clip and keep it in the Library (M)"
+       and re.fullmatch(r"(\d+:\d\d|[\d.]+ s) · [\d.]+ (B|kB|MB|GB)", pg.inner_text("#btn-rec-sub")) is not None
+       and pg.evaluate("(s => !s.hidden && parseFloat(s.style.left) < 100 && s.getBoundingClientRect().width > 0)(document.getElementById('tl-clip')) && document.getElementById('hud-rec').dataset.kind === 'clip'"), pg.inner_text("#btn-rec-sub"))
     # The clip keeps one size when the stage changes shape (here the window; the deck's charts do the same), and its
     # frames keep coming. Recording the stage canvas itself had frozen a clip at the first resize.
     # The frames are sampled through a small scratch canvas made for reading, so the clip's canvas is never read back.
@@ -171,6 +228,18 @@ with sync_playwright() as p:
     v1 = pg.evaluate(rec); pg.wait_for_timeout(800); v2 = pg.evaluate(rec)
     pg.set_viewport_size({"width": 1440, "height": 900}); pg.wait_for_timeout(600)
     ok("clip_keeps_its_size_through_a_resize", v0["stream"] == v1["stream"] == v2["stream"] and v0["stage"] != v1["stage"] and v1["hash"] != v2["hash"], (v0, v1, v2))
+    # Reset while the clip records: the history starts again at t = 0, and the clip's span on the rewind track and its
+    # underline on the Telemetry plot start again with it, from the left edge. The span had kept the old start, in the
+    # future of the new history, and vanished from both.
+    pg.click("#dt-telemetry"); pg.locator("#readouts .gauge-hit").first.click()
+    settle(pg, "document.getElementById('chart-title').textContent === 'Scope'", 4000)
+    pg.click("#btn-reset")
+    settle(pg, "PhysicsPlayground.history.size() >= 3 && PhysicsPlayground.active.t > 0.5", 20000); pg.wait_for_timeout(600)
+    span = pg.evaluate("(s => ({ shown: !s.hidden, left: parseFloat(s.style.left), width: s.getBoundingClientRect().width, from: PhysicsPlayground.capture.vrec.from }))(document.getElementById('tl-clip'))")
+    band = pg.evaluate(PLOT, [0])
+    ok("reset_mid_clip_restarts_its_span", pg.evaluate("!!PhysicsPlayground.capture.vrec.mr") and span["shown"] and span["left"] < 1 and span["width"] > 0 and span["from"] == 0
+       and runs(band["crit"]) == [(band["from"][0], band["w"] - 3)] and band["from"][0] == 2, (span, band["from"], runs(band["crit"])))
+    pg.locator(".scope-x").first.click()
     pg.evaluate("() => PhysicsPlayground.capture.toggleVideo()")
     pg.wait_for_timeout(1500)
     r = pg.evaluate("() => { const c = PhysicsPlayground.capture.vault.list().find(i => i.kind === 'clip'); return c ? { title: c.title, size: c.sizeBytes, type: c.files[0].type, name: c.files[0].name, dur: +c.duration.toFixed(2) } : null; }")
@@ -233,5 +302,166 @@ with sync_playwright() as p:
     pg.keyboard.press("Space"); pg.wait_for_timeout(300)
     r = pg.inner_text("#rewind-out")
     ok("play_returns_to_live", r.startswith("live"), r)
+    # --- the timeline's marks. Each state saved in this run stands as a tick on the rewind track at its moment, in order;
+    # Telemetry's plot, with a reading plotted, draws a tick just below its lanes at each of the same moments and nowhere
+    # else; and playing on from the past drops the ticks of the future it discards, on the track and on the plot.
+    pg.click("#dt-telemetry"); pg.locator("#readouts .gauge-hit").first.click()
+    scoped = settle(pg, "document.getElementById('chart-title').textContent === 'Scope'", 4000)
+    pg.wait_for_timeout(1500); pg.evaluate("PhysicsPlayground.pause()")
+    tl = """(() => ({ ticks: [...document.querySelectorAll('#tl-marks .tl-tick')].filter(i => !i.hidden).map(i => parseFloat(i.style.left)),
+      marks: PhysicsPlayground.active.hist.marks.slice(), saved: document.getElementById('btn-state').classList.contains('is-saved') && document.getElementById('btn-state-label').textContent === 'Saved' }))()"""
+    pg.click("#btn-state"); pg.wait_for_timeout(500); m1 = pg.evaluate(tl)
+    pg.evaluate("() => document.activeElement && document.activeElement.blur()")
+    for _ in range(4): pg.keyboard.press(",")
+    pg.click("#btn-state"); pg.wait_for_timeout(500); m2 = pg.evaluate(tl); p2 = pg.evaluate(PLOT, m2["marks"])
+    pg.evaluate("() => document.activeElement && document.activeElement.blur()"); pg.keyboard.press("Space"); pg.wait_for_timeout(500); m3 = pg.evaluate(tl)
+    # Paused, the plot's next refresh draws the window the series end at, so the canvas and the window read below agree.
+    pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(400); p3 = pg.evaluate(PLOT, m3["marks"])
+    ok("saved_state_ticks_the_timeline", m1["saved"] and len(m1["ticks"]) == 1 and m1["ticks"][0] > 95 and len(m2["ticks"]) == 2 and m2["ticks"][0] < m2["ticks"][1] < 100.01
+       and m2["marks"] == sorted(m2["marks"]), (m1, m2))
+    # A tick is 2 px wide, ending on its moment's column: one run of the ok colour per saved state, exactly there.
+    ok("telemetry_reads_the_same_marks", scoped and len(p2["at"]) == 2 and None not in p2["at"] and runs(p2["ok"]) == [(x - 1, x) for x in p2["at"]], (p2["at"], runs(p2["ok"])))
+    ok("a_new_branch_drops_future_ticks", len(m3["ticks"]) == 1 and m3["marks"] == m2["marks"][:1]
+       and p3["at"][0] is not None and runs(p3["ok"]) == [(p3["at"][0] - 1, p3["at"][0])], (m3, p3["at"], runs(p3["ok"])))
+    pg.locator(".scope-x").first.click()
+    pg.evaluate("async () => { const C = PhysicsPlayground.capture; for (const i of C.vault.list().filter(i => i.kind === 'state')) await C.vault.remove(i); }")
+
+    # --- the director's camera: with the Director on, a clip is filmed with eased moves inside fixed limits, the user's
+    # hand on the camera pauses it, and the view comes back as it was when the clip stops. Its clock is the frame loop's,
+    # which a slow renderer slows, so the waits are on the director's own time.
+    D = "PhysicsPlayground.director"
+    # A per-frame log of the camera (2D: x, y, zoom; 3D: yaw, pitch, distance), whether the director drives, the stage's
+    # short side and whether its chip shows.
+    log_js = """() => { const L = window.__dir = { rows: [], on: true }, P = PhysicsPlayground;
+      const f = () => { if (!L.on) return; const v = P.view.get(), s = P.director.state(), c = document.getElementById('stage-canvas');
+        L.rows.push(v.mode === '3d' ? [v.yaw, v.pitch, v.dist, s.driving, 0, !document.getElementById('hud-dir').hidden] : [v.x, v.y, v.z, s.driving, Math.min(c.clientWidth, c.clientHeight), !document.getElementById('hud-dir').hidden]);
+        requestAnimationFrame(f); };
+      requestAnimationFrame(f); }"""
+    caps = pg.evaluate(D + ".caps")
+
+    def steps2d(rows):
+        """Each directed frame's pan as a share of the stage's short side, and its change of ln zoom."""
+        out = [(math.hypot(c[0] - a[0], c[1] - a[1]) * a[2] / a[4], abs(math.log(c[2] / a[2]))) for a, c in zip(rows, rows[1:]) if a[3] and c[3]]
+        return [p for p, _ in out] or [0], [z for _, z in out] or [0]
+    # The director's switch is in the Capture section of Settings, which the capture cluster's own settings button opens
+    # at its current video quality.
+    pg.click("#btn-cap-settings"); pg.wait_for_timeout(250)
+    r = pg.evaluate("[document.getElementById('settings').open, PhysicsPlayground.settings.section(), document.activeElement.id, document.getElementById('btn-cap-settings').getAttribute('aria-expanded')]")
+    ok("capture_settings_open_in_settings", r == [True, "capture", "vq-standard", "true"], r)
+    r = [pg.evaluate(D + ".on"), pg.get_attribute("#sw-director", "aria-checked"), pg.locator("#btn-dir-preview").is_hidden()]
+    ok("director_off_by_default", r == [False, "false", True], r)
+    # Off, a clip leaves the camera exactly where it is.
+    pg.evaluate("() => { const P = PhysicsPlayground; P.select('collisions'); P.preset('pool'); P.play(); }"); pg.wait_for_timeout(800)
+    pg.evaluate(log_js); pg.evaluate("PhysicsPlayground.capture.toggleVideo()"); pg.wait_for_timeout(2500)
+    pg.evaluate("PhysicsPlayground.capture.toggleVideo()"); pg.wait_for_timeout(800)
+    rows = pg.evaluate("(() => { window.__dir.on = false; return window.__dir.rows; })()")
+    ok("director_off_leaves_the_camera", len(rows) > 5 and all(r[:3] == rows[0][:3] and not r[3] and not r[5] for r in rows), (len(rows), rows[0][:3], rows[-1][:3]))
+    # The switch turns it on and is remembered; the preview appears with it.
+    pg.click("#sw-director")
+    ok("director_switch_turns_on", pg.evaluate(D + ".on") is True and pg.get_attribute("#sw-director", "aria-checked") == "true"
+       and pg.evaluate("localStorage.getItem('psp:director')") == "true" and pg.locator("#btn-dir-preview").is_visible())
+    ok("record_clip_line_says_directed", pg.inner_text("#btn-rec-sub").startswith("Directed"), pg.inner_text("#btn-rec-sub"))
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
+    # On, a clip is filmed: the camera moves, never faster than the limits allow in a frame (the loop's frame is at most
+    # 0.05 s), the chip shows the shot, and the view eases back to where it was.
+    pg.evaluate("() => { const P = PhysicsPlayground; P.preset('pool'); P.play(); }"); pg.wait_for_timeout(800)
+    v0 = pg.evaluate("PhysicsPlayground.view.get()")
+    pg.evaluate(log_js); pg.evaluate("PhysicsPlayground.capture.toggleVideo()")
+    settle(pg, D + ".state().t > 8", 90000)
+    st = pg.evaluate(D + ".state()"); chip = pg.inner_text("#hud-dir")
+    pg.evaluate("PhysicsPlayground.capture.toggleVideo()")
+    back = settle(pg, f"(() => {{ const v = PhysicsPlayground.view.get(); return v.fit === {str(v0['fit']).lower()} && Math.abs(v.x - {v0['x']}) * v.z < 0.5 && Math.abs(v.y - {v0['y']}) * v.z < 0.5 && Math.abs(Math.log(v.z / {v0['z']})) < 1e-3; }})()", 20000)
+    rows = pg.evaluate("(() => { window.__dir.on = false; return window.__dir.rows; })()")
+    pans, zooms = steps2d(rows)
+    moved = sum(pans) > 0.05 or max(abs(math.log(r[2] / v0["z"])) for r in rows) > 0.04
+    ok("director_films_the_clip", st["driving"] and st["why"] == "rec" and st["shots"] >= 2 and moved, (st["label"], st["shots"], round(sum(pans), 3)))
+    ok("director_moves_smoothly", max(pans) <= caps["pan"] * 0.05 * 1.02 and max(zooms) <= caps["zoom"] * 0.05 * 1.02, (round(max(pans), 4), round(max(zooms), 4)))
+    ok("director_chip_while_filming", chip.startswith("DIRECTOR · ") and any(r[5] for r in rows) and pg.evaluate("document.getElementById('hud-dir').hidden"), chip)
+    ok("director_gives_the_view_back", back and not pg.evaluate(D + ".state().driving"), (v0, pg.evaluate("PhysicsPlayground.view.get()")))
+    # Taken back while the view is still easing home, the camera is saved where that ease was going: a preview stopped
+    # and at once started again gives back the view from before the first, fitted as it was, not one half-way home.
+    pg.evaluate(D + ".preview()"); settle(pg, D + ".state().t > 2", 60000)
+    retake = pg.evaluate(f"(() => {{ {D}.preview(); const moving = PhysicsPlayground.view.get().moving; {D}.preview(); return {{ moving, saved: {D}.state().saved }}; }})()")
+    settle(pg, D + ".state().t > 1", 60000); pg.evaluate(D + ".preview()")
+    back = settle(pg, f"(() => {{ const v = PhysicsPlayground.view.get(); return v.fit === {str(v0['fit']).lower()} && Math.abs(v.x - {v0['x']}) * v.z < 0.5 && Math.abs(v.y - {v0['y']}) * v.z < 0.5 && Math.abs(Math.log(v.z / {v0['z']})) < 1e-3; }})()", 20000)
+    ok("director_retake_saves_where_the_view_was_going", retake["moving"] and retake["saved"]["fit"] == v0["fit"] and back and not pg.evaluate(D + ".state().driving"),
+       (v0, retake, pg.evaluate("PhysicsPlayground.view.get()")))
+    # A hand on the camera pauses the director, which then carries on once the camera has been left alone.
+    pg.evaluate("PhysicsPlayground.capture.toggleVideo()")
+    settle(pg, D + ".state().t > 1.5", 60000)
+    pg.evaluate("PhysicsPlayground.view.pan(60, 0)")
+    yielded = settle(pg, D + ".state().yielding", 10000)
+    c1 = pg.evaluate("PhysicsPlayground.view.get()"); pg.wait_for_timeout(1500); c2 = pg.evaluate("PhysicsPlayground.view.get()")
+    resumed = settle(pg, D + ".state().yielding === false", 60000) and settle(pg, f"(() => {{ const v = PhysicsPlayground.view.get(); return v.x !== {c2['x']} || v.z !== {c2['z']}; }})()", 30000)
+    pg.evaluate("PhysicsPlayground.capture.toggleVideo()")
+    ok("director_yields_to_the_user", yielded and (c1["x"], c1["y"], c1["z"]) == (c2["x"], c2["y"], c2["z"]), (c1, c2))
+    ok("director_resumes_after_a_pause", resumed)
+    settle(pg, "!PhysicsPlayground.capture.vrec.mr && !" + D + ".state().driving", 20000)
+    # Preview direction, pressed in Settings, steps the dialog aside so the stage can be watched, and hands focus back to
+    # the button that opened it; the director's chip on the stage, a real button, gives the camera back.
+    pg.click("#btn-cap-settings"); pg.wait_for_timeout(250); pg.click("#btn-dir-preview"); pg.wait_for_timeout(400)
+    pv = pg.evaluate("[document.getElementById('settings').open, document.activeElement.id, " + D + ".state().why, document.getElementById('hud-dir').tagName, !document.getElementById('hud-dir').hidden]")
+    pg.click("#hud-dir"); pg.wait_for_timeout(300)
+    ok("preview_steps_the_dialog_aside", pv == [False, "btn-cap-settings", "preview", "BUTTON", True] and pg.evaluate(D + ".state().why") is None
+       and pg.evaluate("document.getElementById('hud-dir').hidden"), pv)
+    settle(pg, "!PhysicsPlayground.view.get().moving", 10000)
+    # Every lab names its areas of interest in its own world: finite points with a positive extent, a weight from 0 to 1,
+    # a key and a label, inside the lab's world (Gravity's sky has no edge).
+    found = {}
+    for lab, pre in [("gravity", "solar"), ("collisions", "brownian"), ("fluid", "dam"), ("waves", "double"), ("chaos", "chaos"), ("cloth", "flag"), ("fields", "cyclotron")]:
+        pg.evaluate(f"() => {{ const P = PhysicsPlayground; P.select('{lab}'); P.preset('{pre}'); P.play(); }}"); pg.wait_for_timeout(1500)
+        found[lab] = pg.evaluate("""(() => { const L = PhysicsPlayground.active, W = L.selfCam ? null : (L.worldRect ? L.worldRect() : L.size), pts = PhysicsPlayground.director.interest();
+          const fine = p => [p.x, p.y, p.r].every(Number.isFinite) && p.r > 0 && p.w >= 0 && p.w <= 1 && typeof p.key === 'string' && p.key && typeof p.label === 'string' && p.label
+            && (!W || (p.x >= -0.05 * W.w && p.x <= 1.05 * W.w && p.y >= -0.05 * W.h && p.y <= 1.05 * W.h));
+          return { n: pts.length, fine: pts.every(fine), keys: [...new Set(pts.map(p => p.key))].length === pts.length, labels: pts.map(p => p.label) }; })()""")
+    ok("every_lab_names_its_interest", all(v["n"] > 0 and v["fine"] and v["keys"] for v in found.values()), {k: (v["n"], v["fine"], v["keys"]) for k, v in found.items()})
+    # Gravity's moments: a merger is a moment not to miss, a pass between unbound bodies an encounter, a body flung out
+    # an ejection, and the heaviest body is always there to frame.
+    g = pg.evaluate("""(() => { const P = PhysicsPlayground, g = P.labs.gravity, D = P.director; P.select('gravity'); P.pause(); P.preset('empty');
+      g.addBody(g.body(-12, 0, 0, 0, 300)); g.addBody(g.body(12, 0, 0, 0, 300)); D.interest(); P.advance(0.5);
+      const merge = D.interest().find(p => p.key.startsWith('merge:'));
+      P.preset('empty'); P.pause(); g.addBody(g.body(-14, 0, 600, 0, 10)); g.addBody(g.body(14, 6, -600, 0, 10));
+      const pass = D.interest().find(p => p.key.startsWith('pair:'));
+      P.preset('solar'); P.pause(); g.addBody(g.body(2500, 0, 400, 0, 1));
+      const labels = D.interest().map(p => p.label);
+      return { merge: merge && merge.w, pass: pass && pass.w, labels }; })()""")
+    ok("gravity_interest_moments", (g["merge"] or 0) >= 0.85 and (g["pass"] or 0) > 0.3 and "An ejection" in g["labels"] and "The heaviest body and its system" in g["labels"], g)
+    # A merger is only reported once it has happened: with a state from before it loaded, it is gone, and when it
+    # happens again it is found again.
+    g = pg.evaluate("""async () => { const P = PhysicsPlayground, C = P.capture, g = P.labs.gravity, D = P.director, merging = () => D.interest().some(p => p.key.startsWith('merge:'));
+      P.select('gravity'); P.pause(); P.preset('empty'); g.addBody(g.body(-12, 0, 0, 0, 300)); g.addBody(g.body(12, 0, 0, 0, 300));
+      await C.saveState(); const item = C.vault.list().find(i => i.kind === 'state'), before = merging();
+      P.advance(0.5); const flagged = merging(), t1 = g.t;
+      await C.loadState(item); const loaded = { t: g.t, bodies: g.bodies.length, merging: merging() };
+      P.advance(0.5); const again = merging();
+      await C.vault.remove(item);
+      return { before, flagged, t1, loaded, again }; }""")
+    ok("gravity_merger_not_before_it_happens", not g["before"] and g["flagged"] and g["loaded"]["t"] < g["t1"] and g["loaded"]["bodies"] == 2 and not g["loaded"]["merging"] and g["again"], g)
+    # On a page in 3D, the director orbits and dollies the plane camera inside the limits, then gives it back.
+    p3 = open_page(b, mode="3d", viewport={"width": 960, "height": 600})
+    p3.goto(URL + "#chaos"); p3.wait_for_timeout(1500)
+    ready = settle(p3, "PhysicsPlayground.mode.is3D()", 90000)
+    p3.evaluate("() => { const P = PhysicsPlayground; P.mode.tier('lite'); P.director.set(true); P.play(); }"); p3.wait_for_timeout(1200)
+    w0 = p3.evaluate("PhysicsPlayground.view.get()")
+    p3.evaluate(log_js); p3.evaluate("PhysicsPlayground.capture.toggleVideo()")
+    settle(p3, D + ".state().t > 4", 90000)
+    p3.evaluate("PhysicsPlayground.capture.toggleVideo()")
+    back3 = settle(p3, f"(() => {{ const v = PhysicsPlayground.view.get(), d = v.yaw - {w0['yaw']}; return !PhysicsPlayground.director.state().driving && Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) < 1e-3 && Math.abs(v.pitch - {w0['pitch']}) < 1e-3 && Math.abs(Math.log(v.dist / {w0['dist']})) < 1e-3; }})()", 30000)
+    rows = p3.evaluate("(() => { window.__dir.on = false; return window.__dir.rows; })()")
+    st = [(abs(c[0] - a[0]), abs(c[1] - a[1]), abs(math.log(c[2] / a[2]))) for a, c in zip(rows, rows[1:]) if a[3] and c[3]] or [(0, 0, 0)]
+    turned = sum(s[0] for s in st) + sum(s[2] for s in st)
+    ok("director_3d_orbits_smoothly", ready and turned > 0.05 and max(s[0] for s in st) <= caps["yaw"] * 0.05 * 1.02 and max(s[1] for s in st) <= caps["pitch"] * 0.05 * 1.02
+       and max(s[2] for s in st) <= caps["zoom"] * 0.05 * 1.02, (ready, round(turned, 3), [round(max(s[k] for s in st), 4) for k in range(3)]))
+    ok("director_3d_gives_the_view_back", back3, (w0, p3.evaluate("PhysicsPlayground.view.get()")))
+    p3.close()
+    # With reduced motion asked for, every limit is halved and the switch's note says the moves are gentler.
+    p4 = open_page(b, reduced_motion="reduce", viewport={"width": 960, "height": 600})
+    p4.goto(URL + "#collisions"); p4.wait_for_timeout(1200)
+    r = p4.evaluate("[PhysicsPlayground.director.caps, document.querySelector('#sw-director .switch-note').textContent]")
+    ok("director_gentler_with_reduced_motion", all(abs(r[0][k] - caps[k] / 2) < 1e-9 for k in ("pan", "zoom", "yaw", "pitch")) and "slower and gentler" in r[1], r[0])
+    p4.close()
+    # The switch is remembered across a reload.
+    pg.reload(); pg.wait_for_timeout(2000)
+    ok("director_switch_remembered", pg.evaluate(D + ".on") is True and pg.get_attribute("#sw-director", "aria-checked") == "true")
     b.close()
 finish()

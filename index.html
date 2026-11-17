@@ -1,30 +1,56 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.16)
+    - Title: Physics Playground (digiSpace Edition - v2.19)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.16.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button in the gizmo area and every object in
+      a table under Inspect: #nav-select (Q) beside the hand in the camera
+      row, the objects list in the Inspect pane, the focus caption's Pin to
+      Telemetry button, and Q in the keyboard list. On Dennis's call for one
+      timeline: the player bar is laid out as a video player's, with the
+      rewind timeline and its marks across the top, then the transport, the
+      speed and one capture cluster (Record clip, Record data, Save state,
+      each with its live line, the recorders with their keys, and a capture
+      settings button). The Library's capture section is gone, and Settings
+      gains a Capture section. The stage's status line keeps the clock and
+      frame rate as plain text and one recording light; the Running pill and
+      the real-time chip, which repeated the Play button and Insights, are
+      gone. On Dennis's call for drag handles: the deck's grip moves into the
+      gap above the deck and the inspector gets one on its inner edge, both
+      separators that give their size in pixels. On his call for a duplication
+      sweep: the deck size button and the header's top alert are gone, with
+      the button's two glyphs. On Dennis's call for a duplication sweep: the
+      top bar keeps two Settings openers, the gear and Graphics, which shows
+      the tier and now wears its own view_in_ar glyph; the Units, HUD and
+      keyboard buttons, which only repeated the gear, are gone. Restarting the
+      run wears replay and is named so. The status chips form a group named
+      Run status, apart from the head-up display. The Insights tab starts
+      bare, the Inspect tab has no dot, and the keys list says no tool takes a
+      workspace key and lists the grips.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Insights pane's Now
+      and Story views with their tablist in the deck's header, the Story's
+      list, and the unread count on the Insights tab. On Dennis's call for one
+      settings dialog: the Graphics, Units, head-up display and keyboard
+      sheets became sections of one modal Settings dialog, opened by a
+      Settings button (Shift+S, the settings glyph) or at a section by the old
+      buttons. settings.css joins the styles and Shift+S joins the keyboard
+      list. On Dennis's call for recordings shot like a film: the director's
+      chip on the stage, beside the recorders' chips.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       engine's release beside the name in the top bar (filled from
       js/core/version.js), linking to the changelog.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      Library page in two sections, Capture and Saved, with the capture
-      settings folding out beside the Capture heading; the download and edit
-      glyphs join the icon subset.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On Dennis's
-      call for a cockpit head-up display: the display's layer over the stage
-      canvas (tape, caution lights, target box, leader and callout), the HUD
-      button and menu in the top bar, the centre_focus_strong glyph and
-      headsup.css, and Shift+H on the keyboard sheet.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -37,12 +63,21 @@
 ✒ Key Features:
     - Console layout: the stage with its player bar, an instruments deck
       beneath it, and a full-height inspector beside them.
-    - Stage rail anchored top right: Camera (axis ball, zoom, pan, frame),
-      then the lab's Tools with the Random dice, View and This scene groups.
-    - Instruments deck with Telemetry, Inspect and Insights panes, compact,
-      standard and tall sizes, and a grip to drag it to any height.
-    - Units menu (U): metric, US customary or simulation units for every
-      reading and control.
+    - Stage rail anchored top right: Camera (axis ball, zoom, Select, pan,
+      frame), then the lab's Tools with the Random dice, View and This scene
+      groups.
+    - Instruments deck with Telemetry, Inspect and Insights panes and a grip
+      above it that drags it to any height or picks compact, standard or
+      tall; Inspect lists every object beside the selected one's card;
+      Insights has two views, Now and the Story of the run. The inspector
+      has a grip on its inner edge for its width.
+    - One Settings dialog (Shift+S) with Graphics, Units (U), Head-up
+      display, Capture and Keyboard (?) sections, opened by the top bar's
+      Settings button; the Graphics button beside it shows the tier and opens
+      it at Graphics, and the player bar's capture settings button at Capture.
+    - A player bar laid out as a video player's: the timeline across its
+      top with the run's marks, then play, step, reset, speed, and Record
+      clip, Record data and Save state with their live lines.
     - Focus mode (F) and hideable instruments (Shift+B); the layout reflows
       below 1180 px and 760 px.
     - Material Symbols Rounded from Google Fonts, subset with icon_names to
@@ -50,8 +85,7 @@
     - Import map pinning three.js 0.187.0 and KaTeX 0.19.1 on jsDelivr; KaTeX
       styles and fonts are vendored because the artifact host only allows
       fonts from Google or the page itself.
-    - Keyboard sheet (?), Graphics and Units menus as the floating panels; a
-      polite live region announces state changes.
+    - A polite live region announces state changes.
     - A colophon beneath the console credits digiSpace Studio and Dennis
       Smaltz; it steps aside in focus mode.
 
@@ -81,7 +115,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,replay,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,vertical_split,video_library,video_settings,view_column,view_in_ar,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -91,6 +125,7 @@
 <link rel="stylesheet" href="css/headsup.css">
 <link rel="stylesheet" href="css/tiles.css">
 <link rel="stylesheet" href="css/library.css">
+<link rel="stylesheet" href="css/settings.css">
 <link rel="stylesheet" href="css/responsive.css">
 <script type="importmap">
 {
@@ -117,12 +152,10 @@
       <button type="button" role="radio" id="mode-2d" aria-checked="false" title="Flat 2D view (Z)">2D</button>
       <button type="button" role="radio" id="mode-3d" aria-checked="true" title="3D world (Z)">3D</button>
     </div>
-    <button type="button" class="btn gfx-btn" id="btn-gfx" aria-expanded="false" aria-controls="gfx-sheet" title="Graphics tier"><span class="ms" aria-hidden="true">tune</span><span id="btn-gfx-label">Auto</span></button>
-    <button type="button" class="btn gfx-btn" id="btn-units" aria-expanded="false" aria-controls="units-sheet" title="Units (U)"><span class="ms" aria-hidden="true">straighten</span><span id="btn-units-label">Metric</span></button>
-    <button type="button" class="btn gfx-btn" id="btn-hud" aria-expanded="false" aria-controls="hud-sheet" title="Head-up display (Shift+H)"><span class="ms" aria-hidden="true">center_focus_strong</span><span id="btn-hud-label">HUD</span></button>
+    <button type="button" class="btn gfx-btn" id="btn-gfx" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Graphics"><span class="ms" aria-hidden="true">view_in_ar</span><span id="btn-gfx-label">Auto</span></button>
     <button type="button" class="icon-btn" id="btn-bay" aria-pressed="true" title="Show or hide the instruments (Shift+B)"><span class="ms" aria-hidden="true">dock_to_bottom</span><span class="sr-only">Instruments</span></button>
     <button type="button" class="icon-btn" id="btn-focus" aria-pressed="false" title="Focus the stage (F)"><span class="ms" aria-hidden="true" id="btn-focus-icon">fullscreen</span><span class="sr-only">Focus the stage</span></button>
-    <button type="button" class="icon-btn" id="btn-keys" aria-expanded="false" aria-controls="keys-sheet" title="Keyboard shortcuts (?)"><span class="ms" aria-hidden="true">keyboard</span><span class="sr-only">Keyboard shortcuts</span></button>
+    <button type="button" class="icon-btn" id="btn-settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Settings: graphics, units, the head-up display and the keys (Shift+S)"><span class="ms" aria-hidden="true">settings</span><span class="sr-only">Settings</span></button>
   </div>
 </header>
 
@@ -149,14 +182,14 @@
             <div class="scene-menu" id="scene-menu" hidden></div>
           </div>
         </div>
-        <div class="hud">
-          <span class="chip pill" id="hud-state" data-state="run">Running</span>
-          <span class="chip" id="hud-time">t = 0.00 s</span>
-          <span class="chip" id="hud-rate" data-state="ok" title="Simulated seconds per real second">1.00× real time</span>
-          <span class="chip" id="hud-fps">60 fps</span>
+        <!-- The stage's status line. Readings are plain text: the clock and the frame rate, and the recording light
+             while a clip or a dataset records (its stop is in the player bar). Only what a press acts on is a button:
+             the notices open Insights, and the director's chip gives the camera back. -->
+        <div class="hud" role="group" aria-label="Run status">
+          <p class="hud-status"><span id="hud-time">t = 0.00 s</span><span id="hud-fps">60 fps</span></p>
+          <span class="hud-rec" id="hud-rec" hidden></span>
           <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
-          <button type="button" class="chip hud-rec" id="hud-rec" hidden></button>
-          <button type="button" class="chip hud-rec data" id="hud-data" hidden></button>
+          <button type="button" class="chip hud-dir" id="hud-dir" aria-label="The director is filming: press to give the camera back" title="Give the camera back" hidden></button>
         </div>
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>
@@ -174,7 +207,9 @@
             <button type="button" class="nav-zoom" id="nav-zoom" data-tip="Drag to zoom · click for 100%">100%</button>
             <button type="button" class="nav-btn" id="nav-in" aria-label="Zoom in" data-tip="Zoom in · +"><span class="ms" aria-hidden="true">add</span></button>
           </div>
+          <!-- Select and Pan are modes for a press on the stage, each ending the other; a tool on the rail ends both. -->
           <div class="nav-row">
+            <button type="button" class="nav-btn" id="nav-select" aria-pressed="false" aria-label="Select mode" aria-keyshortcuts="Q" data-tip="Select objects only · Q"><span class="ms" aria-hidden="true">ads_click</span></button>
             <button type="button" class="nav-btn" id="nav-pan" aria-pressed="false" aria-label="Pan mode" data-tip="Pan · Space-drag anytime"><span class="ms" aria-hidden="true">pan_tool</span></button>
             <button type="button" class="nav-btn" id="nav-fit" aria-label="Frame the scene" data-tip="Frame the scene · 0"><span class="ms" aria-hidden="true">fit_screen</span></button>
           </div>
@@ -197,11 +232,21 @@
         <div class="minimap" id="minimap" hidden><canvas id="minimap-canvas" role="img" aria-label="Overview of the whole scene with the visible area outlined; click or drag to move the view"></canvas></div>
       </div>
     </div>
+    <!-- The player bar: one transport for time, laid out as a video player's. The timeline runs its full width and
+         carries the run's marks (what is recording, the states saved); beneath it are play, step and reset, the speed,
+         and the capture cluster, whose settings button opens the Capture section of Settings. -->
     <footer class="player">
+      <div class="timeline" role="group" aria-label="Timeline">
+        <span class="ms" aria-hidden="true">history</span>
+        <label for="rewind-range" class="sr-only">Rewind</label>
+        <div class="range-wrap no-notch"><div class="tl-marks" id="tl-marks" aria-hidden="true"><span class="tl-span" id="tl-clip" hidden></span><span class="tl-span data" id="tl-data" hidden></span></div><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note" title="Drag back to replay recent history. Comma steps back."></div>
+        <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
+        <span class="sr-only" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
+      </div>
       <div class="transport" role="group" aria-label="Simulation transport">
         <button type="button" class="btn btn-primary" id="btn-play" title="Play or pause (Space)"><span class="ms fill" id="btn-play-icon" aria-hidden="true">pause</span><span id="btn-play-label">Pause</span></button>
         <button type="button" class="btn btn-ghost" id="btn-step" title="Pause and advance one frame (.)"><span class="ms" aria-hidden="true">skip_next</span><span class="sr-only">Step</span></button>
-        <button type="button" class="btn btn-ghost" id="btn-reset" title="Restart the current scene with the current settings (R)"><span class="ms" aria-hidden="true">restart_alt</span><span class="sr-only">Reset</span></button>
+        <button type="button" class="btn btn-ghost" id="btn-reset" title="Restart the run: the current scene with the current settings (R)"><span class="ms" aria-hidden="true">replay</span><span class="sr-only">Restart the run</span></button>
       </div>
       <div class="speed" role="group" aria-label="Simulation speed">
         <span class="ms" aria-hidden="true">speed</span>
@@ -209,36 +254,37 @@
         <output id="ctl-speed-out" class="ctl-val" for="ctl-speed">1.00×</output>
         <button type="button" class="ctl-reset" id="speed-reset" aria-label="Reset speed to 1×" title="Back to 1×" hidden><span class="ms" aria-hidden="true">restart_alt</span></button>
       </div>
-      <div class="timeline" role="group" aria-label="Rewind">
-        <span class="ms" aria-hidden="true">history</span>
-        <label for="rewind-range" class="sr-only">Rewind</label>
-        <div class="range-wrap no-notch"><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note" title="Drag back to replay recent history. Comma steps back."></div>
-        <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
-        <span class="sr-only" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
-      </div>
+      <!-- Each recorder and the save: a mark, its name, a live line (what it will keep, or how far it has got) and its
+           key. The name is what the button does now; the line describes it. capture.js keeps both, and the tooltip,
+           current. -->
       <div class="capture" role="group" aria-label="Capture">
-        <button type="button" class="btn btn-ghost btn-rec" id="btn-rec" aria-pressed="false" title="Record the stage as a video (M)"><span class="ms fill" aria-hidden="true">fiber_manual_record</span><span class="lbl" id="btn-rec-label">Video</span></button>
-        <button type="button" class="btn btn-ghost" id="btn-data" aria-pressed="false" title="Record this lab's measurements over time as a dataset (D)"><span class="ms" aria-hidden="true">monitoring</span><span class="lbl" id="btn-data-label">Data</span></button>
-        <button type="button" class="btn btn-ghost" id="btn-state" title="Save the exact state of this scene so you can reload it later"><span class="ms" aria-hidden="true">bookmark</span><span class="lbl">Save</span></button>
+        <button type="button" class="cap-btn" id="btn-rec" data-kind="clip" aria-pressed="false" aria-keyshortcuts="M" aria-labelledby="btn-rec-label" aria-describedby="btn-rec-sub"><span class="cap-mark" aria-hidden="true"></span><span class="cap-text"><span class="cap-name" id="btn-rec-label">Record clip</span><span class="cap-sub" id="btn-rec-sub"></span></span><kbd aria-hidden="true">M</kbd></button>
+        <button type="button" class="cap-btn" id="btn-data" data-kind="run" aria-pressed="false" aria-keyshortcuts="D" aria-labelledby="btn-data-label" aria-describedby="btn-data-sub"><span class="cap-mark" aria-hidden="true"></span><span class="cap-text"><span class="cap-name" id="btn-data-label">Record data</span><span class="cap-sub" id="btn-data-sub"></span></span><kbd aria-hidden="true">D</kbd></button>
+        <button type="button" class="cap-btn" id="btn-state" data-kind="state" aria-labelledby="btn-state-label" aria-describedby="btn-state-sub"><span class="cap-mark" aria-hidden="true"></span><span class="cap-text"><span class="cap-name" id="btn-state-label">Save state</span><span class="cap-sub" id="btn-state-sub"></span></span></button>
+        <button type="button" class="cap-set" id="btn-cap-settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Capture settings: clip quality and labels, the director, data rate and tracks"><span class="ms" aria-hidden="true">video_settings</span><span class="sr-only">Capture settings</span></button>
       </div>
     </footer>
   </section>
 
   <!-- The instruments deck: three panes over one header. Telemetry is the lab's readings and their plot; Inspect is
        the selected object, read-only (its settings stay in Controls); Insights is diagnostics grounded in the run.
-       The grip on the top edge sets the height; the size button steps through compact, standard and tall. -->
+       The grip in the gap above it sets the height: drag it, step it with the keys, or pick compact, standard or
+       tall with Home, Enter or End or by double-clicking. -->
+  <div class="grip grip-deck bay" id="deck-grip" role="separator" aria-orientation="horizontal" aria-controls="tile-deck" aria-label="Instruments height" aria-valuemin="112" aria-valuemax="600" aria-valuenow="240" tabindex="0" title="Drag to resize the instruments · double-click to step through compact, standard and tall"></div>
   <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments" data-pane="telemetry">
-    <div class="deck-grip" id="deck-grip" role="separator" aria-orientation="horizontal" aria-controls="tile-deck" aria-label="Instruments height" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" tabindex="0" title="Drag to resize the instruments · double-click for the standard height"></div>
     <header class="tile-head deck-head">
       <div class="deck-tabs" role="tablist" aria-label="Instruments" id="deck-tabs">
         <button type="button" role="tab" class="deck-tab" id="dt-telemetry" aria-controls="dp-telemetry" aria-selected="true"><span class="ms" aria-hidden="true">show_chart</span><span class="deck-tab-name">Telemetry</span></button>
-        <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span><span class="deck-tab-dot" id="dt-inspect-dot" hidden></span></button>
-        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum">Stable</span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-inspect" aria-controls="dp-inspect" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">frame_inspect</span><span class="deck-tab-name">Inspect</span></button>
+        <button type="button" role="tab" class="deck-tab" id="dt-insights" aria-controls="dp-insights" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">monitor_heart</span><span class="deck-tab-name">Insights</span><span class="diag-sum" id="diag-sum" hidden></span><span class="story-new" id="dt-story-n" hidden></span></button>
+      </div>
+      <!-- Insights has two views: Now, the run's state with fixes, and Story, the moments the lab's narrator has found. -->
+      <div class="ins-views" role="tablist" aria-label="Insights view" id="ins-views">
+        <button type="button" role="tab" class="ins-view" id="iv-now" aria-controls="ip-now" aria-selected="false" tabindex="-1">Now<span class="iv-n" id="iv-now-n"></span></button>
+        <button type="button" role="tab" class="ins-view" id="iv-story" aria-controls="ip-story" aria-selected="true">Story<span class="iv-n" id="iv-story-n" hidden></span></button>
       </div>
       <h3 class="deck-title" id="chart-title">Chart</h3>
       <div class="scope-legend" id="scope-legend"></div>
-      <div class="diag-top" id="diag-top" hidden></div>
-      <button type="button" class="icon-btn" id="btn-deck-size" title="Instruments size: standard · click for tall"><span class="ms" aria-hidden="true">unfold_more</span><span class="sr-only" id="btn-deck-size-label">Instruments size: standard. Make them tall.</span></button>
     </header>
     <div class="deck-body">
       <div class="deck-pane deck-telemetry" role="tabpanel" id="dp-telemetry" aria-labelledby="dt-telemetry">
@@ -250,20 +296,29 @@
           <canvas class="details-portrait" id="details-portrait" width="176" height="176" aria-hidden="true"></canvas>
           <div class="details-name"><span id="details-kicker"></span><h3 id="details-title"></h3>
             <div class="details-actions" id="details-actions"></div>
-            <p class="details-how">Figures are read-only and live. Click one to follow it in the chart, or its chart button to plot it under Telemetry. Click another object on the stage to switch; × clears.</p></div>
+            <p class="details-how">Figures are read-only and live. Click one to follow it in the chart, and pin it to Telemetry from there. Pick another object on the stage or in the list to switch; × clears.</p></div>
           <button type="button" class="icon-btn" id="details-close" title="Clear the selection"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Clear the selection</span></button>
           <dl class="details-rows" id="details-rows"></dl>
           <div class="details-focus" id="details-focus">
-            <p class="details-focus-cap" id="details-focus-cap"></p>
+            <div class="details-focus-head"><p class="details-focus-cap" id="details-focus-cap"></p><button type="button" class="details-pin" id="details-pin" aria-pressed="false" hidden><span class="ms" aria-hidden="true">show_chart</span><span class="lbl">Pin to Telemetry</span></button></div>
             <div class="details-plot-wrap"><canvas class="details-plot" id="details-plot" role="img" aria-label="The focused figure of the selected object over time"></canvas></div>
           </div>
         </article>
         <div class="inspect-empty" id="inspect-empty">
           <span class="ms" aria-hidden="true">ads_click</span>
-          <p><b>Nothing selected.</b> <span id="inspect-how">Click an object on the stage to inspect it here.</span> Its live figures appear here, read-only; plot any of them over time with its chart button. Settings stay in Controls.</p>
+          <p><b>Nothing selected.</b> <span id="inspect-how">Click an object on the stage to inspect it here.</span> Or pick one in the list, or turn on Select (Q) in the view controls, where a click only ever selects. Its live figures appear here, read-only; follow any of them over time and pin it to Telemetry. Settings stay in Controls.</p>
         </div>
+        <!-- Every object in the scene (objects.js): sortable, the selection marked; a click or Enter selects. Only the
+             rows in view exist, so a thousand balls scroll as lightly as five posts. -->
+        <section class="objects" id="objects" aria-labelledby="objects-h">
+          <h4 class="objects-h" id="objects-h"><span id="objects-h-name">Objects</span> <span class="objects-n" id="objects-n"></span></h4>
+          <div class="objects-cols" id="objects-cols" role="group" aria-label="Sort the list"></div>
+          <div class="objects-list" id="objects-list" role="listbox" tabindex="0" aria-labelledby="objects-h"><div class="objects-space" id="objects-space"></div></div>
+          <p class="objects-empty" id="objects-empty" hidden></p>
+        </section>
       </div>
       <div class="deck-pane deck-insights" role="tabpanel" id="dp-insights" aria-labelledby="dt-insights" hidden>
+        <div class="ins-now" role="tabpanel" id="ip-now" aria-labelledby="iv-now" hidden>
         <div class="insights" id="insights" aria-live="polite"></div>
         <div class="perf" aria-label="Frame timing">
           <canvas id="perf-spark" role="img" aria-label="Computing time per frame over the last two seconds, against the 16.7 ms frame budget"></canvas>
@@ -274,10 +329,18 @@
             <dt>Real time</dt><dd id="perf-rate">1.00×</dd>
           </dl>
         </div>
+        </div>
+        <!-- The Story: what the run has done and why, newest first. The list scrolls on its own, so it takes focus. -->
+        <div class="ins-story" role="tabpanel" id="ip-story" aria-labelledby="iv-story">
+          <p class="story-empty" id="story-empty"><span class="ms" aria-hidden="true">history</span><span id="story-how"></span></p>
+          <ol class="story" id="story" tabindex="0" aria-label="Story of this run, newest first"></ol>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- The inspector's inner edge: drag the grip in the gap, or focus it and use the arrow keys, to set its width. -->
+  <div class="grip grip-side" id="side-grip" role="separator" aria-orientation="vertical" aria-controls="tile-notes" aria-label="Inspector width" aria-valuemin="320" aria-valuemax="700" aria-valuenow="360" tabindex="0" title="Drag to resize the inspector · double-click for the standard width"></div>
   <aside class="tile tile-inspector" id="tile-notes" aria-label="Inspector">
     <div class="scene-intro" id="scene-body"></div>
     <div class="tabs" role="tablist" aria-label="Inspector" id="notes-tabs">
@@ -293,14 +356,6 @@
       <div role="tabpanel" id="np-guide" aria-labelledby="nt-guide" hidden><div id="guide"></div></div>
       <div role="tabpanel" id="np-math" aria-labelledby="nt-math" hidden><div class="math" id="math"></div></div>
       <div role="tabpanel" id="np-library" aria-labelledby="nt-library" hidden>
-        <section class="lib-sec" aria-labelledby="lib-cap-h">
-          <div class="lib-head">
-            <h4 class="sub" id="lib-cap-h">Capture</h4>
-            <button type="button" class="lib-tog" id="btn-cap-settings" aria-expanded="false" aria-controls="capture-settings"><span class="ms" aria-hidden="true">tune</span>Settings</button>
-          </div>
-          <div class="lib-capture" id="lib-capture" role="group" aria-label="Capture this run"></div>
-          <div class="capture-settings" id="capture-settings" hidden></div>
-        </section>
         <section class="lib-sec" aria-labelledby="lib-saved-h">
           <div class="lib-head">
             <h4 class="sub" id="lib-saved-h">Saved <span class="lib-count" id="lib-count"></span></h4>
@@ -321,50 +376,79 @@
   <span class="colophon-item">Made with epic amounts of coffee <span class="ms fill colophon-ico" aria-hidden="true">coffee</span> by <strong>Dennis Smaltz</strong></span>
 </footer>
 
-<div class="sheet" id="keys-sheet" role="dialog" aria-modal="false" aria-labelledby="keys-title" hidden>
-  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">keyboard</span><h3 id="keys-title">Keyboard and pointer</h3><button type="button" class="icon-btn" id="keys-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+<!-- Settings (settings.js): one modal dialog, a section for each part of the workspace a person sets once and keeps.
+     The top bar's Settings button opens it where it was left, the Graphics button, which shows the tier, at Graphics,
+     and the player bar's capture settings button at Capture; each section's contents belong to the module that owns
+     them (mode.js, unitmenu.js, headsup.js, capture.js). -->
+<dialog class="settings" id="settings" aria-labelledby="settings-title" tabindex="-1">
+  <header class="settings-head"><span class="ms settings-ico" aria-hidden="true">settings</span><h2 id="settings-title">Settings</h2><span class="settings-kept">Kept in this browser</span><button type="button" class="icon-btn" id="settings-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close settings</span></button></header>
+  <div class="settings-nav">
+    <div class="settings-tabs" id="settings-tabs" role="tablist" aria-orientation="vertical" aria-label="Settings sections">
+      <button type="button" role="tab" class="set-tab" id="st-graphics" aria-controls="sp-graphics" aria-selected="true"><span class="ms" aria-hidden="true">view_in_ar</span>Graphics</button>
+      <button type="button" role="tab" class="set-tab" id="st-units" aria-controls="sp-units" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">straighten</span>Units</button>
+      <button type="button" role="tab" class="set-tab" id="st-hud" aria-controls="sp-hud" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">center_focus_strong</span>Head-up display</button>
+      <button type="button" role="tab" class="set-tab" id="st-capture" aria-controls="sp-capture" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">video_settings</span>Capture</button>
+      <button type="button" role="tab" class="set-tab" id="st-keys" aria-controls="sp-keys" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">keyboard</span>Keyboard</button>
+    </div>
+  </div>
+  <div class="settings-body" id="settings-body">
+<section class="set-pane" id="sp-capture" role="tabpanel" aria-labelledby="st-capture" hidden>
+  <header class="set-head"><h3 id="cap-title">Capture</h3><p>How Record clip and Record data, in the player bar under the stage, keep a run, and whether the director films your clips. What you capture gathers in the Library.</p></header>
+  <div class="cap-set-body" id="capture-settings"></div>
+</section>
+<section class="set-pane" id="sp-keys" role="tabpanel" aria-labelledby="st-keys" hidden>
+  <header class="set-head"><h3 id="keys-title">Keyboard and pointer</h3><p>The keys work anywhere in the workspace, except while you type in a field.</p></header>
   <dl class="keys-list">
     <dt><kbd>Space</kbd></dt><dd>Play or pause; hold it and drag to pan</dd>
     <dt><kbd>.</kbd> <kbd>,</kbd></dt><dd>Step forward one frame · step back through history</dd>
-    <dt><kbd>R</kbd></dt><dd>Restart the scene</dd>
+    <dt><kbd>R</kbd></dt><dd>Restart the run, with the current settings</dd>
     <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Halve or double the speed</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, frame the scene</dd>
     <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Pan (orbit in 3D views; Shift pans)</dd>
-    <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record video · record data</dd>
+    <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record a clip · record data</dd>
     <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Switch labs</dd>
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>
     <dt><kbd>Shift</kbd>+<kbd>H</kbd></dt><dd>Show or hide the head-up display on the stage</dd>
-    <dt>Letters</dt><dd>The key shown on each tool selects it</dd>
+    <dt>Letters</dt><dd>The key shown on each tool selects it; no tool takes a plain key listed here</dd>
+    <dt><kbd>Q</kbd></dt><dd>Select: a click on the stage only selects, never throws, paints or erases</dd>
     <dt><kbd>V</kbd></dt><dd>Next view, in a lab with more than one (Chaos, Waves)</dd>
-    <dt><kbd>U</kbd></dt><dd>Units: metric, US customary or simulation pixels</dd>
-    <dt><kbd>?</kbd> <kbd>Esc</kbd></dt><dd>This sheet · close a menu or sheet</dd>
+    <dt><kbd>U</kbd></dt><dd>Units in Settings: metric, US customary or simulation pixels</dd>
+    <dt><kbd>Shift</kbd>+<kbd>S</kbd></dt><dd>Settings: graphics, units, the head-up display and these keys</dd>
+    <dt><kbd>?</kbd> <kbd>Esc</kbd></dt><dd>These keys in Settings · close a menu or Settings</dd>
     <dt>Dials</dt><dd>Drag a wheel sideways, Shift for fine steps; tap a side or a chevron to nudge it; scroll it once clicked; arrows step it; click its value to type one</dd>
+    <dt>Grips</dt><dd>Drag the pill above the instruments or beside the inspector, or focus it and use the arrows (Page keys step further); Home, Enter and End pick sizes; a double-click steps the deck's sizes or restores the inspector's width</dd>
     <dt>Scroll</dt><dd>Zoom at the cursor; middle or right drag pans</dd>
     <dt>Touch</dt><dd>Pinch to zoom, two-finger drag to pan</dd>
   </dl>
-</div>
-<!-- Units: what the readings, controls and scale bar are shown in. The simulations always compute in their own units. -->
-<div class="sheet gfx-sheet hud-sheet" id="hud-sheet" role="dialog" aria-modal="false" aria-labelledby="hud-title" hidden>
-  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">center_focus_strong</span><h3 id="hud-title">Head-up display</h3><button type="button" class="icon-btn" id="hud-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+</section>
+<section class="set-pane" id="sp-hud" role="tabpanel" aria-labelledby="st-hud" hidden>
+  <header class="set-head"><h3 id="hud-title">Head-up display</h3><p>The run's numbers in thin lines over the stage: its key readings, its cautions and the selected object's figures.</p></header>
   <div class="hud-opts">
     <button type="button" role="switch" class="switch" id="hud-on" aria-checked="true"><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span class="switch-text"><span>Show on the stage</span><span class="switch-note">Shift+H turns it on or off from anywhere</span></span></button>
     <div class="hud-field"><span class="seg-label" id="hud-alpha-key">Opacity</span><div id="hud-alpha"></div></div>
     <div class="hud-field"><span class="seg-label">Parts</span><div class="hud-parts" id="hud-parts"></div></div>
   </div>
   <p class="gfx-note">The display repeats Telemetry, Insights and Inspect on the stage itself, so the eye can stay on the run. Select an object to put a target box on it.</p>
-</div>
-<div class="sheet gfx-sheet units-sheet" id="units-sheet" role="dialog" aria-modal="false" aria-labelledby="units-title" hidden>
-  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">straighten</span><h3 id="units-title">Units</h3><button type="button" class="icon-btn" id="units-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
+</section>
+<section class="set-pane" id="sp-units" role="tabpanel" aria-labelledby="st-units" hidden>
+  <header class="set-head"><h3 id="units-title">Units</h3><p>What every reading, control, inspected figure and the scale bar are shown in. The simulations always compute in their own units, so a change never alters a run.</p></header>
   <div class="gfx-list" id="units-list" role="radiogroup" aria-labelledby="units-title"></div>
   <p class="gfx-note" id="units-scale"></p>
-</div>
-<div class="sheet gfx-sheet" id="gfx-sheet" role="dialog" aria-modal="false" aria-labelledby="gfx-title" hidden>
-  <header class="tile-head"><span class="ms tile-ico" aria-hidden="true">tune</span><h3 id="gfx-title">Graphics</h3><button type="button" class="icon-btn" id="gfx-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close</span></button></header>
-  <div class="gfx-list" id="gfx-list" role="radiogroup" aria-labelledby="gfx-title"></div>
+</section>
+<section class="set-pane" id="sp-graphics" role="tabpanel" aria-labelledby="st-graphics">
+  <header class="set-head"><h3 id="gfx-title">Graphics</h3><p>How much the 3D view asks of this machine. Changes apply at once and are kept in this browser.</p></header>
+  <h4 class="sub set-sub" id="gfx-tier-h">Tier</h4>
+  <div class="gfx-list" id="gfx-list" role="radiogroup" aria-labelledby="gfx-tier-h"></div>
   <p class="gfx-note" id="gfx-now"></p>
-  <p class="gfx-note" id="gfx-device"></p>
-</div>
+  <h4 class="sub set-sub">This machine</h4>
+  <div class="dev" id="gfx-device"></div>
+  <div class="set-subhead"><h4 class="sub" id="gfx-own-h">Your settings</h4><button type="button" class="btn btn-quick" id="gfx-reset" hidden><span class="ms" aria-hidden="true">restart_alt</span>Reset to tier</button></div>
+  <p class="gfx-note" id="gfx-own"></p>
+  <div class="knob-groups" id="gfx-knobs"></div>
+</section>
+  </div>
+</dialog>
 <p class="sr-only" id="sr-status" aria-live="polite"></p>
 <script type="module" src="js/main.js"></script>
 </body>

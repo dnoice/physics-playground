@@ -1,28 +1,31 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.17)
+    - Title: Cloth Lab (digiSpace Edition - v2.19)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for easier selection: the pins become objects to select,
+      with the selection contract, a list under Inspect (links held, peak and
+      mean stretch), an Inspect card with Free this pin, and a target for the
+      head-up display.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the tear
+      or the most strained weave and the free edge the wind blows for the
+      director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tracks
       follow every third point along each row and column of the weave and
       every pinned point (column, row, pin, position, velocity), where Cloth
       had kept none; the weave's shape is kept, and a dataset records it with
       its spacing, links and pins.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets: each column's unit, meaning and SI factor, and
-      a note on coordinates and scale.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: mean and peak stretch, torn links and tearing rate on its tape;
-      with nothing to select, no target.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -36,6 +39,8 @@
     - Wind with adjustable gustiness about its mean, and a ball whose size can
       be set.
     - Stretch and tearing-rate readouts with a runaway guard.
+    - Pins to select (Select, Q) and inspect: the links each holds and how
+      hard they pull.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -48,13 +53,14 @@ import { genericState } from '../core/codec.js';
 import { RAMP_HEAT, THEME } from '../core/color.js';
 import { BLACK, WHITE, css, drawSphere, mixRgb } from '../core/draw.js';
 
-import { PX_M, fmtQ } from '../core/units.js';
+import { PX_M, fmtPos, fmtQ } from '../core/units.js';
 import { TAU, clamp } from '../core/util.js';
 
-import { camOf } from '../shell/camera.js';
+import { camOf, toScreen } from '../shell/camera.js';
 import { rebuild, setParam } from '../shell/lifecycle.js';
 
 import { syncControl } from '../shell/panel.js';
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 import { canvas } from '../shell/state.js';
 
 /* ================================================================== */
@@ -121,7 +127,7 @@ export const cloth = {
 
   ballR() { return clamp(this.p.spacing * 3.5, 30, 90) * this.p.ballK; },
   build(preset, w, h) {
-    Object.assign(this, { w, h, n: 0, L: 0, grab: null, ball: null, cutTrail: [], capped: 0, tearClock: 0, tornLast: 0, tearRate: 0 });
+    Object.assign(this, { w, h, n: 0, L: 0, grab: null, ball: null, cutTrail: [], capped: 0, tearClock: 0, tornLast: 0, tearRate: 0, sel: null });
     let s = this.p.spacing, cols, rows, x0, y0;
     if (preset === 'flag') { cols = Math.floor(w * 0.5 / s); rows = Math.floor(cols * 0.6); x0 = w * 0.18; y0 = h * 0.14; }
     else { cols = Math.floor(w * 0.66 / s); rows = Math.floor(h * 0.6 / s); y0 = h * 0.08; }
@@ -261,7 +267,7 @@ export const cloth = {
       if (any) g.stroke();
     }
     g.globalAlpha = 1;
-    const pinR = clamp(this.p.spacing * 0.28, 3, 5.5);
+    const pinR = this.pinR();
     for (let i = 0; i < this.n; i++) if (this.pin[i]) drawSphere(g, X[i], Y[i], pinR, [242, 165, 65]);
     if (this.grab) { const i = this.grab.i; g.strokeStyle = THEME.text; g.lineWidth = 1.5 * px; g.beginPath(); g.arc(X[i], Y[i], 7 * px + 2, 0, TAU); g.stroke(); }
     const BR = this.ballR(), bp = this.ball || (this.p.tool === 'ball' ? this.hover : null);
@@ -354,9 +360,91 @@ export const cloth = {
     for (let i = 0; i < this.n; i++) g.fillRect(this.x[i] - r, this.y[i] - r, 2 * r, 2 * r);
   },
   pins() { let p = 0; for (let i = 0; i < this.n; i++) p += this.pin[i]; return p; },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the most strained part of the weave
+     (the tear, while links are giving way) and the free edge that moves most, the wind-blown edge when there is wind. */
+  interest() {
+    const out = [], X = this.x, Y = this.y, la = this.la, lb = this.lb, rest = this.rest, alive = this.alive, sp = this.sp0, L = this.L;
+    let top = 0;
+    for (let k = 0; k < L; k++) if (alive[k]) { const q = Math.hypot(X[lb[k]] - X[la[k]], Y[lb[k]] - Y[la[k]]) / rest[k]; if (q > top) top = q; }
+    if (top > 1) {
+      const cut = 1 + (top - 1) * 0.8, lim = this.p.tearable ? this.p.tear : 3, tearing = this.tearRate > 0;
+      const hot = k => alive[k] && Math.hypot(X[lb[k]] - X[la[k]], Y[lb[k]] - Y[la[k]]) / rest[k] >= cut;
+      let n = 0, x = 0, y = 0, r = 0;
+      for (let k = 0; k < L; k++) if (hot(k)) { n++; x += (X[la[k]] + X[lb[k]]) / 2; y += (Y[la[k]] + Y[lb[k]]) / 2; }
+      if (n) { x /= n; y /= n; }
+      for (let k = 0; k < L; k++) if (hot(k)) r = Math.max(r, Math.hypot((X[la[k]] + X[lb[k]]) / 2 - x, (Y[la[k]] + Y[lb[k]]) / 2 - y));
+      if (n) out.push({ x, y, r: Math.max(r * 1.4, sp * 4), w: tearing ? 0.9 : clamp((top - 1) / (lim - 1) * 0.8, 0.05, 0.7), key: 'strain', label: tearing ? 'The tear' : 'The most strained weave' });
+    }
+    const cols = this.cols, rows = this.rows, OX = this.ox, OY = this.oy;
+    let best = null;
+    for (const [i0, step, count] of [[(rows - 1) * cols, 1, cols], [cols - 1, cols, rows], [0, cols, rows], [0, 1, cols]]) {
+      let pin = 0, m = 0, x = 0, y = 0;
+      for (let j = 0, i = i0; j < count; j++, i += step) { pin += this.pin[i]; m += Math.hypot(X[i] - OX[i], Y[i] - OY[i]) / count; x += X[i] / count; y += Y[i] / count; }
+      if (!pin && count > 1 && (!best || m > best.m)) best = { m, x, y, r: count * sp * 0.45 };
+    }
+    if (best) out.push({ x: best.x, y: best.y, r: Math.max(best.r, sp * 4), w: this.p.wind ? 0.5 : clamp(best.m / this.dt() / 300, 0.05, 0.4), key: 'edge', label: this.p.wind ? 'The wind-blown edge' : 'The free edge' });
+    return out;
+  },
   // The readings this lab is about lead the deck with larger figures; the rest follow as secondary.
   primary: ['Mean stretch', 'Peak stretch'],
-  // The head-up display's readings; Cloth has nothing to select, so it has no target.
+  /* ---------- the selection contract (ARCHITECTURE.md): the pins, each by its point's place in the weave ---------- */
+  sel: null,
+  pinR() { return clamp(this.p.spacing * 0.28, 3, 5.5); },
+  selectedId() { return this.sel != null && this.sel < this.n && this.pin[this.sel] ? this.sel : null; },
+  select(id) { if (id == null) { this.sel = null; return true; } if (!(id >= 0 && id < this.n && this.pin[id])) return false; this.sel = id; return true; },
+  /* The pin nearest a stage point, within the Select tool's reach of its edge. */
+  pick(s) {
+    const f = pickFrame(this, s); if (!f) return null;
+    let best = null, bd = (PICK_PX * f.k + this.pinR()) ** 2;
+    for (let i = 0; i < this.n; i++) if (this.pin[i]) { const d = (this.x[i] - f.p.x) ** 2 + (this.y[i] - f.p.y) ** 2; if (d < bd) { bd = d; best = i; } }
+    return best;
+  },
+  /* What a pin holds: the links still joined to its point (at most four: right, left, below, above) and how far past
+     their rest length they are stretched, with its place in the weave. */
+  pinStats(i) {
+    const cols = this.cols, c = i % cols, r = (i / cols) | 0, X = this.x, Y = this.y;
+    let n = 0, peak = 0, sum = 0;
+    for (const k of [c < cols - 1 ? this.hL[i] : -1, c > 0 ? this.hL[i - 1] : -1, r < this.rows - 1 ? this.vL[i] : -1, r > 0 ? this.vL[i - cols] : -1]) {
+      if (k < 0 || !this.alive[k]) continue;
+      const q = Math.hypot(X[this.lb[k]] - X[this.la[k]], Y[this.lb[k]] - Y[this.la[k]]) / this.rest[k] - 1;
+      n++; sum += q; if (q > peak) peak = q;
+    }
+    return { n, peak, mean: n ? sum / n : 0, c, r };
+  },
+  objectsName: 'Pins',
+  objectsEmpty: 'No pins: the cloth is falling free. Fix a point with the Pin tool.',
+  objectCols: [
+    { label: 'Links', unit: () => 'held', text: v => String(v) },
+    { label: 'Peak', unit: () => '% stretch', text: v => (v * 100).toFixed(1) },
+    { label: 'Mean', unit: () => '% stretch', text: v => (v * 100).toFixed(1) },
+  ],
+  objects() {
+    const out = [];
+    for (let i = 0; i < this.n; i++) if (this.pin[i]) { const q = this.pinStats(i); out.push({ id: i, name: `Pin ${q.c + 1}, ${q.r + 1}`, kind: q.n ? 'Holding' : 'Torn free', v: [q.n, q.peak, q.mean] }); }
+    return out;
+  },
+  /* The selected pin, for the Details card: where it holds the weave and how hard its links pull. */
+  inspect() {
+    const i = this.selectedId(); if (i == null) return null;
+    const q = this.pinStats(i), name = `Pin ${q.c + 1}, ${q.r + 1}`, pct = v => `${(v * 100).toFixed(1)} %`;
+    return { id: `pin-${i}`, kicker: name, short: name, title: 'Pin', color: '#f2a541', focus: 'Peak stretch of its links', rows: [
+      ['Place in the weave', `column ${q.c + 1} of ${this.cols}, row ${q.r + 1} of ${this.rows}`, 'Counted from the top-left corner of the cloth as it was woven.'],
+      ['Position', fmtPos(this, this.x[i], this.y[i]), 'Across and down from the stage\'s top-left corner. A pin holds its point still.'],
+      ['Links held', `${q.n} of ${(q.c > 0) + (q.c < this.cols - 1) + (q.r > 0) + (q.r < this.rows - 1)}`, 'The threads still joined to this point; a torn or cut one lets go.'],
+      ['Peak stretch of its links', pct(q.peak), 'How far past its rest length the most stretched of its threads is pulled.'],
+      ['Mean stretch of its links', pct(q.mean), 'The same, averaged over its threads.'],
+      ['Tears at', this.p.tearable ? `${pct(this.p.tear - 1)} past rest` : 'never', this.p.tearable ? 'A thread pulled past this tears (Tear at stretch, in Controls).' : 'Links can tear is off, so nothing tears.'],
+    ], actions: [{ label: 'Free this pin', run: () => { this.pin[i] = 0; this.sel = null; } }] };
+  },
+  inspectHint: 'Click a pin with Select (Q) to inspect it here; the Pin tool fixes or frees one.',
+  /* A pin in stage pixels, on the cloth as it hangs in 3D. */
+  spot(id, three) {
+    if (id == null || !(id < this.n)) return null;
+    const x = this.x[id], y = this.y[id];
+    if (three) { const s = this.project3(x, y, this.relief3 ? this.relief3[id] * this.plane3().k : 0); return s && { x: s.x, y: s.y, r: 9 }; }
+    const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: this.pinR() * s.z };
+  },
+  // The head-up display's readings; its target is the selected pin.
   hud: [['Mean stretch', 'MEAN STRETCH'], ['Peak stretch', 'PEAK STRETCH'], ['Links torn or cut', 'TORN'], ['Tearing rate', 'TEAR RATE']],
   readouts() {
     const alive = this.aliveCount, mx = this.maxStretch * 100;

@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Panel Builder (digiSpace Edition - v2.11)
+    - Title: Panel Builder (digiSpace Edition - v2.19)
     - File Name: panel.js
     - Relative Path: js/shell/panel.js
     - Artifact Type: javascript
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: syncPanel() refreshes the Random
+      dice too, so a scene, a section's Reset or a rewind moves it at once,
+      and the Guide is no longer synced.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — Dials show
       their value through the wheel's text(), unit set back; a degree sign
       sits against its number (120°), as the SI writes plane angles.
@@ -19,9 +23,6 @@
       on a log scale without a step shows three significant figures, where
       fixed decimals rounded its low end to nothing (Gravity's softening read
       0.00 AU).
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] —
-      updateReadouts reads the lab once per panel tick and gives the rows to
-      Telemetry and the head-up display's tape, so both show the same text.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,8 +45,8 @@
     - Dials and switches honour the lab's enabled() and show the reason when
       disabled; a dial shows two lines of its note and the whole note as its
       tooltip.
-    - syncControl() also refreshes the Random dice and the Guide's cards, so
-      every mirror of a setting moves with it.
+    - syncControl() and syncPanel() also refresh the rail's Random dice, so
+      it moves with its switch however the setting changed.
     - Formula cards typeset with KaTeX; readouts update in place.
 
 ✒ Other Important Information:
@@ -66,16 +67,18 @@ import { makeWheel } from './dial.js';
 import { buildLiveMath } from './livemath.js';
 import { hudReadings } from './headsup.js';
 import { syncDice } from './dock.js';
-import { buildGuide, syncGuide } from './guide.js';
+import { buildGuide } from './guide.js';
 import { applyPreset, rebuild, setParam } from './lifecycle.js';
 
 import { active, announce, ui } from './state.js';
 
 /* ---------- controls ---------- */
 export const RESET_SVG = '<span class="ms" aria-hidden="true">restart_alt</span>';
-/* After a setting changes: its control, the section Resets, and the dice and Guide cards that mirror settings. */
-export function syncControl(key) { const f = ui.sync.get(key); if (f) f(); refreshGroups(); syncDice(); syncGuide(); }
-export function syncPanel() { for (const f of ui.sync.values()) f(); refreshEnabled(); }
+/* After a setting changes: its control, the section Resets, and the rail's dice, which mirrors the Random switch. */
+export function syncControl(key) { const f = ui.sync.get(key); if (f) f(); refreshGroups(); syncDice(); }
+/* After settings change by any other way (a scene, a section's Reset, a fix, a rewind, a saved state): every control and
+   the dice, at once. */
+export function syncPanel() { for (const f of ui.sync.values()) f(); refreshEnabled(); syncDice(); }
 export function refreshEnabled() {
   if (!active) return;
   for (const [key, fn] of ui.enable) { const s = active.enabled ? active.enabled(key) : true; fn(s === undefined ? true : s); }
@@ -288,7 +291,7 @@ export function buildPanel(lab) {
 }
 export function navHelp(lab) {
   const pan = lab.rightButton ? 'drag with the middle button, or hold <b>Space</b> and drag, to pan' : 'drag with the right or middle button, or hold <b>Space</b> and drag, to pan';
-  return `<b>View</b>: scroll to zoom at the cursor and ${pan}; pinch and two-finger drag on touch. The view controls on the right edge of the stage zoom, pan, frame the scene and open an overview. In <b>3D mode</b>, ${lab.rightButton ? 'middle-drag' : 'right-drag'} or the axis ball orbits and Shift-drag pans.`;
+  return `<b>View</b>: scroll to zoom at the cursor and ${pan}; pinch and two-finger drag on touch. The view controls on the right edge of the stage zoom, pan, frame the scene and open an overview; with their <b>Select</b> (Q) on, a click only picks an object to inspect and never uses the tool. In <b>3D mode</b>, ${lab.rightButton ? 'middle-drag' : 'right-drag'} or the axis ball orbits and Shift-drag pans.`;
 }
 export function markClip(f) {
   const clipped = f.scrollWidth - f.clientWidth - f.scrollLeft > 2, scrollable = f.scrollWidth - f.clientWidth > 2;

@@ -1,32 +1,31 @@
 /*
 ✒ Metadata
-    - Title: Collisions Lab (digiSpace Edition - v2.17)
+    - Title: Collisions Lab (digiSpace Edition - v2.19)
     - File Name: collisions.js
     - Relative Path: js/labs/collisions.js
     - Artifact Type: javascript
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: a ball is selected by its own
+      number, which outlasts its slot when balls are erased or rewound,
+      through the selection contract; Inspect lists every ball with its speed,
+      radius and spin.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      Brownian tracer, the densest cluster and the fastest ball for the
+      director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call to audit every lab's exports: tracks follow every ball
       (number, radius, mass, position, velocity, spin and the tracer flag),
       where only the Brownian tracer had been followed, and a dataset records
       the box, radii, tracer, gravity, e and μ.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and the tracer's tracks: each column's unit,
-      meaning and SI factor, and a note on coordinates and scale.
-    - 2.12.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call to steady the pile test at its cause: the walls take part
-      in every contact pass, as positions only, so the floor's push carries up
-      through a deep pile instead of being undone after the last pass; two
-      passes always, up to four while one still meets an overlap deeper than
-      half a pixel. The pile's worst overlap over 40 runs fell from 2.85 to
-      1.08 px; a sparse gas costs what it did.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -54,10 +53,11 @@ import { chartFrame, chartMessage, velocityTracker } from '../core/chart.js';
 import { genericState } from '../core/codec.js';
 import { RAMP_HEAT, THEME } from '../core/color.js';
 import { brushRing, drawSphere, rampRgb, sphereSprite } from '../core/draw.js';
+import { densest } from '../core/interest.js';
 
 import { FOV3 } from '../core/math3d.js';
 import { TAU, clamp, fmtSI, pct, rand, reduceMotion } from '../core/util.js';
-import { PX_M, fmtQ } from '../core/units.js';
+import { PX_M, fmtQ, sig, unitOf } from '../core/units.js';
 import { view } from '../core/view.js';
 
 import { camOf, camXf, toScreen } from '../shell/camera.js';
@@ -65,6 +65,7 @@ import { camOf, camXf, toScreen } from '../shell/camera.js';
 import { setParam } from '../shell/lifecycle.js';
 
 
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 import { announce, canvas } from '../shell/state.js';
 import { stage3d } from './stage3d.js';
 
@@ -149,8 +150,7 @@ export const collisions = {
   remove(i) {
     const last = this.n - 1;
     if (this.grab && this.grab.i === i) this.grab = null;
-    // The selection follows its ball: gone if this is it, moved if it is the last ball that fills the slot.
-    if (this.picked === i) this.picked = -1; else if (this.picked === last) this.picked = i;
+    // The selection is the ball's own number, so it needs no care here: a removed ball is simply gone from the list.
     if (i !== last) {
       this.x[i] = this.x[last]; this.y[i] = this.y[last]; this.vx[i] = this.vx[last]; this.vy[i] = this.vy[last]; this.r[i] = this.r[last]; this.im[i] = this.im[last];
       this.ang[i] = this.ang[last]; this.om[i] = this.om[last]; this.uid[i] = this.uid[last];
@@ -177,7 +177,7 @@ export const collisions = {
     }
   },
   build(preset, w, h) {
-    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, picked: -1, nextUid: 0 });
+    Object.assign(this, { w, h, n: 0, tracer: -1, tn: 0, th: 0, grab: null, brush: null, hits: 0, hitTime: 0, hitRate: 0, wallImp: 0, wallTime: 0, Z: NaN, sel: null, nextUid: 0 });
     const N = Math.round(this.p.count);
     if (preset === 'gas') this.jitterGrid(N, 5, 170);
     else if (preset === 'pile') {
@@ -309,29 +309,68 @@ export const collisions = {
       this.wallImp = 0; this.wallTime = 0;
     }
   },
-  hit(p) {
+  hit(p, reach = 6 / camOf(this).z) {
     let best = -1, bd = Infinity;
     for (let i = 0; i < this.n; i++) { const d = Math.hypot(this.x[i] - p.x, this.y[i] - p.y) - this.r[i]; if (d < bd) { bd = d; best = i; } }
-    return bd < 6 / camOf(this).z ? best : -1;
+    return bd < reach ? best : -1;
   },
   eraseAt(p) { for (let i = this.n - 1; i >= 0; i--) if (Math.hypot(this.x[i] - p.x, this.y[i] - p.y) < 26 + this.r[i] * 0.5) this.remove(i); },
-  /* The ball last grabbed, for the Details card. A disc's mass is r² and its spin energy ¼m²ω² here. */
-  picked: -1,
+  /* ---------- the selection contract (ARCHITECTURE.md): a ball by its own number, which outlasts its slot ---------- */
+  sel: null, slotHint: 0,
+  /* The slot a ball's number is in now, or -1: removal moves the last ball into the gap, and a rewind reorders. */
+  slot(id) {
+    if (id == null) return -1;
+    if (this.uid[this.slotHint] === id && this.slotHint < this.n) return this.slotHint;
+    for (let i = 0; i < this.n; i++) if (this.uid[i] === id) { this.slotHint = i; return i; }
+    return -1;
+  },
+  selectedId() { return this.slot(this.sel) >= 0 ? this.sel : null; },
+  select(id) { if (id == null) { this.sel = null; return true; } if (this.slot(id) < 0) return false; this.sel = id; return true; },
+  pick(s) { const f = pickFrame(this, s), i = f ? this.hit(f.p, PICK_PX * f.k) : -1; return i >= 0 ? this.uid[i] : null; },
+  objectsName: 'Balls',
+  objectsEmpty: 'The table is empty. Click it with Grab to add a ball.',
+  objectCols: [
+    { label: 'Speed', unit: () => unitOf(collisions, 'speed')[1], text: v => sig(v * unitOf(collisions, 'speed')[0]) },
+    { label: 'Radius', unit: () => unitOf(collisions, 'len')[1], text: v => sig(v * unitOf(collisions, 'len')[0]) },
+    { label: 'Spin', unit: () => 'rad/s', text: v => v.toFixed(2) },
+  ],
+  objects() {
+    const out = [];
+    for (let i = 0; i < this.n; i++) out.push({ id: this.uid[i], name: `Ball ${this.uid[i]}`, kind: i === this.tracer ? 'Tracer' : 'Ball', v: [Math.hypot(this.vx[i], this.vy[i]), this.r[i], this.om[i]] });
+    return out.sort((a, b) => a.id - b.id);
+  },
+  /* The selected ball, for the Details card. A disc's mass is r² and its spin energy ¼m²ω² here. */
   inspect() {
-    const i = this.picked; if (i < 0 || i >= this.n) return null;
+    const i = this.slot(this.sel); if (i < 0) return null;
     const r = this.r[i], m = r * r, v = Math.hypot(this.vx[i], this.vy[i]), w = this.om[i];
     return { id: `ball-${this.uid[i]}`, kicker: i === this.tracer ? 'Tracer' : `Ball ${this.uid[i]}`, title: 'Resin ball', color: '#5fd0df', focus: 'Speed across the table', rows: [['Mass of this ball', fmtSI(m), 'A disc of radius r has mass r² here.'], ['Radius of this ball', fmtQ(this, 'len', r), 'The drawn and collision radius.'], ['Speed across the table', fmtQ(this, 'speed', v), 'How fast it moves over the table.'], ['Spin rate', `${w.toFixed(2)} rad/s`, 'How fast it turns about its own centre.'], ['Energy of motion', fmtSI(0.5 * m * v * v), 'Kinetic energy, ½mv².'], ['Energy of spin', fmtSI(0.25 * m * m * w * w), 'Rotational energy, ¼m²ω².']], actions: [] };
   },
-  deselect() { this.picked = -1; },
-  /* The head-up display: its readings, and the selected ball in stage pixels, its centre lifted as the table draws it. */
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the Brownian tracer, the densest
+     cluster (the pile, a jam) and the fastest ball, each weighted by how far it stands out from the rest. keep is the
+     ball being filmed, reported while it lasts. */
+  interest(keep) {
+    const out = [], n = this.n, X = this.x, Y = this.y, VX = this.vx, VY = this.vy;
+    if (!n) return out;
+    if (this.tracer >= 0) { const t = this.tracer; out.push({ x: X[t], y: Y[t], r: this.r[t] * 4, w: 0.75, key: 'tracer', label: 'The tracer' }); }
+    const d = densest(X, Y, n, this.w, this.h);
+    out.push({ x: d.x, y: d.y, r: d.r, w: clamp((d.ratio - 1.4) / 2.5, 0.05, 0.7), key: 'dense', label: 'The densest cluster' });
+    let f = 0, fv = 0, sum = 0;
+    for (let i = 0; i < n; i++) { const v = Math.hypot(VX[i], VY[i]); sum += v; if (v > fv) { fv = v; f = i; } }
+    const ball = (i, w, key, label) => out.push({ x: X[i], y: Y[i], r: this.r[i] * 5 + Math.hypot(VX[i], VY[i]) * 0.35, w, key, label });
+    if (fv > 0 && f !== this.tracer) ball(f, clamp((fv / (sum / n) - 2) / 4, 0.05, 0.7), `ball:${this.uid[f]}`, 'The fastest ball');
+    const k = keep && keep.startsWith('ball:') ? +keep.slice(5) : 0;
+    if (k && !out.some(p => p.key === keep)) for (let i = 0; i < n; i++) if (this.uid[i] === k) { ball(i, 0.2, keep, 'A ball'); break; }
+    return out;
+  },
+  /* The head-up display: its readings, and a ball in stage pixels, its centre lifted as the table draws it. */
   hud: [['Balls', 'BALLS'], ['Total kinetic energy', 'KINETIC E'], ['RMS speed', 'RMS SPEED'], ['Pressure check PA / NkT', 'PA / NkT']],
-  hudTarget(three) {
-    const i = this.picked; if (i < 0 || i >= this.n) return null;
+  spot(id, three) {
+    const i = this.slot(id); if (i < 0) return null;
     const x = this.x[i], y = this.y[i], r = this.r[i];
     if (three) { const s = this.project3(x, y, r * this.plane3().k); return s && { x: s.x, y: s.y, r: r * this.scale3(s) }; }
     const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: r * s.z };
   },
-  inspectHint: 'With the Grab tool, click a ball to inspect it here.',
+  inspectHint: 'Click a ball with Grab or with Select (Q) to inspect it here.',
   cursorAt(p) { return this.p.tool === 'grab' ? (this.hit(p) >= 0 ? 'grab' : 'copy') : 'crosshair'; },
   pointerDown(p) {
     const tool = this.p.tool;
@@ -340,7 +379,7 @@ export const collisions = {
     let i = this.hit(p);
     // A ball pressed is selected; a press on empty table adds a ball and leaves the selection as it was, so adding
     // and throwing in turn does not flip the instruments between Inspect and the pane in use.
-    if (i >= 0) this.picked = i;
+    if (i >= 0) this.sel = this.uid[i];
     if (i < 0) {
       // Random sizes spread evenly in log from 4 to 24 px, so small and large balls come up about as often.
       const r = this.p.rand ? Math.round(4 * Math.pow(6, Math.random())) : this.p.radius;
@@ -670,7 +709,6 @@ Object.assign(collisions, genericState, {
       if (st >= 7 && k >= 0) { this.ang[k] = s.a[o + 5]; this.om[k] = s.a[o + 6]; }
     }
     if (s.uid) { this.uid.set(s.uid.subarray(0, this.n)); for (let k = 0; k < this.n; k++) if (this.uid[k] > this.nextUid) this.nextUid = this.uid[k]; }
-    if (this.picked >= this.n) this.picked = -1;
     Object.assign(this, { tracer: s.tracer, KE0: s.KE0, grab: null, brush: null, tn: 0, th: 0, wallImp: 0, wallTime: 0 });
     return true;
   },

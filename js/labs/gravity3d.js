@@ -1,38 +1,38 @@
 /*
 ✒ Metadata
-    - Title: Gravity 3D View (digiSpace Edition - v2.13)
+    - Title: Gravity 3D View (digiSpace Edition - v2.19)
     - File Name: gravity3d.js
     - Relative Path: js/labs/gravity3d.js
     - Artifact Type: javascript
-    - Version: 2.13.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for easier selection: the 3D twins of picking, erasing,
+      the throw, the follow ring and the hover tag give way to gravity.js's
+      one projector, tracked3() to its selected(), and projectTo3 projects a
+      point without allocating.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: aim3() and home3() give
+      the director an orbit target for a simulation point and the framing
+      frame3() goes to.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The 3D
       throw and its preview take the lab's throwVel: a drag's screen length
       against the circular speed about what holds its start, so a throw from
       the 3D camera no longer leaves at several times escape speed; the
       reading beside the arrow is throwText's. A throw begun on a body
       launches from its surface (throwFrom).
-    - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] —
-      zoomLimits3: the Solar System's free camera comes in to a few thousand
-      km and out to all of Sedna's orbit; elsewhere from a fiftieth of the
-      system to eight times it.
-    - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Our Solar
-      System in 3D: the first frame reaches Saturn and the zoom out reaches
-      the Kuiper belt; bodies keep their own pixel floor; a moon inside its
-      planet's disc is hidden and cannot be picked (apart3); the near plane
-      follows the camera in to a moon; names in the overlay, and the hover
-      readout names the body. The 3D names are the hudClear too.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Mixed into the gravity lab: the orbit camera, picking on the orbital
-    plane, 3D tools and the screen overlay. The world itself is drawn by
+    Mixed into the gravity lab: the orbit camera, the projection that picking
+    measures through, the point on the orbital plane under the pointer, and
+    the screen overlay. The world itself is drawn by
     js/render/world/scenes/gravity.js.
 
 ✒ Key Features:
@@ -40,8 +40,9 @@
       toward the cursor, pan, frame and axis snaps.
     - Target follows the centre of mass or a tracked body, exactly like the
       flat view.
-    - Throw, drop and follow work in 3D by picking on the orbital plane and
-      hit-testing projected bodies.
+    - Throw, drop, follow and Select work in 3D through the flat view's own
+      tests (pickBody, orbit and trail picking), measured on the stage through
+      project3, with the throw landing on the orbital plane.
     - Real-sized worlds: each body is drawn and picked at its own radius above
       its pixel floor, a moon waits inside its planet's disc until the camera
       draws them apart, and the near plane follows the camera in.
@@ -58,12 +59,10 @@
 ---------
 */
 import { THEME } from '../core/color.js';
-import { brushRing } from '../core/draw.js';
 import { FOV3, m4look, m4mul, m4persp } from '../core/math3d.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
 import { view } from '../core/view.js';
 import { in3D } from '../shell/mode.js';
-import { announce } from '../shell/state.js';
 
 /* ================================================================== */
 /*  Gravity · 3D mode: camera, picking, tools and overlays             */
@@ -84,7 +83,6 @@ export const gravity3d = {
     for (const b of this.bodies) { M += b.m; x += b.m * b.x; y += b.m * b.y; z += b.m * b.z; }
     return M ? { x: x / M, y: y / M, z: z / M } : { x: 0, y: 0, z: 0 };
   },
-  tracked3() { return this.track != null ? this.bodies.find(b => b.id === this.track) || null : null; },
   /* Distance at which the whole system fits the stage; the Solar System frames the planets out to Saturn, as the
      flat view does, and zooms out to the Kuiper belt from there. */
   dist0() {
@@ -105,12 +103,16 @@ export const gravity3d = {
     return { mvp: m4mul(P, V.m), eye: e, r: V.r, u: V.u, f: V.f, w, h, fovDeg: FOV3 * 180 / Math.PI, near, far };
   },
   basis3() { return this.view3 || (this.view3 = this.camMatrices(view.w, view.h)); },
-  /* Simulation point to stage pixels, or null behind the camera. */
-  project3(x, y, z) {
+  /* Simulation point to stage pixels, written into o with its depth w; false behind the camera. Allocates nothing, for
+     loops over many points (picking a trail). */
+  projectTo3(x, y, z, o) {
     const V = this.basis3(), m = V.mvp, X = x, Y = z, Z = y;
     const cx = m[0] * X + m[4] * Y + m[8] * Z + m[12], cy = m[1] * X + m[5] * Y + m[9] * Z + m[13], cw = m[3] * X + m[7] * Y + m[11] * Z + m[15];
-    return cw > 1e-6 ? { x: (cx / cw + 1) * 0.5 * V.w, y: (1 - cy / cw) * 0.5 * V.h, w: cw } : null;
+    if (!(cw > 1e-6)) return false;
+    o.x = (cx / cw + 1) * 0.5 * V.w; o.y = (1 - cy / cw) * 0.5 * V.h; o.w = cw; return true;
   },
+  /* Simulation point to stage pixels, or null behind the camera. */
+  project3(x, y, z) { const o = { x: 0, y: 0, w: 0 }; return this.projectTo3(x, y, z, o) ? o : null; },
   /* World length to stage pixels at a projected point. */
   scale3(s) { return this.basis3().h / (2 * Math.tan(FOV3 / 2) * s.w); },
   /* A body's radius on the stage, with the same floor the scene draws it at: a real world's own, else the stars' and
@@ -145,7 +147,7 @@ export const gravity3d = {
      and out to eight times it. */
   zoomLimits3() { return this.sky ? [1e-6, 80] : [0.02, 8]; },
   zoom3(f, s, instant) {
-    const c = this.c3(), D0 = this.dist0(), tb = this.tracked3(), [lo, hi] = this.zoomLimits3();
+    const c = this.c3(), D0 = this.dist0(), tb = this.selected(), [lo, hi] = this.zoomLimits3();
     const nd = clamp(c.distT / f, tb ? Math.min(tb.r * 2.5, D0 * lo) : D0 * lo, D0 * hi);
     if (s && !this.camLocked()) { const p = this.pick3(s); if (p) { const k = 1 - nd / c.distT; c.txT += (p.x - c.txT) * k; c.tzT += (p.y - c.tzT) * k; } }
     c.distT = nd;
@@ -164,8 +166,12 @@ export const gravity3d = {
     if (!(id in S)) return;
     c.yawT = c.yaw + wrapAngle(S[id] - c.yaw); c.pitchT = 0.02;
   },
+  /* For the director's camera: a simulation point as an orbit target (simulation z is the scene's height, and one
+     simulation pixel is one scene unit), and the home framing that frame3() goes to, at the current heading. */
+  aim3(x, y, z = 0) { return { x, y: z, z: y, k: 1 }; },
+  home3() { const m = this.com3(); return { yaw: this.c3().yaw, pitch: PITCH3, dist: this.dist0(), tx: m.x, ty: m.z, tz: m.y }; },
   tick3(real) {
-    const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 10), tb = this.tracked3();
+    const c = this.c3(), k = reduceMotion ? 1 : 1 - Math.exp(-real * 10), tb = this.selected();
     if (this.track != null && !tb) this.track = null;
     if (this.camLocked()) { const m = tb || this.com3(); c.txT = m.x; c.tyT = m.z; c.tzT = m.y; }
     // Tracking eases in, then sits exactly on the body, so a fast planet holds still under a close camera.
@@ -174,10 +180,10 @@ export const gravity3d = {
     c.dist *= Math.pow(c.distT / c.dist, k); c.tx += (c.txT - c.tx) * kt; c.ty += (c.tyT - c.ty) * kt; c.tz += (c.tzT - c.tz) * kt;
     this.cam.x = c.tx; this.cam.y = c.tz;
   },
-  /* Screen overlay: names, follow ring, hover readout, delete brush and the throw preview. The orbits are drawn in
-     the world scene, where planets can hide them. */
+  /* Screen overlay: names, the follow ring, the hover readout and delete brush (drawMarks, shared with the flat view)
+     and the throw preview. The orbits are drawn in the world scene, where planets can hide them. */
   overlay3(g, w, h) {
-    const tb = this.tracked3(), a = this.aim, sT = tb && this.project3(tb.x, tb.y, tb.z);
+    const a = this.aim;
     this.hudClear = null;
     if (this.p.labels) {
       const names = [];
@@ -188,23 +194,7 @@ export const gravity3d = {
       }
       this.drawNames(g, names);
     }
-    if (sT) {
-      g.save(); g.strokeStyle = THEME.amber; g.globalAlpha = 0.85; g.lineWidth = 1.3; g.setLineDash([4, 4]); g.lineDashOffset = -performance.now() / 60;
-      g.beginPath(); g.arc(sT.x, sT.y, this.radius3(tb, sT) + 8, 0, TAU); g.stroke(); g.restore();
-    }
-    if (this.hover && !a) {
-      const b = this.bodyAt3(this.hover, 12), s = b && this.project3(b.x, b.y, b.z);
-      if (s) {
-        const R = this.radius3(b, s) + 5, label = this.hoverText(b);
-        g.strokeStyle = this.p.tool === 'erase' ? THEME.crit : THEME.text; g.lineWidth = 1.2;
-        g.beginPath(); g.arc(s.x, s.y, R, 0, TAU); g.stroke();
-        g.font = `400 11px ${THEME.mono}`; const tw = g.measureText(label).width;
-        const lx = clamp(s.x + R + 6, 4, w - tw - 14), ly = clamp(s.y - R - 6, 16, h - 6);
-        g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(lx - 5, ly - 13, tw + 10, 18);
-        g.fillStyle = THEME.text; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(label, lx, ly);
-      }
-    }
-    if (this.p.tool === 'erase' && this.hover) brushRing(g, this.hover, 14, THEME.crit);
+    this.drawMarks(g, w, h);
     if (a && a.moved) this.aimOverlay3(g, a);
   },
   /* The throw: the same dashed five-second preview as the flat view, carried over the orbital plane. */
@@ -228,33 +218,5 @@ export const gravity3d = {
     const ang = Math.atan2(a.y - a.sy, a.x - a.sx);
     g.fillStyle = g.strokeStyle; g.beginPath();
     g.moveTo(a.x, a.y); g.lineTo(a.x - 9 * Math.cos(ang - 0.4), a.y - 9 * Math.sin(ang - 0.4)); g.lineTo(a.x - 9 * Math.cos(ang + 0.4), a.y - 9 * Math.sin(ang + 0.4)); g.fill();
-  },
-  /* Pointer tools in 3D: pick on the orbital plane, hit-test projected bodies. */
-  bodyAt3(p, slack = 8) {
-    let best = null, bd = Infinity;
-    for (const b of this.bodies) {
-      const s = this.project3(b.x, b.y, b.z); if (!s || !this.apart3(b, s)) continue;
-      const d = Math.hypot(s.x - p.x, s.y - p.y) - this.radius3(b, s);
-      if (d < bd) { bd = d; best = b; }
-    }
-    return bd < slack ? best : null;
-  },
-  eraseAt3(p) {
-    const before = this.bodies.length;
-    this.bodies = this.bodies.filter(b => { const s = this.project3(b.x, b.y, b.z); return !s || !this.apart3(b, s) || Math.hypot(s.x - p.x, s.y - p.y) > Math.max(14, this.radius3(b, s) + 6); });
-    if (this.bodies.length !== before) { this.accDirty = true; this.E0 = this.energy(); }
-  },
-  pointerUp3(a, nb = this.drawNew()) {
-    if (!a.moved) {
-      const hit = this.bodyAt3({ x: a.sx, y: a.sy });
-      if (hit) { this.followBody(hit); return; }
-      const w = this.pick3({ x: a.sx, y: a.sy });
-      if (w) this.dropOrbit(w.x, w.y, w.z, nb); else announce('Aim at the orbital plane to drop a body.');
-      return;
-    }
-    const A = this.pick3({ x: a.sx, y: a.sy }), B = this.pick3({ x: a.x, y: a.y });
-    if (!A || !B) { announce('Aim at the orbital plane to throw a body.'); return; }
-    const o = this.throwFrom(A.x, A.y, A.z, B.x - A.x, B.y - A.y, nb.m), t = this.throwVel(o.x, o.y, o.z, B.x - A.x, B.y - A.y, 0, Math.hypot(a.x - a.sx, a.y - a.sy), nb.m);
-    this.addBody(this.body(o.x, o.y, t.vx, t.vy, nb.m, o.z, 0, nb.kind));
   },
 };

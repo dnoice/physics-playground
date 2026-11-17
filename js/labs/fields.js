@@ -1,30 +1,32 @@
 /*
 ✒ Metadata
-    - Title: Fields Lab (digiSpace Edition - v2.17)
+    - Title: Fields Lab (digiSpace Edition - v2.19)
     - File Name: fields.js
     - Relative Path: js/labs/fields.js
     - Artifact Type: javascript
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: the selection contract for the test
+      particles, which Inspect lists with q/m, speed and kinetic energy;
+      Select (Q) charts one without the Move tool. On Dennis's call to
+      untangle look-alikes: the Move tool takes G, since V is Next view in the
+      keys list, and the Inspect hint names it.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      tracked particle, framed round its circle in a magnetic field, the swarm
+      and the charges for the director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
       records the world, k, B and its gradient, E₀, the probe and every
       charge; the potential and tracked energies get their real units and SI
       factors (volts and J/kg), and the scale note says how the app shows
       potentials.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and particle tracks: each column's unit, meaning
-      and SI factor, and a note on coordinates, scale and the 64-particle
-      limit.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: probe field and potential, particles and E × B drift on its
-      tape, and the charted particle as its target, riding the field's relief
-      in 3D.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -58,10 +60,11 @@ import { genericState } from '../core/codec.js';
 import { RAMP_WAVE, THEME } from '../core/color.js';
 import { brushRing, drawSphere, zoomOf } from '../core/draw.js';
 import { Series } from '../core/series.js';
-import { PX_M, fmtQ, unitSystem } from '../core/units.js';
+import { PX_M, fmtQ, sig, unitOf, unitSystem } from '../core/units.js';
 import { TAU, clamp, fmtSI, pct, reduceMotion } from '../core/util.js';
 import { announce, canvas } from '../shell/state.js';
 import { toScreen } from '../shell/camera.js';
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 
 /* ================================================================== */
 /*  Lab 7 · Fields & charges                                           */
@@ -104,7 +107,7 @@ export const fields = {
   dock: { key: 'tool', label: 'Pointer tool', options: [
     { id: 'plus', label: 'Add +', key: 'p', icon: 'plus', hint: 'Click to place a positive charge · click a charge to add one unit' },
     { id: 'minus', label: 'Add −', key: 'n', icon: 'minus', hint: 'Click to place a negative charge · click a charge to remove one unit' },
-    { id: 'move', label: 'Move', key: 'v', icon: 'move', hint: 'Drag a charge to move it · click a particle to chart its energy' },
+    { id: 'move', label: 'Move', key: 'g', icon: 'move', hint: 'Drag a charge to move it · click a particle to chart its energy' },
     { id: 'launch', label: 'Launch', key: 'l', icon: 'launch', hint: 'Press and drag to fire a test particle · a click releases one at rest' },
     { id: 'probe', label: 'Probe', key: 'i', icon: 'probe', hint: 'Click or drag to place the field meter' },
     { id: 'erase', label: 'Erase', key: 'x', icon: 'erase', hint: 'Brush over charges and particles to remove them' },
@@ -222,23 +225,57 @@ export const fields = {
     this.track = pid; for (const s of Object.values(this.series)) s.clear();
     const i = this.indexOf(pid); this.E0track = i >= 0 ? this.energyOf(i).et : NaN; this.sampleClock = 0;
   },
-  /* The charted particle, once the user has picked it, for the Details card. */
+  /* ---------- the selection contract (ARCHITECTURE.md): the charted particle, once the user has picked it ---------- */
   picked: false,
+  selectedId() { return this.picked && this.indexOf(this.track) >= 0 ? this.track : null; },
+  select(id) {
+    if (id == null) { this.picked = false; return true; }
+    if (this.indexOf(id) < 0) return false;
+    if (this.track !== id) this.setTrack(id);
+    this.picked = true; return true;
+  },
+  pick(s) { const f = pickFrame(this, s), i = f ? this.hitParticle(f.p, PICK_PX * f.k) : -1; return i >= 0 ? this.pid[i] : null; },
+  objectsName: 'Particles',
+  objectsEmpty: 'No test particles. Fire one with the Launch tool.',
+  objectCols: [
+    { label: 'q/m', unit: () => 'C/kg', text: v => v.toFixed(2) },
+    { label: 'Speed', unit: () => unitOf(fields, 'speed')[1], text: v => sig(v * unitOf(fields, 'speed')[0]) },
+    { label: 'Kinetic E', unit: () => 'per mass', text: v => fmtSI(v) },
+  ],
+  objects() {
+    const out = [];
+    for (let i = 0; i < this.n; i++) out.push({ id: this.pid[i], name: `Particle ${this.pid[i]}`, kind: this.qm[i] > 0 ? 'Positive' : 'Negative', v: [this.qm[i], Math.hypot(this.vx[i], this.vy[i]), 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2)] });
+    return out.sort((a, b) => a.id - b.id);
+  },
   inspect() {
     const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
     const en = this.energyOf(i), q = this.qm[i], B = this.p.B;
     return { id: `particle-${this.track}`, kicker: `Particle ${this.track}`, focus: 'Kinetic energy per mass', title: q > 0 ? 'Positive charge' : 'Negative charge', color: q > 0 ? '#f2a541' : '#5fd0df', rows: [['Charge-to-mass ratio', q.toFixed(2), 'q/m. Its sign is the sign of the charge.'], ['Speed across the bench', fmtQ(this, 'speed', Math.hypot(this.vx[i], this.vy[i])), 'How fast it moves over the bench.'], ['Kinetic energy per mass', fmtSI(en.ke), 'Energy of motion, per unit mass.'], ['Potential energy per mass', fmtSI(en.pe), 'Energy from its place in the electric field, per unit mass.'], ['Total energy per mass', fmtSI(en.et), 'The sum, which a magnetic field never changes.'], ['Circle radius in B', B ? fmtQ(this, 'len', Math.hypot(this.vx[i], this.vy[i]) / Math.abs(q * B)) : 'no field', 'The Larmor radius of the circle a magnetic field bends it into.']], actions: [] };
   },
-  deselect() { this.picked = false; },
-  /* The head-up display: its readings, and the charted particle in stage pixels, riding the field's relief in 3D. */
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the tracked particle, framed round the
+     circle a magnetic field bends it into (centred on its guiding centre, which drifts slowly while the particle
+     whirls), then the swarm of test particles and the charges that drive them. */
+  interest() {
+    const out = [], n = this.n, i = this.indexOf(this.track), C = this.charges;
+    const spread = (len, at) => { let x = 0, y = 0, r = 0; for (let k = 0; k < len; k++) { const p = at(k); x += p[0] / len; y += p[1] / len; } for (let k = 0; k < len; k++) { const p = at(k); r = Math.max(r, Math.hypot(p[0] - x, p[1] - y)); } return { x, y, r }; };
+    if (i >= 0) {
+      // The Boris step turns v by qm·B·(vy, −vx), so the centre of the circle lies (vy, −vx) / (qm·B) away.
+      const vx = this.vx[i], vy = this.vy[i], v = Math.hypot(vx, vy), qB = this.qm[i] * this.Bz(this.y[i]), turns = Math.abs(qB) > 1e-9 && v / Math.abs(qB) < Math.max(this.w, this.h);
+      out.push({ x: clamp(this.x[i] + (turns ? vy / qB : 0), 0, this.w), y: clamp(this.y[i] - (turns ? vx / qB : 0), 0, this.h), r: Math.max(40, turns ? v / Math.abs(qB) * 1.6 : v * 0.8), w: 0.7, key: `p:${this.track}`, label: 'The tracked particle' });
+    }
+    if (n > 2) { const c = spread(n, k => [this.x[k], this.y[k]]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.2, 60), w: 0.35, key: 'swarm', label: 'The particles' }); }
+    if (C.length) { const c = spread(C.length, k => [C[k].x, C[k].y]); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.3, 80), w: 0.3, key: 'charges', label: C.length > 1 ? 'The charges' : 'The charge' }); }
+    return out;
+  },
+  /* The head-up display: its readings, and a particle in stage pixels, riding the field's relief in 3D. */
   hud: [['Probe |E|', 'PROBE |E|'], ['Probe potential V', 'PROBE V'], ['Test particles', 'PARTICLES'], ['E × B drift speed E/B', 'DRIFT E/B']],
-  hudTarget(three) {
-    const i = this.picked ? this.indexOf(this.track) : -1; if (i < 0) return null;
+  spot(id, three) {
+    const i = id == null ? -1 : this.indexOf(id); if (i < 0) return null;
     const x = this.x[i], y = this.y[i];
     if (three) { const s = this.project3(x, y, this.lift3(x, y) + 0.04); return s && { x: s.x, y: s.y, r: 7 }; }
     const s = toScreen(this, x, y); return { x: s.x, y: s.y, r: 6 };
   },
-  inspectHint: 'With the Move tool, click a test particle to chart and inspect it here.',
+  inspectHint: 'Click a test particle with Move (G) or with Select (Q) to chart and inspect it here.',
   /* Any change to the sources moves the potential under the charted particle, so its energy count restarts. */
   retrack() { if (this.indexOf(this.track) >= 0) this.setTrack(this.track); },
   energyOf(i) { const ke = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2), pe = this.qm[i] * this.Vat(this.x[i], this.y[i]); return { ke, pe, et: ke + pe }; },
@@ -432,8 +469,8 @@ export const fields = {
     for (const c of this.charges) { const d = Math.hypot(c.x - p.x, c.y - p.y); if (d < this.chargeR(c) + 6 && d < bd) { bd = d; best = c; } }
     return best;
   },
-  hitParticle(p) {
-    let best = -1, bd = 14 * 14;
+  hitParticle(p, reach = 14) {
+    let best = -1, bd = reach * reach;
     for (let i = 0; i < this.n; i++) { const d = (this.x[i] - p.x) ** 2 + (this.y[i] - p.y) ** 2; if (d < bd) { bd = d; best = i; } }
     return best;
   },

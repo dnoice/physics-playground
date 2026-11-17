@@ -1,27 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Lab Lifecycle (digiSpace Edition - v2.3)
+    - Title: Lab Lifecycle (digiSpace Edition - v2.18)
     - File Name: lifecycle.js
     - Relative Path: js/shell/lifecycle.js
     - Artifact Type: javascript
-    - Version: 2.3.0
-    - Date: 11/09/2026
-    - Update: Monday, November 09, 2026
+    - Version: 2.18.0
+    - Date: 11/16/2026
+    - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: every rebuild starts
+      the lab's story afresh.
     - 2.3.0 (11/09/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
       rebuild a parameter asks for keeps the user's edits through the
       lab's keep() hook, after Dennis found Fluid's posts vanishing when
       Particles changed; scene loads and Reset pass fresh and start clean.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — A rebuild
       can take a saved world size and tells the running experiment.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Split out
-      of the v1.3 single-file playground when Dennis asked for a proper
-      separation of concerns so the stack can keep growing; behaviour
-      unchanged.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -52,6 +51,7 @@ import { evaluateDiagnostics } from './diagnostics.js';
 import { experimentReset } from './experiments.js';
 import { refreshEnabled, syncControl, syncPanel } from './panel.js';
 import { active, announce } from './state.js';
+import { storyReset } from './story.js';
 
 /* A rebuild a parameter asks for keeps what the user built into the world, such as Fluid's posts: the lab hands
    its edits over with keep(), and build() reads them back from lab.kept before it fills the scene. Loading a scene,
@@ -66,6 +66,7 @@ export function rebuild(lab, world = view, { fresh = false } = {}) {
   lab.kept = !fresh && lab.ready && lab.keep ? lab.keep() : null;
   lab.build(lab.presetId, world.w, world.h);
   lab.kept = null;
+  storyReset(lab);
   lab.built = { w: world.w, h: world.h };
   lab.size = { w: view.w, h: view.h };
   histReset(lab); histCapture(lab, true);

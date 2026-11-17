@@ -1,17 +1,25 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.17)
+    - Title: Changelog (digiSpace Edition - v2.19)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.19.0: easier selection (a Select tool, an objects list in Inspect,
+      orbit-line picking), one timeline with capture beside it, drag handles,
+      and a duplication sweep with honest tab marks.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.18.0: planets that take their climate from their stars, Insights that
+      narrate the run, one Settings dialog, and a director's camera for
+      recordings.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0: every lab's dataset stands on its own.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
@@ -80,6 +88,389 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.19.0 (11/17/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's call for a thorough duplication sweep, and for easier ways to
+pick things out of a busy run. Selecting a body meant pausing the run, or
+clicking fast and hoping, and a missed click could drop a brown dwarf into
+the middle of an epic run. He also asked for:
+
+- the capture buttons beside the timeline;
+- drag handles on the panels;
+- the tilted-orbit markers under Display;
+- an Insights light that means something;
+- stage readings that no longer look like buttons.
+
+Four areas were built side by side, reviewed independently, fixed and
+merged.
+
+### Selecting things
+
+- **The root cause of missed clicks is fixed.** A click in Gravity now
+  counts where the bodies were when you pressed, not where they had moved to
+  by the release. A click on a moving planet follows it instead of dropping
+  a new body where the planet used to be. The hover ring and the click now
+  reach equally far.
+- **Select (Q).** A new button beside the hand in the camera controls.
+  - While it is on, a click only selects the nearest object, with a ring
+    showing what it would take.
+  - A click on empty space clears the selection.
+  - Nothing is thrown, dropped, painted or erased, however fast the run.
+  - It works in every lab, in 2D and 3D.
+  - The hand, Q or picking a tool turns it off.
+- **An objects list in Inspect.** Every object in the scene is listed
+  beside the selected one's card: bodies, balls, posts, sources, copies,
+  pins or particles.
+  - Each row gives the name, the kind and the two or three figures that
+    matter in that lab, in your units.
+  - Click a column to sort. Click a row, or use the arrow keys and Enter, to
+    select.
+  - Only the rows in view are drawn, so it stays quick with 1500 balls.
+  - The order holds while the pointer is over the list, so a row cannot move
+    from under a click.
+- **Orbit lines.** In Gravity, a click on a drawn orbit follows its body,
+  running or paused, in 2D and 3D. With Select on, a click on a trail does
+  too, which helps when only the lines show.
+- **One selection contract in every lab.** `objects()`, `select(id)`,
+  `selectedId()`, `pick()` and `spot()` work on ids that last.
+  - Collisions keeps a selection on the same ball after erasing or
+    rewinding.
+  - Fluid keeps a selected post through rebuilds and saved states.
+  - Cloth's pins can be selected and inspected, showing the links each holds
+    and how hard they pull, with Free this pin.
+  - Inspect, the head-up display, the Select tool, the list and the
+    narrators' Show me all go through it.
+- **Gravity's 2D and 3D twins are merged.** Picking, erasing, throwing, the
+  follow ring and the hover tag now run through one `pickBody()` with a
+  projector.
+- **Tilt marks.** The 3D view's drop lines and foot rings now have a switch
+  under Gravity's Display, beside velocity vectors and trails.
+
+### One timeline
+
+- **The player bar is laid out like a video player's.** The rewind
+  timeline runs across the top, with play, step, reset, speed and the
+  capture buttons beneath it.
+- **Capture lives in one place:** Record clip, Record data and Save state
+  in the player bar.
+  - Each shows a live line: format and quality, columns and rate, or the
+    time, size and rows so far.
+  - A recorder turns into its own stop button while recording.
+  - A button says when it is not available in this lab.
+  - The Library's capture cards, which repeated them, are gone. The Library
+    holds what you saved.
+- **The timeline marks the run.** A red or cyan span shows while a clip or a
+  dataset records, and a green tick marks each state saved in this run. The
+  Telemetry plot's drag-to-rewind shows the same marks.
+- **Capture settings are in Settings.** They have their own section, opened
+  from the button at the end of the player bar. It holds clip quality and
+  labels, the director's switch and Preview direction, the data rate,
+  tracks, and what a dataset holds.
+- **The stage's status line no longer looks clickable.**
+  - The time and the frame rate are plain text.
+  - A recording light shows what is recording.
+  - Only the notices and the director's chip are buttons.
+  - The Running and real-time chips are gone: they repeated the Play button
+    and Insights.
+
+### Drag handles
+
+- **The instruments deck has a real drag handle:** a visible pill in the
+  gap above the deck that brightens on hover and while dragging. A
+  double-click steps through compact, standard and tall.
+- **The Inspector column can be resized** with a grip on its inner edge.
+  - Its width is remembered.
+  - It is hidden in focus mode and in the one-column layout.
+- **Both grips work from the keyboard.**
+  - The arrows step, and the Page keys step further.
+  - Home and End jump to the ends.
+  - Enter restores the standard size.
+  - Screen readers hear each grip's size in pixels.
+- **The stage keeps at least 260 px of height,** whatever size the deck is
+  given.
+- **One `dragHandle()`** now serves both grips and the Telemetry plot's
+  scrub.
+
+### Duplicates swept, and honest marks
+
+**Removed, with what replaces each:**
+
+| Removed | Use instead |
+| --- | --- |
+| The deck's size button | Its grip |
+| The deck header's repeat of the first warning | The stage's alert, the caution lights and the Now view's cards |
+| The Guide's scene, tool, view and Random buttons | The scene menu, the rail and Controls. The Guide is now a legend of each tool and view: glyph, name, key and hint |
+| The top bar's Units, HUD and keyboard buttons | The Settings gear. U, ?, Shift+H and Shift+S still work. The Graphics button stays, because it shows the tier in use |
+| Gravity's Pan tool | The hand in the camera controls, or Space-drag |
+| Gravity's Follow switch | Follow on the rail |
+| Gravity's Zoom dial and its View section | The rail's zoom |
+| Inspect's Release camera action | The card's × |
+| Inspect's per-figure plot buttons | The figure's own button, and Pin to Telemetry on the chart |
+| Chaos's "Restart from these angles" | Reset (R) |
+
+**An Insights tab that means something.** It shows a mark only when there
+is something to see:
+
+- an amber or red dot with a few words while a warning or a critical
+  problem stands;
+- a plain count of Story moments you have not read.
+
+A calm run leaves the tab bare, and a selection no longer puts a dot on
+Inspect.
+
+**Look-alikes told apart.**
+
+- Restarting the run has its own glyph and is named "Restart the run".
+- Graphics has its own glyph, apart from the Controls tab's.
+- Fields' Move tool is now G, so V is only Next view.
+- The stage's status chips are announced as "Run status", so the head-up
+  display is the only thing called HUD.
+
+**Smaller fixes.**
+
+- The Random dice no longer shows another lab's name.
+- "Drawing is the bottleneck" appears only when drawing really takes most of
+  each frame.
+
+### Fixed in review
+
+- **The objects list holds its order** while the pointer is over it. It had
+  read row positions as ids, so in Gravity the rows reshuffled four times a
+  second under the pointer.
+- **A followed moon keeps its ring** while it sits inside its planet's drawn
+  disc.
+- **A clip's span on the timeline survives a reset mid-recording,** and so
+  does a dataset's.
+- **The deck's limits hold:**
+  - in the one-column layout, where it may take 80 % of the screen;
+  - in a short window, where the tall preset no longer squeezes the stage
+    under 260 px.
+  - The grip's value never exceeds its maximum.
+- **Settings' focus trap reaches the Capture section's fold.**
+- **"Running slower than requested" names the cause its meters show:** the
+  step cap, the solver's budget, or slow frames.
+- **The stage's alert and the Insights tab use the same words,** "N to
+  check" or "N critical".
+- **Unseen counts have their own look,** a bare "+n", apart from the pills
+  that hold totals and progress. The Library uses it for items saved while
+  another tab was open.
+- **Accessibility.**
+  - Pin to Telemetry keeps one label.
+  - A pinned figure says so in its name.
+  - The list's units meet AA contrast.
+- **Every selection now goes through `select(id)`:** the Chaos, Fields and
+  Waves narrators, and clearing with `select(null)`. The labs' separate
+  `deselect()` is gone.
+
+### Checks
+
+| Suite | New checks |
+| --- | --- |
+| `labs3.py` | A click on a moving body follows it |
+| `nav.py` | The Select tool, and the removed Gravity controls |
+| `solar.py` | Orbit-line clicks in 2D and 3D. Empty sky beside an orbit still drops a body. A followed moon is ringed inside its planet. |
+| `workspace.py` | The objects list: it sorts, a row click selects, and its order holds under the pointer and re-sorts after. The grips: separators, bands that spare every tab, drags that persist, keys, and the stage kept usable in short, stacked and stored-extreme windows. The Insights tab's honest marks. |
+| `capture.py` | The capture cluster. The timeline's spans and ticks on the track and on the Telemetry plot, read from its pixels. A span restarts after a reset mid-clip. |
+| `shell.py` | Each removed opener's section is still reachable. The focus trap reaches the Capture fold. The slow-run cause. One alert wording. Tool keys that are their own. Look-alikes told apart. |
+| `notebook.py` | The Guide has no buttons. The Library has no capture cards. |
+| `placement.py` | The dice follows every change. |
+
+Every rewritten check asserts the new behaviour at least as strictly as
+before. The new checks were run against the code before each fix, and fail
+there.
+
+## 2.18.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+Four features on Dennis's call, built side by side and merged:
+
+- worlds that take their climate from their stars;
+- an Insights pane that narrates the run as it happens;
+- one Settings dialog for everything that was spread across four sheets;
+- a director's camera that films a recording like a film crew would.
+
+Each was reviewed independently before release, and the review's findings
+were fixed before merging.
+
+### Planets take their climate from their stars
+
+- **Every star shines by its mass,** and each world is warmed by the
+  starlight of all of them. Binaries, added stars and removed stars all
+  change it.
+  - Luminosity follows a piecewise main-sequence relation, with the Sun as 1.
+  - Equilibrium temperature is T_eq = 278.6 K × S^¼ × (1 − A)^¼, with a
+    Bond albedo by kind and by air.
+  - Air is kept or lost by the cosmic shoreline (Zahnle & Catling 2017).
+  - Oceans boil past the runaway limit S > 1.06 (Kopparapu 2013).
+  - A grey greenhouse, calibrated on Earth's 288 K and Venus's 737 K,
+    warms the surface. Giants and brown dwarfs add their own internal heat.
+- **Climate classes.**
+  - Rocky worlds can be:
+    - molten, with lava glowing in a dark crust;
+    - hothouse, under a pale, Venus-like sky;
+    - hot and dry;
+    - airless;
+    - cold desert;
+    - temperate, with oceans and clouds;
+    - eyeball, with open water under the star and ice on the night side;
+    - cold, with ice caps spreading toward the equator;
+    - frozen.
+  - Giants run from ammonia bands through white water clouds and clear
+    blue skies to a dark envelope with a glowing night side.
+- **Temperatures follow starlight with a lag.** Eccentric orbits have
+  seasons, and a world pushed toward its star warms over time. A moved
+  world's oceans boil and its spin locks as it settles.
+- **Tidal locking.** Close-in worlds and moons become tidally locked
+  (Gladman et al. 1996), against whichever heavier body raises the
+  strongest tide on them. A moon locks to its planet. In 3D a locked world
+  keeps one face to its star, and Mercury keeps its 3:2 resonance.
+- **Inspect explains every world's climate.**
+  - Each world shows its starlight (Earth = 1, and W/m²), its equilibrium
+    and surface temperatures in the chosen units, and its hottest and
+    coldest.
+  - It also shows the world's air, climate and rotation, each with a line
+    on why.
+  - Each star shows its luminosity.
+- **Our Solar System lands on the real temperatures,** and every world
+  keeps its identity:
+
+  | World | Temperatures | Looks |
+  | --- | --- | --- |
+  | Mercury | 440 K | |
+  | Venus | 230 K, with a 737 K surface | hazy |
+  | Earth | 255 K and 288 K | blue |
+  | Mars | 210 K | red, with polar frost |
+  | Jupiter | 110 K | banded |
+  | Neptune | 47 K | banded |
+- **Tracks and saved runs keep the climate.** Gravity's per-body tracks
+  gain `temperature_K` and `instellation_earth`. Rewind and saved states
+  keep each world's warmth.
+
+### Insights narrates the run
+
+- **A Story view.** It lists the moments each lab's narrator notices:
+  - newest first, stamped with simulated time;
+  - each saying what happened and why, with the numbers behind it.
+
+  Today's insights and their fixes are now the Now view.
+- **Gravity narrates in depth.** It measures every orbit about what holds
+  it: Hill-sphere primaries, bound binaries, and barycentres for distant
+  bodies. It tells:
+  - each throw or drop, and the orbit it starts, against the escape speed;
+  - a giant pulling the barycentre out of the star, the star's wobble, and
+    how little its tide disturbs the planets close in;
+  - orbits that drift, naming the body perturbing them, including the inner
+    orbits of a star that a heavy companion has paired with;
+  - close passes and their slingshot;
+  - captured and lost moons, and binaries forming;
+  - mergers and what they formed (two at once into one survivor included),
+    falls into the star, and ejections;
+  - resonances, orbits that truly cross, and pairs packed too tight;
+  - first orbits, timed against Kepler's law;
+  - a disk clearing;
+  - once a scene, why the drawn sizes are larger than life.
+- **Every other lab narrates too,** each moment measured against its law:
+
+  | Lab | What its narrator measures |
+  | --- | --- |
+  | Collisions | The gas relaxing to Maxwell–Boltzmann, and cooling by Haff's law |
+  | Fluid | A dam-break front against Ritter's 2√(gh₀) |
+  | Waves | The wavelength against c/f, and the fringes against the slit law |
+  | Chaos | The Lyapunov time and the copies parting, and a damped swing's energy halving every ln 2 / b |
+  | Cloth | A cloth's lean in the wind |
+  | Fields | The cyclotron period, and the E × B and grad-B drifts |
+- **Show me and the tab.**
+  - Show me follows, selects or frames what a moment is about.
+  - Repeats fold into one entry, and keyboard focus stays put when they do.
+  - An amber count on the Insights tab says how many moments are new.
+  - Important moments are announced to screen readers.
+  - The Now and Story views work with the arrow keys.
+  - When there are problems to check, the tab opens on Now.
+- **The story follows the run.** It starts afresh when a scene loads or
+  restarts, and waits while the run is paused. It is kept for each lab,
+  and drops what a rewind undid. The HUD's alert opens the Now view.
+
+### One Settings dialog
+
+- **One place for every setting.** Graphics, Units, the head-up display
+  and the keyboard shortcuts are now sections of one dialog.
+  - Open it with the gear in the top bar, or Shift+S.
+  - The Graphics, Units, HUD and keyboard buttons each open it at their own
+    section, as do U and ?. Pressed again, U and ? close it, as they closed
+    the old sheets.
+- **A true modal.**
+  - Tab stays inside the dialog.
+  - Esc, the close button, or a click outside closes it, and returns you to
+    where you were. A press that starts inside and drags off does not close
+    it.
+  - On a phone it fills the screen.
+- **Graphics settings of your own,** apart from the tier: resolution,
+  antialiasing, mesh detail, bloom, film grade, shadow map and softness,
+  fill light, haze, contact shadows, environment light, texture size and
+  filtering, and floor reflections.
+  - Each shows the tier's own value, and resets on its own or with Reset to
+    tier.
+  - Each applies at once, and holds over whichever tier is in use, Auto's
+    included.
+  - Each is kept in this browser.
+  - Nothing above what your GPU reports is offered.
+- **The machine's verdicts.** The Graphics section lists the four hardware
+  verdicts (GPU, CPU, memory and texture limit), and marks the one that set
+  the suggested tier.
+- **Engine fixes found along the way.**
+  - Turning shadows off now frees their shadow map.
+  - Contact shadows switched off stay off on tiers with floor reflections.
+  - Fluid's field resizes when mesh detail changes.
+
+### A director's camera for recordings
+
+- **Direct clips like a film.** Turn it on in the Library's capture
+  settings, and a clip is filmed for you. It opens on an establishing wide
+  shot, then makes slow pans, dollies and, in 3D, orbits onto what is
+  happening. It returns to a wide shot between subjects.
+- **Each lab tells the director what is worth filming.**
+
+  | Lab | What it films |
+  | --- | --- |
+  | Gravity | Close encounters, mergers, ejections, the fastest body, the heaviest body and its system, and each Solar System world with its moons |
+  | Collisions | The tracer, the densest cluster, the fastest ball |
+  | Fluid | The splash front, the fastest flow |
+  | Waves | The sources, the interference pattern, the detector, the brightest spot |
+  | Chaos | The pendulum tips, where the copies part |
+  | Cloth | The tear, the wind-blown edge |
+  | Fields | The tracked particle |
+- **No cuts or jolts.**
+  - Moves between shots pull out, travel and push in along one eased path
+    (van Wijk & Nuij's smooth zoom and pan).
+  - Fast action gets a wider frame.
+  - Pan, zoom and turn speeds have fixed limits on every frame.
+  - With reduced motion, every limit is halved and shots last longer.
+- **Your hand comes first.** If you move the camera during a take, the
+  director waits until you have left it alone for four seconds. When the
+  clip stops, your view comes back as it was, and so does Gravity's Follow.
+- **An amber chip on the stage** names the current shot, and hands the
+  camera back when pressed. Preview direction runs the director without
+  recording.
+- **Live mode only.** The director moves the view you are watching. A
+  second camera filming in the background would draw every recorded frame
+  twice, so it is left for later.
+
+### Checks
+
+| Suite | What it adds or changes |
+| --- | --- |
+| `tests/planets.py` | Climate checks: the 3D material, the locked face, and lava in portrait |
+| `tests/solar.py` | Equilibrium temperatures, surfaces and cloud tops, identity and spin, and the Inspect rows |
+| `tests/workspace.py` | A Story group. The narrator answers a brown dwarf at the Star system's edge, throws into Empty sky, Collisions and Chaos. It tells each of two mergers into one body, and watches inner orbits once a companion pairs with the star. The story resets on a scene change and holds while paused, and focus stays put when an entry folds. Insights opens on Now while a warning stands, and on Story when calm. |
+| `tests/shell.py` | The Settings dialog: its openers and sections, focus kept inside, its own keys (U and ? pressed again close it), the backdrop and a press dragged off it, and the desktop and phone layouts |
+| `tests/world.py` | Graphics settings reach the engine, survive a reload, hold over a change of tier, reset, free their targets, and stay within the GPU's limits. Without WebGL 2, Settings has no Graphics section. |
+| `tests/hud.py` | The head-up display's section in Settings |
+| `tests/capture.py` | The director: off by default, moves within its limits, gives way to the user's hand, returns the view (even when a take starts mid-ease), and keeps reduced motion. Gravity reports no merger after loading a state from before it. Gravity's track header gains its two climate columns. |
+| `tools/check.mjs` and `eslint.config.js` | Both skip `.claude/`, where agents keep their working copies |
 
 ## 2.17.0 (11/16/2026)
 

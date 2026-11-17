@@ -1,31 +1,40 @@
 /*
 ✒ Metadata
-    - Title: Tile Content Styles (digiSpace Edition - v2.14)
+    - Title: Tile Content Styles (digiSpace Edition - v2.19)
     - File Name: tiles.css
     - Relative Path: css/tiles.css
     - Artifact Type: stylesheet
-    - Version: 2.14.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for every object in a table under Inspect: the Inspect
+      pane sets the card beside the objects list (sortable column heads, rows
+      drawn only where they show, the selection marked) and stacks them below
+      720 px. Each figure is one button that focuses it, and the focus chart's
+      caption carries Pin to Telemetry in place of a second chart button per
+      figure. On Dennis's call for drag handles: the grips' look, shared by
+      the deck's and the inspector's: a light pill in the gap at rest, wider
+      and amber when hovered, a line along the edge while dragging and the
+      cyan ring for the keyboard. The size button's and the top alert's styles
+      are gone. On Dennis's call for an honest Insights tab: a tab's dot shows
+      only while a warning (amber) or critical problem (red) stands, unseen
+      counts are neutral with no amber fill, and Inspect's selection dot is
+      gone. The Guide's tool, view, Random and scene cards give way to a flat
+      legend with no hover or press.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Now and Story views
+      beside the deck's tabs, the Story's moments with their time, actions and
+      folded repeats, the amber unread counts, and a fade-in for new moments
+      that reduced motion leaves out.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The deck
       resize drag's own user-select is gone: the workspace's one selection
       rule in tokens.css covers it.
-    - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Math
-      page's parameter dials sit as the Controls page's do, in equal cells
-      side by side, each its symbol over its wheel, in place of full-width
-      rows of uneven wheels.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Styles for
-      the Math page's live panels, the Guide's tool, view and scene cards, the
-      Inspect figures' sparklines and focus chart, and the sheen on gauges and
-      the deck tabs. The Guide's Random card reads On or Off and is dashed
-      while off; the Math page's parameters are compact dials in an
-      auto-filling grid. Gauges and Inspect rows draw their top light in one
-      gradient of plain rgba stops, since they repaint with every reading.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -34,13 +43,20 @@
 
 ✒ Key Features:
     - Scene presets as wrapping chips.
-    - Instruments deck: segmented pane tabs, a grip on the top edge, and a
-      short mode that keeps the readings and drops the plot.
+    - Instruments deck: segmented pane tabs and a short mode that keeps the
+      readings and drops the plot.
+    - Grips: a pill in the gap that widens and turns amber on hover, shows
+      the edge while dragging and takes the cyan ring for the keyboard.
     - Gauges: primary readings lead with larger figures, derived ones are set
       in italics, and units sit in a smaller face.
     - Inspect card: portrait, name and actions beside a grid of read-only
-      figures, each with a plot button.
-    - Notebook tabs with counts and a new-item dot.
+      figures; a figure focuses the chart below, whose caption pins it to
+      Telemetry.
+    - Objects list beside the card: column heads that sort, rows that exist
+      only where they show, the selected row in amber and the keyboard's row
+      ringed.
+    - Notebook tabs with totals in pills, and a bare "+n" for what is unseen,
+      as on the Insights tab.
     - KaTeX formula cards that scroll sideways instead of overflowing.
     - Live Math panels: the symbols' running values, the parameters as dials
       in equal cells side by side, the check line and the plot.
@@ -69,7 +85,7 @@
 .preset-list button[aria-checked="true"]::before { background: var(--amber); box-shadow: 0 0 8px color-mix(in oklab, var(--amber) 70%, transparent); }
 
 .details {
-  position: relative; display: grid; grid-template-columns: minmax(190px, 250px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 14px; row-gap: 10px; align-items: start;
+  position: relative; display: grid; grid-template-columns: minmax(170px, 220px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 14px; row-gap: 8px; align-items: start;
   min-height: 0; height: 100%; animation: tile-in 0.26s var(--ease) both;
 }
 .details[hidden] { display: none; }
@@ -78,10 +94,10 @@
 .details-name span { font-size: 12px; color: var(--muted); padding-top: 6px; }
 .details-name h3 { margin: 0; font: 700 17px/1.15 var(--font-display); letter-spacing: -0.005em; }
 .details .icon-btn { position: absolute; top: 0; right: 0; width: 28px; height: 28px; }
-/* Each figure is a small read-only gauge; the chart button plots it under Telemetry in the object's own colour. */
-.details-rows { grid-column: 2; grid-row: 1; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
-/* A figure: name, value and the sparkline of its history; the whole tile focuses it, the chart button plots it. */
-.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px auto; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.7), rgba(12, 17, 24, 0.7) 30px); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
+/* Each figure is a small read-only gauge; one pinned to Telemetry wears the object's series colour. */
+.details-rows { grid-column: 2; grid-row: 1; align-self: stretch; margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-content: start; gap: 6px; padding-right: 34px; }
+/* A figure: name, value and the sparkline of its history; the whole tile focuses it in the chart below. */
+.drow { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px; grid-template-rows: auto auto; column-gap: 6px; padding: 7px 8px 7px 10px; border-radius: 10px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.7), rgba(12, 17, 24, 0.7) 30px); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s; }
 .drow:hover { background: color-mix(in oklab, var(--text) 5%, var(--bench)); }
 .drow.on { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--series) 70%, transparent), inset 3px 0 0 var(--series); }
 .drow.focus { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 60%, transparent), 0 0 18px -8px color-mix(in oklab, var(--cyan) 60%, transparent); }
@@ -94,20 +110,24 @@
 .drow-pick { position: absolute; inset: 0; appearance: none; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 .drow-pick[hidden] { display: none; }
 .drow-pick:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
-.drow-plot { position: relative; z-index: 1; grid-column: 3; grid-row: 1 / span 2; align-self: center; appearance: none; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; opacity: 0.6; transition: opacity 0.15s, background 0.15s, color 0.15s; }
-.drow-plot[hidden] { display: none; }
-.drow-plot .ms { font-size: 17px; }
-.drow:hover .drow-plot, .drow-plot:focus-visible { opacity: 1; }
-.drow-plot:hover { color: var(--text); background: color-mix(in oklab, var(--text) 9%, transparent); }
-.drow-plot[aria-pressed="true"] { opacity: 1; color: var(--series); }
 .details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; margin-left: -68px; }
 /* The focus chart takes the rest of the pane, so a tall deck shows the object's history instead of empty space. */
-.details-focus { grid-column: 2; grid-row: 2; align-self: stretch; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding-right: 34px; }
+.details-focus { grid-column: 2; grid-row: 2; min-height: 0; display: grid; grid-template-rows: auto auto; gap: 4px; padding-right: 34px; }
 .details-focus-cap { margin: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* The canvas fills a positioned box, so its own pixel size can never feed back into the layout. */
-.details-plot-wrap { position: relative; min-height: 70px; }
+/* The caption names the focused figure, and its button pins that figure to Telemetry. */
+.details-focus-head { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 24px; }
+.details-focus-head .details-focus-cap { flex: 1 1 auto; min-width: 0; }
+.details-pin { appearance: none; flex: none; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px 0 7px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.06); color: var(--muted); font: 500 11.5px/1 var(--font-body); white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.details-pin[hidden] { display: none; }
+.details-pin .ms { font-size: 15px; }
+.details-pin:hover { color: var(--text); background: rgba(255, 255, 255, 0.1); }
+.details-pin[aria-pressed="true"] { color: var(--cyan); background: rgba(95, 208, 223, 0.13); }
+.details-pin:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+/* The canvas fills a positioned box, so its own pixel size can never feed back into the layout. It takes a share of
+   the pane's height, and a pane too short for it keeps the caption and its pin and lets the plot go. */
+.details-plot-wrap { position: relative; height: clamp(48px, 36cqh, 240px); }
+@container inspect (max-height: 175px) { .details-plot-wrap { display: none; } }
 .details-plot { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: 10px; background: color-mix(in oklab, var(--ink) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
-.tile-deck.deck-short .details-focus { display: none; }
 .details-actions .btn { min-height: 30px; border-radius: 9px; font-size: 12.5px; }
 .details-actions:empty { display: none; }
 .details-how { margin: 10px 0 0 -68px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
@@ -133,28 +153,77 @@
 .deck-tab[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--text) 9%, var(--bench)); box-shadow: inset 0 0 0 1px var(--hair); }
 .deck-tab[aria-selected="true"] .ms { color: var(--amber); }
 .deck-tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
-.deck-tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-.deck-tab-dot[hidden] { display: none; }
 .deck-title { margin: 0; flex: none; font: 600 13px/1 var(--font-body); color: var(--text); white-space: nowrap; }
 .tile-deck:not([data-pane="telemetry"]) :is(.deck-title, .scope-legend) { display: none; }
-.tile-deck:not([data-pane="telemetry"]) .diag-top { margin-left: auto; }
-.deck-head:has(.diag-top:not([hidden])) .scope-hint { display: none; }
-.deck-head #btn-deck-size { margin-left: auto; flex: none; }
-.diag-top + #btn-deck-size, .scope-legend ~ #btn-deck-size { margin-left: 0; }
-/* The grip: the deck's top edge drags to any height. */
-.deck-grip { position: absolute; top: 0; left: 18px; right: 18px; height: 9px; z-index: 3; cursor: ns-resize; touch-action: none; }
-.deck-grip::before { content: ""; position: absolute; left: 50%; top: 3px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--rule); opacity: 0.7; transition: background 0.15s, opacity 0.15s; }
-.deck-grip:hover::before, .deck-grip:focus-visible::before, body.resizing .deck-grip::before { background: var(--amber); opacity: 1; }
-.deck-grip:focus-visible { outline: none; }
-body.resizing { cursor: ns-resize; }
+/* The grips: the deck's top edge and the inspector's inner edge. Each is a 24 px band laid over the gap between two
+   tiles (workspace.css places it), so its pill sits on the page between them and never covers a tab or a button.
+   At rest the pill is a light bar; hovered it widens and turns amber with a faint line along the edge it moves;
+   dragged the line brightens; focused from the keyboard it takes the cyan ring. */
+.grip { position: relative; z-index: 4; display: grid; place-items: center; touch-action: none; outline: none; }
+.grip::before { content: ""; position: absolute; border-radius: 1px; background: var(--amber); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.grip::after {
+  content: ""; border-radius: 999px; background: color-mix(in oklab, var(--text) 38%, transparent); pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 6px rgba(0, 0, 0, 0.5); transition: background 0.15s, width 0.15s, height 0.15s, box-shadow 0.15s;
+}
+.grip-deck { cursor: row-resize; }
+.grip-deck::before { left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; }
+.grip-deck::after { width: 44px; height: 5px; }
+.grip-side { cursor: col-resize; }
+.grip-side::before { top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; }
+.grip-side::after { width: 5px; height: 44px; }
+.grip:hover::after, .grip:focus-visible::after, body.resizing-deck .grip-deck::after, body.resizing-side .grip-side::after { background: var(--amber); }
+.grip-deck:hover::after, body.resizing-deck .grip-deck::after { width: 72px; }
+.grip-side:hover::after, body.resizing-side .grip-side::after { height: 72px; }
+.grip:hover::before { opacity: 0.3; }
+body.resizing-deck .grip-deck::before, body.resizing-side .grip-side::before { opacity: 0.75; }
+.grip:focus-visible::after { box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--cyan); }
+body.resizing-deck { cursor: row-resize; }
+body.resizing-side { cursor: col-resize; }
 /* Too short for a plot: the readings stay, the plot and the timing strip go. */
 .tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
 .tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }
-.deck-inspect { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
-.deck-insights { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+/* Inspect: the card (or how to select) beside the list of every object in the scene. */
+.deck-inspect { container: inspect / size; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 34%); grid-template-rows: minmax(0, 1fr); column-gap: 14px; min-height: 0; }
+.deck-inspect > .details, .deck-inspect > .inspect-empty { grid-column: 1; grid-row: 1; }
+.objects { --orow: 26px; grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; padding-left: 14px; box-shadow: inset 1px 0 0 var(--hair); }
+.objects[hidden] { display: none; }
+.objects.none { grid-template-rows: auto auto; }
+.objects.none .objects-cols { display: none; }
+.objects-h { margin: 0; display: flex; align-items: baseline; gap: 6px; font: 600 12px/1.2 var(--font-body); color: var(--text); }
+.objects-n { font: 500 11px/1 var(--font-mono); color: var(--muted); }
+.objects-cols, .orow { display: grid; grid-template-columns: var(--ocols); column-gap: 6px; }
+.objects-cols { padding: 0 8px; }
+/* A column's name over its unit, with the sort arrow beside them once it sorts the list. */
+.ocol { appearance: none; position: relative; min-width: 0; display: grid; grid-template-columns: minmax(0, auto) auto; grid-template-rows: auto auto; justify-content: start; align-items: center; align-content: start; column-gap: 1px; padding: 2px 0; border: 0; border-radius: 6px; background: none; color: var(--muted); font: 500 11px/1.25 var(--font-body); text-align: left; cursor: pointer; }
+.ocol.num { justify-content: end; text-align: right; }
+.ocol-name, .ocol-unit { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocol-unit { font: 400 9.5px/1.2 var(--font-mono); color: var(--muted); }
+.ocol .ms { display: none; grid-column: 2; grid-row: 1 / span 2; font-size: 13px; }
+.ocol:hover, .ocol[aria-pressed="true"] { color: var(--text); }
+.ocol[aria-pressed="true"] .ms { display: block; }
+.ocol.up .ms { transform: rotate(180deg); }
+.ocol:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+/* Rows exist only where they show: each sits at its place in a spacer as tall as the whole list. */
+.objects-list { position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: 9px; background: rgba(8, 12, 18, 0.55); box-shadow: inset 0 0 0 1px var(--hair); }
+.objects-list[hidden] { display: none; }
+.objects-list:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.objects-space { position: relative; }
+.orow { position: absolute; top: 0; left: 0; right: 0; height: var(--orow); align-items: center; padding: 0 8px; color: #c9d2dd; font-size: 11.5px; cursor: pointer; }
+.orow[hidden] { display: none; }
+.orow:hover { background: rgba(255, 255, 255, 0.05); }
+.orow[aria-selected="true"] { color: var(--text); background: rgba(242, 165, 65, 0.14); box-shadow: inset 3px 0 0 var(--amber); }
+.objects-list:focus-visible .orow.act { box-shadow: inset 0 0 0 1.5px var(--cyan); }
+.objects-list:focus-visible .orow.act[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--amber), inset 0 0 0 1.5px var(--cyan); }
+.ocell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocell:nth-child(2) { color: var(--muted); }
+.ocell.num { text-align: right; font: 400 11px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.objects-empty { margin: 0; padding: 10px 2px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+@container tile (max-width: 720px) { .deck-inspect { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1.3fr) minmax(130px, 1fr); row-gap: 10px; } .objects { grid-column: 1; grid-row: 2; padding-left: 0; box-shadow: none; } }
+.deck-insights { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; }
+.ins-now { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 12px; align-items: start; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .deck-insights .insights { align-content: start; }
 .deck-insights .insights:empty { display: grid; }
-@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(110px, 1fr); } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } .details-focus { grid-column: 1; grid-row: 3; padding-right: 0; } }
+@container tile (max-width: 720px) { .deck-insights { grid-template-columns: minmax(0, 1fr); } .deck-tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .details { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; } .details-name { grid-row: 1; } .details-rows { grid-column: 1; grid-row: 2; padding-right: 0; } .details-focus { grid-column: 1; grid-row: 3; padding-right: 0; } }
 .deck-chart { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; }
 .deck-chart canvas { width: 100%; height: 100%; min-height: 0; display: block; }
 .scoping .deck-chart canvas { cursor: crosshair; touch-action: none; }
@@ -194,15 +263,13 @@ body.resizing { cursor: ns-resize; }
 .scope-x { appearance: none; display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
 .scope-x:hover { color: var(--text); background: var(--rule); }
 .scope-x .ms { font-size: 13px; }
-.diag-top { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--warn); white-space: nowrap; }
-.diag-top[hidden] { display: none; }
-.diag-top > span { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
-@container tile (max-width: 620px) { .diag-top { display: none; } }
 
 /* ---------- diagnostics ---------- */
-.diag-sum { font: 500 11px/1 var(--font-mono); color: var(--ok); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+/* A tab's marks mean one thing on every tab: a coloured dot, with a few words, only while a warning (amber) or a
+   critical problem (red) stands; a neutral count for what has not been seen yet; and nothing otherwise. */
+.diag-sum { font: 500 11px/1 var(--font-mono); color: var(--warn); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.diag-sum[hidden] { display: none; }
 .diag-sum::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.diag-sum[data-level="warn"] { color: var(--warn); }
 .diag-sum[data-level="crit"] { color: var(--crit); }
 .perf { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 11px; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }
 #perf-spark { width: 100%; height: 36px; display: block; background: var(--ink); border: 1px solid var(--rule); border-radius: 6px; }
@@ -232,6 +299,59 @@ body.resizing { cursor: ns-resize; }
 .diag-ok .ms { color: var(--ok); }
 @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
 
+/* ---------- insights: the Now and Story views ---------- */
+/* The two views sit beside the deck's tabs while Insights shows, as a smaller segmented control of the same make. */
+.ins-views { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in oklab, var(--well) 80%, transparent); box-shadow: inset 0 0 0 1px var(--hair); }
+.tile-deck:not([data-pane="insights"]) .ins-views { display: none; }
+.ins-view { appearance: none; height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: 500 12px/1 var(--font-body); white-space: nowrap; cursor: pointer; }
+.ins-view:hover { color: var(--text); }
+.ins-view[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--text) 9%, var(--bench)); box-shadow: inset 0 0 0 1px var(--hair); }
+.ins-view:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.iv-n { font: 500 10.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.iv-n:empty, .iv-n[hidden] { display: none; }
+.iv-n[data-level="warn"] { color: var(--warn); }
+.iv-n[data-level="crit"] { color: var(--crit); }
+/* Unseen: what came since it was last looked at, as a bare "+n" in the text colour, with no pill, ring or fill, on the
+   Insights tab, the Story view and the Library tab alike (.tab-new). A pill holds a total or progress (the inspector's
+   tab counts), and colour is kept for problems. The plus is drawn, not read: the count's own words say "new". */
+.story-new, .iv-n[data-new], .tab-new { font: 600 10.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text); }
+.story-new::before, .iv-n[data-new]::before, .tab-new::before { content: "+"; content: "+" / ""; }
+.story-new[hidden] { display: none; }
+.ins-now[hidden], .ins-story[hidden] { display: none; }
+.ins-story { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.story-empty { margin: 0; display: flex; align-items: flex-start; gap: 10px; max-width: 640px; padding: 4px 2px; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.story-empty .ms { flex: none; font-size: 20px; color: var(--amber); }
+.story-empty[hidden] { display: none; }
+.story { list-style: none; margin: 0; padding: 0 4px 0 0; display: grid; align-content: start; gap: 8px; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: 10px; }
+.story:empty { display: none; }
+.story:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.moment { --c: var(--cyan); position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; padding: 8px 12px 9px 10px; border-radius: 10px; background: var(--well); border: 1px solid var(--rule); }
+.moment[data-tone="key"] { --c: var(--amber); }
+.moment[data-tone="warn"] { --c: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, var(--rule)); }
+.moment-ico { font-size: 18px; line-height: 1.2; color: var(--c); }
+.moment-main { display: grid; gap: 2px; min-width: 0; }
+/* The title and its time share a line; the time drops below a title too long to share it. */
+.moment-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; }
+.moment-time { margin: 0; font: 400 10.5px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.moment-title { margin: 0; font-size: 13px; line-height: 1.35; font-weight: 600; color: var(--text); }
+.moment-body { margin: 0; max-width: 120ch; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.moment-body b { color: var(--text); font-weight: 500; }
+.moment-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.moment-acts:empty { display: none; }
+.moment-acts .btn { color: var(--c); border-color: color-mix(in oklab, var(--c) 40%, var(--rule)); }
+.moment-acts .btn .ms { font-size: 15px; }
+.moment-acts .btn[hidden] { display: none; }
+.moment-more { margin-top: 3px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.moment-more[hidden] { display: none; }
+.moment-more summary { width: fit-content; cursor: pointer; border-radius: 4px; }
+.moment-more summary:hover { color: var(--text); }
+.moment-more ul { margin: 3px 0 0; padding-left: 16px; }
+@media (prefers-reduced-motion: no-preference) {
+  .moment.fresh { animation: moment-in 0.9s var(--ease); }
+}
+@keyframes moment-in { from { border-color: var(--c); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent); } }
+@container tile (max-width: 720px) { .ins-now { grid-template-columns: minmax(0, 1fr); } .ins-view { padding: 0 7px; } }
+
 /* ---------- notebook tile: experiments, guide, math, library ---------- */
 .tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 10px; box-shadow: inset 0 -1px 0 var(--hair); }
 .tabs::-webkit-scrollbar { display: none; }
@@ -245,46 +365,28 @@ body.resizing { cursor: ns-resize; }
 .tabs [role="tab"][aria-selected="true"] .ms { color: var(--amber); }
 .tabs [role="tab"] { position: relative; }
 .tab-count { position: absolute; top: 5px; left: calc(50% + 11px); font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 5px; }
-.tabs [role="tab"].has-new .tab-count { color: var(--ink); background: var(--amber); border-color: var(--amber); }
-.tabs [role="tab"].has-new::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+/* Something saved and not yet seen: the unseen "+n" (above) on the other side of the glyph from the total, until the
+   tab is opened. */
+.tab-new { position: absolute; top: 8px; right: calc(50% + 12px); }
+.tabs [role="tab"]:not(.has-new) .tab-new { display: none; }
 .notes-body [role="tabpanel"] { display: grid; gap: 14px; align-content: start; }
 .notes-body [role="tabpanel"][hidden] { display: none; }
 .guide { display: grid; gap: 16px; }
 .guide .blurb { margin: 0; font-size: 13.5px; line-height: 1.65; color: color-mix(in oklab, var(--text) 90%, var(--muted)); }
-/* The Guide's sections: the lab's tools, views and scenes as cards that pick them, then its notes. */
+/* The Guide's sections: a legend of the lab's tools and views (the rail picks them), its scenes, then its notes. The
+   legend is flat text on a hairline list, with no hover, press or pointer, so it never reads as a row of buttons. */
 .g-sec { display: grid; gap: 8px; }
 .g-title { margin: 0; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .g-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--rule), transparent); }
-.g-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-.g-card {
-  appearance: none; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 2px 8px;
-  padding: 9px 10px 10px; border: 0; border-radius: 11px; text-align: left; cursor: pointer; color: var(--text); font: inherit;
-  background: linear-gradient(180deg, color-mix(in oklab, white 3%, transparent), transparent 40px), color-mix(in oklab, var(--well) 70%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
-}
-.g-card:hover { background: color-mix(in oklab, var(--text) 7%, var(--well)); }
-.g-card:active { transform: scale(0.985); }
-.g-card .ms { font-size: 19px; color: color-mix(in oklab, var(--text) 75%, var(--muted)); }
-.g-name { font-weight: 600; font-size: 13px; }
-.g-card kbd { justify-self: end; }
-.g-switch { border: 1px dashed color-mix(in oklab, var(--text) 18%, transparent); box-shadow: var(--card-sheen); }
-.g-switch[aria-pressed="true"] { border-color: transparent; }
-.g-state { justify-self: end; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.g-state::before { content: "Off"; }
-.g-switch[aria-pressed="true"] .g-state { color: var(--amber); }
-.g-switch[aria-pressed="true"] .g-state::before { content: "On"; }
-.g-hint { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
-.g-card[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 16%, transparent), color-mix(in oklab, var(--amber) 6%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 45%, transparent), var(--card-sheen); }
-.g-card[aria-pressed="true"] .ms { color: var(--amber); }
-.g-scenes { display: flex; flex-wrap: wrap; gap: 6px; }
-.g-scene {
-  appearance: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; cursor: pointer; font: 500 12.5px/1 var(--font-body);
-  color: color-mix(in oklab, var(--text) 85%, var(--muted)); background: color-mix(in oklab, var(--well) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: background 0.15s, color 0.15s;
-}
-.g-scene .ms { font-size: 17px; color: var(--muted); }
-.g-scene:hover { color: var(--text); background: color-mix(in oklab, var(--text) 8%, var(--well)); }
-.g-scene[aria-pressed="true"] { color: var(--text); background: color-mix(in oklab, var(--cyan) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 45%, transparent); }
-.g-scene[aria-pressed="true"] .ms { color: var(--cyan); }
+.g-lead { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.g-legend { margin: 0; display: grid; }
+.g-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; padding: 8px 2px 9px; border-top: 1px solid var(--rule); }
+.g-row:last-child { border-bottom: 1px solid var(--rule); }
+.g-row dt { display: flex; align-items: center; gap: 8px; }
+.g-row dt .ms { font-size: 18px; color: var(--muted); }
+.g-name { font-weight: 600; font-size: 13px; color: var(--text); }
+.g-row kbd { margin-left: auto; }
+.g-hint { margin: 0 0 0 26px; font-size: 12px; line-height: 1.45; color: var(--muted); }
 .g-nav { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
 .g-nav b { color: var(--text); font-weight: 600; }
 .interact { margin: 0; padding: 12px 14px 12px 30px; color: var(--muted); display: grid; gap: 8px; font-size: 13px; line-height: 1.55; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }

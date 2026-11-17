@@ -1,45 +1,37 @@
 /*
 ✒ Metadata
-    - Title: Library (digiSpace Edition - v2.16)
+    - Title: Library (digiSpace Edition - v2.19)
     - File Name: library.js
     - Relative Path: js/shell/library.js
     - Artifact Type: javascript
-    - Version: 2.16.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the capture cards and their settings
+      moved out (to the player bar and the Capture section of Settings); the
+      Library keeps the saved items, and its empty line points to the player
+      bar. A clip's tag says Clip, the word Record clip uses.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the capture settings hold
+      the director's switch, its note and Preview direction.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
       dataset's ZIP download carries its CSVs with a README and a data
       package, and its Details show each column's unit, with its meaning on
       hover, and how far its tracks were thinned.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
-      Dennis's call for a Library where what is what is obvious: a Capture
-      control bar whose recorders wear the red record dot and turn to stop
-      squares while running, with a Save state that confirms; capture settings
-      that fold out beside it; and item cards with the kind's colour, one main
-      action, downloads named by format and Delete as a corner trash button.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Capture
-      cards on Dennis's call to fill the Library: record a clip, record a
-      dataset or save the state with one press, each saying what it will keep
-      for this lab and what it is doing now.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The Library page of the notebook, in two sections: Capture, a control bar
-    that records a clip or a dataset or saves the state, with its settings
-    beside it; and Saved, the storage status, filter and list of saved items
+    The Library page of the notebook: what the player bar's capture cluster
+    saved, with the storage status, the filter and the list of saved items
     with preview, details, load, download, rename and delete.
 
 ✒ Key Features:
-    - Capture bar: Record clip and Record data with the red record mark, a
-      stop square while recording and their progress, and Save state, which
-      confirms; each with its key.
-    - Capture settings fold out beside the bar and are remembered: video
-      quality and labels, the data sample rate, and tracks.
     - Storage status and, when synced to an artifact, a usage meter.
     - One list for clips, datasets and saved states, filtered to this lab or
       all, each in its kind's colour with one main action, downloads named by
@@ -55,7 +47,7 @@
 import { ICON, icon } from '../core/icons.js';
 import { $, clamp, el, fmtSI, keepFocus, store } from '../core/util.js';
 import { labsById } from '../labs/index.js';
-import { dataRec, fmtBytes, fmtDur, fmtWhen, loadState, saveState, toggleData, toggleVideo, vrec } from './capture.js';
+import { fmtBytes, fmtDur, fmtWhen, loadState } from './capture.js';
 import { columnsOf, runZip } from './dataset.js';
 import { radioGroup } from './panel.js';
 import { active, announce } from './state.js';
@@ -63,7 +55,7 @@ import { vault } from './vault.js';
 
 /* ---------- library ---------- */
 export const lib = { filter: store.get('libFilter', 'lab'), open: null, confirm: null, renaming: null };
-export const KIND = { clip: { icon: 'clip', name: 'Video' }, run: { icon: 'data', name: 'Dataset' }, state: { icon: 'state', name: 'Saved state' } };
+export const KIND = { clip: { icon: 'clip', name: 'Clip' }, run: { icon: 'data', name: 'Dataset' }, state: { icon: 'state', name: 'Saved state' } };
 export function renderLibrary() {
   const storeEl = $('#lib-store'), listEl = $('#lib-list'), emptyEl = $('#lib-empty');
   if (!storeEl) return;
@@ -86,7 +78,8 @@ export function renderLibrary() {
   const shown = $('#lib-count');
   if (shown) shown.textContent = items.length ? `· ${items.length}` : '';
   emptyEl.hidden = items.length > 0;
-  emptyEl.textContent = lib.filter === 'all' ? 'Nothing saved yet: clips, datasets and saved states from any lab will gather here.' : `Nothing saved for ${active ? active.name : 'this lab'} yet: the clips, datasets and states you capture above will gather here.`;
+  emptyEl.textContent = lib.filter === 'all' ? 'Nothing saved yet: clips, datasets and saved states from any lab will gather here.'
+    : `Nothing saved for ${active ? active.name : 'this lab'} yet: what Record clip, Record data and Save state keep, in the player bar under the stage, will gather here.`;
   const keep = new Map([...listEl.children].map(li => [li.dataset.id, li]));
   const rows = items.map(item => {
     const li = keep.get(item.id) || el('li', { class: 'lib-item', 'data-id': item.id });
@@ -102,11 +95,16 @@ export function renderLibrary() {
   const count = $('#nt-library-count'), total = vault.list().length;
   if (count) { count.textContent = total ? String(total) : ''; count.hidden = !total; }
 }
-/* A capture saved while another notebook tab is open marks the Library tab,
-   so a new clip, dataset or state is never filed away out of sight. */
+/* A capture saved while another notebook tab is open marks the Library tab with the unseen count every tab uses
+   (+1, then +2) beside its total, so a new clip, dataset or state is never filed away out of sight. Opening the
+   Library takes has-new away, which hides the count (layout.js). */
 export function noteNewItem() {
   const tab = $('#nt-library');
-  if (tab && tab.getAttribute('aria-selected') !== 'true') { tab.classList.add('has-new'); tab.setAttribute('aria-description', 'New item saved'); }
+  if (!tab || tab.getAttribute('aria-selected') === 'true') return;
+  const mark = tab.querySelector('.tab-new') || tab.appendChild(el('span', { class: 'tab-new', 'aria-hidden': 'true' }));
+  const k = tab.classList.contains('has-new') ? (Number(mark.textContent) || 0) + 1 : 1;
+  mark.textContent = String(k);
+  tab.classList.add('has-new'); tab.setAttribute('aria-description', `${k} new item${k === 1 ? '' : 's'} saved`);
 }
 /* A saved item: its kind as a coloured tile and tag, its name (press to rename) and what it holds, and Delete as a
    quiet trash button in the corner, red on hover, which asks first. Then one row of actions: the main one leads,
@@ -182,83 +180,6 @@ export function renderItem(li, item) {
     }
   }
   keepFocus(li, () => li.replaceChildren(...kids));
-}
-/* ---------- capture: the three ways to keep a run, one press each ---------- */
-/* Two recorders and a save, laid out as a control bar. The recorders wear the universal record mark, a red dot in a
-   ring, which turns to a stop square on a pulsing red disc while they run, their label to Stop and their line to the
-   time and size so far. Save state is an instant action with its own mark, and says so when it has saved. Each shows
-   its key. A dataset's columns fold away under the bar. */
-let capCards = null;
-export function buildLibraryCapture(lab) {
-  const host = $('#lib-capture'); if (!host || !lab) return;
-  const card = (kind, key, run, more = {}) => {
-    const name = el('span', { class: 'cap-name' }), sub = el('span', { class: 'cap-sub' });
-    const b = el('button', { type: 'button', class: 'cap-card', 'data-kind': kind, 'aria-keyshortcuts': key || null, ...more },
-      el('span', { class: 'cap-mark', 'aria-hidden': 'true', 'data-ico': kind === 'state' ? ICON.state : null }), name, sub, key ? el('kbd', { text: key }) : null);
-    b.addEventListener('click', () => { run(); syncLibraryCapture(); });
-    return { b, name, sub };
-  };
-  const cols = (lab.dataColumns || []).length;
-  capCards = {
-    clip: card('clip', 'M', toggleVideo, { 'aria-pressed': 'false' }),
-    run: card('run', 'D', toggleData, { 'aria-pressed': 'false', disabled: cols ? null : true }),
-    state: card('state', null, () => Promise.resolve(saveState()).then(() => { capCards.saved = performance.now(); syncLibraryCapture(); setTimeout(syncLibraryCapture, 1700); }), { disabled: lab.serialize ? null : true }),
-    cols, lab, saved: 0,
-  };
-  const holds = cols ? el('details', { class: 'cap-cols' }, el('summary', { text: `What a dataset holds: ${cols} columns` }),
-    el('div', { class: 'cap-chips' }, ...lab.dataColumns.map(c => el('code', { text: c })))) : el('span');
-  host.replaceChildren(capCards.clip.b, capCards.run.b, capCards.state.b, holds);
-  syncLibraryCapture();
-}
-/* Panel rate: each button says what it will do, or what it is doing now. */
-export function syncLibraryCapture() {
-  if (!capCards) return;
-  const { clip, run, state, cols, lab } = capCards, set = (c, name, sub, on) => {
-    if (c.name.textContent !== name) c.name.textContent = name;
-    if (c.sub.textContent !== sub) c.sub.textContent = sub;
-    if (on != null) c.b.setAttribute('aria-pressed', String(!!on));
-  };
-  const q = vrec.quality[0].toUpperCase() + vrec.quality.slice(1);
-  // Two short lines each, broken where they read, never mid-phrase.
-  set(clip, vrec.mr ? 'Stop clip' : 'Record clip', vrec.mr ? `${fmtDur((performance.now() - vrec.t0) / 1000)}\n${fmtBytes(vrec.bytes)}` : `WebM, ${q.toLowerCase()}\n${vrec.overlay ? 'labelled' : 'unlabelled'}`, !!vrec.mr);
-  set(run, dataRec.on ? 'Stop data' : 'Record data', !cols ? 'Not in\nthis lab' : dataRec.on ? `${dataRec.rows.length.toLocaleString()} rows\nso far` : `${cols} columns\nat ${dataRec.rate} Hz`, dataRec.on);
-  const fresh = performance.now() - capCards.saved < 1600;
-  state.b.classList.toggle('is-saved', fresh);
-  set(state, fresh ? 'Saved' : 'Save state', !lab.serialize ? 'Not in\nthis lab' : fresh ? 'In the list\nbelow' : 'The exact\nscene', null);
-}
-export function buildCaptureSettings() {
-  const host = $('#capture-settings'); if (!host) return;
-  const qg = radioGroup('Video quality', [['compact', 'Compact'], ['standard', 'Standard'], ['high', 'High']], () => vrec.quality, v => { vrec.quality = v; store.set('vq', v); }, 'vq');
-  const rg = radioGroup('Data sample rate', [['5', '5 Hz'], ['10', '10 Hz'], ['30', '30 Hz'], ['60', '60 Hz']], () => String(dataRec.rate), v => { dataRec.rate = +v; store.set('dataRate', +v); }, 'rate');
-  const sw = (id, label, get, set) => {
-    const b = el('button', { type: 'button', role: 'switch', class: 'switch', id }, el('span', { class: 'switch-track', 'aria-hidden': 'true' }, el('span', { class: 'switch-thumb' })), el('span', { id: id + '-label', text: label }));
-    const upd = () => b.setAttribute('aria-checked', String(!!get()));
-    b.addEventListener('click', () => { set(!get()); upd(); }); upd();
-    return b;
-  };
-  host.replaceChildren(
-    el('div', { class: 'seg-wrap' }, el('span', { class: 'seg-label', text: 'Video quality' }), qg.group),
-    sw('sw-overlay', 'Label videos with lab, scene and time', () => vrec.overlay, v => { vrec.overlay = v; store.set('overlay', v); }),
-    el('div', { class: 'seg-wrap' }, el('span', { class: 'seg-label', text: 'Data sample rate (simulated time)' }), rg.group),
-    sw('sw-tracks', 'Include tracks', () => dataRec.tracksOn, v => { dataRec.tracksOn = v; store.set('tracks', v); }),
-    el('p', { class: 'ctl-note', id: 'tracks-note' }));
-  updateTracksNote();
-  // The settings fold out under the capture bar they shape, and stay as left.
-  const tog = $('#btn-cap-settings'), show = open => { host.hidden = !open; tog.setAttribute('aria-expanded', String(open)); };
-  if (tog && !tog.dataset.wired) {
-    tog.dataset.wired = '1';
-    tog.addEventListener('click', () => { const open = host.hidden; show(open); store.set('capSettings', open); });
-  }
-  if (tog) show(!!store.get('capSettings', false));
-  // A change of quality or labels shows at once on the clip button.
-  host.addEventListener('click', () => syncLibraryCapture());
-}
-export function updateTracksNote() {
-  const n = $('#tracks-note'), sw = $('#sw-tracks'), lbl = $('#sw-tracks-label'); if (!n || !active) return;
-  const has = !!active.trackRows;
-  sw.disabled = !has;
-  lbl.textContent = has ? `Include ${active.trackLabel.toLowerCase()}` : 'Include tracks';
-  n.textContent = has ? `Saved as a second CSV beside the dataset.` : `${active.name} records summary measurements only.`;
 }
 export function buildLibraryFilter() {
   const host = $('#lib-filter'); if (!host) return;

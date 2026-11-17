@@ -1,24 +1,27 @@
 /*
 ✒ Metadata
-    - Title: Responsive Styles (digiSpace Edition - v2.16)
+    - Title: Responsive Styles (digiSpace Edition - v2.19)
     - File Name: responsive.css
     - Relative Path: css/responsive.css
     - Artifact Type: stylesheet
-    - Version: 2.16.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: in one column the inspector's grip is
+      hidden, and a dragged deck, even one kept from a wider window, stays
+      within 80 % of the screen. On Dennis's call for a duplication sweep: the
+      narrow-screen rules for the removed Units, HUD and keyboard buttons are
+      gone.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       tag steps aside below 1280 px, where the lab tabs need the room.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
       button keeps its glyph only below 1024 px, like Graphics and Units.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On phones
-      (560 px and below) the lab tabs take a row of their own, where all seven
-      fit with the selected lab's name; beside the actions they had 77 px.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -28,9 +31,8 @@
     - Rail tabs tighten at 1280 px; below 1120 px only the selected lab
       keeps its name.
     - Below 1180 px the console becomes one scrolling column: stage,
-      instruments, then the inspector.
-    - Below 760 px the top bar compacts: no title, a narrow mode switch, and
-      no keyboard button.
+      instruments, then the inspector, which has no grip there.
+    - Below 760 px the top bar compacts: no title and a narrow mode switch.
     - Below 620 px the colophon stacks its two credits.
     - Reduced motion shortens every animation and transition.
 
@@ -57,15 +59,19 @@
   .tile-stage { height: min(68vh, 640px); min-height: 360px; }
   .bento.focus .tile-stage { height: calc(100vh - 76px); }
   .tile-inspector { max-height: 680px; }
-  .tile-deck { height: 320px; }
-  .bento.deck-tall .tile-deck { height: 460px; }
+  /* Every deck height, preset or dragged (even one kept from a wider window), stays within the 80 % of the screen the
+     grip allows, so a phone on its side never shows a deck taller than the grip's maximum. */
+  .tile-deck { height: min(320px, 80vh); }
+  .bento.deck-tall .tile-deck { height: min(460px, 80vh); }
   .bento.deck-compact .tile-deck { height: 136px; }
-  .bento.deck-sized .tile-deck { height: var(--bay-px); }
+  .bento.deck-sized .tile-deck { height: min(var(--bay-px), 80vh); }
+  /* One column has no inner edge to drag: the inspector takes the full width under the deck. */
+  .bento .grip-side { display: none; }
 }
-/* The lab rail needs the top bar's room first: the Graphics and Units buttons keep their glyphs and titles only. */
+/* The lab rail needs the top bar's room first: the Graphics button keeps its glyph and title only. */
 @media (max-width: 1024px) {
   .gfx-btn { padding: 0 8px; }
-  #btn-gfx-label, #btn-units-label, #btn-hud-label { display: none; }
+  #btn-gfx-label { display: none; }
 }
 @media (max-width: 760px) {
   .bento { padding: 0 6px 6px; gap: 6px; }
@@ -77,7 +83,6 @@
   .top-actions { gap: 3px; }
   .mode-switch button { min-width: 28px; padding: 0 5px; font-size: 11.5px; }
   .gfx-btn { padding: 0 7px; }
-  #btn-keys { display: none; }
 }
 @media (max-width: 620px) {
   .colophon { flex-direction: column; }

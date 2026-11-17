@@ -1,28 +1,32 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.17)
+    - Title: Chaos Lab (digiSpace Edition - v2.19)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: the selection contract (objects,
+      select, selectedId, pick and spot) for the copies, which Inspect lists
+      with their energy, distance from the front copy and θ₂. On Dennis's call
+      for a duplication sweep: the quick action Restart from these angles,
+      which only repeated Reset (R), is removed; the starting-angle dials
+      already restart the run as they change.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      pendulum tips, where the copies part and the copies on the phase map for
+      the director.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
       records the arms, bobs, g, the spread between copies as the code applies
       it (each lower angle δ₀ beyond the last) and every copy's starting
       state.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and per-copy tracks: each column's unit, meaning
-      and SI factor, and a note on the pendulum's units.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: energy, drift, Lyapunov estimate and divergence on its tape,
-      and the selected copy as its target: its lower bob, or its dot in the
-      Phase map view.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -56,7 +60,7 @@ import { RAMP_HEAT, THEME } from '../core/color.js';
 import { drawSphere, mixRgb, rampRgb, rrect } from '../core/draw.js';
 
 import { Series } from '../core/series.js';
-import { fmtPos, fmtQ } from '../core/units.js';
+import { fmtPos, fmtQ, sig, unitOf } from '../core/units.js';
 import { TAU, clamp, reduceMotion, wrapAngle } from '../core/util.js';
 
 import { camOf, is3D, navFrame, toScreen } from '../shell/camera.js';
@@ -64,6 +68,7 @@ import { rebuild, setParam } from '../shell/lifecycle.js';
 
 
 import { syncControl } from '../shell/panel.js';
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 import { canvas } from '../shell/state.js';
 
 /* ================================================================== */
@@ -118,7 +123,6 @@ export const pendulum = {
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: PEND_TRAIL, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'toggle', key: 'trails', label: 'Show trails', group: 'display', short: 'Trails' },
   ],
-  actions: [{ label: 'Restart from these angles', run() { rebuild(pendulum); } }],
   N: 0, s: new Float64Array(240), trails: null, phist: null, tn: 0, th: 0, trailClock: 0, E0: 0, holding: false, drag: null, wmax: 0,
   sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN, fit: { n: 0, t: 0, y: 0, tt: 0, ty: 0 }, predAt: NaN, predFrom: NaN,
   k1: new Float64Array(4), k2: new Float64Array(4), k3: new Float64Array(4), k4: new Float64Array(4), tmp: new Float64Array(4),
@@ -285,9 +289,9 @@ export const pendulum = {
     return best;
   },
   /* A copy behind the front pendulum, by either of its bobs; -1 for none. */
-  hitCopy(p) {
+  hitCopy(p, sl = 7 / camOf(this).z) {
     if (this.p.view === 'phase') return -1;
-    const [r1, r2] = this.bobR(), sl = 7 / camOf(this).z;
+    const [r1, r2] = this.bobR();
     let best = -1, bd = Infinity;
     for (let i = 1; i < this.N; i++) {
       const b = this.bobs(i), d = Math.min(Math.hypot(p.x - b.x2, p.y - b.y2) - r2 * 0.7, Math.hypot(p.x - b.x1, p.y - b.y1) - r1 * 0.7);
@@ -341,18 +345,61 @@ export const pendulum = {
     return { id: `copy-${i}`, kicker: i === 0 ? `Front pendulum · 1 of ${this.N}` : `Copy ${i + 1} of ${this.N}`, short: i === 0 ? 'Front copy' : `Copy ${i + 1}`, focus: 'Lower angle θ₂', title: 'Double pendulum', rgb: this.rgbOf(i), color: this.colorOf(i), rows,
       actions: [{ label: 'Start every copy from this pose', run: () => { this.p.theta1 = Math.round(wrapAngle(s[o]) * r2d); this.p.theta2 = Math.round(wrapAngle(s[o + 1]) * r2d * 10) / 10; rebuild(this); syncControl('theta1'); syncControl('theta2'); } }] };
   },
-  deselect() { this.sel = -1; },
+  /* ---------- the selection contract (ARCHITECTURE.md): a copy by its place in the row, 0 the front pendulum ---------- */
+  selectedId() { return this.sel >= 0 && this.sel < this.N ? this.sel : null; },
+  select(id) { if (id == null) { this.sel = -1; return true; } if (!(id >= 0 && id < this.N)) return false; this.sel = id; return true; },
+  /* Its dot on the map, the front pendulum's bobs, then any copy's, within the Select tool's reach. */
+  pick(s) {
+    const f = pickFrame(this, s); if (!f) return null;
+    const d = this.hitDot(f.p); if (d >= 0) return d;
+    if (this.hitBob(f.p)) return 0;
+    const c = this.hitCopy(f.p, PICK_PX * f.k); return c >= 0 ? c : null;
+  },
+  objectsName: 'Copies',
+  objectCols: [
+    { label: 'Energy', unit: () => unitOf(pendulum, 'spec')[1], text: v => sig(v * unitOf(pendulum, 'spec')[0], 4) },
+    { label: 'From front', unit: () => '', text: v => (v < 1e-3 ? v.toExponential(1) : v.toFixed(3)) },
+    { label: 'θ₂', unit: () => '°', text: v => v.toFixed(1) },
+  ],
+  objects() {
+    const out = [], s = this.s, tau = Math.sqrt(1 / this.p.g);
+    for (let i = 0; i < this.N; i++) {
+      const o = i * 4, a = wrapAngle(s[o] - s[0]), b = wrapAngle(s[o + 1] - s[1]), c = (s[o + 2] - s[2]) * tau, d = (s[o + 3] - s[3]) * tau;
+      out.push({ id: i, name: i === 0 ? 'Front copy' : `Copy ${i + 1}`, kind: i === 0 ? 'Front pendulum' : 'Double pendulum', v: [this.energy(i), Math.sqrt(a * a + b * b + c * c + d * d), wrapAngle(s[o + 1]) * 180 / Math.PI] });
+    }
+    return out;
+  },
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the front pendulum's tip, where every
+     copy's tip is (strong once the copies have parted), and in the views with the map, the copies' dots on it. */
+  interest() {
+    const out = [], N = this.N, s = this.s, v = this.p.view, S = this.scale;
+    if (!N) return out;
+    const spread = (xs, ys) => { let x = 0, y = 0, r = 0; for (let i = 0; i < N; i++) { x += xs[i] / N; y += ys[i] / N; } for (let i = 0; i < N; i++) r = Math.max(r, Math.hypot(xs[i] - x, ys[i] - y)); return { x, y, r }; };
+    const xs = new Float64Array(N), ys = new Float64Array(N);
+    if (v !== 'phase') {
+      for (let i = 0; i < N; i++) { const b = this.bobs(i); xs[i] = b.x2; ys[i] = b.y2; }
+      out.push({ x: xs[0], y: ys[0], r: S * (0.35 + 0.5 * this.p.len), w: 0.4, key: 'tip', label: 'The pendulum tips' });
+      if (N > 1) { const c = spread(xs, ys); out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.25, S * 0.3), w: Number.isFinite(this.divergeAt) ? 0.7 : 0.25, key: 'spread', label: 'Where the copies part' }); }
+    }
+    if (v !== 'pend') {
+      const q = this.sq;
+      for (let i = 0; i < N; i++) { xs[i] = q.x0 + (wrapAngle(s[i * 4]) + Math.PI) / TAU * q.S; ys[i] = q.y0 + (Math.PI - wrapAngle(s[i * 4 + 1])) / TAU * q.S; }
+      const c = spread(xs, ys);
+      out.push({ x: c.x, y: c.y, r: Math.max(c.r * 1.3, q.S * 0.15), w: v === 'phase' ? 0.55 : 0.45, key: 'map', label: 'The copies on the phase map' });
+    }
+    return out;
+  },
   /* The head-up display: its readings, and the selected copy in stage pixels: its lower bob where the pendulums
      show, its dot on the map in the Phase map view. */
   hud: [['Energy E (front pendulum)', 'ENERGY E'], ['Energy drift', 'E DRIFT'], ['Lyapunov estimate λ', 'LYAPUNOV λ'], ['Copies diverged (δ ≥ 0.1)', 'DIVERGED']],
-  hudTarget(three) {
-    const i = this.sel; if (i < 0 || i >= this.N) return null;
+  spot(id, three) {
+    const i = id == null ? -1 : id; if (i < 0 || i >= this.N) return null;
     if (this.p.view === 'phase') { if (three) return null; const d = this.dotAt(i), s = toScreen(this, d.x, d.y); return { x: s.x, y: s.y, r: 7 }; }
     const b = this.bobs(i), r = this.bobR()[1];
     if (three) { const s = this.project3(b.x2, b.y2, 0.2); return s && { x: s.x, y: s.y, r: 12 }; }
     const s = toScreen(this, b.x2, b.y2); return { x: s.x, y: s.y, r: r * s.z };
   },
-  inspectHint: 'Click a pendulum on the stage, or a dot on the phase map, to inspect that copy here.',
+  inspectHint: 'Click a pendulum on the stage, or a dot on the phase map, to inspect that copy here. Select (Q) picks the front pendulum without dragging it.',
   colorOf(i) { return this.N === 1 ? THEME.text : RAMP_HEAT.css[Math.round(70 + 185 * i / Math.max(1, this.N - 1))]; },
   rgbOf(i) { return this.N === 1 ? [222, 228, 236] : rampRgb(RAMP_HEAT, Math.round(70 + 185 * i / Math.max(1, this.N - 1))); },
 

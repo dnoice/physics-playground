@@ -1,17 +1,25 @@
 """
 ✒ Metadata
-    - Title: Solar System Tests (digiSpace Edition - v2.15)
+    - Title: Solar System Tests (digiSpace Edition - v2.19)
     - File Name: solar.py
     - Relative Path: tests/solar.py
     - Artifact Type: test
-    - Version: 2.15.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — A click on
+      a drawn orbit follows its body with Throw and with Select, in the flat
+      view and in 3D.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      planets' equilibrium temperatures within 10 % of the textbook values at
+      their mean distances; Venus's, Earth's and Mars's surfaces and the
+      giants' cloud tops; each planet's climate and spin, the Moon locked to
+      Earth; the climate rows in Inspect.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Pluto's
       orbit holds through a turn of Charon: size to 1e-5 and shape to 2e-5
       where Pluto alone swings by 1.6 %, one Inspect size throughout, and the
@@ -41,6 +49,9 @@
       turns so eccentric orbits count true; Phobos's orbit unchanged;
       Jupiter's Trojans still at L4 and L5; energy within 2e-7 all year;
       nothing merged or lost.
+    - Climate: equilibrium temperatures within 10 % of the textbook values,
+      Venus's, Earth's and Mars's surfaces, the giants' cloud tops, each
+      planet's climate and spin, and the climate rows in Inspect.
     - Rewind and saved states keep every name, moon link, radius and floor;
       a tampered state's self-host, cycle, chain or massless host is cut.
     - Display: the date beside the clock, the softening in significant
@@ -124,6 +135,35 @@ with sync_playwright() as p:
        and rows["r"].get("Time for one orbit") == "1.00 yr" and rows["r"].get("Radius") == "6371 km" and rows["r"].get("Orbit tilt") == "0.0°", rows)
     io = pg.evaluate(f"""(() => {{ {HELP} L.track = by('Io').id; const i = L.inspect(); L.track = null; return {{ title: i.title, focus: i.focus }}; }})()""")
     ok("sol_moon_inspects_about_its_planet", io == {"title": "Moon of Jupiter", "focus": "Distance from Jupiter"}, io)
+
+    # ---- Climate from sunlight: each planet's equilibrium temperature at its mean distance against the textbook value,
+    # its surface or cloud tops, its look and its spin. Temperatures here go as r^-½ while internal heat is small, so
+    # each is carried from where the planet stands at J2000 to its semi-major axis.
+    REAL = {"Mercury": (0.387098, 440), "Venus": (0.723336, 230), "Earth": (1.000003, 255), "Mars": (1.523710, 210), "Jupiter": (5.202887, 110),
+            "Saturn": (9.536676, 81), "Uranus": (19.189165, 58), "Neptune": (30.069923, 47)}
+    # The climate is read again first, with no time passing, so the starlight is the planets' where they stand now.
+    clim = pg.evaluate(f"""(real) => {{ {HELP} const sun = by('Sun'), out = {{}}; L.climateAll(0, false);
+      for (const [n, [a]] of Object.entries(real)) {{ const b = by(n), c = L.climateOf(b), r = Math.hypot(b.x - sun.x, b.y - sun.y, b.z - sun.z) / 135, k = Math.sqrt(r / a);
+        out[n] = {{ eq: c.Teq * k, T: c.T * k, top: c.T, law: 278.6 * Math.pow((1 - c.A) / (r * r), 0.25) / c.Teq, cls: c.cls, spin: c.spin, type: c.type, haze: c.haze, xIce: c.xIce }}; }}
+      for (const n of ['Moon', 'Io', 'Titan']) {{ const c = L.climateOf(by(n)); out[n] = {{ cls: c.cls, spin: c.spin, lock: c.lock && c.lock.name, T: c.T }}; }}
+      L.track = by('Earth').id; out.rows = Object.fromEntries(L.inspect().rows.map(q => [q[0], q[1]])); L.track = null;
+      return out; }}""", REAL)
+    ok("sol_climate_equilibrium_near_reality", all(abs(clim[n]["eq"] / t - 1) < 0.1 and abs(clim[n]["law"] - 1) < 1e-6 for n, (_, t) in REAL.items()),
+       {n: round(clim[n]["eq"], 1) for n in REAL})
+    # Venus's runaway greenhouse, Earth's mild one and Mars's thin air; the giants' cloud tops near their measured effective
+    # temperatures, their own heat included.
+    ok("sol_climate_surfaces_and_cloud_tops", abs(clim["Venus"]["T"] / 737 - 1) < 0.03 and abs(clim["Earth"]["T"] / 288 - 1) < 0.02 and abs(clim["Mars"]["T"] / 210 - 1) < 0.05
+       and all(abs(clim[n]["top"] / t - 1) < 0.1 for n, t in (("Jupiter", 124.4), ("Saturn", 95.0), ("Uranus", 59.1), ("Neptune", 59.3))),
+       {n: round(clim[n]["T"] if n in ("Venus", "Earth", "Mars") else clim[n]["top"], 1) for n in REAL})
+    ident = {n: (clim[n]["cls"], clim[n]["spin"]) for n in REAL}
+    ok("sol_climate_keeps_each_identity", ident == {"Mercury": ("hot", "resonant"), "Venus": ("hothouse", "slowed"), "Earth": ("temperate", "free"), "Mars": ("dry", "free"),
+                                                    "Jupiter": ("coldGiant", "free"), "Saturn": ("coldGiant", "free"), "Uranus": ("iceGiant", "free"), "Neptune": ("iceGiant", "free")}
+       and clim["Earth"]["type"] == 1 and clim["Venus"]["haze"] == 1 and clim["Mercury"]["type"] == 0 and clim["Mars"]["type"] == 0 and 0.8 < clim["Mars"]["xIce"] < 1
+       and (clim["Moon"]["cls"], clim["Moon"]["lock"]) == ("bare", "Earth") and clim["Io"]["lock"] == "Jupiter" and (clim["Titan"]["cls"], clim["Titan"]["lock"]) == ("frozen", "Saturn")
+       and 90 < clim["Titan"]["T"] < 100, (ident, {n: clim[n] for n in ("Moon", "Io", "Titan")}))
+    ok("sol_climate_in_inspect", re.fullmatch(r"\d+ K \(\d+ °C\)", clim["rows"].get("Surface temperature", "")) is not None and clim["rows"].get("Climate") == "Temperate"
+       and clim["rows"].get("Air") == "Earth-like" and clim["rows"].get("Rotation") == "Spins freely" and clim["rows"].get("Starlight received", "").startswith("1.03 × Earth's"),
+       {k: clim["rows"].get(k) for k in ("Starlight received", "Surface temperature", "Air", "Climate", "Rotation")})
     # Pluto's own orbit wobbles as it swings round Charon; the elements are the pair's, so its barycentre is measured.
     t = pg.evaluate(f"""(() => {{ {HELP} const pl = by('Pluto'), ch = by('Charon'), M = pl.m + ch.m, w = (k) => (pl[k] * pl.m + ch[k] * ch.m) / M;
       const pc = {{ x: w('x'), y: w('y'), z: w('z'), vx: w('vx'), vy: w('vy'), vz: w('vz'), m: M }};
@@ -231,6 +271,24 @@ with sync_playwright() as p:
     ok("sol_softening_in_significant_figures", soft[:2] == ["7.41e-7 AU", "0.000100 px"] and soft[2] == "", soft)
     hov = pg.evaluate(f"""(() => {{ {HELP} const belt = L.bodies.find(q => q.m === 0 && !q.name); return [L.hoverText(by('Io')), L.hoverText(belt)]; }})()""")
     ok("sol_hover_names_the_body", hov[0].startswith("Io · ") and "Jupiter masses" not in hov[1] and hov[1].count("·") == 0 and hov[1].endswith("km/s"), hov)
+    # Followed from afar, Io keeps its follow ring though it is still inside Jupiter's disc, neither drawn nor picked
+    # there: the stage round it changes with the ring and without, the camera held still between the two looks. Each
+    # look copies the square round the ring off the stage, so the stage itself is read once.
+    ring = pg.evaluate(f"""(async () => {{ {HELP} const io = by('Io'), cv = document.getElementById('stage-canvas'), frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const k = cv.width / cv.getBoundingClientRect().width, c = document.createElement('canvas'), g = c.getContext('2d', {{ willReadFrequently: true }});
+      const look = () => {{ const s = L.spot(io.id, false), R = (s.r + 8) * k, x0 = Math.floor(s.x * k - R - 4), y0 = Math.floor(s.y * k - R - 4), n = Math.ceil(2 * R + 8);
+        c.width = c.height = n; g.drawImage(cv, x0, y0, n, n, 0, 0, n, n); return {{ x: s.x, y: s.y, R, cx: s.x * k - x0, cy: s.y * k - y0, n, d: g.getImageData(0, 0, n, n).data }}; }};
+      L.select(io.id); await new Promise(r => setTimeout(r, 1500)); await frame();
+      const apart = L.apart(io, L.viewXf.z), on = look(); L.track = null; await frame(); await frame(); const off = look();
+      let changed = 0;
+      for (let a = 0; a < 120; a++) {{ let hit = false;
+        for (let rr = on.R - 2; rr <= on.R + 2 && !hit; rr += 0.5) {{ const px = Math.round(on.cx + rr * Math.cos(a * Math.PI / 60)), py = Math.round(on.cy + rr * Math.sin(a * Math.PI / 60)), i = (py * on.n + px) * 4;
+          hit = Math.abs(on.d[i] - off.d[i]) + Math.abs(on.d[i + 1] - off.d[i + 1]) + Math.abs(on.d[i + 2] - off.d[i + 2]) > 40; }}
+        if (hit) changed++; }}
+      return {{ apart, still: Math.hypot(on.x - off.x, on.y - off.y) < 0.5 && on.n === off.n, share: changed / 120 }}; }})()""")
+    # The dashes cover about half the ring, less where names are drawn over it; without the ring nothing changes.
+    ok("sol_followed_moon_ringed_inside_planet", ring["apart"] is False and ring["still"] and ring["share"] > 0.1, ring)
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(300)
     hid = pg.evaluate(f"""(async () => {{ {HELP} const io = by('Io'), J = by('Jupiter'), frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       await frame(); const z0 = L.viewXf.z, far = L.apart(io, z0), {{ ox, oy }} = L.viewXf, pick = L.bodyAt({{ x: io.x * z0 + ox, y: io.y * z0 + oy }}, 10);
       L.track = J.id; L.trackEase = 1; {P}.view.zoomBy(400); await frame(); await new Promise(r => setTimeout(r, 900)); await frame();
@@ -247,6 +305,37 @@ with sync_playwright() as p:
     fix = pg.evaluate(f"""(() => {{ {HELP} const f = L.perfFixes(); f[0].run(); L.computeAcc();
       return {{ labels: f.map(q => q.label), n: L.bodies.length, named: {NAMED!r}.every(n => by(n)), tests: L.tests.length, moons: L.moons.length }}; }})()""")
     ok("sol_speed_fix_keeps_every_named_body", fix == {"labels": ["Remove the 214 belt bodies"], "n": 33, "named": True, "tests": 2, "moons": 17}, fix)
+    # A click on a drawn orbit, away from its body, follows the body, with the Throw tool or with Select; empty sky
+    # beside it still drops a body.
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(600)
+    ORBIT = f"""(() => {{ const L = {G}, {{ ox, oy, z }} = L.viewXf, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect();
+      for (const nm of ['Saturn', 'Jupiter', 'Uranus']) {{ const b = L.bodies.find(q => q.name === nm), f = L.orbitFrame(b, L.pullHost(b)), bx = b.x * z + ox, by = b.y * z + oy;
+        for (let k = 10; k < 90; k++) {{ const E = f.E0 - 2 * Math.PI * k / 96, c = f.a * (Math.cos(E) - f.e), s = f.bb * Math.sin(E), x = (f.cx + f.Px * c + f.Qx * s) * z + ox, y = (f.cy + f.Py * c + f.Qy * s) * z + oy;
+          if (Math.hypot(x - bx, y - by) > 80 && x > 40 && y > 40 && document.elementFromPoint(r.left + x, r.top + y) === cv && !L.bodyAt({{ x, y }}, 24)) return [r.left + x, r.top + y, b.id, nm]; }} }}
+      return null; }})()"""
+    at = pg.evaluate(ORBIT); n_sol = pg.evaluate(f"{G}.bodies.length")
+    pg.click("#dock-gravity-throw"); pg.mouse.click(at[0], at[1]); pg.wait_for_timeout(300)
+    by_throw = [pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.bodies.length") - n_sol]
+    named = at[3] in pg.inner_text("#details-kicker")
+    # Following it moved the camera, so the line is found again where it now is.
+    pg.evaluate(f"{G}.select(null)"); pg.wait_for_timeout(300); at2 = pg.evaluate(ORBIT)
+    pg.keyboard.press("q"); pg.mouse.click(at2[0], at2[1]); pg.wait_for_timeout(300)
+    by_select = [pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.bodies.length") - n_sol]
+    pg.keyboard.press("q"); pg.evaluate(f"{G}.select(null)")
+    ok("sol_orbit_line_click_selects", at is not None and at2 is not None and by_throw == [at[2], 0] and by_select == [at2[2], 0] and named, (at, by_throw, at2, by_select))
+    # Empty sky beside an orbit, 15 px or more from every orbit drawn and every body's disc, takes a Throw click as a
+    # drop: exactly one body more, and nothing followed.
+    SKY = f"""(() => {{ const L = {G}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), project = L.projector(), o = {{ x: 0, y: 0, r: 0 }};
+      const clear = p => {{ const best = {{ d: 15, b: null }}; L.orbitNear(p, best); return !best.b && L.bodies.every(b => !project(b, o) || Math.hypot(o.x - p.x, o.y - p.y) - o.r >= 15); }};
+      const line = {ORBIT}; if (!line) return null;
+      const x0 = line[0] - r.left, y0 = line[1] - r.top;
+      for (const d of [16, 20, 26, 34, 44]) for (let k = 0; k < 16; k++) {{ const p = {{ x: x0 + d * Math.cos(k * Math.PI / 8), y: y0 + d * Math.sin(k * Math.PI / 8) }};
+        if (p.x > 40 && p.y > 40 && p.x < r.width - 40 && p.y < r.height - 40 && document.elementFromPoint(r.left + p.x, r.top + p.y) === cv && clear(p)) return [r.left + p.x, r.top + p.y, d]; }}
+      return null; }})()"""
+    pg.wait_for_timeout(300); sky = pg.evaluate(SKY); n_sky = pg.evaluate(f"{G}.bodies.length")
+    if sky: pg.mouse.click(sky[0], sky[1]); pg.wait_for_timeout(300)
+    dropped = [pg.evaluate(f"{G}.bodies.length") - n_sky, pg.evaluate(f"{G}.track"), pg.evaluate(f"{G}.p.tool")]
+    ok("sol_sky_beside_orbit_drops_a_body", sky is not None and dropped == [1, None, "throw"], (sky, dropped))
     pg.evaluate(P + ".preset('sol')"); pg.wait_for_timeout(200)
     sw = pg.evaluate("""(() => ['orbits', 'labels'].map(k => document.getElementById('ctl-gravity-' + k)).map(e => e && [e.getAttribute('aria-checked'), e.textContent.trim()]))()""")
     pg.click("#ctl-gravity-orbits"); off = pg.evaluate(f"{G}.p.orbits"); pg.click("#ctl-gravity-orbits")
@@ -269,7 +358,7 @@ with sync_playwright() as p:
     ok("sol_3d_orbits_drawn_in_scene", tri[0] - tri[1] > 2000, tri)
     # Close enough to Jupiter that Io is on the stage and drawn apart, then all the way in.
     ZOOM = f"""async n => {{ {HELP} for (let k = 0; k < n; k++) {{ {P}.view.zoomBy(3); await new Promise(r => setTimeout(r, 120)); }}
-      await new Promise(r => setTimeout(r, 1500)); const J = by('Jupiter'), io = by('Io'), t = L.hudTarget(true), s = L.project3(J.x, J.y, J.z), si = L.project3(io.x, io.y, io.z), V = L.basis3();
+      await new Promise(r => setTimeout(r, 1500)); const J = by('Jupiter'), io = by('Io'), t = L.spot(L.selectedId(), true), s = L.project3(J.x, J.y, J.z), si = L.project3(io.x, io.y, io.z), V = L.basis3();
       return {{ near: V.near, dist: L.c3().dist, apart: L.apart3(io), ioOn: !!si && si.x > 0 && si.y > 0 && si.x < V.w && si.y < V.h,
         box: t && Math.hypot(t.x - s.x, t.y - s.y), r: t && t.r, px: J.px }}; }}"""
     pg.evaluate(f"(() => {{ const L = {G}, J = L.bodies.find(b => b.name === 'Jupiter'); L.track = J.id; L.trackEase = 0; }})()")
@@ -278,6 +367,15 @@ with sync_playwright() as p:
     ok("sol_3d_target_on_followed_planet", z["box"] is not None and z["box"] < 1 and z["r"] >= z["px"], z)
     z = pg.evaluate(ZOOM, 8)
     ok("sol_3d_near_plane_follows_in", z["near"] < 1e-2 and z["near"] <= z["dist"] * 0.0041, z)
+    # In 3D an orbit is picked on the very curve the scene draws: framed again, a click on Saturn's line follows Saturn.
+    pg.evaluate(f"{G}.select(null)"); pg.evaluate(P + ".view.frame()"); pg.wait_for_timeout(2500)
+    o3 = pg.evaluate(f"""(() => {{ const L = {G}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect();
+      for (const nm of ['Saturn', 'Jupiter']) {{ const b = L.bodies.find(q => q.name === nm), f = L.orbitFrame(b, L.pullHost(b)), sb = L.project3(b.x, b.y, b.z);
+        for (let k = 12; k < 84; k++) {{ const E = f.E0 - 2 * Math.PI * k / 96, c = f.a * (Math.cos(E) - f.e), s = f.bb * Math.sin(E), q = L.project3(f.cx + f.Px * c + f.Qx * s, f.cy + f.Py * c + f.Qy * s, f.cz + f.Pz * c + f.Qz * s);
+          if (q && sb && Math.hypot(q.x - sb.x, q.y - sb.y) > 80 && q.x > 40 && q.y > 40 && document.elementFromPoint(r.left + q.x, r.top + q.y) === cv && !L.bodyAt({{ x: q.x, y: q.y }}, 24) && L.lineAt({{ x: q.x, y: q.y }}, false, true) === b) return [r.left + q.x, r.top + q.y, b.id]; }} }}
+      return null; }})()""")
+    if o3: pg.keyboard.press("q"); pg.mouse.click(o3[0], o3[1]); pg.wait_for_timeout(300); pg.keyboard.press("q")
+    ok("sol_3d_orbit_line_click_selects", o3 is not None and pg.evaluate(f"{G}.track") == o3[2], o3)
     pg.close()
 
     # ---- Orbits stay smooth curves where the 3D view sits inside them: 10.7 years in, the camera turned as in the

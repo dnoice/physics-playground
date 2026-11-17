@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Interaction Test (digiSpace Edition - v2.11)
+    - Title: Interaction Test (digiSpace Edition - v2.19)
     - File Name: interact.py
     - Relative Path: tests/interact.py
     - Artifact Type: test
-    - Version: 2.11.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
+      zoom is the rail's alone: the wheel's zoom shows in the rail's reading,
+      and Controls has no Zoom dial.
     - 2.11.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
       start-angle dial reads its degrees against the number (35.1°), as the
       controls now write a degree sign.
@@ -72,9 +75,10 @@ with sync_playwright() as p:
     pg.evaluate("PhysicsPlayground.play()")
     pg.mouse.wheel(0, -300); pg.wait_for_timeout(700)
     settle(pg, f"PhysicsPlayground.labs.gravity.p.zoom > {z0 * 1.2}")
-    r = pg.evaluate("[PhysicsPlayground.labs.gravity.p.zoom, document.getElementById('ctl-gravity-zoom-out').textContent]")
+    r = pg.evaluate("[PhysicsPlayground.labs.gravity.p.zoom, document.getElementById('nav-zoom').textContent, !!document.getElementById('ctl-gravity-zoom')]")
     ok("gravity_wheel_zooms", r[0] > z0 * 1.2, (round(z0, 3), round(r[0], 3)))
-    ok("zoom_slider_follows", r[1] == f"{r[0]:.2f}×", r[1])
+    # Zoom is the rail's alone now: its reading follows the wheel to the per cent, and Controls has no second dial.
+    ok("zoom_readout_follows", r[1].endswith("%") and abs(float(r[1][:-1]) - r[0] * 100) <= max(0.051, r[0]) and not r[2], r)
     # collisions: click empty -> spawn, drag throw
     pg.keyboard.press("2"); pg.wait_for_timeout(200)
     scene(pg, "#preset-collisions-pool"); pg.wait_for_timeout(100)

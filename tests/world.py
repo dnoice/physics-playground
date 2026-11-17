@@ -1,17 +1,30 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.17)
+    - Title: 3D Mode Test (digiSpace Edition - v2.19)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Select
+      picks a body a few pixels off in 3D and clears on empty sky without
+      throwing; the Tilt marks switch hides the drop lines and foot rings. On
+      Dennis's call for drag handles: the deck's grip replaces the size
+      button; a double-click steps it tall, compact and back to standard. The
+      3D Select check steps the run on and looks again when no planet stands
+      clear on the shorter stage.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the Graphics checks drive
+      Settings, and the machine's four verdicts mark the GPU. A setting of
+      one's own reaches the engine, holds over a change of tier and across a
+      reload, resets on its own and with Reset to tier, frees what it made and
+      stays within the GPU's limits.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
       back-view check waits for the camera to finish turning, as the Fluid one
       does, before it reads the yaw; on a busy machine the turn had not ended
@@ -57,13 +70,17 @@
       pan does not jump, a resize keeps the angle, and dragging the space
       around the apparatus orbits.
     - Instruments: a reading plots, the plot rewinds and scrubs, plotted
-      readings are remembered, and diagnostics open on demand.
+      readings are remembered, diagnostics open on demand, and the deck's
+      grip steps through its sizes.
     - The scene dropdown, tools in the gizmo, and the Details card with a
       period that matches Kepler's third law and a drawn portrait.
     - The pendulum can be seen from behind.
     - Rewind and video capture work on the 3D stage.
     - All five tiers apply; Auto lands on Lite under software rendering and
       steps down from a tier the machine cannot hold.
+    - Graphics settings of one's own reach the engine, hold over a change of
+      tier and a reload, reset one by one and all at once, free what they
+      made and stay within the GPU's limits.
     - No three.js, no WebGL 2, a lost context and a scene that throws each
       leave a working workspace.
     - A soak through every scene of every lab, twice, finds growth in GPU
@@ -249,12 +266,15 @@ with sync_playwright() as p:
     ok("diagnostics_open_on_demand", not pg.evaluate("document.getElementById('dp-insights').hidden") and pg.evaluate("document.getElementById('dp-telemetry').hidden"))
     pg.click("#dt-telemetry")
     ok("telemetry_returns", not pg.evaluate("document.getElementById('dp-telemetry').hidden") and pg.evaluate("document.activeElement.id") == "dt-telemetry")
+    # The deck's grip is its one size control: a double-click steps standard, tall, compact and back.
+    grip = lambda: (lambda g: (g["x"] + g["width"] / 2, g["y"] + g["height"] / 2))(pg.locator("#deck-grip").bounding_box())
     std = pg.locator("#tile-deck").bounding_box()["height"]
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(500)
+    pg.mouse.dblclick(*grip()); pg.wait_for_timeout(500)
     tall = pg.locator("#tile-deck").bounding_box()["height"]
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(500)
+    pg.mouse.dblclick(*grip()); pg.wait_for_timeout(500)
     ok("deck_grows_and_shrinks", tall > std + 40 and pg.locator("#tile-deck").bounding_box()["height"] < std - 40, round(tall))
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(300)
+    pg.mouse.dblclick(*grip()); pg.wait_for_timeout(300)
+    ok("deck_cycles_back_to_standard", abs(pg.locator("#tile-deck").bounding_box()["height"] - std) < 4)
     ctx.close()
 
     # The console: scene dropdown, tools in the gizmo, and a click that opens up what was clicked.
@@ -292,6 +312,39 @@ with sync_playwright() as p:
     ok("portrait_is_drawn", pg.evaluate("""(() => { const d = document.getElementById('details-portrait').getContext('2d').getImageData(44, 44, 88, 88).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 90) lit++; return lit > 200; })()"""))
     pg.click("#details-close"); pg.wait_for_timeout(200)
     ok("close_clears_the_selection", pg.evaluate("document.getElementById('details').hidden") and pg.evaluate(f"{P}.active.track") is None)
+    # Select in 3D: a click a few pixels off a body picks it, and a press on empty sky clears it; nothing is thrown.
+    pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(300)
+    # The body is one standing clear of the rest on the stage (a giant's moon drawn beside it would rightly win a click
+    # that lands on it), and the click lands 6 px outside its drawn disc.
+    # Where the planets stand depends on how far the run has gone, and on a shorter stage none may stand clear at a
+    # given moment; the run then steps on a little and the search looks again. What a click must do is unchanged.
+    find = f"""(() => {{ const L = {P}.active, pr = L.projector(), o = {{ x: 0, y: 0, r: 0 }}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), drawn = [];
+      for (const b of L.bodies) if (pr(b, o)) drawn.push([b, o.x, o.y, o.r]);
+      const free = (x, y) => x > 40 && y > 60 && x < r.width - 220 && y < r.height - 140 && document.elementFromPoint(r.left + x, r.top + y) === cv;
+      let hit = null;
+      for (const [b, x, y, R] of drawn.filter(d => d[0].m > 0 && d[0].m < L.STAR_MASS).sort((a, c) => c[0].m - a[0].m)) {{
+        if (drawn.some(d => d[0] !== b && Math.hypot(d[1] - x, d[2] - y) - d[3] < R + 40)) continue;
+        for (let k = 0; k < 8 && !hit; k++) {{ const a = k * Math.PI / 4, px = x + (R + 6) * Math.cos(a), py = y + (R + 6) * Math.sin(a); if (free(px, py)) hit = {{ x: r.left + px, y: r.top + py, id: b.id }}; }}
+        if (hit) break;
+      }}
+      let ex = null, ey = null; for (let y = 60; y < r.height - 140 && ex == null; y += 13) for (let x = 60; x < r.width - 220 && ex == null; x += 13) if (free(x, y) && L.pick({{ x, y }}) == null) {{ ex = r.left + x; ey = r.top + y; }}
+      return hit && {{ ...hit, ex, ey }}; }})()"""
+    spot = pg.evaluate(find)
+    for _ in range(12):
+        if spot: break
+        pg.evaluate(f"{P}.play()"); pg.wait_for_timeout(700); pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(300); spot = pg.evaluate(find)
+    n3 = pg.evaluate(f"{P}.active.bodies.length"); picked = None
+    pg.keyboard.press("q")
+    if spot: pg.mouse.click(spot["x"], spot["y"]); pg.wait_for_timeout(300); picked = pg.evaluate(f"{P}.active.track"); pg.mouse.click(spot["ex"], spot["ey"]); pg.wait_for_timeout(300)
+    ok("select_tool_picks_in_3d", spot is not None and picked == spot["id"] and pg.evaluate(f"{P}.active.bodies.length") == n3 and pg.evaluate(f"{P}.active.track") is None, (spot, picked))
+    pg.keyboard.press("q")
+    # Tilt marks: the drop lines and foot rings have a switch of their own under Display; off, no body drops one.
+    pg.evaluate(f"{P}.preset('tilted')"); pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(1500)
+    MARKS = f"(() => {{ const m = {P}.mode.world.engine.sceneOf('gravity').scene.children.find(o => o.renderOrder === 5); return m ? (m.visible ? m.geometry.drawRange.count : 0) : -1; }})()"
+    on, enabled = pg.evaluate(MARKS), not pg.is_disabled("#ctl-gravity-marks")
+    pg.click("#ctl-gravity-marks"); pg.wait_for_timeout(700); off = pg.evaluate(MARKS)
+    pg.click("#ctl-gravity-marks"); pg.wait_for_timeout(700); back = pg.evaluate(MARKS)
+    ok("tilt_marks_switch_hides_marks", enabled and on > 0 and off == 0 and back > 0, (enabled, on, off, back))
     ctx.close()
 
     # Every apparatus can be walked around, front and back.
@@ -339,13 +392,62 @@ with sync_playwright() as p:
             pg.evaluate(f"{P}.mode.tier('{tier}')"); pg.wait_for_timeout(600)
         counts.append(pg.evaluate(f"{P}.mode.info().textures"))
     ok("tier_changes_free_their_targets", counts[0] == counts[1], counts)
+    # The Graphics section of Settings, opened from the top bar's Graphics button: the tiers, the machine's four verdicts
+    # with the one that set the suggestion marked, and a setting of one's own laid over the tier (here Lite).
     pg.click("#btn-gfx")
-    ok("menu_opens", not pg.evaluate("document.getElementById('gfx-sheet').hidden"))
+    ok("menu_opens", pg.evaluate(f"document.getElementById('settings').matches(':modal') && {P}.settings.section() === 'graphics'") and pg.is_visible("#sp-graphics")
+       and pg.evaluate("document.activeElement === document.querySelector('#gfx-list [aria-checked=true]')"))
     dev = pg.inner_text("#gfx-device")
-    ok("menu_reads_the_whole_machine", "threads at" in dev and ("GB memory" in dev or "memory not reported" in dev) and "suggests Lite, set by the GPU" in dev, dev)
+    rows = pg.evaluate("[...document.querySelectorAll('#gfx-device .dev-row')].map(r => [r.querySelector('dt').textContent, r.dataset.sets])")
+    ok("menu_reads_the_whole_machine", "threads at" in dev and ("GB memory" in dev or "memory not reported" in dev) and "suggests Lite, set by the GPU" in dev
+       and rows == [["GPU", "true"], ["CPU", "false"], ["Memory", "false"], ["Texture limit", "false"]], (dev, rows))
     ok("menu_lists_all_tiers", pg.evaluate("document.querySelectorAll('#gfx-list [role=radio]').length") == 6)
+    OWN = f"""(() => {{ const E = {P}.mode.world.engine, t = E.tier, st = E.studioOf('chaos'), row = k => document.querySelector(`.knob[data-key="${{k}}"]`);
+      return {{ id: t.id, shadow: t.shadow, bloom: t.bloom, cast: st.key.castShadow, map: st.key.shadow.mapSize.x, freed: !st.key.shadow.map, radius: st.key.shadow.radius,
+        contact: st.contacts.some(c => c.visible), own: {P}.gfx.own(), kept: JSON.parse(localStorage.getItem('psp:gfxOverrides') || 'null'), focus: document.activeElement.id,
+        marked: [...document.querySelectorAll('.knob[data-own="true"]')].map(r => r.dataset.key), resets: [...document.querySelectorAll('.knob-reset:not([hidden])')].map(b => b.id),
+        dot: document.getElementById('btn-gfx').classList.contains('has-own'), all: !document.getElementById('gfx-reset').hidden, now: document.getElementById('gfx-now').textContent }}; }})()"""
+    pg.click("#ov-shadow-2048"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_reaches_the_engine", g["id"] == "lite" and g["shadow"] == 2048 and g["cast"] and g["map"] == 2048 and abs(g["radius"] - 5) < 1e-9 and g["kept"] == {"shadow": 2048}
+       and g["marked"] == ["shadow"] and g["resets"] == ["ov-shadow-reset"] and g["dot"] and g["all"] and "Lite with 1 setting of your own" in g["now"] and "2048 shadows" in g["now"], g)
+    pg.click("#ov-bloom"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_switch_reaches_the_engine", g["bloom"] and g["shadow"] == 2048 and g["kept"] == {"shadow": 2048, "bloom": True} and sorted(g["marked"]) == ["bloom", "shadow"], g)
     pg.keyboard.press("Escape")
-    ok("escape_closes_menu", pg.evaluate("document.getElementById('gfx-sheet').hidden") and pg.evaluate("document.activeElement.id") == "btn-gfx")
+    ok("escape_closes_menu", not pg.evaluate("document.getElementById('settings').open") and pg.evaluate("document.activeElement.id") == "btn-gfx")
+    pg.reload()
+    settle(pg, IS3D, 30000); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("overrides_kept_across_a_reload", g["id"] == "lite" and g["shadow"] == 2048 and g["cast"] and g["bloom"] and g["own"] == {"shadow": 2048, "bloom": True} and sorted(g["marked"]) == ["bloom", "shadow"], g)
+    # A setting held over a change of tier: contact shadows off stay off on High, whose own are on.
+    pg.evaluate(f"{P}.gfx.set('contact', false); {P}.mode.tier('high')"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_holds_over_a_change_of_tier", g["id"] == "high" and not g["contact"] and g["shadow"] == 2048 and g["own"] == {"shadow": 2048, "bloom": True, "contact": False}, g)
+    pg.evaluate(f"{P}.gfx.reset('contact'); {P}.mode.tier('lite')"); pg.wait_for_timeout(600)
+    pg.click("#btn-gfx"); pg.wait_for_timeout(200)
+    pg.click("#ov-shadow-reset"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("override_resets_on_its_own", g["shadow"] == 0 and not g["cast"] and g["freed"] and g["bloom"] and g["kept"] == {"bloom": True} and g["marked"] == ["bloom"] and g["focus"] == "ov-shadow-0", g)
+    pg.click("#gfx-reset"); pg.wait_for_timeout(600)
+    g = pg.evaluate(OWN)
+    ok("reset_to_tier", not g["bloom"] and g["shadow"] == 0 and g["own"] == {} and g["kept"] == {} and not g["marked"] and not g["dot"] and not g["all"]
+       and pg.evaluate("document.activeElement === document.querySelector('#gfx-list [aria-checked=true]')"), g)
+    # Settings of one's own free what they made through the tier's path: two laps leave the same textures.
+    counts = []
+    for _ in range(2):
+        for k, v in [("env", 1024), ("shadow", 4096), ("reflect", 0.75), ("bloom", "true"), ("tex", 2048), ("msaa", 2)]:
+            pg.evaluate(f"{P}.gfx.set('{k}', {v})"); pg.wait_for_timeout(500)
+        pg.evaluate(f"{P}.gfx.reset()"); pg.wait_for_timeout(1500)
+        counts.append(pg.evaluate(f"{P}.mode.info().textures"))
+    ok("overrides_free_their_targets", counts[0] == counts[1], counts)
+    # The GPU's limits still hold: nothing above them is offered, and a value above them is refused.
+    lim = pg.evaluate(f"""(() => {{ const d = {P}.mode.world.device, msaa = [...document.querySelectorAll('.knob[data-key=msaa] [role=radio]')].map(b => +b.id.slice(8));
+      return {{ s: d.maxSamples, a: d.maxAniso, msaa, eight: {P}.gfx.set('msaa', 8), sixteen: {P}.gfx.set('aniso', 16), aniso: {P}.gfx.budget().aniso }}; }})()""")
+    pg.evaluate(f"{P}.gfx.reset()")
+    ok("gpu_limits_hold_over_overrides", lim["msaa"] == [m for m in [0, 2, 4, 8] if m <= lim["s"]] and lim["eight"] == (8 <= lim["s"]) and lim["sixteen"] == (16 <= lim["a"])
+       and lim["aniso"] == (16 if 16 <= lim["a"] else 1), lim)
+    pg.keyboard.press("Escape")
     pg.evaluate(f"{P}.mode.tier('auto')")
     pg.evaluate(f"{P}.mode.world.autoTier = 'ultra'; {P}.mode.world.engine.setTier({{ ...{P}.mode.world.engine.tier, id: 'ultra', scale: 2, msaa: 4, shadow: 4096, reflect: 0.75, bloom: true, grade: true, detail: 1 }})")
     ok("auto_steps_down_when_slow", settle(pg, f"{P}.mode.world.autoTier !== 'ultra'", 30000), pg.evaluate(f"{P}.mode.world.autoTier"))
@@ -385,6 +487,11 @@ with sync_playwright() as p:
     pg.add_init_script("const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, o) { return t === 'webgl2' ? null : g.call(this, t, o); };")
     pg.goto(URL + "#chaos"); pg.wait_for_timeout(1200)
     ok("no_webgl2_stays_2d", pg.evaluate(f"{P}.mode.get()") == "2d" and pg.evaluate("document.getElementById('mode-3d').disabled"))
+    # With no 3D there is nothing to set under Graphics: its section leaves Settings, which opens at the next one.
+    hid = pg.evaluate("document.getElementById('st-graphics').hidden")
+    pg.click("#btn-settings"); pg.wait_for_timeout(200)
+    r = pg.evaluate(f"({{ open: document.getElementById('settings').open, section: {P}.settings.section(), pane: document.getElementById('sp-graphics').hidden }})")
+    ok("no_webgl2_no_graphics_section", hid and r["open"] and r["section"] == "units" and r["pane"], (hid, r))
     ctx.close()
 
     ctx = b.new_context(viewport=VIEW)

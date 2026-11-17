@@ -1,17 +1,34 @@
 """
 ✒ Metadata
-    - Title: Shell Regression Test (digiSpace Edition - v2.14)
+    - Title: Shell Regression Test (digiSpace Edition - v2.19)
     - File Name: shell.py
     - Relative Path: tests/shell.py
     - Artifact Type: test
-    - Version: 2.14.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline and for chips that do not look clickable:
+      the capture settings button opens Settings at Capture, the nav's arrows
+      pass through it, all five sections fit across a phone, the status line's
+      readings are plain text while its buttons look like buttons, and the
+      player bar holds every control from a desktop to a phone. Chaos has no
+      duplicate restart, and quick actions still lead in a lab that has them.
+      On Dennis's call for a duplication sweep: two Settings openers and every
+      section reachable from the gear, tool keys apart from workspace keys,
+      one glyph per meaning, the Run status name, Chaos without a second
+      restart, and Fluid's quick actions first.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: each opener opens its section
+      with focus on its current choice; the nav's arrows, the focus trap, the
+      workspace's keys held behind it, its own keys, Shift+S beside Fluid's S
+      tool, the close button and the backdrop; a centred panel on a desktop
+      and the whole screen on a phone. The selection sweep opens each section.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Nothing in
       the workspace selects, on any page, pane, sheet or menu in 2D or 3D;
       real drags and double-clicks select nothing, short labels included; text
@@ -59,6 +76,13 @@
       Reset with focus kept, and a remembered fold.
     - The Chaos phase view: split layout, reach curve, hover preview, click
       to start, and a bob that still drags.
+    - Settings: every entry point at its section, the capture cluster's
+      included, the nav, the focus trap, Escape, the backdrop and focus
+      handed back; the workspace's keys held behind it; centred on a desktop
+      and the whole screen on a phone, all five sections across its top.
+    - The stage's status line: readings as plain text, only real buttons as
+      buttons. The player bar keeps every control inside it, the timeline
+      on top, from a desktop down to a phone.
 
 ✒ Usage Instructions:
     $ python tests/shell.py
@@ -377,6 +401,9 @@ with sync_playwright() as p:
     ok("fluid_no_particle_inside_a_post", inside == 0, inside)
     pg.evaluate(P + ".reset()"); pg.wait_for_timeout(150)
     ok("fluid_reset_starts_clean", pg.evaluate(OBSTACLES) == "[]", pg.evaluate(OBSTACLES))
+    # Quick actions act on the run now, so they come first, above every section.
+    quick = pg.evaluate("(() => { const f = document.querySelector('#params-body .params').firstElementChild; return f.classList.contains('quick') ? [...f.querySelectorAll('button')].map(b => b.textContent) : null; })()")
+    ok("quick_actions_first", quick == ["Level the tank", "Splash upward", "Remove obstacles"], quick)
     pg.context.close()
 
     # ---- Control sections: in the lab's order after the quick actions, one restart note, a Reset that appears
@@ -384,7 +411,12 @@ with sync_playwright() as p:
     pg = fresh("chaos")
     groups = pg.evaluate("[...document.querySelectorAll('#params-body .pgroup')].map(s => s.dataset.group)")
     ok("sections_in_lab_order", groups == ["start", "physics", "display"], groups)
-    ok("quick_actions_first", pg.evaluate("document.querySelector('#params-body .params').firstElementChild.classList.contains('quick')"))
+    # Chaos's "Restart from these angles" only repeated Reset (R): with it gone the panel opens on its first section.
+    # A button's name is its words and its aria-label, not its glyph's ligature (restart_alt on every dial's Reset).
+    second = pg.evaluate("""(() => { const p = document.querySelector('#params-body .params');
+      const name = b => `${b.getAttribute('aria-label') || ''} ${[...b.childNodes].filter(n => !(n.nodeType === 1 && n.classList.contains('ms'))).map(n => n.textContent).join('')}`;
+      return { first: p.firstElementChild.className, quick: !!p.querySelector('.quick'), restarts: [...p.querySelectorAll('button')].map(name).filter(t => /restart/i.test(t)), resets: p.querySelectorAll('.pgroup-reset').length }; })()""")
+    ok("chaos_no_second_restart", second == {"first": "pgroup", "quick": False, "restarts": [], "resets": 3}, second)
     ok("restart_note_once", pg.locator("#params-body .pgroup-note").count() == 1 and "restart" in pg.inner_text("[data-group='start'] .pgroup-note"))
     ok("no_restart_note_per_slider", pg.inner_text("#ctl-chaos-copies-note") == "", pg.inner_text("#ctl-chaos-copies-note"))
     reset = pg.locator("[data-group='physics'] .pgroup-reset")
@@ -453,6 +485,200 @@ with sync_playwright() as p:
     ok("hud_fps_shows_meter", abs(float(pg.inner_text("#hud-fps").split()[0]) - state("perf.fps")) < 8, pg.inner_text("#hud-fps"))
     pg.context.close()
 
+    # ---- The slow-run warning names the limit its own numbers show: the step cap when the frames take every step the
+    # lab allows, the budget only when the solver's time reaches it, slow frames only below 20 a second (each carrying at
+    # most 50 ms of real time, more simulated time at a higher speed), and no single cause when none of them holds. The
+    # meters are set and read back in one task, so no frame runs in between, and then restored.
+    pg = fresh("collisions")
+    why = pg.evaluate("""async () => { const D = await import(new URL('js/shell/diagnostics.js', location.href).href), P = PhysicsPlayground, f = P.perf, s = P.state;
+      const keep = { ...f }, run = s.running, speed = s.speed, out = {};
+      for (const [name, m, sp] of [['cap', { steps: 48, sim: 4, fps: 60 }, 1], ['budget', { steps: 20, sim: 12, fps: 50 }, 1], ['frames', { steps: 10, sim: 3, fps: 12 }, 2], ['none', { steps: 10, sim: 9, fps: 50 }, 1]]) {
+        Object.assign(f, m, { slow: 2, rate: 0.5 }); s.running = true; s.speed = sp;
+        const w = D.globalInsights().find(i => i.id === 'perf-slow'); out[name] = w ? w.body.replace(/<[^>]+>/g, '') : '';
+      }
+      Object.assign(f, keep); s.running = run; s.speed = speed; return out; }""")
+    blames = lambda text: [k for k, w in [("cap", "steps this lab takes"), ("budget", "budget"), ("frames", "Frames arrive")] if w in text]
+    ok("slow_run_names_the_cause_its_meters_show", blames(why["cap"]) == ["cap"] and "48 steps" in why["cap"]
+       and blames(why["budget"]) == ["budget"] and "12.0 ms" in why["budget"] and "11 ms budget" in why["budget"]
+       and blames(why["frames"]) == ["frames"] and "about 12 times a second" in why["frames"] and "50 ms of real time (100 ms of simulated time at 2.00×)" in why["frames"]
+       and blames(why["none"]) == [] and "No one limit stands out" in why["none"], why)
+    pg.context.close()
+
+    # ---- One wording for one problem: the stage's alert chip says what the Insights tab says, and its name says where
+    # to see it. Paused, so a busy machine cannot add a slow-run warning to the count.
+    pg = fresh("waves"); scene(pg, "#preset-waves-twosrc"); pg.wait_for_timeout(300); pg.evaluate(P + ".pause()")
+    pg.evaluate(P + ".setParam('f', 9)")
+    warned = settle(pg, "!document.getElementById('hud-alert').hidden && !document.getElementById('diag-sum').hidden", 8000)
+    chip = pg.evaluate("(a => [a.textContent, document.getElementById('diag-sum').textContent, a.getAttribute('aria-label'), PhysicsPlayground.diagnose().filter(i => i.level !== 'info').length])(document.getElementById('hud-alert'))")
+    ok("alert_chip_says_what_the_tab_says", warned and chip[3] == 1 and chip[0] == chip[1] == "1 to check" and chip[2] == "1 to check: show it in Insights", chip)
+    pg.context.close()
+
+    # ---- The stage's status line: readings are plain text that takes no press (no pill, no ring, no pointer), and only
+    # real buttons look like buttons. The Running pill and the real-time chip repeated the Play button and Insights, so
+    # they are gone, and the recorders' stage chips became one recording light, whose stop is in the player bar.
+    pg = fresh("gravity")
+    look = """(sel => [...document.querySelectorAll(sel)].map(e => { const s = getComputedStyle(e);
+      return [e.tagName, s.cursor, s.pointerEvents, s.backgroundColor, s.boxShadow, s.borderRadius, e.tabIndex]; }))"""
+    readings = pg.evaluate(look + "('.hud-status, #hud-time, #hud-fps, #hud-rec')")
+    buttons = pg.evaluate(look + "('#hud-alert, #hud-dir')")
+    ok("status_readings_are_plain_text", len(readings) == 4 and all(r[0] != "BUTTON" and r[1] != "pointer" and r[2] == "none" and r[3] == "rgba(0, 0, 0, 0)"
+       and r[4] == "none" and r[5] == "0px" and r[6] < 0 for r in readings), readings)
+    ok("status_buttons_look_like_buttons", len(buttons) == 2 and all(r[0] == "BUTTON" and r[1] == "pointer" and r[2] == "auto" and r[5] == "999px" and r[6] == 0 for r in buttons), buttons)
+    ok("status_duplicates_gone", pg.locator("#hud-state, #hud-rate, #hud-data, .hud .pill").count() == 0)
+
+    # ---- The player bar is one transport for time: the timeline across its top, then play, step, reset, speed and the
+    # capture cluster with its settings. Every control and every name stays in view, inside the bar, from a desktop down
+    # to a phone, with nothing wider than the page.
+    BAR = """(() => { const r = s => document.querySelector(s).getBoundingClientRect(), bar = r('.player'), tl = r('.timeline');
+      const btns = ['#btn-play', '#btn-step', '#btn-reset', '#ctl-speed', '#btn-rec', '#btn-data', '#btn-state', '#btn-cap-settings'].map(r);
+      return { inBar: btns.every(b => b.width > 0 && b.left >= bar.left - 0.5 && b.right <= bar.right + 0.5 && b.top >= bar.top - 0.5 && b.bottom <= bar.bottom + 0.5),
+        timelineOnTop: btns.every(b => b.top >= tl.bottom - 0.5) && tl.top >= bar.top - 0.5, track: Math.round(r('.timeline .range-wrap').width),
+        names: [...document.querySelectorAll('.player .cap-name')].every(n => n.getClientRects().length && n.scrollWidth <= n.clientWidth + 1),
+        page: document.documentElement.scrollWidth - innerWidth, barH: Math.round(bar.height) }; })()"""
+    bars = {"desktop": pg.evaluate(BAR)}
+    pg.context.close()
+    for name, size in [("tablet", {"width": 760, "height": 900}), ("phone", {"width": 390, "height": 844})]:
+        ctx = b.new_context(viewport=size)
+        pg = open_page(ctx); pg.goto(URL + "#gravity")
+        pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(500)
+        bars[name] = pg.evaluate(BAR)
+        ctx.close()
+    ok("player_bar_holds_every_control", all(v["inBar"] and v["timelineOnTop"] and v["names"] and v["page"] <= 0 for v in bars.values())
+       and bars["desktop"]["track"] >= 600 and bars["phone"]["track"] >= 150 and bars["desktop"]["barH"] <= 72 and bars["phone"]["barH"] <= 120, bars)
+
+    # ---- Settings: one modal dialog. Each entry point opens it at its own section with focus on that section's current
+    # choice; Tab never leaves it; Escape, the close button and the backdrop close it and hand focus back to what opened
+    # it; the workspace's keys wait behind it, and a phone gets the whole screen.
+    SET = """(() => { const d = document.getElementById('settings'), a = document.activeElement, sec = PhysicsPlayground.settings.section();
+      const want = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', capture: '#vq-standard', keys: '#st-keys' }[sec];
+      return { open: d.open, modal: d.matches(':modal'), section: sec, panes: [...d.querySelectorAll('[role=tabpanel]')].filter(p => !p.hidden).map(p => p.id),
+        tab: d.querySelector('[role=tab][aria-selected=true]').id, focus: a.id, inside: d.contains(a), onChoice: a === document.querySelector(want),
+        expanded: [...document.querySelectorAll('[aria-controls=settings]')].filter(b => b.getAttribute('aria-expanded') === 'true').map(b => b.id) }; })()"""
+    st = lambda: pg.evaluate(SET)
+    pg = fresh("fluid")
+    # Two openers in the top bar, not five: the Settings button and Graphics, which shows the tier. The Units, HUD and
+    # keyboard buttons are gone, markup and all. The one other opener anywhere is the player bar's capture settings,
+    # beside the buttons it sets.
+    openers = pg.evaluate("[...document.querySelectorAll('[aria-controls=settings]')].map(b => [b.id, !!b.closest('.topbar'), !!b.closest('.player .capture')]).sort()")
+    gone = pg.evaluate("['btn-units', 'btn-hud', 'btn-keys', 'btn-units-label', 'btn-hud-label'].filter(i => document.getElementById(i))")
+    ok("settings_two_openers", openers == [["btn-cap-settings", False, True], ["btn-gfx", True, False], ["btn-settings", True, False]] and not gone, (openers, gone))
+    # Graphics opens at its section on its current choice. Every other section is one press of its tab away from the
+    # Settings button, and one Tab more lands on its current choice, where the removed buttons put focus.
+    at = {}
+    pg.click("#btn-gfx"); pg.wait_for_timeout(200); s = st()
+    good = (s["open"] and s["modal"] and s["section"] == "graphics" and s["panes"] == ["sp-graphics"] and s["tab"] == "st-graphics" and s["inside"] and s["onChoice"]
+            and sorted(s["expanded"]) == ["btn-gfx", "btn-settings"])
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(200); back = st()
+    at["graphics"] = True if good and not back["open"] and back["focus"] == "btn-gfx" and not back["expanded"] else (s, back)
+    pg.click("#btn-cap-settings"); pg.wait_for_timeout(200); s = st()
+    good = (s["open"] and s["modal"] and s["section"] == "capture" and s["panes"] == ["sp-capture"] and s["tab"] == "st-capture" and s["inside"] and s["onChoice"]
+            and sorted(s["expanded"]) == ["btn-cap-settings", "btn-settings"])
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(200); back = st()
+    at["capture"] = True if good and not back["open"] and back["focus"] == "btn-cap-settings" and not back["expanded"] else (s, back)
+    for sec in ["units", "hud", "keys"]:
+        pg.click("#btn-settings"); pg.wait_for_timeout(200); pg.click("#st-" + sec); pg.wait_for_timeout(150); s = st()
+        good = (s["open"] and s["modal"] and s["section"] == sec and s["panes"] == ["sp-" + sec] and s["tab"] == "st-" + sec and s["focus"] == "st-" + sec
+                and s["expanded"] == ["btn-settings"])
+        if sec != "keys":
+            pg.keyboard.press("Tab"); s2 = st(); good = good and s2["onChoice"] and s2["section"] == sec
+        pg.keyboard.press("Escape"); pg.wait_for_timeout(200); back = st()
+        at[sec] = True if good and not back["open"] and back["focus"] == "btn-settings" and not back["expanded"] else (s, back)
+    ok("settings_openers_open_their_section", all(v is True for v in at.values()), at)
+    pg.click("#btn-settings"); pg.wait_for_timeout(200); s = st()
+    ok("settings_button_opens_where_it_was_left", s["open"] and s["modal"] and s["section"] == "keys" and s["focus"] == "st-keys" and s["expanded"] == ["btn-settings"], s)
+    keys = pg.evaluate("[...document.querySelectorAll('#sp-keys .keys-list dt')].map(d => d.textContent.replace(/\\s+/g, ' ').trim())")
+    ok("settings_lists_the_keys", len(keys) >= 19 and "Shift+S" in keys and "Shift+H" in keys and "? Esc" in keys and ". ," in keys, keys)
+    # A letter means one thing: no lab's tool takes a plain key the list gives the workspace (Fields' Move was V, which
+    # is Next view), and no lab gives two tools one key.
+    plain = pg.evaluate("""[...document.querySelectorAll('#sp-keys .keys-list dt kbd')].filter(k => !/^Shift$/.test(k.textContent) && !(k.previousSibling && /\\+$/.test(k.previousSibling.textContent || ''))).map(k => k.textContent.toLowerCase())""")
+    tool_keys = pg.evaluate("Object.values(PhysicsPlayground.labs).filter(L => L.dock).map(L => [L.id, L.dock.options.map(o => o.key)])")
+    clash = [(lab, k) for lab, ks in tool_keys for k in ks if k in plain] + [(lab, "twice") for lab, ks in tool_keys if len(set(ks)) != len(ks)]
+    ok("tool_keys_are_their_own", "v" in plain and "r" in plain and len(tool_keys) == 6 and not clash and dict(tool_keys)["fields"][2] == "g", (clash, plain))
+    # Look-alikes: restarting the run has its own glyph, kept apart from the resets that set a value back; Graphics has
+    # its own, apart from the Controls tab's; and the stage's status chips are not a second "HUD".
+    glyphs = pg.evaluate("""(() => { const g = s => document.querySelector(s + ' .ms').textContent; const all = [...document.querySelectorAll('.ms')].map(e => e.textContent);
+      return { reset: g('#btn-reset'), speed: g('#speed-reset'), gfx: g('#btn-gfx'), gfxTab: g('#st-graphics'), controls: g('#nt-controls'), replays: all.filter(t => t === 'replay').length,
+        status: document.querySelector('.hud').getAttribute('aria-label'), hudTab: document.getElementById('st-hud').lastChild.textContent.trim(), name: document.querySelector('#btn-reset .sr-only').textContent,
+        saysHud: /\\bHUD\\b/.test(document.body.innerText) }; })()""")
+    ok("look_alikes_apart", glyphs["reset"] == "replay" and glyphs["replays"] == 1 and glyphs["speed"] == "restart_alt" and glyphs["gfx"] == glyphs["gfxTab"] != glyphs["controls"] == "tune"
+       and glyphs["status"] == "Run status" and glyphs["hudTab"] == "Head-up display" and glyphs["name"] == "Restart the run" and not glyphs["saysHud"], glyphs)
+    pg.keyboard.press("ArrowUp"); s0 = st(); pg.keyboard.press("ArrowUp"); s1 = st(); pg.keyboard.press("Home"); s2 = st(); pg.keyboard.press("End"); s3 = st()
+    ok("settings_nav_arrows", s0["section"] == "capture" and s0["focus"] == "st-capture" and s0["panes"] == ["sp-capture"]
+       and s1["section"] == "hud" and s1["focus"] == "st-hud" and s1["panes"] == ["sp-hud"] and s2["section"] == "graphics" and s2["focus"] == "st-graphics"
+       and s3["section"] == "keys" and s3["panes"] == ["sp-keys"], (s0, s1, s2, s3))
+    # Tab and Shift+Tab go round the Graphics section's controls and come back to where they began, never outside.
+    pg.click("#st-graphics"); pg.wait_for_timeout(150)
+    fwd, back = [], []
+    for _ in range(40):
+        pg.keyboard.press("Tab"); s = st(); fwd.append((s["inside"], s["focus"] or "?"))
+    for _ in range(40):
+        pg.keyboard.press("Shift+Tab"); s = st(); back.append((s["inside"], s["focus"] or "?"))
+    stops = len({f for _, f in fwd})
+    ok("settings_traps_focus", all(i for i, _ in fwd + back) and 12 <= stops < 40 and fwd[stops][1] == fwd[0][1] and back[stops][1] == back[0][1], (stops, fwd[:3], back[:3]))
+    # The Capture section's fold, what a dataset holds, is a stop like any control: Tab from the switch before it lands
+    # on its summary with the ring, Enter opens it, and Shift+Tab goes back. The trap had left summaries out, so Tab from
+    # that switch went round to the top of the dialog.
+    pg.click("#st-capture"); pg.wait_for_timeout(150)
+    pg.focus("#sw-tracks"); pg.keyboard.press("Tab"); on_fold = pg.evaluate(ACTIVE)
+    pg.keyboard.press("Enter"); opened = pg.evaluate("document.getElementById('cap-cols').open")
+    pg.keyboard.press("Shift+Tab"); fold_back = pg.evaluate(ACTIVE)
+    ok("settings_tab_reaches_the_capture_fold", on_fold["id"] == "cap-cols-sum" and on_fold["ring"] and opened and fold_back["id"] == "sw-tracks" and st()["inside"], (on_fold, opened, fold_back))
+    # The workspace's keys wait: no restart, no lab, mode or focus change, and Space presses the focused button.
+    t0, run0, mode0 = state("active.t"), running(), state("mode.get()")
+    pg.focus("#st-graphics")
+    for k in ["r", "2", "z", "f", "Space", "m"]:
+        pg.keyboard.press(k)
+    pg.wait_for_timeout(200)
+    ok("settings_holds_the_workspace_keys", st()["open"] and state("active.id") == "fluid" and state("active.t") >= t0 and running() == run0 and state("mode.get()") == mode0
+       and not in_focus() and not state("capture.vrec.mr"), (state("active.t"), t0, running(), state("mode.get()")))
+    # Its own keys: U and ? move to their section, and a second press there closes the dialog, as the sheets they
+    # opened used to; from the workspace they open it again. Shift+S closes, and each close hands focus back to the
+    # Settings button, which opened it.
+    pg.keyboard.press("u"); s1 = st(); pg.keyboard.press("?"); s2 = st(); pg.keyboard.press("?"); pg.wait_for_timeout(150); s3 = st()
+    pg.keyboard.press("u"); pg.wait_for_timeout(150); s4 = st(); pg.keyboard.press("u"); pg.wait_for_timeout(150); s5 = st()
+    pg.keyboard.press("?"); pg.wait_for_timeout(150); s6 = st(); pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s7 = st()
+    ok("settings_own_keys", s1["open"] and s1["section"] == "units" and s1["onChoice"] and s2["open"] and s2["section"] == "keys" and s2["focus"] == "st-keys"
+       and not s3["open"] and s3["focus"] == "btn-settings" and s4["open"] and s4["section"] == "units" and s4["onChoice"] and not s5["open"] and s5["focus"] == "btn-settings"
+       and s6["open"] and s6["section"] == "keys" and s6["focus"] == "st-keys" and not s7["open"] and s7["focus"] == "btn-settings", (s1, s2, s3, s4, s5, s6, s7))
+    # Shift+S opens it from anywhere and leaves Fluid's S tool (Stir) on the plain key; U and ? open their own sections.
+    pg.evaluate(P + ".tool('push')"); blur()
+    pg.keyboard.press("Shift+S"); pg.wait_for_timeout(150); s = st()
+    shift_s = s["open"] and s["section"] == "keys" and s["focus"] == "st-keys" and tool() == "push"
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    pg.keyboard.press("s")
+    ok("shift_s_opens_settings", shift_s and tool() == "stir" and not st()["open"], (s, tool()))
+    pg.keyboard.press("u"); pg.wait_for_timeout(150); s1 = st(); pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    pg.keyboard.press("?"); pg.wait_for_timeout(150); s2 = st(); pg.keyboard.press("Escape"); pg.wait_for_timeout(150); s3 = st()
+    ok("u_and_question_open_their_sections", s1["open"] and s1["section"] == "units" and s1["onChoice"] and s2["open"] and s2["section"] == "keys" and not s3["open"] and s3["focus"] == "", (s1, s2, s3))
+    # The close button and a click on the backdrop close it too; on a desktop it is a centred panel, not the whole page.
+    pg.click("#btn-settings"); settle(pg, "document.getElementById('settings').getAnimations().length === 0", 3000)
+    geo = pg.evaluate("(() => { const r = document.getElementById('settings').getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height, vw: innerWidth, vh: innerHeight }; })()")
+    pg.click("#settings-close"); pg.wait_for_timeout(150); s1 = st()
+    pg.click("#btn-gfx"); pg.wait_for_timeout(150)
+    # A press that begins inside the panel and is let go over the backdrop is a drag off, not a click outside.
+    pg.mouse.move(geo["l"] + geo["w"] / 2, geo["t"] + 20); pg.mouse.down(); pg.mouse.move(geo["l"] / 2, geo["vh"] / 2, steps=4); pg.mouse.up(); pg.wait_for_timeout(150); s0 = st()
+    pg.mouse.click(geo["l"] / 2, geo["vh"] / 2); pg.wait_for_timeout(150); s2 = st()
+    ok("settings_close_and_backdrop", not s1["open"] and s1["focus"] == "btn-settings" and not s2["open"] and s2["focus"] == "btn-gfx", (s1, s2))
+    ok("settings_drag_off_stays_open", s0["open"] and s0["section"] == "graphics", s0)
+    ok("settings_centred_on_desktop", geo["w"] < geo["vw"] - 40 and geo["h"] < geo["vh"] - 40 and abs(geo["l"] - (geo["vw"] - geo["w"]) / 2) < 2 and abs(geo["t"] - (geo["vh"] - geo["h"]) / 2) < 2, geo)
+    pg.context.close()
+
+    # A phone: the Settings button in the top bar, and the dialog fills the screen with the sections across its top,
+    # all five in view, and nothing wider than the screen in any section.
+    ctx = b.new_context(viewport={"width": 390, "height": 844})
+    pg = open_page(ctx); pg.goto(URL + "#gravity")
+    pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(400)
+    btn = pg.locator("#btn-settings").bounding_box()
+    pg.click("#btn-settings"); pg.wait_for_timeout(250)
+    phone = {}
+    for sec in ["graphics", "units", "hud", "capture", "keys"]:
+        pg.click("#st-" + sec); pg.wait_for_timeout(120)
+        phone[sec] = pg.evaluate("""(() => { const d = document.getElementById('settings').getBoundingClientRect(), b = document.getElementById('settings-body'), t = [...document.querySelectorAll('#settings-tabs [role=tab]')].map(e => e.getBoundingClientRect());
+          return { d: [d.left, d.top, d.width, d.height].map(Math.round), over: b.scrollWidth - b.clientWidth, tabs: t.every(r => r.left >= 0 && r.right <= innerWidth && Math.abs(r.top - t[0].top) < 1),
+            orient: document.getElementById('settings-tabs').getAttribute('aria-orientation'), page: document.documentElement.scrollWidth - innerWidth }; })()""")
+    ok("settings_phone_fills_the_screen", btn is not None and btn["x"] + btn["width"] <= 390 and all(v["d"] == [0, 0, 390, 844] and v["over"] <= 0 and v["tabs"] and v["orient"] == "horizontal" and v["page"] <= 0 for v in phone.values()), phone)
+    ctx.close()
+
     # ---- Selection: the workspace is an instrument, not a document. A click, drag or double-click never paints a
     # highlight over its words, on any page, pane, sheet or menu, in 2D or 3D; text fields still select, as typing
     # needs; and .selectable is the one way to let a block be copied.
@@ -471,7 +697,9 @@ with sync_playwright() as p:
     pg.evaluate("(() => { const L = PhysicsPlayground.active; L.track = L.bodies[1].id; })()"); pg.wait_for_timeout(600)
     for pane in ["inspect", "insights", "telemetry"]:
         pg.click("#dt-" + pane); pg.wait_for_timeout(300); sweep("deck_" + pane)
-    for btn, where in [("#btn-keys", "keyboard_sheet"), ("#btn-units", "units_menu"), ("#btn-hud", "hud_sheet"), ("#btn-gfx", "graphics_menu"), ("#scene-btn", "scene_menu")]:
+    for sec, where in [("keys", "settings_keyboard"), ("units", "settings_units"), ("hud", "settings_hud")]:
+        pg.click("#btn-settings"); pg.wait_for_timeout(200); pg.click("#st-" + sec); pg.wait_for_timeout(300); sweep(where); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
+    for btn, where in [("#btn-cap-settings", "settings_capture"), ("#btn-gfx", "settings_graphics"), ("#btn-settings", "settings"), ("#scene-btn", "scene_menu")]:
         pg.click(btn); pg.wait_for_timeout(300); sweep(where); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
     pg.click("#mode-3d"); settle(pg, "PhysicsPlayground.mode.is3D()", 30000); pg.wait_for_timeout(800); sweep("3d")
     ok("nothing_in_the_workspace_selects", not leaks, leaks)

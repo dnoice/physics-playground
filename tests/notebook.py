@@ -1,17 +1,28 @@
 """
 ✒ Metadata
-    - Title: Notebook Tests (digiSpace Edition - v2.5)
+    - Title: Notebook Tests (digiSpace Edition - v2.19)
     - File Name: notebook.py
     - Relative Path: tests/notebook.py
     - Artifact Type: test
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
+      Inspect focus check selects its ball through select(). On Dennis's call
+      for one timeline: the Library's capture-card checks became checks of the
+      player bar's cluster: Record data starts and stops a recording, its line
+      counts rows and its tooltip follows, the stage's light is status and the
+      timeline marks it, and the Library keeps the dataset with no capture
+      cards of its own. On Dennis's call for drag handles: the deck goes tall
+      from its grip's End key, the size button being gone. On Dennis's call
+      for a duplication sweep: the Guide holds no buttons, its legend matches
+      the rail glyph for glyph and key for key, and the scene menu loads
+      scenes.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created for
       release 2.5.0: the Math page's live panels, the Guide's cards, the
       Library's capture cards and the Inspect pane's focus chart. The Guide's
@@ -21,8 +32,9 @@
     Checks that the notebook is wired to the simulation in the flat view:
     live formulas read the run and their sliders change it in step with
     Controls, theory checks agree with what the run measures, the Guide's
-    cards pick tools and load scenes, the Library's cards start and stop a
-    capture, and the Inspect pane follows a figure over time.
+    cards pick tools and load scenes, the player bar's capture cluster
+    starts and stops a recording that the Library then keeps, and the
+    Inspect pane follows a figure over time.
 
 ✒ Key Features:
     - Every lab's Math page builds live panels without errors.
@@ -32,7 +44,10 @@
       system.
     - Guide: a tool card selects the tool and marks it; a keyboard change
       moves the mark; a scene card loads the scene.
-    - Library: the dataset card starts and stops a recording.
+    - Capture: Record data in the player bar starts and stops a recording,
+      its line counts the rows, the stage's recording light (status, not a
+      button) and the timeline show it, and the Library keeps the dataset
+      but no capture cards of its own.
     - Inspect: the focus chart sits inside the pane and follows the figure
       that is clicked.
 
@@ -46,8 +61,9 @@
       Windows, macOS and Linux
 ---------
 """
+import re
 from playwright.sync_api import sync_playwright
-from harness import URL, finish, launch, ok, open_page, settle
+from harness import URL, finish, launch, ok, open_page, scene, settle
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
@@ -100,36 +116,62 @@ with sync_playwright() as p:
     ok("gravity_live_has_plot_free_panels", pg.locator("#math .f-live").count() == 5)
     pg.context.close()
 
-    # ---- Guide: cards pick tools, follow the keyboard and load scenes
+    # ---- Guide: a static legend of what the rail picks; the rail, its keys and the scene menu do the picking
     pg = fresh("waves")
     pg.click("#nt-guide"); pg.wait_for_timeout(300)
-    cards = pg.locator("#guide .g-card")
-    # Five tools, the Random switch that sits with them, and two views.
-    ok("guide_has_tool_and_view_cards", cards.count() == 8 and pg.locator("#guide .g-switch").count() == 1, cards.count())
-    cards.nth(1).click(); pg.wait_for_timeout(300)
-    ok("tool_card_selects_tool", state("active.p.tool") == "wall" and cards.nth(1).get_attribute("aria-pressed") == "true")
-    pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("e"); pg.wait_for_timeout(600)
-    ok("guide_follows_keyboard", cards.nth(2).get_attribute("aria-pressed") == "true" and cards.nth(1).get_attribute("aria-pressed") == "false")
-    pg.locator("#guide .g-scene", has_text="Two sources").click(); pg.wait_for_timeout(500)
-    ok("scene_card_loads_scene", state("active.presetId") == "twosrc" and pg.locator("#guide .g-scene[aria-pressed=true]").inner_text().strip().endswith("Two sources"))
+    # Nothing in the Guide is a control: no scene, tool or Random buttons, nothing pressed, nothing to tab to.
+    live = pg.evaluate("[...document.querySelectorAll('#guide button, #guide [role=button], #guide [aria-pressed], #guide [tabindex], #guide a[href], #guide input')].length")
+    ok("guide_has_no_buttons", live == 0 and pg.locator("#guide .g-card, #guide .g-scene, #guide .g-switch").count() == 0, live)
+    # Five tools, the Random row that sits with them, and two views: each the rail's glyph, its name and its key.
+    rows = pg.evaluate("[...document.querySelectorAll('#guide .g-row')].map(r => [r.querySelector('.ms').textContent, r.querySelector('.g-name').textContent, (r.querySelector('kbd') || {}).textContent || '', r.querySelector('.g-hint').textContent.length > 0])")
+    rail = pg.evaluate("[...document.querySelectorAll('#dock .dock-btn, #views .view-btn')].map(b => [b.querySelector('.ms').textContent, b.dataset.tip.split(' · ')[1]])")
+    legend = [r for r in rows if r[1] != "Random"]
+    ok("guide_legend_matches_rail", len(rows) == 8 and [[r[0], r[2]] for r in legend] == rail and all(r[3] for r in rows)
+       and [r[1] for r in rows if r[1] == "Random"] == ["Random"] and rows[5][0] == "casino", (rows, rail))
+    # The rail and the keys pick; the legend stays as it was, since it marks nothing.
+    before = pg.inner_html("#guide")
+    pg.click("#dock-waves-wall"); pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("e"); pg.wait_for_timeout(600)
+    ok("rail_and_keys_pick_tools", state("active.p.tool") == "erase" and pg.inner_html("#guide") == before, state("active.p.tool"))
+    # The Scenes line names every scene and points to the menu, which loads one.
+    names = pg.evaluate("PhysicsPlayground.active.presets.map(p => p.label)")
+    line = pg.inner_text("#guide .g-sec:nth-of-type(3) .g-lead")
+    scene(pg, "#preset-waves-twosrc"); pg.wait_for_timeout(500)
+    ok("scene_menu_loads_scene", state("active.presetId") == "twosrc" and all(n in line for n in names) and "menu" in line and pg.inner_text("#stage-scene").strip() == "Two sources", line)
     pg.context.close()
 
-    # ---- Library: the dataset card starts and stops a recording
+    # ---- Capture: one cluster in the player bar records and saves; the Library keeps only what was saved. Record data
+    # starts and stops a recording, its line counts the rows, the stage's light and the timeline show it while it runs.
     pg = fresh("collisions")
     pg.click("#nt-library"); pg.wait_for_timeout(300)
-    ok("capture_cards_shown", pg.locator("#lib-capture .cap-card").count() == 3 and "columns" in pg.inner_text("#lib-capture"))
-    run = pg.locator("#lib-capture .cap-card[data-kind=run]")
+    names = pg.evaluate("[...document.querySelectorAll('.player .capture .cap-btn')].map(b => [b.id, b.querySelector('.cap-name').textContent])")
+    ok("capture_cluster_in_player", names == [["btn-rec", "Record clip"], ["btn-data", "Record data"], ["btn-state", "Save state"]]
+       and re.fullmatch(r"\d+ cols · \d+ Hz", pg.inner_text("#btn-data-sub")) is not None and pg.locator("#btn-cap-settings").is_visible(), (names, pg.inner_text("#btn-data-sub")))
+    ok("library_has_no_capture_cards", pg.locator(".cap-card, #lib-capture, #np-library .lib-tog").count() == 0 and pg.locator("#np-library .lib-sec").count() == 1
+       and "player bar" in pg.inner_text("#lib-empty"), pg.inner_text("#lib-empty"))
+    run = pg.locator("#btn-data")
     run.click(); pg.wait_for_timeout(1200)
-    ok("dataset_card_starts", state("capture.dataRec.on") is True and run.get_attribute("aria-pressed") == "true" and "Stop" in run.inner_text())
+    light = pg.evaluate("(() => { const r = document.getElementById('hud-rec'); return { tag: r.tagName, shown: !r.hidden, text: r.textContent, cursor: getComputedStyle(r).cursor, tab: r.tabIndex }; })()")
+    ok("dataset_button_starts", state("capture.dataRec.on") is True and run.get_attribute("aria-pressed") == "true" and pg.inner_text("#btn-data-label") == "Stop data"
+       and run.get_attribute("title") == "Stop the dataset and keep it in the Library (D)"
+       and re.fullmatch(r"[\d,]+ rows", pg.inner_text("#btn-data-sub")) is not None, pg.inner_text("#btn-data-sub"))
+    ok("recording_light_is_status_not_a_button", light["tag"] == "SPAN" and light["shown"] and re.fullmatch(r"REC [\d,]+ rows", light["text"]) is not None
+       and light["cursor"] != "pointer" and light["tab"] < 0, light)
+    # The span is placed, not only shown: it begins inside the track and reaches the live end, so it has a width.
+    span = pg.evaluate("(s => ({ shown: !s.hidden, left: parseFloat(s.style.left), width: s.getBoundingClientRect().width, clip: !document.getElementById('tl-clip').hidden }))(document.getElementById('tl-data'))")
+    ok("timeline_marks_the_recording", span["shown"] and span["left"] < 100 and span["width"] > 0 and not span["clip"], span)
     run.click()
     settle(pg, "!PhysicsPlayground.capture.dataRec.on && PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')", 10000)
-    ok("dataset_card_stops_and_saves", not state("capture.dataRec.on") and pg.evaluate("PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')"))
+    pg.wait_for_timeout(300)
+    ok("dataset_button_stops_and_saves", not state("capture.dataRec.on") and pg.evaluate("PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')")
+       and run.get_attribute("aria-pressed") == "false" and pg.inner_text("#btn-data-label") == "Record data" and run.get_attribute("title").endswith("(D)")
+       and pg.evaluate("document.getElementById('hud-rec').hidden && document.getElementById('tl-data').hidden") and pg.locator("#lib-list .lib-item[data-kind=run]").count() == 1)
     pg.context.close()
 
     # ---- Inspect: the focus chart sits inside the pane and follows the clicked figure
     pg = fresh("collisions")
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400)
-    pg.evaluate("PhysicsPlayground.active.picked = 5")
+    # The deck's grip picks the tall preset with End (the size button it replaced stepped standard to tall).
+    pg.focus("#deck-grip"); pg.keyboard.press("End"); pg.wait_for_timeout(400)
+    pg.evaluate("(() => { const L = PhysicsPlayground.active; L.select(L.uid[5]); })()")
     settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
     pg.wait_for_timeout(2500)
     deck, plot = pg.locator("#tile-deck").bounding_box(), pg.locator("#details-plot").bounding_box()

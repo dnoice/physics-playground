@@ -1,44 +1,52 @@
 /*
 ✒ Metadata
-    - Title: Stage Styles (digiSpace Edition - v2.6)
+    - Title: Stage Styles (digiSpace Edition - v2.19)
     - File Name: stage.css
     - Relative Path: css/stage.css
     - Artifact Type: stylesheet
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button in the gizmo area: the camera row sets
+      Select, Pan and Frame side by side, three equal buttons on the rail and
+      fixed squares in the narrow bar. On Dennis's call for one timeline: the
+      player bar as a grid with the timeline on top, the run's marks on the
+      rewind track, and the capture cluster, one colour per kind (red clip,
+      cyan data, green state), narrowing to a row of its own below 780 px of
+      tile and to live lines only on a phone. On his call for chips that do
+      not look clickable: the status line's readings are plain monospaced text
+      with no pill, hover or pointer, the recording light is status, and only
+      the notices and the director's chip are buttons, with a focus ring.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: the director's chip,
+      amber with a steady dot.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — On a narrow
       stage, where the rail becomes a sideways scroller, the side with more
       tools beyond it fades out, so a cut-off tool reads as more to come; at
       390 px six labs' bars overflow, by up to 196 px in Waves.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail's
-      Random dice: a toggle the size of a tool, dashed while off and lit amber
-      while on, that rolls when it turns on. With an odd number of tools it
-      takes the empty cell of their last row, so the rail grows only when the
-      tools fill their rows and still fits a 1440 by 900 stage in every lab;
-      it sits inline in the bottom bar at 720 px and below. The section gap
-      and tool height are variables the short-stage rules set.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The rail
-      hangs from the top-right corner instead of centring on the stage edge,
-      so its camera group no longer moves between labs; it gains a named View
-      group, focus rings, larger axis targets, and captions and the axis ball
-      that give way on short stages.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The stage tile: header transport, live stage with HUD, experiment banner,
-    the stage rail, overview map and the rewind timeline.
+    The stage tile: the live stage with its title and status line,
+    experiment banner, the stage rail and overview map, and the player bar:
+    the rewind timeline with the run's marks, the transport, the speed and
+    the capture cluster.
 
 ✒ Key Features:
     - The header never wraps on content; long scene names truncate so the
       stage keeps its size.
-    - Transport labels hide below 960 px of tile width.
-    - Experiment banner below the HUD row.
+    - The status line's readings are plain text; only its real buttons
+      wear a pill, a hover and a focus ring.
+    - The player bar keeps every name and live line from a desktop to a
+      phone: keys go below 1000 px of tile, Play's word below 860 px, and
+      below 780 px the capture cluster takes a row of its own.
+    - Experiment banner below the run's status chips.
     - The rail sits at a fixed offset from the top-right corner; Camera first,
       then Tools with the Random dice, View and This scene.
     - View options carry their names; at 720 px and below the rail becomes a
@@ -77,18 +85,106 @@
 }
 .scene-menu[hidden] { display: none; }
 .transport { display: flex; align-items: center; gap: 4px; flex: none; }
-.player { display: flex; align-items: center; gap: 14px; padding: 8px 12px; background: color-mix(in oklab, var(--bench) 55%, transparent); box-shadow: inset 0 1px 0 var(--hair); min-width: 0; }
+/* ---------- the player bar: one transport for time, laid out as a video player's ---------- */
+/* The timeline runs the full width on top; beneath it are the transport and the speed at the left and the capture
+   cluster at the right. One colour per kind runs through the cluster and the marks it leaves: red for a clip, cyan for
+   data, green for a saved state. */
+.player {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "time time time time" "transport speed . capture";
+  align-items: center; column-gap: 14px; row-gap: 1px; padding: 3px 12px 7px; min-width: 0;
+  background: color-mix(in oklab, var(--bench) 55%, transparent); box-shadow: inset 0 1px 0 var(--hair);
+}
+.player > .timeline { grid-area: time; }
+.player > .transport { grid-area: transport; }
+.player > .speed { grid-area: speed; }
+.player > .capture { grid-area: capture; }
 .player .btn { min-height: 36px; border-radius: 10px; }
+.player .range-wrap > input { display: block; }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--muted); padding-inline: 9px; }
 .btn-ghost:hover { color: var(--text); background: color-mix(in oklab, var(--text) 7%, transparent); border-color: transparent; }
-.speed { display: flex; align-items: center; gap: 7px; flex: none; color: var(--muted); }
+.speed { display: flex; align-items: center; gap: 7px; flex: none; min-width: 0; color: var(--muted); }
 .speed .ms { font-size: 18px; }
 .speed .range-wrap { width: 92px; }
 .speed .ctl-val { min-width: 3.4em; text-align: right; color: var(--text); }
-.capture { display: flex; gap: 2px; flex: none; }
-.btn-ghost.btn-rec .ms { color: var(--crit); }
-@container tile (max-width: 900px) { .capture .lbl { display: none; } .player { gap: 10px; } }
-@container tile (max-width: 680px) { .speed .range-wrap { width: 60px; } .player { flex-wrap: wrap; } .timeline { order: 5; flex-basis: 100%; } }
+/* The run's marks on the rewind track, inset by the thumb's half-width as the track is. A running recording's span
+   lies under the track from where it began to the live end, and each state saved in this run stands above it as a
+   tick. They take no press: the track is the control. */
+.tl-marks { position: absolute; inset: 0 7px; pointer-events: none; }
+.tl-span { position: absolute; right: 0; top: 16px; height: 3px; border-radius: 2px; background: var(--crit); box-shadow: 0 0 6px color-mix(in oklab, var(--crit) 55%, transparent); }
+.tl-span.data { background: var(--cyan); box-shadow: 0 0 6px color-mix(in oklab, var(--cyan) 50%, transparent); }
+#tl-clip:not([hidden]) ~ .tl-span.data { top: 20px; }
+.tl-tick { position: absolute; top: 2px; width: 2px; height: 7px; margin-left: -1px; border-radius: 1px; background: var(--ok); }
+/* The capture cluster: each button a mark, its name over a live line, and its key. */
+.capture { display: flex; align-items: center; gap: 3px; justify-self: end; padding-left: 10px; box-shadow: inset 1px 0 0 var(--hair); }
+.cap-btn {
+  --k: var(--crit); appearance: none; position: relative; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px 0 8px; min-width: 0;
+  border: 0; border-radius: 10px; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
+}
+.cap-btn[data-kind="run"] { --k: var(--cyan); }
+.cap-btn[data-kind="state"] { --k: var(--ok); }
+.cap-btn:hover:not(:disabled) { background: color-mix(in oklab, var(--text) 7%, transparent); }
+.cap-btn:active:not(:disabled) { transform: scale(0.97); }
+.cap-btn:disabled { cursor: not-allowed; opacity: 0.45; }
+.cap-text { display: grid; gap: 3px; min-width: 0; }
+.cap-name { font: 600 12.5px/1.05 var(--font-body); white-space: nowrap; }
+.cap-sub { font: 400 10.5px/1.1 var(--font-mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.cap-btn kbd { flex: none; padding: 2px 4px; font-size: 10px; color: var(--muted); }
+/* The mark: a ring holding the kind's record dot, or the state's bookmark. Recording, it becomes a stop square on a
+   pulsing disc of the kind's colour. */
+.cap-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--k); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--text) 26%, transparent); transition: background 0.2s, box-shadow 0.2s; }
+.cap-btn:hover:not(:disabled) .cap-mark { box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--k) 75%, transparent); }
+.cap-btn:not([data-kind="state"]) .cap-mark::before {
+  content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--k); box-shadow: 0 0 8px color-mix(in oklab, var(--k) 55%, transparent);
+  transition: width 0.2s var(--ease), height 0.2s var(--ease), border-radius 0.2s var(--ease), background 0.2s;
+}
+.cap-btn[data-kind="state"] .cap-mark::before {
+  content: "bookmark"; content: "bookmark" / ""; font-family: "Material Symbols Rounded"; font-size: 15px; line-height: 1;
+  font-feature-settings: "liga"; -webkit-font-feature-settings: "liga"; font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20;
+}
+html.no-icons .cap-btn[data-kind="state"] .cap-mark::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--k); }
+.cap-btn[aria-pressed="true"] { background: color-mix(in oklab, var(--k) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--k) 52%, transparent); }
+.cap-btn[aria-pressed="true"] .cap-mark { background: var(--k); box-shadow: none; animation: ping 1.6s ease-out infinite; }
+.cap-btn[aria-pressed="true"] .cap-mark::before { width: 8px; height: 8px; border-radius: 1.5px; background: #fff; box-shadow: none; }
+.cap-btn[aria-pressed="true"] .cap-sub { color: var(--text); }
+/* Saved: the state's button confirms for a moment. */
+.cap-btn.is-saved { background: color-mix(in oklab, var(--ok) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ok) 50%, transparent); }
+.cap-btn.is-saved .cap-sub { color: var(--text); }
+/* Its settings: the clip quality, the director, the data rate and tracks, in the Capture section of Settings. */
+.cap-set {
+  appearance: none; flex: none; display: grid; place-items: center; width: 34px; height: 34px; margin-left: 1px; padding: 0; border: 0; border-radius: 10px;
+  background: none; color: var(--muted); cursor: pointer; transition: color 0.15s, background 0.15s;
+}
+.cap-set .ms { font-size: 20px; }
+.cap-set:hover, .cap-set[aria-expanded="true"] { color: var(--text); background: color-mix(in oklab, var(--text) 8%, transparent); }
+/* Narrower bars keep every name and live line: the keys go first, then Play's word and the speed glyph; below 780 px the
+   cluster takes a row of its own, and on a phone a button's line shows only while it says something live. */
+@container tile (max-width: 1000px) { .cap-btn kbd { display: none; } .cap-btn { padding-right: 9px; } }
+@container tile (max-width: 860px) {
+  .player { column-gap: 10px; }
+  .speed > .ms { display: none; }
+  .speed .range-wrap { width: 76px; }
+  #btn-play-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #btn-play { padding-inline: 9px; }
+}
+@container tile (max-width: 780px) {
+  .player { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "time time" "transport speed" "capture capture"; row-gap: 3px; }
+  .speed .range-wrap { flex: 1; width: auto; min-width: 60px; max-width: 240px; }
+  .capture { justify-self: stretch; padding: 4px 0 0; box-shadow: inset 0 1px 0 var(--hair); }
+  .cap-btn { flex: 1 1 0; justify-content: center; }
+}
+@container tile (max-width: 520px) {
+  .player { padding-inline: 10px; }
+  .timeline { gap: 7px; }
+  .capture { gap: 2px; }
+  .cap-btn { gap: 5px; padding: 0 4px; }
+  .cap-mark, .cap-btn:hover:not(:disabled) .cap-mark { width: 14px; height: 14px; box-shadow: none; }
+  .cap-btn[aria-pressed="true"] .cap-mark::before { width: 6px; height: 6px; }
+  .cap-btn[data-kind="state"] .cap-mark::before { font-size: 14px; }
+  .cap-name { font-size: 11.5px; }
+  .cap-sub { font-size: 9px; }
+  .cap-btn:not([aria-pressed="true"], .is-saved, :disabled) .cap-sub { display: none; }
+}
 .stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--ink); container: stage / size; }
 /* The 3D stage is a window into a room: a recessed edge sells the depth behind it. */
 .stage[data-mode="3d"]::after {
@@ -96,10 +192,10 @@
   box-shadow: inset 0 0 0 1px color-mix(in oklab, white 5%, transparent), inset 0 22px 34px -26px rgba(0, 0, 0, 0.85), inset 0 -22px 34px -26px rgba(0, 0, 0, 0.7);
 }
 #stage-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
-.timeline { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; color: var(--muted); }
+.timeline { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--muted); }
 .timeline .ms { font-size: 18px; }
 .timeline .range-wrap { flex: 1; min-width: 60px; }
-.timeline .ctl-out { flex: none; color: var(--muted); font-size: 11.5px; }
+.timeline .ctl-out { flex: none; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
 .exp-banner {
   position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 4; max-width: min(560px, calc(100% - 140px));
   display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; font-size: 12.5px;
@@ -112,22 +208,31 @@
 .exp-banner[data-done="true"] .ms { color: var(--ok); }
 .exp-banner .bar { width: 70px; height: 4px; border-radius: 2px; background: var(--rule); overflow: hidden; flex: none; }
 .exp-banner .bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--ok)); transition: width 0.3s var(--ease); }
+/* ---------- the stage's status line ---------- */
+/* Readings are plain text, as the scale bar is: monospaced figures over a soft shadow, with no pill, no hover and no
+   pointer, so nothing that only reports looks pressable. The recording light is status too, a dot that blinks while
+   anything records (red for a clip, cyan for data alone); its stop is the button that started it. Only the real buttons
+   (the notices, the director) are pills, with a hover and a focus ring. */
+.hud { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; pointer-events: none; }
+.hud-status, .hud-rec {
+  margin: 0; padding: 0 2px; font: 500 11.5px/1.5 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: color-mix(in oklab, var(--text) 84%, var(--muted)); text-shadow: 0 1px 2px rgba(2, 5, 9, 0.95), 0 0 8px rgba(2, 5, 9, 0.75);
+}
+.hud-status { display: inline-flex; gap: 14px; }
+#hud-fps { color: var(--muted); }
+.hud-rec { display: inline-flex; align-items: center; gap: 7px; color: var(--crit); }
+.hud-rec::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blink 1s steps(2, start) infinite; }
+.hud-rec[data-kind="run"] { color: var(--cyan); }
 .chip {
-  font: 400 11.5px/1 var(--font-mono); color: color-mix(in oklab, var(--text) 72%, var(--muted)); font-variant-numeric: tabular-nums;
-  background: var(--glass); border: 0; box-shadow: inset 0 0 0 1px var(--hair); border-radius: 999px; padding: 6px 10px;
-  -webkit-backdrop-filter: blur(10px) saturate(1.3); backdrop-filter: blur(10px) saturate(1.3);
+  --ring: var(--hair); pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+  font: 500 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); background: var(--glass);
+  border: 0; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ring); transition: transform 0.15s var(--ease), background 0.2s, box-shadow 0.2s;
 }
-.hud { display: flex; flex-wrap: wrap; gap: 5px; pointer-events: none; }
-.hud .pill[data-state="run"] { color: var(--ok); }
-.hud .pill[data-state="pause"] { color: var(--amber); }
-#hud-rate[data-state="warn"] { color: var(--warn); }
-.hud-alert {
-  pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: var(--warn);
-  border-color: color-mix(in oklab, var(--warn) 45%, var(--rule)); transition: transform 0.15s var(--ease), background 0.2s;
-}
+.chip:hover { transform: translateY(-1px); background: color-mix(in oklab, var(--glass) 70%, currentColor 12%); box-shadow: inset 0 0 0 1px currentColor; }
+.chip:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.hud-alert { --ring: color-mix(in oklab, var(--warn) 45%, var(--rule)); color: var(--warn); }
 .hud-alert::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 0 currentColor; animation: ping 1.8s ease-out infinite; }
-.hud-alert[data-level="crit"] { color: var(--crit); border-color: color-mix(in oklab, var(--crit) 50%, var(--rule)); }
-.hud-alert:hover { transform: translateY(-1px); background: color-mix(in oklab, var(--glass) 70%, var(--warn) 12%); }
+.hud-alert[data-level="crit"] { --ring: color-mix(in oklab, var(--crit) 50%, var(--rule)); color: var(--crit); }
 @keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 7px transparent; } }
 .stage-hint {
   position: absolute; left: 12px; bottom: 10px; margin: 0; max-width: calc(100% - 24px); pointer-events: none;
@@ -157,6 +262,9 @@
 .nav-btn:hover, .nav-zoom:hover { color: var(--text); background: color-mix(in oklab, var(--text) 9%, transparent); }
 .nav-btn:active { transform: scale(0.94); }
 .nav-btn[aria-pressed="true"] { color: #1a1206; background: var(--amber); }
+/* The camera row holds Select, Pan and Frame side by side: three equal buttons on the rail, fixed squares in the bar. */
+.nav-row .nav-btn { flex: 1 1 0; width: auto; min-width: 0; }
+@container stage (max-width: 720px) { .nav-row .nav-btn { flex: none; width: 36px; } }
 .nav-zoom { flex: 1; height: 30px; font: 500 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); cursor: ns-resize; touch-action: none; }
 .nav-extra { display: flex; flex-wrap: wrap; gap: 4px; }
 .nav-extra:empty { display: none; }
@@ -262,9 +370,9 @@
 
 .nav-btn .ms { font-size: 19px; }
 .hud [hidden] { display: none !important; }
-.hud-rec { pointer-events: auto; cursor: pointer; color: var(--crit); border-color: color-mix(in oklab, var(--crit) 50%, var(--rule)); display: inline-flex; align-items: center; gap: 6px; }
-.hud-rec::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blink 1s steps(2, start) infinite; }
-.hud-rec.data { color: var(--cyan); border-color: color-mix(in oklab, var(--cyan) 45%, var(--rule)); }
+/* The director's chip: a button, amber like the camera's own marks, with a steady dot, since the recording light blinks. */
+.hud-dir { --ring: color-mix(in oklab, var(--amber) 45%, var(--rule)); color: var(--amber); }
+.hud-dir::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .exp-b-text { display: grid; gap: 2px; min-width: 0; }
 .exp-b-text b { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exp-b-text span { font: 400 11px/1.35 var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

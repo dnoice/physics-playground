@@ -1,27 +1,29 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.10)
+    - Title: Transport and Keys (digiSpace Edition - v2.19)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.10.0
-    - Date: 11/14/2026
-    - Update: Saturday, November 14, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a select button: Q turns Select on and off. On
+      Dennis's call for chips that do not look clickable: the Running pill on
+      the stage is gone, since the Play button already says whether the run
+      plays.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: Shift+S opens Settings, ahead of
+      the tool letters so a lab whose tool is S keeps the plain key, and U and
+      ? open it at Units and Keyboard. While it is open the workspace's keys
+      wait, and keys that reach the page go to the dialog.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The + and
       - keys take the lab's zoomPace.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Shift+H
-      shows or hides the head-up display, ahead of the tool letters so a lab
-      whose tool is H keeps it; Escape also closes the HUD menu; a held H acts
-      once.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — V steps
-      through the active lab's views and U opens the Units menu; Escape closes
-      the Units menu. The diagnostics sheet it used to close is now the deck's
-      Insights pane.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -31,8 +33,9 @@
     - Space toggles play unless it is held to pan; period steps; comma
       rewinds.
     - 1–7 switch labs, letters pick tools, F focuses the stage, Shift+B
-      hides the bay, ? opens the keys.
-    - R resets, M records video, D records data, [ and ] change speed.
+      hides the bay, Shift+S opens Settings, and U and ? open it at Units and
+      at the keys.
+    - R resets, M records a clip, D records data, [ and ] change speed.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -53,10 +56,11 @@ import { drawChart, rangeMap, updateReadouts } from './panel.js';
 import { ptr, refreshCursor } from './stage.js';
 import { active, announce, canvas, perf, stageEl, state } from './state.js';
 import { selectLab } from './workspace.js';
-import { closeSceneMenu, hasBay, isFocus, setBay, setFocus, setKeys } from './layout.js';
-import { closeGfx, toggleMode } from './mode.js';
-import { closeUnits, setUnits } from './unitmenu.js';
-import { closeHudSheet, toggleHud } from './headsup.js';
+import { closeSceneMenu, hasBay, isFocus, setBay, setFocus } from './layout.js';
+import { toggleMode } from './mode.js';
+import { toggleHud } from './headsup.js';
+import { openSettings, settingsKey, settingsOpen } from './settings.js';
+import { toggleSelectMode } from './navigator.js';
 
 /* ---------- transport and keys ---------- */
 export const speedInput = $('#ctl-speed'), speedMap = rangeMap({ min: 0.1, max: 4, log: true });
@@ -71,7 +75,6 @@ export function setSpeed(v) { state.speed = clamp(Number(v.toPrecision(3)), 0.1,
 export function updatePlay() {
   $('#btn-play-label').textContent = state.running ? 'Pause' : 'Play';
   $('#btn-play-icon').textContent = state.running ? 'pause' : 'play_arrow';
-  const pill = $('#hud-state'); pill.dataset.state = state.running ? 'run' : 'pause'; pill.textContent = state.running ? 'Running' : 'Paused';
 }
 export function play() { histBranch(active); state.running = true; perf.slow = 0; updatePlay(); announce('Running'); }
 export function pause() { state.running = false; updatePlay(); announce('Paused'); }
@@ -94,11 +97,13 @@ export function init() {
   $('#btn-reset').addEventListener('click', resetActive);
   document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // While Settings is open its keys are its own (settings.js), and the workspace's wait behind it.
+    if (settingsOpen()) { settingsKey(e); return; }
     const t = e.target, tag = t && t.tagName, typing = tag === 'TEXTAREA' || (tag === 'INPUT' && t.type !== 'range');
     if (typing) return;
     const k = e.key;
     // One action per press: holding a key must not chain clips or flip the layout back and forth.
-    if (e.repeat && (/^[rfmdz?]$/i.test(k) || e.code === 'KeyB' || e.code === 'KeyH')) return;
+    if (e.repeat && (/^[rfmdz?]$/i.test(k) || e.code === 'KeyB' || e.code === 'KeyH' || e.code === 'KeyS')) return;
     if (k === ' ' || e.code === 'Space') {
       if (tag === 'BUTTON' && pointerFocus) t.blur();
       else if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'A' || tag === 'SUMMARY') return;
@@ -118,15 +123,18 @@ export function init() {
     else if (e.code === 'KeyB' && e.shiftKey) { setBay(!hasBay()); announce(hasBay() ? 'Instruments shown' : 'Instruments hidden'); }
     // Shift+H, ahead of the tool letters, so a lab whose tool is H keeps it on the plain key.
     else if (e.code === 'KeyH' && e.shiftKey) toggleHud();
-    else if (k === '?') { e.preventDefault(); setKeys(document.getElementById('keys-sheet').hidden); }
+    // Shift+S opens Settings, also ahead of the tool letters, so Fluid's Stir and Waves' Source keep the plain key.
+    else if (e.code === 'KeyS' && e.shiftKey) { e.preventDefault(); openSettings(); }
+    else if (k === '?') { e.preventDefault(); openSettings('keys'); }
     else if (k === 'z' || k === 'Z') toggleMode();
-    else if (k === 'u' || k === 'U') setUnits(document.getElementById('units-sheet').hidden);
-    else if (k === 'Escape') { if (closeSceneMenu() || closeGfx() || closeUnits() || closeHudSheet()) return; if (!document.getElementById('keys-sheet').hidden) { setKeys(false); document.getElementById('btn-keys').focus(); } }
+    else if (k === 'u' || k === 'U') { e.preventDefault(); openSettings('units'); }
+    else if (k === 'Escape') closeSceneMenu();
     else if (k === ',') { e.preventDefault(); rewindStep(-1); }
     else if (k === 'm' || k === 'M') toggleVideo();
     else if (k === 'd' || k === 'D') toggleData();
     else if (k === '[') setSpeed(state.speed / 2);
     else if (k === ']') setSpeed(state.speed * 2);
+    else if (k === 'q' || k === 'Q') { if (!e.repeat) toggleSelectMode(); }
     else if (/^[1-9]$/.test(k) && labs[+k - 1]) selectLab(labs[+k - 1].id);
     else if ((k === 'v' || k === 'V') && active && active.views) { e.preventDefault(); nextView(); }
     else if (active && active.dock && k.length === 1) {

@@ -1,0 +1,194 @@
+/*
+✒ Metadata
+    - Title: Settings Dialog Styles (digiSpace Edition - v2.19)
+    - File Name: settings.css
+    - Relative Path: css/settings.css
+    - Artifact Type: stylesheet
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
+    - Author: Dennis 'dendogg' Smaltz
+    - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
+    - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
+
+✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the Capture section's column, the
+      director's switch and preview, and the fold of what a dataset holds. The
+      phone nav's tabs sit a little closer, so all five sections fit across a
+      phone.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
+      Dennis's call for one settings dialog: a centred panel on a desktop and
+      a full-screen sheet on a phone, its section nav down the left or across
+      the top, the tier cards, the machine's four verdicts and a card for each
+      graphics setting of one's own, marked while it differs from the tier.
+    Earlier entries: see CHANGELOG.md
+
+✒ Description:
+    The look of the Settings dialog (settings.js): its frame, header and
+    section nav, the Graphics section's tiers, verdicts and setting cards,
+    the Capture section's column, and the room the Units, head-up display
+    and keyboard sections sit in.
+
+✒ Key Features:
+    - The tiles' own glass: one gradient layer and an inset sheen, over a
+      plain dimmed backdrop. No backdrop blur, so the stage behind keeps its
+      frame rate while a change is judged against it.
+    - A setting of one's own carries an amber edge, a Yours tag and its own
+      reset; the top bar's Graphics button shows a dot while any is set.
+    - Phones get the whole screen, with the nav as a scrolling strip; a short
+      landscape screen also fills, keeping the nav down the side.
+
+✒ Other Important Information:
+    - Dependencies: none beyond the modules it imports
+    - Compatible platforms: Evergreen browsers with ES modules, import maps
+      and container queries (Chrome and Edge 105+, Firefox 110+, Safari
+      16.4+)
+    - No backdrop blur anywhere: a blur over a stage that redraws every frame
+      would cost that frame rate (see ARCHITECTURE.md).
+---------
+*/
+/* ---------- the dialog: a centred panel over a dimmed workspace ---------- */
+.settings {
+  --set-nav: 204px;
+  width: min(960px, calc(100vw - 48px)); height: min(720px, calc(100vh - 48px)); max-width: none; max-height: none;
+  margin: auto; padding: 0; overflow: hidden; color: var(--text); font: 500 14px/1.5 var(--font-body);
+  background: var(--glass-tile); border: 1px solid var(--rule); border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255, 228, 186, 0.11), 0 40px 90px -30px rgba(0, 0, 0, 0.95);
+}
+.settings[open] {
+  display: grid; grid-template-columns: var(--set-nav) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "head head" "nav body"; animation: set-in 0.24s var(--ease) both;
+}
+@keyframes set-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+.settings::backdrop { background: rgba(3, 5, 9, 0.5); }
+.settings:focus { outline: none; }
+
+.settings-head { grid-area: head; display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 0 12px 0 20px; border-bottom: 1px solid var(--hair); }
+.settings-ico { color: var(--amber); font-size: 21px; }
+.settings-head h2 { margin: 0; font: 700 17px/1 var(--font-display); letter-spacing: -0.01em; }
+.settings-kept { padding-top: 2px; font: 500 10px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.settings-head .icon-btn { margin-left: auto; }
+
+/* ---------- section nav ---------- */
+.settings-nav { grid-area: nav; min-height: 0; overflow: auto; padding: 14px 10px; border-right: 1px solid var(--hair); background: rgba(5, 8, 12, 0.3); }
+.settings-tabs { display: grid; gap: 3px; }
+.set-tab {
+  appearance: none; display: flex; align-items: center; gap: 11px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px;
+  background: none; color: var(--muted); font: 600 13px/1.2 var(--font-body); text-align: left; white-space: nowrap; cursor: pointer;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.set-tab .ms { font-size: 19px; }
+.set-tab:hover { color: var(--text); background: color-mix(in oklab, var(--text) 5%, transparent); }
+.set-tab[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--amber) 13%, transparent); box-shadow: inset 2px 0 0 var(--amber); }
+.set-tab[aria-selected="true"] .ms { color: var(--amber); }
+.set-tab[hidden] { display: none; }
+
+/* ---------- sections ---------- */
+.settings-body { grid-area: body; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 20px 24px 28px; container: setbody / inline-size; }
+.set-pane[hidden] { display: none; }
+.set-head { margin-bottom: 16px; }
+.set-head h3 { margin: 0 0 5px; font: 700 15px/1.25 var(--font-display); }
+.set-head p { margin: 0; max-width: 64ch; font-size: 12.5px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
+h4.set-sub { margin: 26px 0 10px; }
+.set-head + h4.set-sub { margin-top: 0; }
+.set-subhead { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; min-height: 30px; margin: 28px 0 4px; }
+.set-subhead .btn-quick .ms { font-size: 16px; }
+#gfx-reset[hidden] { display: none; }
+.set-pane .gfx-note { margin: 10px 0 0; padding: 0; max-width: 72ch; font: 500 12px/1.5 var(--font-body); color: var(--muted); overflow-wrap: normal; }
+.set-pane .keys-list { padding: 0; }
+
+/* Tiers and unit systems as cards: two or three abreast where there is room. */
+.set-pane .gfx-list { padding: 0; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+.set-pane .gfx-row { padding: 10px 12px; align-content: start; background: rgba(5, 8, 12, 0.34); box-shadow: inset 0 0 0 1px var(--hair); }
+.set-pane .gfx-row:hover { background: color-mix(in oklab, var(--text) 6%, transparent); }
+.set-pane .gfx-row[aria-checked="true"] { background: color-mix(in oklab, var(--amber) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 45%, transparent), inset 3px 0 0 var(--amber); }
+
+/* ---------- this machine: four verdicts and the suggestion ---------- */
+.dev-list { margin: 0; border-radius: 12px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--hair); background: rgba(5, 8, 12, 0.3); }
+.dev-row { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: baseline; gap: 12px; padding: 9px 12px; }
+.dev-row + .dev-row { border-top: 1px solid var(--hair); }
+.dev-row dt { font: 500 10.5px/1.5 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.dev-row dd { display: flex; align-items: baseline; gap: 12px; min-width: 0; margin: 0; }
+.dev-what { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.dev-tier { flex: none; padding: 4px 7px; border-radius: 6px; font: 600 11px/1 var(--font-mono); color: var(--muted); box-shadow: inset 0 0 0 1px var(--hair); }
+.dev-row[data-sets="true"] .dev-tier { color: #1a1206; background: var(--amber); box-shadow: none; }
+.dev-sum { margin: 10px 0 0; font-size: 12.5px; }
+@container setbody (max-width: 440px) {
+  .dev-row { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+}
+
+/* ---------- settings of one's own: a card each ---------- */
+.knob-groups { display: grid; gap: 20px; margin-top: 14px; }
+.knob-group-title { margin: 0 0 8px; font: 600 12.5px/1.2 var(--font-body); color: color-mix(in oklab, var(--text) 85%, var(--muted)); }
+.knobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 10px; }
+.knob {
+  display: grid; align-content: start; gap: 9px; padding: 11px 12px 12px; border-radius: 12px;
+  background: rgba(5, 8, 12, 0.32); box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: box-shadow 0.2s;
+}
+.knob[data-own="true"] { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 42%, transparent), inset 3px 0 0 var(--amber), var(--card-sheen); }
+.knob-head { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.knob-name { font: 600 13px/1.25 var(--font-body); color: var(--text); }
+.knob-tag { font: 600 9.5px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); }
+.knob-tier { margin-left: auto; font: 500 11px/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
+.knob-reset {
+  appearance: none; flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 1px solid var(--rule); border-radius: 8px;
+  background: var(--ink); color: var(--muted); cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.knob-reset .ms { font-size: 16px; }
+.knob-reset:hover { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 50%, var(--rule)); }
+.knob-reset[hidden], .knob-tag[hidden] { display: none; }
+.knob .seg { gap: 5px; }
+.knob .seg button { padding: 6px 10px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.knob .seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+.knob-note { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--muted); text-wrap: pretty; }
+
+/* ---------- capture: clips, the director, data ---------- */
+/* The Capture section's own column: a heading for each part, then its choices, switches and notes, kept to a reading
+   width. The player bar's capture settings button opens it. */
+.cap-set-body { display: grid; gap: 12px; justify-items: start; max-width: 620px; }
+.cap-set-body > h4.set-sub { margin: 14px 0 0; }
+.cap-set-body > h4.set-sub:first-child { margin-top: 0; }
+.cap-set-body .ctl-note { margin: -4px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+/* The director: its switch, then Preview direction, which shows amber while it runs rather than the recorders' red. */
+.dir-set { display: grid; gap: 8px; justify-items: start; }
+.dir-preview[hidden] { display: none; }
+.dir-preview[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: color-mix(in oklab, var(--amber) 10%, var(--ink)); }
+.dir-preview[aria-pressed="true"] .ms { animation: none; }
+/* What a dataset from this lab holds, folded under the data settings. */
+.cap-cols { font-size: 11.5px; color: var(--muted); }
+.cap-cols summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
+.cap-cols summary::-webkit-details-marker { display: none; }
+.cap-cols summary::before { content: "expand_more"; content: "expand_more" / ""; font-family: "Material Symbols Rounded"; font-size: 16px; line-height: 1; font-feature-settings: "liga"; transform: rotate(-90deg); transition: transform 0.15s; }
+.cap-cols[open] summary::before { transform: none; }
+html.no-icons .cap-cols summary::before { content: "›"; font-family: inherit; }
+.cap-cols summary:hover { color: var(--text); }
+.cap-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 2px; }
+.cap-chips code { font: 400 10.5px/1 var(--font-mono); padding: 4px 6px; border-radius: 5px; color: var(--text); background: color-mix(in oklab, var(--cyan) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 22%, transparent); }
+
+/* The top bar's Graphics button carries a dot while any setting is the person's own. */
+.gfx-btn.has-own { position: relative; }
+.gfx-btn.has-own::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 2px var(--bench); }
+
+/* ---------- phones and short screens: the whole screen ---------- */
+/* Sized by its containing block, the viewport less any scrollbar, where 100vw would run a scrollbar's width past it. */
+@media (max-width: 640px), (max-height: 500px) {
+  .settings { width: 100%; height: 100%; border: 0; border-radius: 0; }
+  .settings-kept { display: none; }
+}
+@media (max-width: 640px) {
+  .settings[open] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "head" "nav" "body"; }
+  .settings-head { min-height: 52px; padding-left: 16px; }
+  .settings-nav { padding: 6px 8px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--hair); scrollbar-width: none; }
+  .settings-nav::-webkit-scrollbar { display: none; }
+  .settings-tabs { display: flex; gap: 2px; width: max-content; }
+  /* Words alone, a little closer set, so all five sections fit across a phone. */
+  .set-tab { min-height: 38px; padding: 0 7px; font-size: 12.5px; }
+  .set-tab .ms { display: none; }
+  .set-tab[aria-selected="true"] { box-shadow: inset 0 -2px 0 var(--amber); }
+  .settings-body { padding: 16px 16px 28px; }
+}
+@media (max-height: 500px) and (min-width: 641px) {
+  .settings { --set-nav: 184px; }
+  .settings-head { min-height: 48px; }
+}

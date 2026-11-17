@@ -1,25 +1,30 @@
 /*
 ✒ Metadata
-    - Title: Head-Up Display (digiSpace Edition - v2.8)
+    - Title: Head-Up Display (digiSpace Edition - v2.19)
     - File Name: headsup.js
     - Relative Path: js/shell/headsup.js
     - Artifact Type: javascript
-    - Version: 2.8.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one selection contract: the target box sits at the
+      lab's spot() for its selectedId(), and the callout reads the Inspect
+      card's own reading of the tick. On Dennis's call for a duplication
+      sweep: the top bar's HUD button is gone, so its label is no longer
+      written; the Settings button's nav and Shift+H reach the section.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the display's settings are its
+      Head-up display section, which the HUD button opens; the sheet's own
+      opening and closing went with it.
     - 2.8.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The callout
       also keeps off what the lab drew and asks to keep visible, its hudClear
       boxes, such as Gravity's names beside bodies in the Solar System.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created on
-      Dennis's call for a cockpit-style head-up display, so the run's numbers
-      sit on the stage instead of pulling the eye away from it: a readings
-      tape, caution lights and a target box with a callout on the selected
-      object, at an opacity he chooses.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -36,15 +41,16 @@
       Telemetry samples, coloured by the reading's own state.
     - Caution lights: the two most severe notices by title, and a count of
       the rest, moved clear of an experiment's banner.
-    - Target box and callout, placed each frame from the lab's hudTarget(),
-      clamped to the stage edge with a dashed box when the object is off it,
-      and kept clear of the title, the rail and the tape.
-    - A Head-up display menu in the top bar: on or off (Shift+H), opacity in
-      four steps, and each part on or off, remembered per browser.
+    - Target box and callout, placed each frame from the lab's spot() for
+      its selectedId(), clamped to the stage edge with a dashed box when the
+      object is off it, and kept clear of the title, the rail and the tape.
+    - A Head-up display section in Settings, reached from the Settings
+      button: on or off (Shift+H), opacity in four steps, and each part on
+      or off, remembered per browser.
 
 ✒ Usage Instructions:
     In a lab:  hud: [['Total energy E', 'ENERGY E'], ...]   readout labels and their short HUD names
-               hudTarget(three) { return { x, y, r } }       the inspected object in stage pixels, or null
+               spot(id, three) { return { x, y, r } }        an object in stage pixels, or null (with selectedId())
     In the shell:  hudReadings(lab, rows) at panel rate, hudInspect(lab) at panel rate,
                    trackHud(lab) each frame after drawing, hudCautions(alerts) with the insights
 
@@ -60,6 +66,7 @@
 import { view } from '../core/view.js';
 import { $, clamp, el, store } from '../core/util.js';
 import { is3D } from './camera.js';
+import { inspected } from './details.js';
 import { readingSeries, setValue, sparkPath } from './instruments.js';
 import { radioGroup } from './panel.js';
 import { announce, stageEl } from './state.js';
@@ -144,9 +151,10 @@ function pickRows(inf) {
   const rows = inf.rows || [], first = rows.find(r => r[0] === inf.focus);
   return [...(first ? [first] : []), ...rows.filter(r => r !== first)].slice(0, 3);
 }
-/* Panel rate: what the callout says, its size, and the parts of the stage it must keep clear of. */
+/* Panel rate: what the callout says, its size, and the parts of the stage it must keep clear of. The card's own
+   reading of the selection at this tick, so the lab's inspect() runs once. */
 export function hudInspect(lab) {
-  info = cfg.on && cfg.target && lab && lab.hudTarget && lab.inspect ? lab.inspect() : null;
+  info = cfg.on && cfg.target && lab && lab.spot ? inspected(lab) : null;
   if (!info) { if (!card.hidden) card.hidden = true; return; }
   const rows = pickRows(info), name = info.short || info.kicker || '', kind = info.title || '';
   const key = `${name}|${kind}|${rows.map(r => `${r[0]}=${r[1]}`).join('|')}`;
@@ -195,9 +203,10 @@ function placeCard(x, y, half, clear) {
   }
   return best;
 }
-/* Each frame, after the stage is drawn, so the box sits on the object as it is shown. */
+/* Each frame, after the stage is drawn, so the box sits on the object as it is shown: where the lab draws its
+   selected object (spot), in stage pixels. */
 export function trackHud(lab) {
-  const t = cfg.on && cfg.target && lab && lab.hudTarget ? lab.hudTarget(is3D(lab)) : null;
+  const id = cfg.on && cfg.target && lab && lab.spot ? lab.selectedId() : null, t = id != null ? lab.spot(id, is3D(lab)) : null;
   if (!t || !Number.isFinite(t.x) || !Number.isFinite(t.y)) { hideTarget(); return; }
   const W = view.w, H = view.h, s = clamp(2 * (t.r || 0) + 16, 26, 180), half = s / 2;
   // On the stage the box stays centred on the object, even at the edge; off it, the box waits whole inside the edge
@@ -225,10 +234,9 @@ export function trackHud(lab) {
   if (k) { lead.style.width = `${len.toFixed(1)}px`; lead.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) rotate(${Math.atan2(ey - sy, ex - sx).toFixed(4)}rad)`; }
 }
 
-/* ---------- settings: the top-bar menu, Shift+H and the automation surface ---------- */
+/* ---------- settings: the Settings dialog's section, Shift+H and the automation surface ---------- */
 let alphaUpdate = () => {};
 const partSwitches = new Map();
-const sheetOpen = () => !$('#hud-sheet').hidden;
 function apply() {
   root.hidden = !cfg.on;
   root.style.setProperty('--hu-a', String(cfg.alpha / 100));
@@ -236,9 +244,6 @@ function apply() {
   if (!cfg.read) { tapeLab = null; tape.replaceChildren(); }
   if (!cfg.target) { info = null; hideTarget(); card.hidden = true; }
   lightKey = null; hudCautions(lastAlerts);
-  const pct = `${cfg.alpha}%`;
-  $('#btn-hud-label').textContent = cfg.on ? `HUD ${pct}` : 'HUD off';
-  $('#btn-hud').title = `Head-up display: ${cfg.on ? `on, ${pct}` : 'off'} (Shift+H)`;
   $('#hud-on').setAttribute('aria-checked', String(cfg.on));
   for (const [k, b] of partSwitches) { b.setAttribute('aria-checked', String(cfg[k])); b.disabled = !cfg.on; }
   alphaUpdate();
@@ -252,12 +257,6 @@ export function configureHud(o) {
   if (LEVELS.some(l => l[0] === o.alpha)) cfg.alpha = o.alpha;
   save(); apply();
 }
-export function setHudSheet(on) {
-  $('#hud-sheet').hidden = !on;
-  $('#btn-hud').setAttribute('aria-expanded', String(on));
-  if (on) $('#hud-on').focus();
-}
-export function closeHudSheet() { if (!sheetOpen()) return false; setHudSheet(false); $('#btn-hud').focus(); return true; }
 /* The tape starts under the title and its chips, however they wrap. */
 function placeTape() {
   const top = $('.stage-top');
@@ -280,11 +279,6 @@ export function init() {
     b.addEventListener('click', () => { cfg[k] = !cfg[k]; save(); apply(); announce(`${label} ${cfg[k] ? 'shown' : 'hidden'} on the head-up display`); });
     partSwitches.set(k, b); parts.append(b);
   }
-  $('#btn-hud').addEventListener('click', () => setHudSheet(!sheetOpen()));
-  $('#hud-close').addEventListener('click', closeHudSheet);
-  document.addEventListener('pointerdown', e => {
-    if (sheetOpen() && !$('#hud-sheet').contains(e.target) && !$('#btn-hud').contains(e.target)) setHudSheet(false);
-  });
   new ResizeObserver(placeTape).observe($('.stage-top'));
   placeTape(); apply();
 }

@@ -1,38 +1,43 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.16)
+    - Title: Workspace Styles (digiSpace Edition - v2.19)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.16.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the grips' places, each a 24 px band
+      centred on its gap and clear of the tiles' corners; the inspector's
+      dragged width in --side-px; and a dragged deck or inspector clamped
+      again, so the stage keeps 260 px of height and half the width. Focus
+      mode hides the grips. On Dennis's call for a duplication sweep: the
+      description names the one quick opener left beside the Settings gear,
+      the Graphics button; the Units and HUD buttons are gone.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one settings dialog: the floating sheet and its
+      backdrop blur are gone, and the keyboard list and the tier and unit
+      lists sit in Settings.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       release tag beside the name: monospace small capitals, the release in
       amber, quiet until hovered.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The lab tab
-      strip is centred by auto margins instead of justify-content, so when it
-      overflows it scrolls from its first tab rather than pushing the first
-      tabs out of reach; removed the unused .tile-meta.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tiles take
-      the glass look over the page's light: a faint cool light at the top and
-      a warm sheen along the top edge, drawn as one background layer and an
-      inset shadow so that a tile costs no more to paint than before.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
     Top bar, lab rail, icon buttons, the console grid, tile chrome, the
-    keyboard sheet, the 2D and 3D switch with its Graphics menu, and the
-    colophon.
+    keyboard list, the 2D and 3D switch, the Graphics button with the tier
+    and unit lists in Settings, and the colophon.
 
 ✒ Key Features:
     - Console grid: the stage over the instruments deck, beside a
-      full-height inspector, with focus, no-bay and tall-deck modes.
+      full-height inspector, with focus, no-bay and tall-deck modes, and
+      grips across its gaps for the deck's height and the inspector's width.
     - Tiles are containers for container queries and never widen their grid
       track.
     - Rail tabs reveal the equation of the selected lab.
@@ -86,7 +91,10 @@
 
 /* ---------- console: stage and deck beside a full-height inspector ---------- */
 .bento {
-  --bay: minmax(226px, 27vh);
+  /* The most height the deck may take: the stage keeps 260 px of it, though the deck never drops below 112 px. Each
+     preset and a dragged height are held to it, so a short window never squeezes the stage. */
+  --bay-room: max(112px, 100% - var(--gap) - 260px);
+  --bay: minmax(min(226px, var(--bay-room)), min(27vh, var(--bay-room)));
   --side: clamp(320px, 25vw, 400px);
   display: grid; gap: var(--gap); padding: 0 var(--gap) var(--gap); min-height: 0;
   grid-template-columns: minmax(0, 1fr) var(--side);
@@ -96,13 +104,21 @@
 .tile-stage { grid-area: stage; }
 .tile-deck { grid-area: deck; }
 .tile-inspector { grid-area: notes; }
-.bento.deck-tall { --bay: minmax(300px, 46vh); }
-.bento.deck-compact { --bay: 136px; }
-.bento.deck-sized { --bay: var(--bay-px); }
+.bento.deck-tall { --bay: minmax(min(300px, var(--bay-room)), min(46vh, var(--bay-room))); }
+.bento.deck-compact { --bay: min(136px, var(--bay-room)); }
+/* A dragged height or width, clamped again here so a smaller window never squeezes the stage: it keeps 260 px of
+   height under the deck and at least half the console's width beside the inspector. */
+.bento.deck-sized { --bay: min(var(--bay-px), var(--bay-room)); }
+.bento.side-sized { --side: clamp(320px, var(--side-px), 50% - var(--gap) / 2); }
 .bento.no-bay { grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage notes"; }
 .bento.no-bay .bay { display: none; }
 .bento.focus { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage"; }
 .bento.focus .tile:not(.tile-stage) { display: none; }
+/* The grips (drawn in tiles.css) lie across the gaps, each centred on its gap and clear of the tiles' rounded corners:
+   the deck's along its top edge, the inspector's along its inner edge. Focus mode has no edges to move. */
+.grip-deck { grid-area: deck; align-self: start; height: 24px; margin: calc(-12px - var(--gap) / 2) 18px 0; }
+.grip-side { grid-area: notes; justify-self: start; width: 24px; margin: 18px 0 18px calc(-12px - var(--gap) / 2); }
+.bento.focus .grip { display: none; }
 
 /* One background layer and the sheen as an inset shadow, so a tile costs no more to paint than before (see
    --glass-tile in tokens.css). */
@@ -127,15 +143,7 @@
 .tile.flash { animation: tile-flash 1.2s var(--ease); }
 @keyframes tile-flash { 0%, 100% { box-shadow: var(--tile-shadow); } 20% { box-shadow: var(--tile-shadow), 0 0 0 2px color-mix(in oklab, var(--warn) 70%, transparent); } }
 
-/* ---------- keyboard sheet (the one floating panel) ---------- */
-.sheet {
-  position: fixed; top: 66px; right: 12px; z-index: 20; width: min(420px, calc(100vw - 24px)); max-height: calc(100vh - 80px); overflow: auto;
-  background: color-mix(in oklab, var(--bench) 94%, transparent); border: 1px solid var(--rule); border-radius: var(--radius);
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.85);
-  animation: tile-in 0.22s var(--ease) both;
-}
-.sheet[hidden] { display: none; }
-.sheet .tile-head .icon-btn { margin-left: auto; }
+/* ---------- the keyboard list (Settings, under Keyboard) ---------- */
 .keys-list { margin: 0; padding: 12px var(--pad) 16px; display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; font-size: 13px; align-items: baseline; }
 .keys-list dt { white-space: nowrap; color: var(--muted); }
 .keys-list dd { margin: 0; color: color-mix(in oklab, var(--text) 88%, var(--muted)); }
@@ -160,7 +168,6 @@ body:has(.bento.focus) .colophon { display: none; }
 .mode-switch button[disabled] { opacity: 0.45; cursor: not-allowed; }
 .mode-switch { background: color-mix(in oklab, var(--bench) 80%, transparent); border: 0; box-shadow: inset 0 0 0 1px var(--hair); border-radius: 11px; padding: 3px; }
 .gfx-btn { height: 34px; background: color-mix(in oklab, var(--bench) 80%, transparent); border-color: var(--hair); border-radius: 11px; padding: 0 10px; gap: 6px; white-space: nowrap; font-size: 12.5px; }
-.gfx-sheet { width: min(380px, calc(100vw - 24px)); }
 .gfx-list { display: grid; gap: 2px; padding: 8px; }
 .gfx-row { appearance: none; display: grid; gap: 2px; text-align: left; padding: 8px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font: inherit; }
 .gfx-row b { font-weight: 600; font-size: 13.5px; }

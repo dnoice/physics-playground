@@ -1,17 +1,43 @@
 """
 ✒ Metadata
-    - Title: Workspace Tests (digiSpace Edition - v2.4)
+    - Title: Workspace Tests (digiSpace Edition - v2.19)
     - File Name: workspace.py
     - Relative Path: tests/workspace.py
     - Artifact Type: test
-    - Version: 2.4.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — One
+      control per figure, with the focus caption's Pin to Telemetry; the
+      objects list lists, sorts, selects by click and Enter and keeps focus;
+      every lab keeps the selection contract; 1200 balls draw only the rows in
+      view; the pane stays read-only. On Dennis's call for drag handles: the
+      grip replaces the size button in the deck checks (a double-click steps
+      the presets; Home, End and Enter pick them). The grips' own checks:
+      separators that give their size, bands over the gaps that spare every
+      tab and player button, drags that resize and are remembered, the keys,
+      the stage kept usable at the limits and from stored extremes, and the
+      inspector's grip hidden in focus mode and in one column. On Dennis's
+      call for an honest Insights tab: the tab is bare when nothing stands and
+      nothing is unseen, a warning shows in its colour, and the unseen count
+      is neutral; units are read from the Units section.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the Story's checks. A
+      brown dwarf dropped at the Star system's edge moves the barycentre and
+      reshapes orbits, and a star dropped there leaves the inner planets
+      watched; three fast throws into Empty sky each get explained, then
+      what follows, and two mergers in one look are both told; Collisions
+      and Chaos tell their own moments; the unread count, the keyboard and
+      focus through a fold, Show me, pause, rewind and a new scene. Insights
+      now opens on its Story, or on Now while a warning stands, so the pane
+      checks read both views. On Dennis's call for one settings dialog: U
+      opens its Units section with focus on the current system, and Escape
+      closes it.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       for the unified interaction architecture of release 2.4.0: the stage
       rail, view modes, Chaos's three views, the deck workspace, object
@@ -21,8 +47,9 @@
     Drives the 2.4.0 workspace in the flat view: the rail that keeps its
     camera group in one place, view modes that never restart a run, Chaos's
     Pendulum, Phase map and Both views with a selection shared between them,
-    the deck's panes and sizes, inspection of posts and sources, and the
-    Metric, US and Simulation unit systems.
+    the deck's panes and sizes, inspection of posts and sources, the
+    Metric, US and Simulation unit systems, and the Insights pane's Story
+    told by each lab's narrator.
 
 ✒ Key Features:
     - Rail: the camera group sits at the same height in every lab; tools
@@ -30,10 +57,20 @@
     - Views: V and the View group switch without touching time or trails.
     - Chaos: map-only layout with the torus, no pendulum to grab, a dot
       click that selects, Inspect opening on its own, and a figure plotted.
-    - Deck: Insights pane, size presets, the grip on the keyboard.
+    - Deck: Insights pane, the size presets from the grip by double-click
+      and keys, the grip on the keyboard.
+    - Grips: the deck's and the inspector's drag, step with the keys, are
+      remembered, spare every tab, keep the stage usable at their limits,
+      and hide in focus mode (and the inspector's in one column).
     - Inspection: a Fluid post and a Waves source, each removable.
     - Units: readings, controls, typed values and the scale bar follow the
       system; the simulation does not change.
+    - Story: Gravity's narrator explains a giant at the edge of the Star
+      system, the inner planets of the binary a star there makes, three
+      fast throws into Empty sky and two mergers in one look within a
+      bounded run; Collisions and Chaos tell their own; the unread count,
+      the keyboard, focus through a fold, Show me, pause, rewind and a new
+      scene behave.
 
 ✒ Usage Instructions:
     $ python tests/workspace.py
@@ -45,6 +82,8 @@
       Windows, macOS and Linux
 ---------
 """
+import json
+
 from playwright.sync_api import sync_playwright
 from harness import URL, finish, launch, ok, open_page, scene, settle
 
@@ -54,6 +93,15 @@ state = lambda expr: pg.evaluate(P + "." + expr)
 pane = lambda: pg.evaluate("document.getElementById('tile-deck').dataset.pane")
 # The Inspect card refreshes at panel rate, which a loaded machine stretches; wait for it to name the selection.
 card = lambda text: settle(pg, "document.getElementById('details-kicker').textContent.includes(%r)" % text, 10000)
+WARNED = "['warn', 'crit'].includes(document.getElementById('diag-sum').dataset.level)"
+# The Insights tab as it shows: its alert words, their colour and the dot's beside the theme's warning and critical
+# colours, the unseen count, the tab's description, and how many marks are on screen.
+TAB = """(() => { const sum = document.getElementById('diag-sum'), n = document.getElementById('dt-story-n'), tab = document.getElementById('dt-insights'), cs = getComputedStyle(sum);
+  const tone = v => { const e = document.createElement('i'); e.style.color = `var(${v})`; document.body.append(e); const c = getComputedStyle(e).color; e.remove(); return c; };
+  const shown = e => e.getClientRects().length > 0;
+  return { warn: PhysicsPlayground.diagnose().filter(i => i.level !== 'info').map(i => i.id), sum: shown(sum) ? sum.textContent : null, level: sum.dataset.level || null,
+    color: cs.color, dot: getComputedStyle(sum, '::before').backgroundColor, warnColor: tone('--warn'), critColor: tone('--crit'),
+    new: shown(n) ? n.textContent : null, desc: tab.getAttribute('aria-description'), marks: [...tab.children].filter(e => !e.matches('.ms, .deck-tab-name') && shown(e)).length }; })()"""
 ADVANCE = "(s => {{ const P = PhysicsPlayground, L = P.active, end = L.t + s; while (L.t < end - 1e-9) if (!P.advance(Math.min(1 / 60, end - L.t))) break; }})({})"
 
 with sync_playwright() as p:
@@ -120,27 +168,127 @@ with sync_playwright() as p:
     ok("dot_click_selects_copy", state("active.sel") == k and state("active.t") == t0, (state("active.sel"), k))
     ok("selection_opens_inspect", pane() == "inspect" and pg.is_visible("#details") and ("Copy %d" % (k + 1)) in pg.inner_text("#details-kicker"), pane())
     ok("inspect_is_read_only", pg.locator("#dp-inspect input, #dp-inspect [role=slider]").count() == 0)
-    pg.locator(".drow-plot").first.click(); pg.wait_for_timeout(200)
-    ok("object_figure_plots", pg.locator(".drow-plot[aria-pressed=true]").count() == 1 and state("active.inst.pins.size") == 1)
+    # One control per figure: its tile focuses it in the chart, and the chart's caption pins it to Telemetry.
+    pg.locator(".drow-pick:not([hidden])").first.click(); pg.wait_for_timeout(200)
+    pg.click("#details-pin"); pg.wait_for_timeout(200)
+    ok("object_figure_plots", pg.get_attribute("#details-pin", "aria-pressed") == "true" and pg.locator(".drow.focus.on").count() == 1 and state("active.inst.pins.size") == 1 and pg.locator(".drow-plot").count() == 0)
     pg.click("#details-close"); pg.wait_for_timeout(500)
     ok("clearing_returns_to_telemetry", pane() == "telemetry" and state("active.sel") == -1, pane())
     ok("object_series_in_scope", pg.locator(".scope-chip").count() == 1 and ("Copy %d" % (k + 1)) in pg.inner_text("#scope-legend"))
+    # ---- the objects list in Inspect: every copy, sortable; a row click or Enter selects, and focus stays put
+    pg.click("#dt-inspect"); pg.wait_for_timeout(400)
+    n = state("active.N")
+    ok("objects_list_lists_all", pg.inner_text("#objects-n") == str(n) and pg.locator("#objects-list .orow:not([hidden])").count() >= 4 and "inspect" == pane(), pg.inner_text("#objects-n"))
+    # The list showed the copy picked on the map; back at its top, the rows are the copies in order.
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(200)
+    rows = pg.locator("#objects-list .orow:not([hidden])")
+    rows.nth(2).click(); card("Copy 3")
+    ok("objects_row_click_selects", state("active.sel") == 2 and rows.nth(2).get_attribute("aria-selected") == "true" and pg.locator("#objects-list .orow[aria-selected=true]").count() == 1, state("active.sel"))
+    pg.focus("#objects-list"); pg.keyboard.press("ArrowDown"); pg.keyboard.press("Enter"); card("Copy 4")
+    ok("objects_keyboard_selects", state("active.sel") == 3 and pg.evaluate("document.activeElement.id") == "objects-list")
+    pg.evaluate(P + ".play()"); pg.wait_for_timeout(900); pg.evaluate(P + ".pause()")
+    ok("objects_focus_kept", pg.evaluate("document.activeElement.id") == "objects-list" and pg.get_attribute("#objects-list", "aria-activedescendant") == "orow-act" and "Copy 4" in pg.inner_text("#orow-act"))
+    pg.mouse.move(5, 5); pg.locator("#objects-cols .ocol").nth(2).click(); pg.wait_for_timeout(300)
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(200)
+    top = pg.evaluate("(() => { const o = PhysicsPlayground.active.objects(); return o.reduce((a, b) => (b.v[0] > a.v[0] ? b : a)).name; })()")
+    ok("objects_sort_by_column", pg.locator("#objects-cols .ocol").nth(2).get_attribute("aria-pressed") == "true" and rows.first.inner_text().startswith(top), (top, rows.first.inner_text()))
+    # A pick in the list is work in Inspect: once the user has picked there, clearing the selection stays in Inspect,
+    # even when a selection elsewhere opened it from Telemetry.
+    # The card must have seen the selection cleared (a panel tick, which a loaded machine stretches) before the next one.
+    pg.evaluate(P + ".active.select(null)"); pg.click("#dt-telemetry"); settle(pg, "document.getElementById('details').hidden", 5000)
+    pg.evaluate(P + ".active.select(1)"); opened = settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
+    picked = None
+    if opened:
+        other = pg.evaluate("[...document.querySelectorAll('#objects-list .orow:not([hidden])')].findIndex(r => r.getAttribute('aria-selected') !== 'true')")
+        rows.nth(other).click(); pg.wait_for_timeout(300); picked = state("active.sel")
+        pg.click("#details-close"); pg.wait_for_timeout(500)
+    ok("list_pick_keeps_inspect_on_clear", opened and picked not in (-1, 1) and pane() == "inspect" and state("active.sel") == -1, (opened, picked, pane()))
+    pg.context.close()
+
+    # ---- one selection contract in every lab: objects(), select(id), selectedId(), inspect(), spot() and pick() agree
+    pg = fresh("gravity")
+    rt = pg.evaluate("""(() => { const P = PhysicsPlayground, out = {};
+      for (const [id, pre] of [['gravity', 'solar'], ['collisions', 'gas'], ['fluid', 'posts'], ['waves', 'twosrc'], ['chaos', 'chaos'], ['cloth', 'curtain'], ['fields', 'exb']]) {
+        P.select(id); P.preset(pre); P.pause(); const L = P.active, o = L.objects(), first = o[0], last = o[o.length - 1];
+        const took = L.select(last.id), sel = L.selectedId(), info = L.inspect(), at = L.spot(first.id, false), back = at && L.pick(at);
+        const none = L.select(null) && L.selectedId() === null && !L.inspect(), bogus = L.select(-12345) === false && L.selectedId() === null;
+        const res = { n: o.length, took, sel, last: last.id, info: !!info, back, first: first.id, none, bogus, unique: new Set(o.map(q => q.id)).size === o.length, shaped: o.every(q => q.name && q.kind && q.v.length === L.objectCols.length) };
+        out[id] = (took && sel === last.id && res.info && back === first.id && none && bogus && res.unique && res.shaped && o.length > 1) || res;
+      } return out; })()""")
+    ok("selection_contract_every_lab", all(v is True for v in rt.values()), rt)
+    # The order holds while the pointer is over the list. In the Star system (whose ids are not the list's indices),
+    # sorted by distance, the rows stay as they were through panel ticks while the run plays, even with a body dropped
+    # out past the rest that a fresh sort would put first; it joins at the end. Off the list, the rows re-sort.
+    pg.evaluate(P + ".select('gravity')"); pg.evaluate(P + ".preset('solar')"); pg.evaluate(P + ".pause()")
+    pg.click("#dt-inspect"); pg.wait_for_timeout(400)
+    pg.locator("#objects-cols .ocol").nth(3).click(); pg.wait_for_timeout(400)
+    ROWS = "[...document.querySelectorAll('#objects-list .orow:not([hidden])')].sort((a, b) => a.getAttribute('aria-posinset') - b.getAttribute('aria-posinset')).map(r => r.querySelector('.ocell').textContent)"
+    # The order a fresh sort by distance gives, largest first and the lab's own order breaking ties, as objects.js sorts.
+    FRESH = """(() => { const o = PhysicsPlayground.active.objects(), i = o.map((_, k) => k);
+      i.sort((a, b) => { const x = o[a].v[1], y = o[b].v[1], fx = Number.isFinite(x), fy = Number.isFinite(y); return fx && fy ? y - x || a - b : fx ? -1 : fy ? 1 : a - b; });
+      return i.map(k => o[k].name); })()"""
+    ids_apart = pg.evaluate("PhysicsPlayground.active.objects().some((o, i) => o.id !== i)")
+    lb = pg.locator("#objects-list").bounding_box(); pg.mouse.move(lb["x"] + lb["width"] / 2, lb["y"] + lb["height"] / 2); pg.wait_for_timeout(600)
+    before = pg.evaluate(ROWS)
+    # Dropped at 1.3 times the farthest distance, where the sky there is widest, so it orbits the star alone.
+    added = pg.evaluate("""(() => { const L = PhysicsPlayground.active, H = L.heaviest(), far = Math.max(...L.objects().map(o => o.v[1]).filter(Number.isFinite)) * 1.3;
+      let at = null, gap = -1;
+      for (let k = 0; k < 12; k++) { const x = H.x + far * Math.cos(k * Math.PI / 6), y = H.y + far * Math.sin(k * Math.PI / 6), d = Math.min(...L.bodies.map(b => Math.hypot(b.x - x, b.y - y))); if (d > gap) { gap = d; at = [x, y]; } }
+      L.dropOrbit(at[0], at[1]); const b = L.bodies[L.bodies.length - 1]; return L.objects().find(o => o.id === b.id).name; })()""")
+    pg.evaluate(P + ".play()"); pg.wait_for_timeout(1300)
+    during, sorted_now = pg.evaluate("[%s, %s]" % (ROWS, FRESH))
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 1e9"); pg.wait_for_timeout(400)
+    last = pg.evaluate(ROWS)[-1:]
+    pg.evaluate(P + ".pause()"); pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(300)
+    ok("objects_order_holds_under_pointer", ids_apart and len(before) >= 3 and during == before and sorted_now[0] == added and added not in during and last == [added],
+       (ids_apart, before, during, sorted_now[:len(during)], added, last))
+    pg.mouse.move(5, 5)
+    resorted = settle(pg, "(r => r.length > 0 && JSON.stringify(r) === JSON.stringify(%s.slice(0, r.length)))(%s)" % (FRESH, ROWS), 5000)
+    after = pg.evaluate(ROWS)
+    ok("objects_resort_off_the_list", resorted and after[:1] == [added], (after, pg.evaluate(FRESH)[:len(after)]))
+    # A thousand balls: the list holds them all and draws only the rows in view, to the very last.
+    pg.evaluate(P + ".select('collisions')"); pg.evaluate(P + ".setParam('count', 1200)"); pg.evaluate(P + ".pause()")
+    pg.click("#dt-inspect"); pg.wait_for_timeout(600)
+    pg.evaluate("document.getElementById('objects-list').scrollTop = 1e9"); pg.wait_for_timeout(300)
+    v = pg.evaluate("""[PhysicsPlayground.active.objects().length, document.querySelectorAll('#objects-list .orow').length, +document.getElementById('objects-n').textContent,
+      [...document.querySelectorAll('#objects-list .orow:not([hidden])')].map(r => r.textContent).some(t => t.startsWith('Ball ' + Math.max(...PhysicsPlayground.active.objects().map(o => o.id)) + 'B'))]""")
+    ok("objects_list_draws_rows_in_view", v[0] >= 1000 and v[1] <= 40 and v[2] == v[0] and v[3], v)
+    ok("inspect_list_is_read_only", pg.locator("#dp-inspect input, #dp-inspect [role=slider]").count() == 0)
     pg.context.close()
 
     # ---- the deck: Insights in place of a floating sheet, size presets, and the grip on the keyboard
     pg = fresh("fluid")
+    # Insights opens on its Story, or on Now while a warning stands; the run's state (the insight cards) and the
+    # frame-timing strip are its Now view. Paused, so a slow frame cannot raise a warning between the look and the click.
+    pg.evaluate(P + ".pause()"); pg.wait_for_timeout(700)
+    warned = pg.evaluate(WARNED)
     pg.click("#dt-insights"); pg.wait_for_timeout(300)
-    ok("insights_pane_shows", pane() == "insights" and pg.is_visible("#insights") and pg.is_visible("#perf-spark"))
+    first, other = ("now", "story") if warned else ("story", "now")
+    ok("insights_pane_shows", pane() == "insights" and pg.is_visible("#ip-" + first) and pg.get_attribute("#iv-" + first, "aria-selected") == "true" and pg.is_hidden("#ip-" + other), warned)
+    pg.click("#iv-now"); pg.wait_for_timeout(200)
+    ok("insights_now_view", pg.is_visible("#insights") and pg.is_visible("#perf-spark") and pg.is_hidden("#ip-story"))
+    pg.evaluate(P + ".play()")
+    pg.focus("#dt-insights")
     pg.keyboard.press("ArrowLeft")
     ok("deck_tabs_arrow_keys", pane() == "inspect" and pg.evaluate("document.activeElement.id") == "dt-inspect")
     ok("inspect_empty_says_how", "post" in pg.inner_text("#inspect-empty").lower())
     h = lambda: pg.locator("#tile-deck").bounding_box()["height"]
-    std = h(); pg.click("#btn-deck-size"); pg.wait_for_timeout(400); tall = h()
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400); compact = h()
+    # The grip is the deck's one size control (the size button is gone): a double-click steps standard, tall and
+    # compact as the button did, and Home, Enter and End pick compact, standard and tall from the keyboard.
+    grip_mid = lambda: (lambda g: (g["x"] + g["width"] / 2, g["y"] + g["height"] / 2))(pg.locator("#deck-grip").bounding_box())
+    ok("deck_size_button_gone", pg.locator("#btn-deck-size").count() == 0 and pg.locator(".deck-head .icon-btn").count() == 0)
+    std = h(); pg.mouse.dblclick(*grip_mid()); pg.wait_for_timeout(400); tall = h()
+    pg.mouse.dblclick(*grip_mid()); pg.wait_for_timeout(400); compact = h()
     ok("deck_size_presets", tall > std + 40 and compact < std - 40, (round(compact), round(std), round(tall)))
     ok("compact_hides_the_plot", not pg.is_visible("#chart") or pane() != "telemetry")
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400)
-    pg.focus("#deck-grip"); pg.keyboard.press("ArrowUp"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(400)
+    pg.mouse.dblclick(*grip_mid()); pg.wait_for_timeout(400)
+    ok("double_click_cycles_back", abs(h() - std) < 4, round(h()))
+    pg.focus("#deck-grip"); pg.keyboard.press("End"); pg.wait_for_timeout(400)
+    ok("grip_end_is_tall", abs(h() - tall) < 4, round(h()))
+    pg.keyboard.press("Home"); pg.wait_for_timeout(400)
+    ok("grip_home_is_compact", abs(h() - compact) < 4 and pg.get_attribute("#deck-grip", "aria-valuetext").endswith("compact"), pg.get_attribute("#deck-grip", "aria-valuetext"))
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(400)
+    pg.keyboard.press("ArrowUp"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(400)
     ok("grip_steps_taller", abs(h() - (std + 48)) < 4 and "deck-sized" in pg.get_attribute("#bento", "class"), round(h()))
     pg.keyboard.press("Enter"); pg.wait_for_timeout(400)
     ok("grip_enter_restores", abs(h() - std) < 4)
@@ -155,6 +303,84 @@ with sync_playwright() as p:
     ok("post_removed_from_card", state("active.obs.length") == n0 - 1 and pg.is_hidden("#details"))
     pg.context.close()
 
+    # ---- the grips: the deck's top edge and the inspector's inner edge drag, step with the keys and are remembered,
+    # and the stage keeps a usable size at their limits
+    ctx = b.new_context(viewport=VIEW)
+    pg = open_page(ctx)
+    pg.goto(URL + "#fluid"); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active && PhysicsPlayground.active.id === 'fluid'")
+    pg.wait_for_timeout(800)
+    bb = lambda s: pg.locator(s).bounding_box()
+    mid = lambda r: (r["x"] + r["width"] / 2, r["y"] + r["height"] / 2)
+    deck_h, side_w = lambda: bb("#tile-deck")["height"], lambda: bb("#tile-notes")["width"]
+    aria = lambda s, a: pg.get_attribute(s, "aria-" + a)
+    st, dk, nt, gd, gs = bb("#tile-stage"), bb("#tile-deck"), bb("#tile-notes"), bb("#deck-grip"), bb("#side-grip")
+    ok("grips_are_separators", all(pg.get_attribute(s, "role") == "separator" and pg.get_attribute(s, "tabindex") == "0" and aria(s, "label") for s in ("#deck-grip", "#side-grip"))
+       and aria("#deck-grip", "orientation") == "horizontal" and aria("#side-grip", "orientation") == "vertical"
+       and abs(int(aria("#deck-grip", "valuenow")) - dk["height"]) < 2 and int(aria("#deck-grip", "valuemin")) <= dk["height"] <= int(aria("#deck-grip", "valuemax"))
+       and abs(int(aria("#side-grip", "valuenow")) - nt["width"]) < 2 and int(aria("#side-grip", "valuemin")) <= nt["width"] <= int(aria("#side-grip", "valuemax")))
+    # Each grip is a band at least 24 px across, laid over the gap between the tiles it moves.
+    ok("grips_span_their_gaps", gd["height"] >= 24 and gd["y"] < st["y"] + st["height"] and gd["y"] + gd["height"] > dk["y"]
+       and gs["width"] >= 24 and gs["x"] < st["x"] + st["width"] and gs["x"] + gs["width"] > nt["x"], (gd, gs))
+    ok("grips_resize_cursors", pg.evaluate("['deck-grip', 'side-grip'].map(id => getComputedStyle(document.getElementById(id)).cursor).join()") == "row-resize,col-resize")
+    # The band never covers a deck tab, the inspector's tabs or the player bar's buttons: a press at the middle of any
+    # of their edges, the nearest to a grip included, reaches the control itself.
+    spared = pg.evaluate("""[...document.querySelectorAll('#deck-tabs [role=tab], #notes-tabs [role=tab], .player button')].filter(e => e.offsetParent && e.offsetWidth).every(e => {
+      const r = e.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      return [[cx, r.top + 1], [cx, r.bottom - 1], [r.left + 1, cy], [r.right - 1, cy], [cx, cy]].every(([x, y]) => e.contains(document.elementFromPoint(x, y))); })""")
+    ok("grips_spare_the_tabs", spared and pg.evaluate("document.elementFromPoint(%f, %f).id" % mid(gd)) == "deck-grip")
+    # A drag resizes; both sizes come back after a reload.
+    x, y = mid(gd); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x, y - 50, steps=4); pg.mouse.move(x, y - 100, steps=4); pg.mouse.up(); pg.wait_for_timeout(300)
+    ok("deck_grip_drags", abs(deck_h() - (dk["height"] + 100)) < 3 and "deck-sized" in pg.get_attribute("#bento", "class"), (round(dk["height"]), round(deck_h())))
+    x, y = mid(gs); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x - 60, y, steps=4); pg.mouse.move(x - 120, y, steps=4); pg.mouse.up(); pg.wait_for_timeout(300)
+    ok("side_grip_drags", abs(side_w() - (nt["width"] + 120)) < 3 and abs(int(aria("#side-grip", "valuenow")) - side_w()) < 2, (round(nt["width"]), round(side_w())))
+    dragged = (deck_h(), side_w())
+    pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(800)
+    ok("grips_remembered", abs(deck_h() - dragged[0]) < 2 and abs(side_w() - dragged[1]) < 2 and pg.evaluate("JSON.parse(localStorage.getItem('psp:sidePx'))") > 0, (dragged, round(deck_h()), round(side_w())))
+    # The keys: arrows step 24 px (Left widens the inspector), Home and End reach the narrowest and widest, Enter
+    # gives back the standard width, which is not remembered as a custom one.
+    pg.focus("#side-grip"); pg.keyboard.press("Home"); pg.wait_for_timeout(200)
+    narrow = side_w()
+    pg.keyboard.press("ArrowLeft"); pg.keyboard.press("ArrowLeft"); pg.keyboard.press("ArrowRight"); pg.wait_for_timeout(200)
+    ok("side_grip_keys", abs(narrow - int(aria("#side-grip", "valuemin"))) < 2 and abs(side_w() - (narrow + 24)) < 2, (round(narrow), round(side_w())))
+    pg.keyboard.press("End"); pg.wait_for_timeout(200)
+    ok("side_widest_keeps_the_stage", bb("#tile-stage")["width"] >= side_w() - 1 and abs(int(aria("#side-grip", "valuenow")) - int(aria("#side-grip", "valuemax"))) < 2, (round(bb("#tile-stage")["width"]), round(side_w())))
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(200)
+    ok("side_enter_restores", abs(side_w() - nt["width"]) < 2 and pg.evaluate("JSON.parse(localStorage.getItem('psp:sidePx'))") == 0, round(side_w()))
+    pg.focus("#deck-grip"); pg.keyboard.press("Enter"); pg.keyboard.press("ArrowDown"); pg.wait_for_timeout(200)
+    ok("deck_grip_keys", abs(deck_h() - (dk["height"] - 24)) < 3, round(deck_h()))
+    # Dragged to the top, the deck stops where the stage keeps 260 px.
+    x, y = mid(bb("#deck-grip")); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x, 4, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    ok("deck_tallest_keeps_the_stage", 258 <= bb("#tile-stage")["height"] <= 264 and abs(int(aria("#deck-grip", "valuenow")) - int(aria("#deck-grip", "valuemax"))) < 2, round(bb("#tile-stage")["height"]))
+    # A size kept from a larger window is held back by the stylesheet too.
+    pg.evaluate("localStorage.setItem('psp:deckSize', '\"custom\"'); localStorage.setItem('psp:deckPx', '5000'); localStorage.setItem('psp:sidePx', '5000')")
+    pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(800)
+    ok("stored_extremes_keep_the_stage", bb("#tile-stage")["height"] >= 258 and bb("#tile-stage")["width"] >= side_w() - 1, (round(bb("#tile-stage")["height"]), round(bb("#tile-stage")["width"]), round(side_w())))
+    # Focus mode has no edges to move; one column has no inner edge, while the deck keeps its grip.
+    pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("f"); pg.wait_for_timeout(300)
+    ok("grips_hidden_in_focus", pg.is_hidden("#deck-grip") and pg.is_hidden("#side-grip"))
+    pg.keyboard.press("f"); pg.wait_for_timeout(300)
+    pg.focus("#deck-grip"); pg.keyboard.press("Enter")
+    pg.set_viewport_size({"width": 1000, "height": 800}); pg.wait_for_timeout(600)
+    h0 = deck_h(); pg.focus("#deck-grip"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(200)
+    ok("side_grip_hidden_when_stacked", pg.is_hidden("#side-grip") and pg.is_visible("#deck-grip") and abs(deck_h() - (h0 + 24)) < 3, (round(h0), round(deck_h())))
+    # Stacked, the grip's range is the stylesheet's: the deck may take 80 % of the screen, and the keys take it there.
+    for _ in range(12): pg.keyboard.press("PageUp")
+    pg.wait_for_timeout(300)
+    top = int(aria("#deck-grip", "valuemax"))
+    ok("deck_grip_max_when_stacked", top == round(800 * 0.8) and abs(deck_h() - top) < 2 and int(aria("#deck-grip", "valuenow")) <= top, (top, round(deck_h())))
+    # A short wide window holds the presets to the stage's 260 px as it holds a dragged height: the tall and standard
+    # decks stop there, the value stays within its range, and a step up never shrinks the deck.
+    pg.set_viewport_size({"width": 1400, "height": 620}); pg.wait_for_timeout(600)
+    held = []
+    for key in ("End", "Enter"):
+        pg.focus("#deck-grip"); pg.keyboard.press(key); pg.wait_for_timeout(400)
+        st_h, now, top, h1 = bb("#tile-stage")["height"], int(aria("#deck-grip", "valuenow")), int(aria("#deck-grip", "valuemax")), deck_h()
+        pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(300)
+        held.append((key, round(st_h), now, top, round(h1), round(deck_h())))
+        if not (st_h >= 259 and now <= top and deck_h() >= h1 - 1): held[-1] += ("bad",)
+    ok("short_window_presets_keep_the_stage", all(len(r) == 6 for r in held), held)
+    ctx.close()
+
     # ---- inspecting a Waves source: a click on it selects instead of removing it
     pg = fresh("waves")
     scene(pg, "#preset-waves-twosrc"); pg.wait_for_timeout(500)
@@ -163,19 +389,40 @@ with sync_playwright() as p:
     pg.mouse.click(*to_screen(s["x"], s["y"])); card("Source 1")
     ok("source_click_selects", state("active.sources.length") == 2 and "Source 1" in pg.inner_text("#details-kicker"))
     ok("source_rows_in_units", " m" in pg.inner_text("#details-rows") and "Hz" in pg.inner_text("#details-rows"))
+    # The Insights tab's marks mean one thing: nothing while nothing stands and nothing is unseen. Paused (so a busy
+    # machine cannot raise "running slower"), with the Story read and Telemetry showing again, the tab is bare: no dot,
+    # no count, no description.
+    pg.evaluate(P + ".pause()"); pg.click("#dt-insights"); pg.click("#iv-story"); pg.wait_for_timeout(300); pg.click("#dt-telemetry")
+    pg.evaluate("PhysicsPlayground.story.tick()"); pg.wait_for_timeout(1200)
+    quiet = pg.evaluate(TAB)
+    ok("insights_tab_bare_when_nothing_stands", quiet["warn"] == [] and quiet["sum"] is None and quiet["new"] is None and quiet["desc"] is None and quiet["marks"] == 0, quiet)
+    # A warning shows its colour: the dot and its words in the warning colour, and the tab describes it.
+    pg.evaluate(P + ".setParam('f', 9)")
+    warned = settle(pg, WARNED, 8000)
+    lit = pg.evaluate(TAB)
+    ok("insights_tab_warning_in_colour", warned and lit["sum"] == "1 to check" and lit["level"] == "warn" and lit["color"] == lit["warnColor"] == lit["dot"] != lit["critColor"] and bool(lit["desc"]), lit)
+    pg.click("#dt-insights"); pg.wait_for_timeout(200)
+    ok("insights_open_on_now_when_warned", warned and pane() == "insights" and pg.get_attribute("#iv-now", "aria-selected") == "true" and pg.is_visible("#insights") and pg.is_hidden("#ip-story"))
+    pg.click("#dt-telemetry"); pg.evaluate(P + ".setParam('f', 3)")
+    calm = settle(pg, "!(" + WARNED + ")", 8000)
+    pg.click("#dt-insights"); pg.wait_for_timeout(200)
+    ok("insights_open_on_story_when_calm", calm and pg.get_attribute("#iv-story", "aria-selected") == "true" and pg.is_visible("#ip-story") and pg.is_hidden("#insights"))
     pg.context.close()
 
     # ---- units: readings, controls and typed values follow the system; the physics does not
     pg = fresh("fluid")
-    ok("units_default_metric", state("units.get()") == "si" and pg.inner_text("#btn-units-label") == "Metric")
+    # The system in use is the checked one in the Units section (the top bar's Units button is gone).
+    checked = pg.evaluate("[...document.querySelectorAll('#units-list [aria-checked=true]')].map(b => [b.dataset.sys, b.querySelector('b').textContent])")
+    ok("units_default_metric", state("units.get()") == "si" and checked == [["si", "Metric (SI)"]] and not pg.evaluate("document.getElementById('btn-units')"), checked)
     g_label = lambda: pg.inner_text("#ctl-fluid-gravity-out")
     ok("control_in_metric", g_label().endswith("m/s²") and g_label().startswith("9.8"), g_label())
     pg.keyboard.press("u"); pg.wait_for_timeout(200)
-    ok("u_opens_units", pg.is_visible("#units-sheet") and "1.09 cm" in pg.inner_text("#units-scale"))
+    ok("u_opens_units", pg.is_visible("#sp-units") and pg.evaluate("document.getElementById('settings').matches(':modal')") and state("settings.section()") == "units"
+       and pg.evaluate("document.activeElement === document.querySelector('#units-list [aria-checked=true]')") and "1.09 cm" in pg.inner_text("#units-scale"))
     pg.keyboard.press("ArrowDown"); pg.wait_for_timeout(300)
     ok("arrow_picks_us", state("units.get()") == "us" and g_label().endswith("ft/s²") and g_label().startswith("32.2"), g_label())
     pg.keyboard.press("Escape")
-    ok("escape_closes_units", pg.is_hidden("#units-sheet"))
+    ok("escape_closes_units", pg.is_hidden("#sp-units") and not state("settings.isOpen()") and pg.evaluate("document.activeElement === document.body"))
     pg.evaluate(P + ".units.set('si')"); pg.wait_for_timeout(300)
     pg.click("#ctl-fluid-gravity-out"); pg.keyboard.press("Control+A"); pg.keyboard.type("4.905"); pg.keyboard.press("Enter"); pg.wait_for_timeout(200)
     ok("typed_value_in_display_units", abs(state("active.p.gravity") - 450) < 0.6, state("active.p.gravity"))
@@ -188,6 +435,165 @@ with sync_playwright() as p:
     ok("chaos_energy_in_si", "J/kg" in pg.inner_text("#readouts"))
     pg.evaluate(P + ".units.set('us')"); pg.wait_for_timeout(400)
     ok("chaos_energy_in_us", "ft²/s²" in pg.inner_text("#readouts") and abs(state("active.p.g") - 9.81) < 1e-9)
+    pg.context.close()
+
+    # ---- Insights: the Story, the lab's narrator telling the run as it happens
+    STEP = "(s => {{ const P = PhysicsPlayground, L = P.active, end = L.t + s; while (L.t < end - 1e-9) {{ const e2 = Math.min(end, L.t + 0.25); while (L.t < e2 - 1e-9) if (!P.advance(Math.min(1 / 60, e2 - L.t))) break; P.story.tick(); }} }})({})"
+    story = lambda: pg.evaluate(P + ".story.list()")
+    kinds = lambda: {m["kind"] for m in story()}
+    # Empty sky 520 px out from the star (3.85 AU, past the ice giant), within 30° of the stage's wide axis so the click
+    # lands on the stage, at the angle there farthest from every body.
+    EDGE = "(() => { const L = PhysicsPlayground.active, H = L.heaviest(); let best = null, far = -1; for (let k = 0; k < 26; k++) { const a = (k < 13 ? -Math.PI / 6 + k * Math.PI / 36 : 5 * Math.PI / 6 + (k - 13) * Math.PI / 36), x = H.x + 520 * Math.cos(a), y = H.y + 520 * Math.sin(a), d = Math.min(...L.bodies.map(b => Math.hypot(b.x - x, b.y - y))); if (d > far) { far = d; best = { x, y }; } } return best; })()"
+    def drag(x0, y0, x1, y1):
+        r = pg.locator("#stage-canvas").bounding_box()
+        pg.mouse.move(r["x"] + x0, r["y"] + y0); pg.mouse.down()
+        for k in range(1, 9): pg.mouse.move(r["x"] + x0 + (x1 - x0) * k / 8, r["y"] + y0 + (y1 - y0) * k / 8)
+        pg.mouse.up()
+
+    # Gravity: a brown dwarf dropped at the outer edge of the Star system pulls the barycentre out of the star.
+    pg = fresh("gravity"); pg.evaluate(P + ".pause()")
+    scene(pg, "#preset-gravity-solar"); pg.wait_for_timeout(300); pg.evaluate(P + ".story.tick()")
+    ok("story_opens_with_the_scale", "scale" in kinds(), kinds())
+    pg.evaluate(P + ".setParam('launchMass', 70)")
+    spot = pg.evaluate(EDGE)
+    n0 = state("active.bodies.length")
+    pg.mouse.click(*to_screen(spot["x"], spot["y"])); pg.wait_for_timeout(200)
+    ok("giant_dropped", state("active.bodies.length") == n0 + 1 and state("active.heaviest().m") == 1000 and state("active.bodies.some(b => b.kind === 'brown')"), state("active.bodies.length"))
+    pg.evaluate(STEP.format(5))
+    bary = [m for m in story() if m["kind"] == "bary"]
+    ok("story_giant_moves_the_barycentre", {"added", "bary"} <= kinds() and bary and "barycentre" in bary[0]["body"] and "km/s" in bary[0]["body"], kinds())
+    ok("story_explains_the_wobble", bool(bary) and "wobble" in bary[0]["body"] and bary[0]["show"])
+    pg.evaluate(STEP.format(40))
+    ok("story_giant_reshapes_orbits", bool(kinds() & {"perturb", "pass", "cross", "packed", "resonance", "capture", "loss", "merge"}), kinds())
+    lst = story()
+    ok("story_newest_first", all(lst[i]["t"] >= lst[i + 1]["t"] for i in range(len(lst) - 1)) and len(lst) <= 60, [round(m["t"], 2) for m in lst])
+    ok("story_numbers_and_causes", all(any(c.isdigit() for c in m["body"]) for m in lst), [m["title"] for m in lst if not any(c.isdigit() for c in m["body"])])
+    # The unread count rides on the Insights tab and clears when the Story is read.
+    pg.wait_for_timeout(400)
+    ok("story_unread_on_tab", pg.is_visible("#dt-story-n") and int(pg.inner_text("#dt-story-n").split()[0]) > 0, pg.inner_text("#dt-story-n"))
+    # The unseen count is neutral, in the text colour on no fill: colour on a tab is kept for a problem that stands.
+    # It is not a pill either, as the inspector's totals and progress are: no ring and no border.
+    tone = pg.evaluate("""(() => { const n = getComputedStyle(document.getElementById('dt-story-n')), e = document.createElement('i'); e.style.color = 'var(--text)'; document.body.append(e);
+      const t = getComputedStyle(e).color; e.remove(); return { color: n.color, text: t, fill: n.backgroundColor, ring: n.boxShadow, border: n.borderTopStyle }; })()""")
+    ok("story_unread_count_neutral", tone["color"] == tone["text"] and tone["fill"] == "rgba(0, 0, 0, 0)" and tone["ring"] == "none" and tone["border"] == "none", tone)
+    # The run is paused, so whether a warning stands cannot change between the look and the click.
+    warned = pg.evaluate(WARNED)
+    pg.click("#dt-insights")
+    ok("insights_view_follows_warnings", pg.get_attribute("#iv-now" if warned else "#iv-story", "aria-selected") == "true", warned)
+    if warned: pg.click("#iv-story")
+    ok("story_read_clears_unread", settle(pg, "document.getElementById('dt-story-n').hidden && " + P + ".story.unread() === 0", 5000))
+    # Keyboard: the Now and Story views are a tablist; the list itself and every moment's buttons are tab stops.
+    pg.focus("#iv-story"); pg.keyboard.press("Home")
+    ok("story_views_keys", pg.evaluate("document.activeElement.id") == "iv-now" and pg.is_visible("#insights"))
+    pg.keyboard.press("ArrowRight")
+    ok("story_view_back", pg.evaluate("document.activeElement.id") == "iv-story" and pg.is_visible("#story"))
+    reached = False
+    for k in range(4):
+        pg.keyboard.press("Tab")
+        if pg.evaluate("document.activeElement.id") == "story": reached = True; break
+    ok("story_list_keyboard_reachable", reached, pg.evaluate("document.activeElement.id || document.activeElement.className"))
+    pg.keyboard.press("Tab")
+    ok("story_moment_button_reachable", pg.evaluate("(e => !!e.closest('#story') && (e.tagName === 'BUTTON' || e.tagName === 'SUMMARY'))(document.activeElement)"))
+    follow = pg.locator("#story .btn-show:visible", has_text="Follow").first
+    follow.focus(); pg.keyboard.press("Enter"); pg.wait_for_timeout(200)
+    ok("story_show_me_follows", state("active.track") is not None)
+    # Show me never offers a body that has merged away or left: its button goes with it.
+    ok("story_show_me_only_live", pg.evaluate("[...document.querySelectorAll('#story .btn-show')].filter(b => b.offsetParent).every(b => { const m = b.textContent.match(/Follow Body (\\d+)/); return !m || PhysicsPlayground.active.bodies.some(q => q.id === +m[1]); })"))
+    # The story survives a pause: played on a moment and paused, it keeps everything it had and holds still while the
+    # frame loop goes on looking. One look after the pause takes in the last frames played.
+    snap = lambda: [(m["kind"], m["title"], m["t"], m["n"]) for m in story()]
+    n_kept, t_play = len(story()), state("active.t")
+    pg.evaluate(P + ".play()"); played = settle(pg, P + ".active.t > %r" % (t_play + 0.5), 8000); pg.evaluate(P + ".pause()")
+    pg.evaluate(P + ".story.tick()")
+    held, t_held = snap(), state("active.t")
+    pg.wait_for_timeout(800)
+    ok("story_survives_pause", played and len(held) >= n_kept and snap() == held and state("active.t") == t_held and state("state.running") is False, (n_kept, len(held), len(story())))
+    # A rewind drops what it undid.
+    n_before = len(held)
+    # Rewind needs recorded history, which only real playing captures: play a moment, then seek back to the start.
+    pg.evaluate(P + ".play()"); settle(pg, P + ".history.size() >= 2", 8000); pg.evaluate(P + ".pause()")
+    pg.evaluate(P + ".history.seek(0)"); pg.evaluate(P + ".story.tick()")
+    t_now = state("active.t")
+    ok("story_rewind_trims", t_now < 1 and len(story()) < n_before and all(m["t"] <= t_now + 1e-6 for m in story()), (t_now, n_before, [round(m["t"], 2) for m in story()]))
+    # A new scene starts a new story. Before Kepler ellipses loads, the Star system's story holds its opening moment at
+    # t = 0 and a body dropped after the rewind, told at its own time; afterwards neither is there. Time going back to 0
+    # alone would trim only the second, so the first shows the story itself began again.
+    pg.evaluate(STEP.format(2))
+    drop = pg.evaluate("(() => { const L = PhysicsPlayground.active, H = L.heaviest(); let best = null, far = -1; for (let k = 0; k < 24; k++) { const a = k * Math.PI / 12, x = H.x + 300 * Math.cos(a), y = H.y + 300 * Math.sin(a), d = Math.min(...L.bodies.map(b => Math.hypot(b.x - x, b.y - y))); if (d > far) { far = d; best = { x, y }; } } return best; })()")
+    pg.evaluate("(s => PhysicsPlayground.active.dropOrbit(s.x, s.y, 0))(%s)" % json.dumps(drop)); pg.evaluate(STEP.format(0.5))
+    held = story()
+    early, late = [(m["title"], m["body"]) for m in held if m["t"] < 0.01], [m["title"] for m in held if m["t"] > 1]
+    pg.evaluate(P + ".preset('kepler')"); pg.evaluate(P + ".story.tick()")
+    told = {x for m in story() for x in [m["title"]] + m["earlier"]}
+    ok("story_resets_on_scene", bool(early) and bool(late) and not told & set(late) and not {(m["title"], m["body"]) for m in story()} & set(early)
+       and all(m["t"] < 0.01 for m in story()), ([e[0] for e in early], late, [(m["kind"], m["t"]) for m in story()]))
+    pg.context.close()
+
+    # A star as heavy as the Star system's own, dropped at the same edge, makes a binary with it. The planets close to the
+    # star still circle it and are still watched about it: the companion's tide reshapes an inner orbit, and that is told.
+    pg = fresh("gravity"); pg.evaluate(P + ".pause()")
+    scene(pg, "#preset-gravity-solar"); pg.wait_for_timeout(300); pg.evaluate(P + ".story.tick()")
+    inner = pg.evaluate("(() => { const L = PhysicsPlayground.active, H = L.heaviest(); return L.bodies.filter(b => b !== H && b.m > 0 && Math.hypot(b.x - H.x, b.y - H.y, b.z - H.z) < 150).map(b => b.id); })()")
+    pg.evaluate(P + ".setParam('launchMass', 1000)")
+    spot = pg.evaluate(EDGE)
+    n0 = state("active.bodies.length")
+    pg.mouse.click(*to_screen(spot["x"], spot["y"])); pg.wait_for_timeout(200)
+    ok("companion_dropped", state("active.bodies.length") == n0 + 1 and state("active.bodies.filter(b => b.kind === 'star' && b.m === 1000).length") == 2, state("active.bodies.length"))
+    # Seen within 10 s of simulated time in every trial run; 30 s is the bound.
+    seen = None
+    for k in range(30):
+        pg.evaluate(STEP.format(1))
+        changed = {x for m in story() if m["kind"] == "perturb" for x in [m["title"]] + m["earlier"]}
+        seen = next((i for i in inner if "Body %d's orbit is changing" % i in changed), None)
+        if seen: break
+    ok("story_binary_inner_orbit_watched", len(inner) >= 2 and seen is not None, (inner, round(state("active.t"), 2), sorted(kinds())))
+    pg.context.close()
+
+    # Empty sky, three fast throws by hand: each throw is explained, then what follows from it.
+    pg = fresh("gravity"); pg.evaluate(P + ".pause()")
+    scene(pg, "#preset-gravity-empty"); pg.wait_for_timeout(300); pg.evaluate(P + ".story.tick()")
+    r = pg.locator("#stage-canvas").bounding_box(); cx, cy = r["width"] / 2, r["height"] / 2
+    drag(cx, cy, cx + 160, cy - 20); pg.evaluate(STEP.format(1))
+    drag(cx - 160, cy + 30, cx + 140, cy + 30); pg.evaluate(STEP.format(1))
+    drag(cx, cy - 120, cx + 70, cy - 120); pg.evaluate(STEP.format(40))
+    total = sum(m["n"] for m in story())
+    ok("empty_sky_three_bodies", state("active.bodies.length") == 3, state("active.bodies.length"))
+    ok("empty_sky_steady_story", {"added", "momentum", "pass"} <= kinds() and total >= 6, (kinds(), total))
+    added = [m for m in story() if m["kind"] == "added"]
+    ok("empty_sky_throws_explained", bool(added) and added[0]["n"] == 3 and ("escape" in added[0]["body"] or "once every" in added[0]["body"]), added[0]["body"][:120] if added else None)
+    pg.context.close()
+
+    # Keyboard focus stays on a moment's button when a repeat folds into its entry, relabels it and moves it to the top.
+    pg = fresh("gravity"); pg.evaluate(P + ".pause()")
+    scene(pg, "#preset-gravity-empty"); pg.wait_for_timeout(300); pg.evaluate(P + ".story.tick()")
+    pg.click("#dt-insights"); pg.click("#iv-story")
+    ADD = "((x, y, vx, m) => { const L = PhysicsPlayground.active; L.addBody(L.body(x, y, vx, 0, m)); return L.uid; })(%s)"
+    pg.evaluate(ADD % "0, 0, 30, 2"); pg.evaluate(STEP.format(0.5))
+    before = pg.evaluate("[...document.querySelectorAll('#story > li')].map(li => li.dataset.kind)")
+    pg.focus("#story li[data-kind=added] .btn-show")
+    # Passing wide of the first, so its arrival is the only moment of the look.
+    second = pg.evaluate(ADD % "160, 120, -30, 1"); pg.evaluate(STEP.format(0.25))
+    f = pg.evaluate("(e => { const li = e.closest('#story > li'); return { fk: e.dataset.fk || null, kind: li && li.dataset.kind, first: !!li && li === document.querySelector('#story > li'), text: e.textContent }; })(document.activeElement)")
+    ok("story_fold_keeps_focus", before[:2] == ["momentum", "added"] and f["fk"] == "show" and f["kind"] == "added" and f["first"] and ("Body %d" % second) in f["text"], (before, f))
+    # Two bodies falling into one in the same look are both told as mergers into it, and neither as an escape.
+    pg.evaluate(P + ".preset('empty')"); pg.evaluate(P + ".story.tick()")
+    big = pg.evaluate(ADD % "0, 0, 0, 10"); pg.evaluate(STEP.format(0.5))
+    pg.evaluate("(() => { const L = PhysicsPlayground.active, k = 0.7 * (L.bodies[0].r + 4) + 30; L.addBody(L.body(k - 8, 0, -40, 0, 1)); L.addBody(L.body(-k, 0, 40, 0, 2)); })()")
+    pg.evaluate(STEP.format(0.25)); n_three = state("active.bodies.length"); pg.evaluate(STEP.format(1))
+    merged = [m for m in story() if m["kind"] == "merge"]
+    ok("story_tells_each_merger", n_three == 3 and state("active.bodies.length") == 1 and len(merged) == 1 and merged[0]["n"] == 2
+       and all(x.endswith("merged into Body %d" % big) for x in [merged[0]["title"]] + merged[0]["earlier"]) and "escape" not in kinds(), [(m["kind"], m["n"], m["title"]) for m in story()])
+    pg.context.close()
+
+    # Other labs tell their own moments: the gas relaxing and pressing on its walls, the copies parting.
+    pg = fresh("collisions"); pg.evaluate(P + ".pause()"); pg.evaluate(P + ".preset('gas')"); pg.evaluate(P + ".story.tick()")
+    pg.evaluate(STEP.format(10))
+    ok("collisions_story", {"relax", "pressure"} <= kinds(), kinds())
+    pg.click("#tab-chaos"); pg.wait_for_timeout(300); pg.evaluate(P + ".pause()"); pg.evaluate(P + ".preset('chaos')"); pg.evaluate(P + ".story.tick()")
+    pg.evaluate(STEP.format(12))
+    ok("chaos_story", {"lyapunov", "parted"} <= kinds(), kinds())
+    pg.click("#tab-collisions"); pg.wait_for_timeout(300)
+    ok("story_kept_per_lab", {"relax", "pressure"} <= kinds(), kinds())
     pg.context.close()
 
     b.close()

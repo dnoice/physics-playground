@@ -1,28 +1,31 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.17)
+    - Title: Fluid Lab (digiSpace Edition - v2.19)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.17.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one way to select: posts are numbered, so the
+      selection follows a post by its number through rebuilds, rewinds and
+      saved states; the selection contract, and a list of posts with their
+      radius, the liquid touching them and the flow past them.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for recordings shot like a film: interest() names the
+      splash front and the fastest flow for the director, weighted by their
+      speed.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Particles
       carry stable numbers through removal, rewind and saved states; tracks
       follow one particle in eight, chosen by number (position, velocity,
       density), where Fluid had kept none; a dataset records the tank,
       spacing, gravity, tilt and every post.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets: each column's unit, meaning and SI factor, and
-      a note on coordinates and scale.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The camera
-      orbits all the way round the tank, as in every other lab: its back is
-      now finished.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -49,10 +52,11 @@ import { chartFrame, chartMessage, drawSeries, seriesRange, velocityTracker } fr
 import { genericState } from '../core/codec.js';
 import { RAMP_DENS, RAMP_HEAT, THEME } from '../core/color.js';
 import { brushRing, drawSphere } from '../core/draw.js';
+import { fastGroup, fastestCell } from '../core/interest.js';
 
 import { Series } from '../core/series.js';
 import { TAU, clamp, fmtSI, pct, rand } from '../core/util.js';
-import { PX_M, fmtPos, fmtQ, unitOf } from '../core/units.js';
+import { PX_M, fmtPos, fmtQ, sig, unitOf } from '../core/units.js';
 import { view } from '../core/view.js';
 
 
@@ -62,6 +66,7 @@ import { sticky } from '../shell/diagnostics.js';
 import { setParam } from '../shell/lifecycle.js';
 
 
+import { PICK_PX, pickFrame } from '../shell/stage.js';
 import { announce } from '../shell/state.js';
 
 /* ================================================================== */
@@ -185,10 +190,11 @@ export const fluid = {
     const s = this.spacing, A = s * s * Math.sqrt(3) / 2, N = Math.round(this.p.count), Wu = this.Wu, Hu = this.Hu, m = 0.45;
     // Posts go in before the liquid, so no particle starts inside one; kept posts outside a smaller tank are dropped.
     if (this.kept) this.obs = this.kept.obs.filter(o => o.x - o.r > m && o.x + o.r < Wu - m && o.y - o.r > m && o.y + o.r < Hu - m);
+    this.numberPosts();
     if (preset === 'dam' || preset === 'posts') {
       if (preset === 'posts' && !this.kept) {
         const r = 1.5;
-        this.obs.push({ x: Wu * 0.55, y: Hu * 0.72, r }, { x: Wu * 0.7, y: Hu * 0.5, r }, { x: Wu * 0.84, y: Hu * 0.74, r }, { x: Wu * 0.62, y: Hu * 0.3, r: 1.1 });
+        this.addPost(Wu * 0.55, Hu * 0.72, r); this.addPost(Wu * 0.7, Hu * 0.5, r); this.addPost(Wu * 0.84, Hu * 0.74, r); this.addPost(Wu * 0.62, Hu * 0.3, 1.1);
       }
       const bw = Math.min(Wu * 0.4, Wu - 1), ht = Math.min(Hu - 1.2, N * A / bw);
       this.fillBlock(m, Hu - m - ht, m + bw, Hu - m, N);
@@ -359,50 +365,86 @@ export const fluid = {
       if (this.ticks) { this.clampRate += (this.clamped / (Math.max(1, this.n) * this.ticks) - this.clampRate) * 0.4; this.clamped = 0; this.ticks = 0; }
     }
   },
-  /* The post under a point, by index; -1 for none. */
-  hitPost(p) { const ux = p.x / this.U, uy = p.y / this.U; return this.obs.findIndex(o => (o.x - ux) ** 2 + (o.y - uy) ** 2 < (o.r + 0.3) ** 2); },
+  /* The post under a point, by index; -1 for none. reach is in particle spacings beyond its edge. */
+  hitPost(p, reach = 0.3) { const ux = p.x / this.U, uy = p.y / this.U; return this.obs.findIndex(o => (o.x - ux) ** 2 + (o.y - uy) ** 2 < (o.r + reach) ** 2); },
+  /* Posts are numbered, so the selection and the list follow a post through rebuilds, rewinds and saved states. */
+  postUid: 0,
+  addPost(x, y, r) { const o = { x, y, r, id: ++this.postUid }; this.obs.push(o); return o; },
+  /* A post from before posts had numbers, or with a number already taken, gets a fresh one. */
+  numberPosts() {
+    const seen = new Set();
+    for (const o of this.obs) { if (Number.isInteger(o.id) && o.id > 0 && !seen.has(o.id)) seen.add(o.id); else o.id = 0; }
+    this.postUid = Math.max(this.postUid, ...seen);
+    for (const o of this.obs) if (!o.id) o.id = ++this.postUid;
+  },
   pointerDown(p) {
     // Any tool but Obstacle selects a post it lands on, for the Inspect pane, instead of acting on the liquid there.
     const post = this.hitPost(p);
-    if (this.p.tool !== 'obstacle' && post >= 0) { const o = this.obs[post]; this.selAt = { x: o.x, y: o.y }; return; }
+    if (this.p.tool !== 'obstacle' && post >= 0) { this.selId = this.obs[post].id; return; }
     this.vel.reset(p); this.ptr = { x: p.x, y: p.y, down: true }; this.pourClock = 2;
     if (this.p.tool === 'obstacle') {
       const hit = post, ux = p.x / this.U, uy = p.y / this.U;
-      if (hit >= 0) { if (this.post() === this.obs[hit]) this.selAt = null; this.obs.splice(hit, 1); }
-      else if (this.obs.length < 24) { this.obs.push({ x: ux, y: uy, r: this.nextPostR() }); this.pendR = null; }
+      if (hit >= 0) { if (this.post() === this.obs[hit]) this.selId = null; this.obs.splice(hit, 1); }
+      else if (this.obs.length < 24) { this.addPost(ux, uy, this.nextPostR()); this.pendR = null; }
       else announce('Obstacle limit reached (24).');
     }
   },
   pointerMove(p, e, down) { if (this.ptr) { this.ptr.x = p.x; this.ptr.y = p.y; } if (down) this.vel.update(p); },
-  /* The selected post, found by its centre, so a rebuild that carries posts over keeps the selection. */
-  selAt: null,
-  post() { const s = this.selAt; return s ? this.obs.find(o => o.x === s.x && o.y === s.y) || null : null; },
-  inspectHint: 'Click a post with any tool except Obstacle to inspect it here.',
-  cursorAt(p) { return this.p.tool !== 'obstacle' && this.hitPost(p) >= 0 ? 'pointer' : 'crosshair'; },
-  /* Read-only figures of the selected post, measured from the particles around it this frame. */
-  inspect() {
-    const o = this.post(); if (!o) return null;
-    const U = this.U, s = U / this.TICK, X = this.x, Y = this.y, near = (o.r + 0.45) ** 2, flow = (o.r + 1.5) ** 2;
+  /* ---------- the selection contract (ARCHITECTURE.md): a post by its number, which a rebuild carries over ---------- */
+  selId: null,
+  post() { return this.selId == null ? null : this.obs.find(o => o.id === this.selId) || null; },
+  selectedId() { return this.post() ? this.selId : null; },
+  select(id) { if (id == null) { this.selId = null; return true; } if (!this.obs.some(o => o.id === id)) return false; this.selId = id; return true; },
+  pick(s) { const f = pickFrame(this, s), k = f ? this.hitPost(f.p, PICK_PX * f.k / this.U) : -1; return k >= 0 ? this.obs[k].id : null; },
+  objectsName: 'Posts',
+  objectsEmpty: 'No posts in the tank. Place one with the Obstacle tool.',
+  objectCols: [
+    { label: 'Radius', unit: () => unitOf(fluid, 'len')[1], text: v => sig(v * unitOf(fluid, 'len')[0]) },
+    { label: 'Touching', unit: () => 'particles', text: v => String(v) },
+    { label: 'Flow', unit: () => unitOf(fluid, 'speed')[1], text: v => (Number.isFinite(v) ? sig(v * unitOf(fluid, 'speed')[0]) : '—') },
+  ],
+  objects() { return this.obs.map((o, k) => { const f = this.postFlow(o); return { id: o.id, name: `Post ${k + 1}`, kind: 'Steel post', v: [o.r * this.U, f.touch, f.nf ? f.sp / f.nf : NaN] }; }); },
+  /* The liquid at a post this frame: the particles touching it and their density, and the speed of the flow round it. */
+  postFlow(o) {
+    const s = this.U / this.TICK, X = this.x, Y = this.y, near = (o.r + 0.45) ** 2, flow = (o.r + 1.5) ** 2;
     let touch = 0, dens = 0, nf = 0, sp = 0;
     for (let i = 0; i < this.n; i++) {
       const d2 = (X[i] - o.x) ** 2 + (Y[i] - o.y) ** 2;
       if (d2 < near) { touch++; dens += this.rho[i] / this.rho0; }
       if (d2 < flow) { nf++; sp += Math.hypot(this.vx[i], this.vy[i]) * s; }
     }
-    const k = this.obs.indexOf(o) + 1;
-    return { id: `post-${o.x}-${o.y}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, focus: 'Liquid touching it', title: 'Steel post', color: '#56677c', rows: [
+    return { touch, dens, nf, sp };
+  },
+  inspectHint: 'Click a post with Select (Q), or with any tool except Obstacle, to inspect it here.',
+  cursorAt(p) { return this.p.tool !== 'obstacle' && this.hitPost(p) >= 0 ? 'pointer' : 'crosshair'; },
+  /* Read-only figures of the selected post, measured from the particles around it this frame. */
+  inspect() {
+    const o = this.post(); if (!o) return null;
+    const U = this.U, { touch, dens, nf, sp } = this.postFlow(o), k = this.obs.indexOf(o) + 1;
+    return { id: `post-${o.id}`, kicker: `Post ${k} of ${this.obs.length}`, short: `Post ${k}`, focus: 'Liquid touching it', title: 'Steel post', color: '#56677c', rows: [
       ['Centre', fmtPos(this, o.x * U, o.y * U), 'Across and down from the tank\'s top-left corner.'],
       ['Radius', fmtQ(this, 'len', o.r * U), 'The post\'s size, which is also how far it pushes liquid back.'],
       ['Liquid touching it', `${touch} particles`, 'Particles within half a particle spacing of its surface right now.'],
       ['Density at its surface ρ / ρ₀', touch ? (dens / touch).toFixed(3) : '—', 'The mean density of the touching particles over the rest density. Above 1 the liquid is pressing on the post.'],
       ['Flow speed around it', nf ? fmtQ(this, 'speed', sp / nf) : '—', 'The mean speed of the particles within about one and a half spacings of its surface.'],
-    ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selAt = null; } }] };
+    ], actions: [{ label: 'Remove this post', run: () => { this.obs = this.obs.filter(q => q !== o); this.selId = null; } }] };
   },
-  deselect() { this.selAt = null; },
-  /* The head-up display: its readings, and the selected post in stage pixels, on the tank's mid-plane in 3D. */
+  /* The director's areas of interest (js/shell/director.js), in stage pixels: the splash front, where the particles
+     moving faster than twice the mean are (a breaking dam, a landing drop, two blobs meeting), and the fastest patch
+     of the tank, each weighted by its speed in px/s, so water at rest offers nothing. */
+  interest() {
+    const out = [], n = this.n, U = this.U, k = U / this.TICK;
+    if (!n) return out;
+    const f = fastGroup(this.x, this.y, this.vx, this.vy, n, 2, U);
+    if (f.count >= 6) out.push({ x: f.x, y: f.y, r: Math.max(f.r, U * 3), w: clamp((f.speed * k - 60) / 400, 0.05, 0.85), key: 'splash', label: 'The splash front' });
+    const c = fastestCell(this.x, this.y, this.vx, this.vy, n, this.Wu * U, this.Hu * U, U);
+    if (c.count) out.push({ x: c.x, y: c.y, r: c.r, w: clamp((c.speed * k - 80) / 500, 0.05, 0.7), key: 'flow', label: 'The fastest flow' });
+    return out;
+  },
+  /* The head-up display: its readings, and a post in stage pixels, on the tank's mid-plane in 3D. */
   hud: [['Particles', 'PARTICLES'], ['Mean density ρ / ρ₀', 'MEAN ρ/ρ₀'], ['Peak compression', 'PEAK ρ/ρ₀'], ['Fastest particle speed', 'TOP SPEED']],
-  hudTarget(three) {
-    const o = this.post(); if (!o) return null;
+  spot(id, three) {
+    const o = id == null ? null : this.obs.find(q => q.id === id); if (!o) return null;
     const U = this.U;
     if (three) {
       const d = this.rig3.depth / 2 + 0.05, c = this.project3(o.x * U, o.y * U, d), e = c && this.project3((o.x + o.r) * U, o.y * U, d);
@@ -660,7 +702,7 @@ Object.assign(fluid, genericState, {
     // Particle numbers come back with them; a state saved before they existed numbers its particles afresh.
     if (s.uid && s.uid.length >= s.n) { for (let i = 0; i < s.n; i++) this.uid[i] = s.uid[i]; this.nextUid = Math.max(this.nextUid, s.nextUid || 0, ...Array.from(s.uid).slice(0, s.n)); }
     else for (let i = 0; i < s.n; i++) this.uid[i] = ++this.nextUid;
-    this.obs = s.obs.map(o => ({ ...o })); this.ptr = null; this.seed = s.seed ?? this.seed;
+    this.obs = s.obs.map(o => ({ ...o })); this.numberPosts(); this.ptr = null; this.seed = s.seed ?? this.seed;
     this.series.truncateAfter(this.t); this.lastSample = this.t;
     return true;
   },

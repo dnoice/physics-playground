@@ -1,27 +1,32 @@
 /*
 ✒ Metadata
-    - Title: Frame Loop (digiSpace Edition - v2.7)
+    - Title: Frame Loop (digiSpace Edition - v2.19)
     - File Name: loop.js
     - Relative Path: js/shell/loop.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: at panel rate syncCapture() keeps the
+      capture buttons' lines and the recording light current, in place of the
+      Library's cards and the stage chips. On Dennis's call for a duplication
+      sweep: the panel tick no longer refreshes the Guide's cards or the dice;
+      syncControl() and syncPanel() keep the dice current as each change
+      happens.
+    - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for Insights that narrate the run: the lab's narrator
+      looks at the run four times a second (tickStory). On Dennis's call for
+      recordings shot like a film: each frame runs the director just before
+      the camera's own easing, so it sets the view the camera then shows.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Each frame,
       after drawing, the head-up display places its target box on the selected
       object; at panel rate it refreshes the callout.
-    - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — At panel
-      rate, the live formulas, the Guide's marks and the Library's capture
-      cards refresh with the readings. The rail's Random dice is kept current
-      at the same rate.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The HUD
-      clock adds the lab's own time note, so Gravity shows its simulated days
-      or years.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -43,25 +48,28 @@
 */
 import { $ } from '../core/util.js';
 import { is3D, navTick } from './camera.js';
-import { dataRec, drawRecOverlay, histBranch, histCapture, sampleData, updateCaptureChips, updateRewind } from './capture.js';
+import { dataRec, drawRecOverlay, histBranch, histCapture, sampleData, syncCapture, updateRewind } from './capture.js';
 import { drawPerf, evaluateDiagnostics, updatePerfNums } from './diagnostics.js';
+import { tickDirector } from './director.js';
 import { tickExperiment } from './experiments.js';
 import { updateDetails } from './details.js';
 import { updateLiveMath } from './livemath.js';
-import { syncGuide } from './guide.js';
-import { syncLibraryCapture } from './library.js';
-import { syncDice, updateDock } from './dock.js';
+import { updateDock } from './dock.js';
 import { resizeLab } from './lifecycle.js';
 import { updateNav, updateOrbit } from './navigator.js';
 import { tickWorld } from './mode.js';
 import { drawChart, updateReadouts } from './panel.js';
 import { drawStage } from './stage.js';
 import { hudInspect, trackHud } from './headsup.js';
+import { tickStory } from './story.js';
 import { BUDGET_MS, active, measure, perf, stageEl, state } from './state.js';
 
 /* ---------- loop ---------- */
+/* The most solver steps a frame takes when the lab sets no maxSteps of its own, and the most real time one frame may
+   carry the run forward by (a stall past it is dropped, not fast-forwarded). The slow-run warning names both. */
+export const STEP_CAP = 32, FRAME_MAX_S = 0.05;
 export function advance(lab, simDt, budget = BUDGET_MS) {
-  const h = lab.dt(), cap = lab.maxSteps || 32, t0 = performance.now();
+  const h = lab.dt(), cap = lab.maxSteps || STEP_CAP, t0 = performance.now();
   lab._acc += simDt;
   let n = 0, over = false;
   const rec = dataRec.on && dataRec.lab === lab;
@@ -75,10 +83,12 @@ export function advance(lab, simDt, budget = BUDGET_MS) {
   return n;
 }
 export let last = performance.now(), uiClock = 0, hudClock = 0, diagClock = 0;
+// The lab's narrator looks at the run four times a second of real time.
+let storyClock = 0;
 export function setLast(t) { last = t; }
 export function frame(now) {
   // `raw` is the true frame gap for the meters; `real` is capped so a stall cannot fast-forward the run.
-  const raw = Math.max(0, (now - last) / 1000), real = Math.min(0.05, raw);
+  const raw = Math.max(0, (now - last) / 1000), real = Math.min(FRAME_MAX_S, raw);
   last = now;
   if (raw > 0 && raw < 1) perf.fps += (1 / raw - perf.fps) * 0.05;
   tickWorld(raw);
@@ -88,6 +98,7 @@ export function frame(now) {
     const stepping = state.running && !active.holding;
     if (stepping) { histBranch(active); n = advance(active, real * state.speed); if (n) histCapture(active); }
     const t1 = performance.now();
+    tickDirector(real);
     navTick(real);
     drawStage(active);
     trackHud(active);
@@ -106,8 +117,9 @@ export function frame(now) {
       $('#hud-fps').textContent = `${Math.round(perf.fps)} fps`;
       updateNav();
     }
-    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); hudInspect(active); updateLiveMath(active); syncGuide(); syncDice(); syncLibraryCapture(); drawPerf(); updatePerfNums(); updateCaptureChips(); tickExperiment(); if (stepping) updateRewind(); }
+    if ((uiClock += real) >= 0.25) { uiClock = 0; updateReadouts(); drawChart(); updateDetails(active); hudInspect(active); updateLiveMath(active); syncCapture(); drawPerf(); updatePerfNums(); tickExperiment(); if (stepping) updateRewind(); }
     if ((diagClock += real) >= 0.5) { diagClock = 0; evaluateDiagnostics(); }
+    if ((storyClock += real) >= 0.25) { storyClock = 0; tickStory(active); }
   }
   requestAnimationFrame(frame);
 }
