@@ -16,7 +16,9 @@
       picks a body a few pixels off in 3D and clears on empty sky without
       throwing; the Tilt marks switch hides the drop lines and foot rings. On
       Dennis's call for drag handles: the deck's grip replaces the size
-      button; a double-click steps it tall, compact and back to standard.
+      button; a double-click steps it tall, compact and back to standard. The
+      3D Select check steps the run on and looks again when no planet stands
+      clear on the shorter stage.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the Graphics checks drive
       Settings, and the machine's four verdicts mark the GPU. A setting of
@@ -314,7 +316,9 @@ with sync_playwright() as p:
     pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(300)
     # The body is one standing clear of the rest on the stage (a giant's moon drawn beside it would rightly win a click
     # that lands on it), and the click lands 6 px outside its drawn disc.
-    spot = pg.evaluate(f"""(() => {{ const L = {P}.active, pr = L.projector(), o = {{ x: 0, y: 0, r: 0 }}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), drawn = [];
+    # Where the planets stand depends on how far the run has gone, and on a shorter stage none may stand clear at a
+    # given moment; the run then steps on a little and the search looks again. What a click must do is unchanged.
+    find = f"""(() => {{ const L = {P}.active, pr = L.projector(), o = {{ x: 0, y: 0, r: 0 }}, cv = document.getElementById('stage-canvas'), r = cv.getBoundingClientRect(), drawn = [];
       for (const b of L.bodies) if (pr(b, o)) drawn.push([b, o.x, o.y, o.r]);
       const free = (x, y) => x > 40 && y > 60 && x < r.width - 220 && y < r.height - 140 && document.elementFromPoint(r.left + x, r.top + y) === cv;
       let hit = null;
@@ -324,7 +328,11 @@ with sync_playwright() as p:
         if (hit) break;
       }}
       let ex = null, ey = null; for (let y = 60; y < r.height - 140 && ex == null; y += 13) for (let x = 60; x < r.width - 220 && ex == null; x += 13) if (free(x, y) && L.pick({{ x, y }}) == null) {{ ex = r.left + x; ey = r.top + y; }}
-      return hit && {{ ...hit, ex, ey }}; }})()""")
+      return hit && {{ ...hit, ex, ey }}; }})()"""
+    spot = pg.evaluate(find)
+    for _ in range(12):
+        if spot: break
+        pg.evaluate(f"{P}.play()"); pg.wait_for_timeout(700); pg.evaluate(f"{P}.pause()"); pg.wait_for_timeout(300); spot = pg.evaluate(find)
     n3 = pg.evaluate(f"{P}.active.bodies.length"); picked = None
     pg.keyboard.press("q")
     if spot: pg.mouse.click(spot["x"], spot["y"]); pg.wait_for_timeout(300); picked = pg.evaluate(f"{P}.active.track"); pg.mouse.click(spot["ex"], spot["ey"]); pg.wait_for_timeout(300)
