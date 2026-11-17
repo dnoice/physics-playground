@@ -236,12 +236,12 @@ with sync_playwright() as p:
       for (let k = 0; k < 12; k++) { const x = H.x + far * Math.cos(k * Math.PI / 6), y = H.y + far * Math.sin(k * Math.PI / 6), d = Math.min(...L.bodies.map(b => Math.hypot(b.x - x, b.y - y))); if (d > gap) { gap = d; at = [x, y]; } }
       L.dropOrbit(at[0], at[1]); const b = L.bodies[L.bodies.length - 1]; return L.objects().find(o => o.id === b.id).name; })()""")
     pg.evaluate(P + ".play()"); pg.wait_for_timeout(1300)
-    during, fresh = pg.evaluate("[%s, %s]" % (ROWS, FRESH))
+    during, sorted_now = pg.evaluate("[%s, %s]" % (ROWS, FRESH))
     pg.evaluate("document.getElementById('objects-list').scrollTop = 1e9"); pg.wait_for_timeout(400)
     last = pg.evaluate(ROWS)[-1:]
     pg.evaluate(P + ".pause()"); pg.evaluate("document.getElementById('objects-list').scrollTop = 0"); pg.wait_for_timeout(300)
-    ok("objects_order_holds_under_pointer", ids_apart and len(before) >= 3 and during == before and fresh[0] == added and added not in during and last == [added],
-       (ids_apart, before, during, fresh[:len(during)], added, last))
+    ok("objects_order_holds_under_pointer", ids_apart and len(before) >= 3 and during == before and sorted_now[0] == added and added not in during and last == [added],
+       (ids_apart, before, during, sorted_now[:len(during)], added, last))
     pg.mouse.move(5, 5)
     resorted = settle(pg, "(r => r.length > 0 && JSON.stringify(r) === JSON.stringify(%s.slice(0, r.length)))(%s)" % (FRESH, ROWS), 5000)
     after = pg.evaluate(ROWS)

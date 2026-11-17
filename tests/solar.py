@@ -271,6 +271,24 @@ with sync_playwright() as p:
     ok("sol_softening_in_significant_figures", soft[:2] == ["7.41e-7 AU", "0.000100 px"] and soft[2] == "", soft)
     hov = pg.evaluate(f"""(() => {{ {HELP} const belt = L.bodies.find(q => q.m === 0 && !q.name); return [L.hoverText(by('Io')), L.hoverText(belt)]; }})()""")
     ok("sol_hover_names_the_body", hov[0].startswith("Io · ") and "Jupiter masses" not in hov[1] and hov[1].count("·") == 0 and hov[1].endswith("km/s"), hov)
+    # Followed from afar, Io keeps its follow ring though it is still inside Jupiter's disc, neither drawn nor picked
+    # there: the stage round it changes with the ring and without, the camera held still between the two looks. Each
+    # look copies the square round the ring off the stage, so the stage itself is read once.
+    ring = pg.evaluate(f"""(async () => {{ {HELP} const io = by('Io'), cv = document.getElementById('stage-canvas'), frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const k = cv.width / cv.getBoundingClientRect().width, c = document.createElement('canvas'), g = c.getContext('2d', {{ willReadFrequently: true }});
+      const look = () => {{ const s = L.spot(io.id, false), R = (s.r + 8) * k, x0 = Math.floor(s.x * k - R - 4), y0 = Math.floor(s.y * k - R - 4), n = Math.ceil(2 * R + 8);
+        c.width = c.height = n; g.drawImage(cv, x0, y0, n, n, 0, 0, n, n); return {{ x: s.x, y: s.y, R, cx: s.x * k - x0, cy: s.y * k - y0, n, d: g.getImageData(0, 0, n, n).data }}; }};
+      L.select(io.id); await new Promise(r => setTimeout(r, 1500)); await frame();
+      const apart = L.apart(io, L.viewXf.z), on = look(); L.track = null; await frame(); await frame(); const off = look();
+      let changed = 0;
+      for (let a = 0; a < 120; a++) {{ let hit = false;
+        for (let rr = on.R - 2; rr <= on.R + 2 && !hit; rr += 0.5) {{ const px = Math.round(on.cx + rr * Math.cos(a * Math.PI / 60)), py = Math.round(on.cy + rr * Math.sin(a * Math.PI / 60)), i = (py * on.n + px) * 4;
+          hit = Math.abs(on.d[i] - off.d[i]) + Math.abs(on.d[i + 1] - off.d[i + 1]) + Math.abs(on.d[i + 2] - off.d[i + 2]) > 40; }}
+        if (hit) changed++; }}
+      return {{ apart, still: Math.hypot(on.x - off.x, on.y - off.y) < 0.5 && on.n === off.n, share: changed / 120 }}; }})()""")
+    # The dashes cover about half the ring, less where names are drawn over it; without the ring nothing changes.
+    ok("sol_followed_moon_ringed_inside_planet", ring["apart"] is False and ring["still"] and ring["share"] > 0.1, ring)
+    pg.evaluate(P + ".preset('sol')"); pg.evaluate(P + ".pause()"); pg.wait_for_timeout(300)
     hid = pg.evaluate(f"""(async () => {{ {HELP} const io = by('Io'), J = by('Jupiter'), frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       await frame(); const z0 = L.viewXf.z, far = L.apart(io, z0), {{ ox, oy }} = L.viewXf, pick = L.bodyAt({{ x: io.x * z0 + ox, y: io.y * z0 + oy }}, 10);
       L.track = J.id; L.trackEase = 1; {P}.view.zoomBy(400); await frame(); await new Promise(r => setTimeout(r, 900)); await frame();
