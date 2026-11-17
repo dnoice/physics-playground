@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.18)
+    - Title: 3D Mode Test (digiSpace Edition - v2.19)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the deck's grip replaces the size
+      button; a double-click steps it tall, compact and back to standard.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the Graphics checks drive
       Settings, and the machine's four verdicts mark the GPU. A setting of
@@ -63,7 +66,8 @@
       pan does not jump, a resize keeps the angle, and dragging the space
       around the apparatus orbits.
     - Instruments: a reading plots, the plot rewinds and scrubs, plotted
-      readings are remembered, and diagnostics open on demand.
+      readings are remembered, diagnostics open on demand, and the deck's
+      grip steps through its sizes.
     - The scene dropdown, tools in the gizmo, and the Details card with a
       period that matches Kepler's third law and a drawn portrait.
     - The pendulum can be seen from behind.
@@ -258,12 +262,15 @@ with sync_playwright() as p:
     ok("diagnostics_open_on_demand", not pg.evaluate("document.getElementById('dp-insights').hidden") and pg.evaluate("document.getElementById('dp-telemetry').hidden"))
     pg.click("#dt-telemetry")
     ok("telemetry_returns", not pg.evaluate("document.getElementById('dp-telemetry').hidden") and pg.evaluate("document.activeElement.id") == "dt-telemetry")
+    # The deck's grip is its one size control: a double-click steps standard, tall, compact and back.
+    grip = lambda: (lambda g: (g["x"] + g["width"] / 2, g["y"] + g["height"] / 2))(pg.locator("#deck-grip").bounding_box())
     std = pg.locator("#tile-deck").bounding_box()["height"]
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(500)
+    pg.mouse.dblclick(*grip()); pg.wait_for_timeout(500)
     tall = pg.locator("#tile-deck").bounding_box()["height"]
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(500)
+    pg.mouse.dblclick(*grip()); pg.wait_for_timeout(500)
     ok("deck_grows_and_shrinks", tall > std + 40 and pg.locator("#tile-deck").bounding_box()["height"] < std - 40, round(tall))
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(300)
+    pg.mouse.dblclick(*grip()); pg.wait_for_timeout(300)
+    ok("deck_cycles_back_to_standard", abs(pg.locator("#tile-deck").bounding_box()["height"] - std) < 4)
     ctx.close()
 
     # The console: scene dropdown, tools in the gizmo, and a click that opens up what was clicked.

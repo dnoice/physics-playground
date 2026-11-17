@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Dials and Placement Tests (digiSpace Edition - v2.13)
+    - Title: Dials and Placement Tests (digiSpace Edition - v2.19)
     - File Name: placement.py
     - Relative Path: tests/placement.py
     - Artifact Type: test
-    - Version: 2.13.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the deck goes tall from its grip's End
+      key, the size button being gone.
     - 2.13.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       throws follow the orbit, not the zoom, and stay in the system; a drop
       beside a giant makes a moon. A drag begun on a planet launches from its
@@ -196,7 +199,7 @@ with sync_playwright() as p:
     ok("types_survive_saved_state", ser == kinds_before)
     pg.click("#nt-controls"); pg.wait_for_timeout(200)
     pg.evaluate("PhysicsPlayground.active.track = PhysicsPlayground.active.bodies.at(-1).id"); pg.wait_for_timeout(600)
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(300)
+    pg.focus("#deck-grip"); pg.keyboard.press("End"); pg.wait_for_timeout(300)
     settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
     ok("inspector_names_the_type", "Ice giant" in pg.inner_text("#tile-deck"))
     pg.context.close()

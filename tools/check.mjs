@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Project Checker (digiSpace Edition - v2.18)
+    - Title: Project Checker (digiSpace Edition - v2.19)
     - File Name: check.mjs
     - Relative Path: tools/check.mjs
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: the deck size button's two glyphs
+      no longer count, since the button is gone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the glyphs in
       STORY_ICON count toward the font subset. The .claude directory, where
@@ -119,7 +122,6 @@ else {
     for (const g of (s.match(/\n {2}groups: \[([\s\S]*?)\n {2}\],/) || [, ''])[1].matchAll(/icon: '([a-z0-9_]+)'/g)) used.add(g[1]);
   }
   for (const glyph of ['expand_more', 'tune', 'restart_alt']) used.add(glyph); // the section header, fallback section and reset glyphs in panel.js
-  for (const glyph of ['unfold_less', 'unfold_more']) used.add(glyph); // the deck size button's two glyphs, swapped in deck.js
   const icons = readFileSync(join(ROOT, 'js/core/icons.js'), 'utf8');
   const block = name => (icons.match(new RegExp(`export const ${name} = ([\\s\\S]*?);\\n`)) || [, ''])[1];
   for (const m of block('ICON').matchAll(/:\s*'([a-z0-9_]+)'/g)) used.add(m[1]);

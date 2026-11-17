@@ -1,17 +1,25 @@
 """
 ✒ Metadata
-    - Title: Workspace Tests (digiSpace Edition - v2.18)
+    - Title: Workspace Tests (digiSpace Edition - v2.19)
     - File Name: workspace.py
     - Relative Path: tests/workspace.py
     - Artifact Type: test
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the grip replaces the size button in the
+      deck checks (a double-click steps the presets; Home, End and Enter pick
+      them). The grips' own checks: separators that give their size, bands
+      over the gaps that spare every tab and player button, drags that resize
+      and are remembered, the keys, the stage kept usable at the limits and
+      from stored extremes, and the inspector's grip hidden in focus mode and
+      in one column.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Story's checks. A
       brown dwarf dropped at the Star system's edge moves the barycentre and
@@ -43,7 +51,11 @@
     - Views: V and the View group switch without touching time or trails.
     - Chaos: map-only layout with the torus, no pendulum to grab, a dot
       click that selects, Inspect opening on its own, and a figure plotted.
-    - Deck: Insights pane, size presets, the grip on the keyboard.
+    - Deck: Insights pane, the size presets from the grip by double-click
+      and keys, the grip on the keyboard.
+    - Grips: the deck's and the inspector's drag, step with the keys, are
+      remembered, spare every tab, keep the stage usable at their limits,
+      and hide in focus mode (and the inspector's in one column).
     - Inspection: a Fluid post and a Waves source, each removable.
     - Units: readings, controls, typed values and the scale bar follow the
       system; the simulation does not change.
@@ -166,12 +178,22 @@ with sync_playwright() as p:
     ok("deck_tabs_arrow_keys", pane() == "inspect" and pg.evaluate("document.activeElement.id") == "dt-inspect")
     ok("inspect_empty_says_how", "post" in pg.inner_text("#inspect-empty").lower())
     h = lambda: pg.locator("#tile-deck").bounding_box()["height"]
-    std = h(); pg.click("#btn-deck-size"); pg.wait_for_timeout(400); tall = h()
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400); compact = h()
+    # The grip is the deck's one size control (the size button is gone): a double-click steps standard, tall and
+    # compact as the button did, and Home, Enter and End pick compact, standard and tall from the keyboard.
+    grip_mid = lambda: (lambda g: (g["x"] + g["width"] / 2, g["y"] + g["height"] / 2))(pg.locator("#deck-grip").bounding_box())
+    ok("deck_size_button_gone", pg.locator("#btn-deck-size").count() == 0 and pg.locator(".deck-head .icon-btn").count() == 0)
+    std = h(); pg.mouse.dblclick(*grip_mid()); pg.wait_for_timeout(400); tall = h()
+    pg.mouse.dblclick(*grip_mid()); pg.wait_for_timeout(400); compact = h()
     ok("deck_size_presets", tall > std + 40 and compact < std - 40, (round(compact), round(std), round(tall)))
     ok("compact_hides_the_plot", not pg.is_visible("#chart") or pane() != "telemetry")
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400)
-    pg.focus("#deck-grip"); pg.keyboard.press("ArrowUp"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(400)
+    pg.mouse.dblclick(*grip_mid()); pg.wait_for_timeout(400)
+    ok("double_click_cycles_back", abs(h() - std) < 4, round(h()))
+    pg.focus("#deck-grip"); pg.keyboard.press("End"); pg.wait_for_timeout(400)
+    ok("grip_end_is_tall", abs(h() - tall) < 4, round(h()))
+    pg.keyboard.press("Home"); pg.wait_for_timeout(400)
+    ok("grip_home_is_compact", abs(h() - compact) < 4 and pg.get_attribute("#deck-grip", "aria-valuetext").endswith("compact"), pg.get_attribute("#deck-grip", "aria-valuetext"))
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(400)
+    pg.keyboard.press("ArrowUp"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(400)
     ok("grip_steps_taller", abs(h() - (std + 48)) < 4 and "deck-sized" in pg.get_attribute("#bento", "class"), round(h()))
     pg.keyboard.press("Enter"); pg.wait_for_timeout(400)
     ok("grip_enter_restores", abs(h() - std) < 4)
@@ -185,6 +207,68 @@ with sync_playwright() as p:
     pg.click("#details-actions button"); pg.wait_for_timeout(400)
     ok("post_removed_from_card", state("active.obs.length") == n0 - 1 and pg.is_hidden("#details"))
     pg.context.close()
+
+    # ---- the grips: the deck's top edge and the inspector's inner edge drag, step with the keys and are remembered,
+    # and the stage keeps a usable size at their limits
+    ctx = b.new_context(viewport=VIEW)
+    pg = open_page(ctx)
+    pg.goto(URL + "#fluid"); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active && PhysicsPlayground.active.id === 'fluid'")
+    pg.wait_for_timeout(800)
+    bb = lambda s: pg.locator(s).bounding_box()
+    mid = lambda r: (r["x"] + r["width"] / 2, r["y"] + r["height"] / 2)
+    deck_h, side_w = lambda: bb("#tile-deck")["height"], lambda: bb("#tile-notes")["width"]
+    aria = lambda s, a: pg.get_attribute(s, "aria-" + a)
+    st, dk, nt, gd, gs = bb("#tile-stage"), bb("#tile-deck"), bb("#tile-notes"), bb("#deck-grip"), bb("#side-grip")
+    ok("grips_are_separators", all(pg.get_attribute(s, "role") == "separator" and pg.get_attribute(s, "tabindex") == "0" and aria(s, "label") for s in ("#deck-grip", "#side-grip"))
+       and aria("#deck-grip", "orientation") == "horizontal" and aria("#side-grip", "orientation") == "vertical"
+       and abs(int(aria("#deck-grip", "valuenow")) - dk["height"]) < 2 and int(aria("#deck-grip", "valuemin")) <= dk["height"] <= int(aria("#deck-grip", "valuemax"))
+       and abs(int(aria("#side-grip", "valuenow")) - nt["width"]) < 2 and int(aria("#side-grip", "valuemin")) <= nt["width"] <= int(aria("#side-grip", "valuemax")))
+    # Each grip is a band at least 24 px across, laid over the gap between the tiles it moves.
+    ok("grips_span_their_gaps", gd["height"] >= 24 and gd["y"] < st["y"] + st["height"] and gd["y"] + gd["height"] > dk["y"]
+       and gs["width"] >= 24 and gs["x"] < st["x"] + st["width"] and gs["x"] + gs["width"] > nt["x"], (gd, gs))
+    ok("grips_resize_cursors", pg.evaluate("['deck-grip', 'side-grip'].map(id => getComputedStyle(document.getElementById(id)).cursor).join()") == "row-resize,col-resize")
+    # The band never covers a deck tab, the inspector's tabs or the player bar's buttons: a press at the middle of any
+    # of their edges, the nearest to a grip included, reaches the control itself.
+    spared = pg.evaluate("""[...document.querySelectorAll('#deck-tabs [role=tab], #notes-tabs [role=tab], .player button')].filter(e => e.offsetParent && e.offsetWidth).every(e => {
+      const r = e.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      return [[cx, r.top + 1], [cx, r.bottom - 1], [r.left + 1, cy], [r.right - 1, cy], [cx, cy]].every(([x, y]) => e.contains(document.elementFromPoint(x, y))); })""")
+    ok("grips_spare_the_tabs", spared and pg.evaluate("document.elementFromPoint(%f, %f).id" % mid(gd)) == "deck-grip")
+    # A drag resizes; both sizes come back after a reload.
+    x, y = mid(gd); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x, y - 50, steps=4); pg.mouse.move(x, y - 100, steps=4); pg.mouse.up(); pg.wait_for_timeout(300)
+    ok("deck_grip_drags", abs(deck_h() - (dk["height"] + 100)) < 3 and "deck-sized" in pg.get_attribute("#bento", "class"), (round(dk["height"]), round(deck_h())))
+    x, y = mid(gs); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x - 60, y, steps=4); pg.mouse.move(x - 120, y, steps=4); pg.mouse.up(); pg.wait_for_timeout(300)
+    ok("side_grip_drags", abs(side_w() - (nt["width"] + 120)) < 3 and abs(int(aria("#side-grip", "valuenow")) - side_w()) < 2, (round(nt["width"]), round(side_w())))
+    dragged = (deck_h(), side_w())
+    pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(800)
+    ok("grips_remembered", abs(deck_h() - dragged[0]) < 2 and abs(side_w() - dragged[1]) < 2 and pg.evaluate("JSON.parse(localStorage.getItem('psp:sidePx'))") > 0, (dragged, round(deck_h()), round(side_w())))
+    # The keys: arrows step 24 px (Left widens the inspector), Home and End reach the narrowest and widest, Enter
+    # gives back the standard width, which is not remembered as a custom one.
+    pg.focus("#side-grip"); pg.keyboard.press("Home"); pg.wait_for_timeout(200)
+    narrow = side_w()
+    pg.keyboard.press("ArrowLeft"); pg.keyboard.press("ArrowLeft"); pg.keyboard.press("ArrowRight"); pg.wait_for_timeout(200)
+    ok("side_grip_keys", abs(narrow - int(aria("#side-grip", "valuemin"))) < 2 and abs(side_w() - (narrow + 24)) < 2, (round(narrow), round(side_w())))
+    pg.keyboard.press("End"); pg.wait_for_timeout(200)
+    ok("side_widest_keeps_the_stage", bb("#tile-stage")["width"] >= side_w() - 1 and abs(int(aria("#side-grip", "valuenow")) - int(aria("#side-grip", "valuemax"))) < 2, (round(bb("#tile-stage")["width"]), round(side_w())))
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(200)
+    ok("side_enter_restores", abs(side_w() - nt["width"]) < 2 and pg.evaluate("JSON.parse(localStorage.getItem('psp:sidePx'))") == 0, round(side_w()))
+    pg.focus("#deck-grip"); pg.keyboard.press("Enter"); pg.keyboard.press("ArrowDown"); pg.wait_for_timeout(200)
+    ok("deck_grip_keys", abs(deck_h() - (dk["height"] - 24)) < 3, round(deck_h()))
+    # Dragged to the top, the deck stops where the stage keeps 260 px.
+    x, y = mid(bb("#deck-grip")); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x, 4, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    ok("deck_tallest_keeps_the_stage", 258 <= bb("#tile-stage")["height"] <= 264 and abs(int(aria("#deck-grip", "valuenow")) - int(aria("#deck-grip", "valuemax"))) < 2, round(bb("#tile-stage")["height"]))
+    # A size kept from a larger window is held back by the stylesheet too.
+    pg.evaluate("localStorage.setItem('psp:deckSize', '\"custom\"'); localStorage.setItem('psp:deckPx', '5000'); localStorage.setItem('psp:sidePx', '5000')")
+    pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(800)
+    ok("stored_extremes_keep_the_stage", bb("#tile-stage")["height"] >= 258 and bb("#tile-stage")["width"] >= side_w() - 1, (round(bb("#tile-stage")["height"]), round(bb("#tile-stage")["width"]), round(side_w())))
+    # Focus mode has no edges to move; one column has no inner edge, while the deck keeps its grip.
+    pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("f"); pg.wait_for_timeout(300)
+    ok("grips_hidden_in_focus", pg.is_hidden("#deck-grip") and pg.is_hidden("#side-grip"))
+    pg.keyboard.press("f"); pg.wait_for_timeout(300)
+    pg.focus("#deck-grip"); pg.keyboard.press("Enter")
+    pg.set_viewport_size({"width": 1000, "height": 800}); pg.wait_for_timeout(600)
+    h0 = deck_h(); pg.focus("#deck-grip"); pg.keyboard.press("ArrowUp"); pg.wait_for_timeout(200)
+    ok("side_grip_hidden_when_stacked", pg.is_hidden("#side-grip") and pg.is_visible("#deck-grip") and abs(deck_h() - (h0 + 24)) < 3, (round(h0), round(deck_h())))
+    ctx.close()
 
     # ---- inspecting a Waves source: a click on it selects instead of removing it
     pg = fresh("waves")

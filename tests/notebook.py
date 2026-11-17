@@ -1,17 +1,20 @@
 """
 ✒ Metadata
-    - Title: Notebook Tests (digiSpace Edition - v2.5)
+    - Title: Notebook Tests (digiSpace Edition - v2.19)
     - File Name: notebook.py
     - Relative Path: tests/notebook.py
     - Artifact Type: test
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the deck goes tall from its grip's End
+      key, the size button being gone.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created for
       release 2.5.0: the Math page's live panels, the Guide's cards, the
       Library's capture cards and the Inspect pane's focus chart. The Guide's
@@ -128,7 +131,8 @@ with sync_playwright() as p:
 
     # ---- Inspect: the focus chart sits inside the pane and follows the clicked figure
     pg = fresh("collisions")
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400)
+    # The deck's grip picks the tall preset with End (the size button it replaced stepped standard to tall).
+    pg.focus("#deck-grip"); pg.keyboard.press("End"); pg.wait_for_timeout(400)
     pg.evaluate("PhysicsPlayground.active.picked = 5")
     settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
     pg.wait_for_timeout(2500)

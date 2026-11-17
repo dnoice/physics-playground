@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.18)
+    - Title: Physics Playground (digiSpace Edition - v2.19)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the deck's grip moves into the gap above
+      the deck and the inspector gets one on its inner edge, both separators
+      that give their size in pixels. On his call for a duplication sweep: the
+      deck size button and the header's top alert are gone, with the button's
+      two glyphs.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Insights pane's Now
       and Story views with their tablist in the deck's header, the Story's
@@ -26,10 +32,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       engine's release beside the name in the top bar (filled from
       js/core/version.js), linking to the changelog.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      Library page in two sections, Capture and Saved, with the capture
-      settings folding out beside the Capture heading; the download and edit
-      glyphs join the icon subset.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -44,9 +46,10 @@
       beneath it, and a full-height inspector beside them.
     - Stage rail anchored top right: Camera (axis ball, zoom, pan, frame),
       then the lab's Tools with the Random dice, View and This scene groups.
-    - Instruments deck with Telemetry, Inspect and Insights panes, compact,
-      standard and tall sizes, and a grip to drag it to any height; Insights
-      has two views, Now and the Story of the run.
+    - Instruments deck with Telemetry, Inspect and Insights panes and a grip
+      above it that drags it to any height or picks compact, standard or
+      tall; Insights has two views, Now and the Story of the run. The
+      inspector has a grip on its inner edge for its width.
     - One Settings dialog (Shift+S) with Graphics, Units (U), Head-up display
       and Keyboard (?) sections; the top bar's Graphics, Units, HUD and
       keyboard buttons open it at their own.
@@ -87,7 +90,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -235,9 +238,10 @@
 
   <!-- The instruments deck: three panes over one header. Telemetry is the lab's readings and their plot; Inspect is
        the selected object, read-only (its settings stay in Controls); Insights is diagnostics grounded in the run.
-       The grip on the top edge sets the height; the size button steps through compact, standard and tall. -->
+       The grip in the gap above it sets the height: drag it, step it with the keys, or pick compact, standard or
+       tall with Home, Enter or End or by double-clicking. -->
+  <div class="grip grip-deck bay" id="deck-grip" role="separator" aria-orientation="horizontal" aria-controls="tile-deck" aria-label="Instruments height" aria-valuemin="112" aria-valuemax="600" aria-valuenow="240" tabindex="0" title="Drag to resize the instruments · double-click to step through compact, standard and tall"></div>
   <section class="tile tile-deck bay" id="tile-deck" aria-label="Instruments" data-pane="telemetry">
-    <div class="deck-grip" id="deck-grip" role="separator" aria-orientation="horizontal" aria-controls="tile-deck" aria-label="Instruments height" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" tabindex="0" title="Drag to resize the instruments · double-click for the standard height"></div>
     <header class="tile-head deck-head">
       <div class="deck-tabs" role="tablist" aria-label="Instruments" id="deck-tabs">
         <button type="button" role="tab" class="deck-tab" id="dt-telemetry" aria-controls="dp-telemetry" aria-selected="true"><span class="ms" aria-hidden="true">show_chart</span><span class="deck-tab-name">Telemetry</span></button>
@@ -251,8 +255,6 @@
       </div>
       <h3 class="deck-title" id="chart-title">Chart</h3>
       <div class="scope-legend" id="scope-legend"></div>
-      <div class="diag-top" id="diag-top" hidden></div>
-      <button type="button" class="icon-btn" id="btn-deck-size" title="Instruments size: standard · click for tall"><span class="ms" aria-hidden="true">unfold_more</span><span class="sr-only" id="btn-deck-size-label">Instruments size: standard. Make them tall.</span></button>
     </header>
     <div class="deck-body">
       <div class="deck-pane deck-telemetry" role="tabpanel" id="dp-telemetry" aria-labelledby="dt-telemetry">
@@ -299,6 +301,8 @@
     </div>
   </section>
 
+  <!-- The inspector's inner edge: drag the grip in the gap, or focus it and use the arrow keys, to set its width. -->
+  <div class="grip grip-side" id="side-grip" role="separator" aria-orientation="vertical" aria-controls="tile-notes" aria-label="Inspector width" aria-valuemin="320" aria-valuemax="700" aria-valuenow="360" tabindex="0" title="Drag to resize the inspector · double-click for the standard width"></div>
   <aside class="tile tile-inspector" id="tile-notes" aria-label="Inspector">
     <div class="scene-intro" id="scene-body"></div>
     <div class="tabs" role="tablist" aria-label="Inspector" id="notes-tabs">

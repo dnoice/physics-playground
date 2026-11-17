@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Physics Playground Readme (digiSpace Edition - v2.18)
+    - Title: Physics Playground Readme (digiSpace Edition - v2.19)
     - File Name: README.md
     - Relative Path: README.md
     - Artifact Type: docs
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the deck's and the inspector's grips,
+      their keys and their limits, under the workspace, mouse and touch, and
+      the keyboard. On his call for a duplication sweep: the deck size button
+      and the header's top alert are gone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Climate
       from starlight under Planet classes, with its table of climates; the
       climate in Our Solar System, in the 3D table's Gravity row and in the
@@ -641,14 +646,18 @@ full-height Inspector beside them.
     a **Show me** that follows, selects or frames what it is about (see The
     story of a run below). **Now** is what the run is doing and why a setting
     misbehaves, each with its fix, beside the frame-timing strip. The tab
-    shows the count of insights and, in amber, how many moments are new; the
-    top alert and its fix stay in the header whichever pane is open, and the
-    HUD's alert opens Now.
+    shows the count of insights and, in amber, how many moments are new, and
+    the HUD's alert opens Now.
 
-  The button at the right of the header steps the deck through compact,
-  standard and tall, and the grip on its top edge drags it to any height
-  (arrow keys on the grip step it; Enter restores the standard height).
-- **Inspector**: the lab's formula above five tabs.
+  The grip in the gap above the deck sets its height: drag it, or focus it
+  and use the arrow keys (the Page keys step further). Home, Enter and End
+  pick the compact, standard and tall sizes, and a double-click steps through
+  them. However tall the deck, the stage keeps 260 px.
+- **Inspector**: the lab's formula above five tabs. The grip in the gap on
+  its inner edge sets its width the same way; Home and End give the narrowest
+  and widest, Enter or a double-click the standard width, and the stage always
+  keeps at least half the width. In one column, on a narrow screen, the
+  inspector takes the full width and has no grip.
   - **Controls** opens with the lab's quick actions, then its settings in
     sections such as Setup, Physics and Display. Each number is a compact
     dial: drag its ridged wheel sideways (Shift for fine), tap either side or
@@ -718,7 +727,8 @@ for the computation rather than from real materials.
 
 Press **F** to give the stage the whole window and **Shift+B** to hide the
 Instruments; with the head-up display on, the stage still shows the numbers
-that matter. The layout reflows to one column below 1180 px.
+that matter. The layout reflows to one column below 1180 px. The deck's height
+and the inspector's width, set with their grips, are remembered.
 
 ### Mouse and touch
 
@@ -730,6 +740,9 @@ that matter. The layout reflows to one column below 1180 px.
 - Zooming in follows the cursor and zooming back out returns to the home
   view, so you can always find your way back.
 - On touch screens, pinch zooms and two fingers pan.
+- **Resizing.** The pill in the gap above the Instruments, and the one
+  between the stage and the Inspector, are grips: drag either one (a finger
+  works too) to change the deck's height or the inspector's width.
 - **No stray highlights.** A click, drag or double-click never highlights the
   workspace's words, and a long press opens no copy menu. Text fields, such
   as a dial's typed value or a Library item's name, still select as usual.
@@ -761,6 +774,7 @@ that matter. The layout reflows to one column below 1180 px.
 | [ and ] | Halve or double the speed |
 | M and D | Record a video clip, record a dataset |
 | F and Shift+B | Focus the stage, hide the Instruments |
+| Arrows, Page Up and Down, Home, End, Enter | On a focused grip: resize the Instruments or the Inspector |
 | Shift+H | Show or hide the head-up display |
 | Shift+S | Settings |
 | ? | Keyboard reference, in Settings |
