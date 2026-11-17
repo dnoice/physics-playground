@@ -485,6 +485,34 @@ with sync_playwright() as p:
     ok("hud_fps_shows_meter", abs(float(pg.inner_text("#hud-fps").split()[0]) - state("perf.fps")) < 8, pg.inner_text("#hud-fps"))
     pg.context.close()
 
+    # ---- The slow-run warning names the limit its own numbers show: the step cap when the frames take every step the
+    # lab allows, the budget only when the solver's time reaches it, slow frames only below 20 a second (each carrying at
+    # most 50 ms of real time, more simulated time at a higher speed), and no single cause when none of them holds. The
+    # meters are set and read back in one task, so no frame runs in between, and then restored.
+    pg = fresh("collisions")
+    why = pg.evaluate("""async () => { const D = await import(new URL('js/shell/diagnostics.js', location.href).href), P = PhysicsPlayground, f = P.perf, s = P.state;
+      const keep = { ...f }, run = s.running, speed = s.speed, out = {};
+      for (const [name, m, sp] of [['cap', { steps: 48, sim: 4, fps: 60 }, 1], ['budget', { steps: 20, sim: 12, fps: 50 }, 1], ['frames', { steps: 10, sim: 3, fps: 12 }, 2], ['none', { steps: 10, sim: 9, fps: 50 }, 1]]) {
+        Object.assign(f, m, { slow: 2, rate: 0.5 }); s.running = true; s.speed = sp;
+        const w = D.globalInsights().find(i => i.id === 'perf-slow'); out[name] = w ? w.body.replace(/<[^>]+>/g, '') : '';
+      }
+      Object.assign(f, keep); s.running = run; s.speed = speed; return out; }""")
+    blames = lambda text: [k for k, w in [("cap", "steps this lab takes"), ("budget", "budget"), ("frames", "Frames arrive")] if w in text]
+    ok("slow_run_names_the_cause_its_meters_show", blames(why["cap"]) == ["cap"] and "48 steps" in why["cap"]
+       and blames(why["budget"]) == ["budget"] and "12.0 ms" in why["budget"] and "11 ms budget" in why["budget"]
+       and blames(why["frames"]) == ["frames"] and "about 12 times a second" in why["frames"] and "50 ms of real time (100 ms of simulated time at 2.00×)" in why["frames"]
+       and blames(why["none"]) == [] and "No one limit stands out" in why["none"], why)
+    pg.context.close()
+
+    # ---- One wording for one problem: the stage's alert chip says what the Insights tab says, and its name says where
+    # to see it. Paused, so a busy machine cannot add a slow-run warning to the count.
+    pg = fresh("waves"); scene(pg, "#preset-waves-twosrc"); pg.wait_for_timeout(300); pg.evaluate(P + ".pause()")
+    pg.evaluate(P + ".setParam('f', 9)")
+    warned = settle(pg, "!document.getElementById('hud-alert').hidden && !document.getElementById('diag-sum').hidden", 8000)
+    chip = pg.evaluate("(a => [a.textContent, document.getElementById('diag-sum').textContent, a.getAttribute('aria-label'), PhysicsPlayground.diagnose().filter(i => i.level !== 'info').length])(document.getElementById('hud-alert'))")
+    ok("alert_chip_says_what_the_tab_says", warned and chip[3] == 1 and chip[0] == chip[1] == "1 to check" and chip[2] == "1 to check: show it in Insights", chip)
+    pg.context.close()
+
     # ---- The stage's status line: readings are plain text that takes no press (no pill, no ring, no pointer), and only
     # real buttons look like buttons. The Running pill and the real-time chip repeated the Play button and Insights, so
     # they are gone, and the recorders' stage chips became one recording light, whose stop is in the player bar.
@@ -586,6 +614,14 @@ with sync_playwright() as p:
         pg.keyboard.press("Shift+Tab"); s = st(); back.append((s["inside"], s["focus"] or "?"))
     stops = len({f for _, f in fwd})
     ok("settings_traps_focus", all(i for i, _ in fwd + back) and 12 <= stops < 40 and fwd[stops][1] == fwd[0][1] and back[stops][1] == back[0][1], (stops, fwd[:3], back[:3]))
+    # The Capture section's fold, what a dataset holds, is a stop like any control: Tab from the switch before it lands
+    # on its summary with the ring, Enter opens it, and Shift+Tab goes back. The trap had left summaries out, so Tab from
+    # that switch went round to the top of the dialog.
+    pg.click("#st-capture"); pg.wait_for_timeout(150)
+    pg.focus("#sw-tracks"); pg.keyboard.press("Tab"); on_fold = pg.evaluate(ACTIVE)
+    pg.keyboard.press("Enter"); opened = pg.evaluate("document.getElementById('cap-cols').open")
+    pg.keyboard.press("Shift+Tab"); fold_back = pg.evaluate(ACTIVE)
+    ok("settings_tab_reaches_the_capture_fold", on_fold["id"] == "cap-cols-sum" and on_fold["ring"] and opened and fold_back["id"] == "sw-tracks" and st()["inside"], (on_fold, opened, fold_back))
     # The workspace's keys wait: no restart, no lab, mode or focus change, and Space presses the focused button.
     t0, run0, mode0 = state("active.t"), running(), state("mode.get()")
     pg.focus("#st-graphics")

@@ -76,6 +76,38 @@ import re
 import zipfile
 from playwright.sync_api import sync_playwright
 from harness import URL, finish, launch, ok, open_page, settle, shot
+# The Telemetry plot as it is drawn, for the timeline's marks on it: which columns of the rows just below its lanes
+# (where the scope draws a saved state's tick and a recording's underline) carry the ok or the critical colour, and the
+# column each given simulated time falls on in the scope's window (at: null outside it; from: held to its edges, as a
+# recording's underline begins). The scope insets its lanes 2 px each side and ends
+# them 16 px above the bottom. The plot is copied once into a scratch canvas made for reading, so its own canvas is
+# never read back.
+PLOT = """async times => { const { THEME } = await import(new URL('js/core/color.js', location.href).href);
+  const c = document.getElementById('chart'), w = c.clientWidth, h = c.clientHeight, k = c.width / w, bottom = h - 16;
+  const s = window.__plot || (window.__plot = document.createElement('canvas')), g = s.getContext('2d', { willReadFrequently: true });
+  s.width = c.width + 2; s.height = c.height; g.clearRect(0, 0, s.width, s.height); g.drawImage(c, 0, 0);
+  const tone = (v, x) => { g.fillStyle = v; g.fillRect(c.width + 1, x, 1, 1); return [...g.getImageData(c.width + 1, x, 1, 1).data]; };
+  const okC = tone(THEME.ok, 0), critC = tone(THEME.crit, 1), d = g.getImageData(0, 0, c.width, c.height).data;
+  const at = (x, y) => { const i = (Math.floor(y * k) * c.width + Math.floor(x * k)) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; };
+  const is = (p, q) => p[3] > 240 && [0, 1, 2].every(j => Math.abs(p[j] - q[j]) <= 6);
+  const cols = (q, rows) => { const out = []; for (let x = 0; x < w; x++) if (rows.some(dy => is(at(x + 0.5, bottom + dy + 0.5), q))) out.push(x); return out; };
+  const L = PhysicsPlayground.active, I = L.inst, list = [...I.pins].map(l => I.series.get(l)).filter(s => s && s.n);
+  const end = Math.max(...list.map(s => s.t[s.idx(s.n - 1)])), first = Math.min(...list.map(s => s.t[s.idx(0)])), beg = I.span ? Math.max(first, end - I.span) : first;
+  const x = t => Math.round(2 + (Math.min(Math.max(t, beg), end) - beg) / (end - beg) * (w - 4));
+  return { w, ok: cols(okC, [1, 2, 3, 4]), crit: cols(critC, [1]), at: times.map(t => (t < beg - 1e-9 || t > end + 1e-9 ? null : x(t))), from: times.map(x) }; }"""
+
+
+def runs(xs):
+    """Columns grouped into runs of neighbours, as (first, last) pairs."""
+    out = []
+    for x in xs:
+        if out and x == out[-1][1] + 1:
+            out[-1][1] = x
+        else:
+            out.append([x, x])
+    return [tuple(r) for r in out]
+
+
 with sync_playwright() as p:
     b = launch(p)
     ctx = b.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
@@ -183,7 +215,7 @@ with sync_playwright() as p:
     ok("rec_button_counts", pg.get_attribute("#btn-rec", "aria-pressed") == "true" and pg.inner_text("#btn-rec-label") == "Stop clip"
        and pg.get_attribute("#btn-rec", "title") == "Stop the clip and keep it in the Library (M)"
        and re.fullmatch(r"(\d+:\d\d|[\d.]+ s) · [\d.]+ (B|kB|MB|GB)", pg.inner_text("#btn-rec-sub")) is not None
-       and pg.evaluate("!document.getElementById('tl-clip').hidden && document.getElementById('hud-rec').dataset.kind === 'clip'"), pg.inner_text("#btn-rec-sub"))
+       and pg.evaluate("(s => !s.hidden && parseFloat(s.style.left) < 100 && s.getBoundingClientRect().width > 0)(document.getElementById('tl-clip')) && document.getElementById('hud-rec').dataset.kind === 'clip'"), pg.inner_text("#btn-rec-sub"))
     # The clip keeps one size when the stage changes shape (here the window; the deck's charts do the same), and its
     # frames keep coming. Recording the stage canvas itself had frozen a clip at the first resize.
     # The frames are sampled through a small scratch canvas made for reading, so the clip's canvas is never read back.
@@ -196,6 +228,18 @@ with sync_playwright() as p:
     v1 = pg.evaluate(rec); pg.wait_for_timeout(800); v2 = pg.evaluate(rec)
     pg.set_viewport_size({"width": 1440, "height": 900}); pg.wait_for_timeout(600)
     ok("clip_keeps_its_size_through_a_resize", v0["stream"] == v1["stream"] == v2["stream"] and v0["stage"] != v1["stage"] and v1["hash"] != v2["hash"], (v0, v1, v2))
+    # Reset while the clip records: the history starts again at t = 0, and the clip's span on the rewind track and its
+    # underline on the Telemetry plot start again with it, from the left edge. The span had kept the old start, in the
+    # future of the new history, and vanished from both.
+    pg.click("#dt-telemetry"); pg.locator("#readouts .gauge-hit").first.click()
+    settle(pg, "document.getElementById('chart-title').textContent === 'Scope'", 4000)
+    pg.click("#btn-reset")
+    settle(pg, "PhysicsPlayground.history.size() >= 3 && PhysicsPlayground.active.t > 0.5", 20000); pg.wait_for_timeout(600)
+    span = pg.evaluate("(s => ({ shown: !s.hidden, left: parseFloat(s.style.left), width: s.getBoundingClientRect().width, from: PhysicsPlayground.capture.vrec.from }))(document.getElementById('tl-clip'))")
+    band = pg.evaluate(PLOT, [0])
+    ok("reset_mid_clip_restarts_its_span", pg.evaluate("!!PhysicsPlayground.capture.vrec.mr") and span["shown"] and span["left"] < 1 and span["width"] > 0 and span["from"] == 0
+       and runs(band["crit"]) == [(band["from"][0], band["w"] - 3)] and band["from"][0] == 2, (span, band["from"], runs(band["crit"])))
+    pg.locator(".scope-x").first.click()
     pg.evaluate("() => PhysicsPlayground.capture.toggleVideo()")
     pg.wait_for_timeout(1500)
     r = pg.evaluate("() => { const c = PhysicsPlayground.capture.vault.list().find(i => i.kind === 'clip'); return c ? { title: c.title, size: c.sizeBytes, type: c.files[0].type, name: c.files[0].name, dur: +c.duration.toFixed(2) } : null; }")
@@ -259,21 +303,27 @@ with sync_playwright() as p:
     r = pg.inner_text("#rewind-out")
     ok("play_returns_to_live", r.startswith("live"), r)
     # --- the timeline's marks. Each state saved in this run stands as a tick on the rewind track at its moment, in order;
-    # Telemetry's plot reads the same marks (timelineMarks), and playing on from the past drops the ticks of the future it
-    # discards.
+    # Telemetry's plot, with a reading plotted, draws a tick just below its lanes at each of the same moments and nowhere
+    # else; and playing on from the past drops the ticks of the future it discards, on the track and on the plot.
+    pg.click("#dt-telemetry"); pg.locator("#readouts .gauge-hit").first.click()
+    scoped = settle(pg, "document.getElementById('chart-title').textContent === 'Scope'", 4000)
     pg.wait_for_timeout(1500); pg.evaluate("PhysicsPlayground.pause()")
     tl = """(() => ({ ticks: [...document.querySelectorAll('#tl-marks .tl-tick')].filter(i => !i.hidden).map(i => parseFloat(i.style.left)),
       marks: PhysicsPlayground.active.hist.marks.slice(), saved: document.getElementById('btn-state').classList.contains('is-saved') && document.getElementById('btn-state-label').textContent === 'Saved' }))()"""
     pg.click("#btn-state"); pg.wait_for_timeout(500); m1 = pg.evaluate(tl)
     pg.evaluate("() => document.activeElement && document.activeElement.blur()")
     for _ in range(4): pg.keyboard.press(",")
-    pg.click("#btn-state"); pg.wait_for_timeout(500); m2 = pg.evaluate(tl)
-    shared = pg.evaluate("import(new URL('js/shell/capture.js', location.href).href).then(m => m.timelineMarks(PhysicsPlayground.active).states.slice())")
+    pg.click("#btn-state"); pg.wait_for_timeout(500); m2 = pg.evaluate(tl); p2 = pg.evaluate(PLOT, m2["marks"])
     pg.evaluate("() => document.activeElement && document.activeElement.blur()"); pg.keyboard.press("Space"); pg.wait_for_timeout(500); m3 = pg.evaluate(tl)
+    # Paused, the plot's next refresh draws the window the series end at, so the canvas and the window read below agree.
+    pg.evaluate("PhysicsPlayground.pause()"); pg.wait_for_timeout(400); p3 = pg.evaluate(PLOT, m3["marks"])
     ok("saved_state_ticks_the_timeline", m1["saved"] and len(m1["ticks"]) == 1 and m1["ticks"][0] > 95 and len(m2["ticks"]) == 2 and m2["ticks"][0] < m2["ticks"][1] < 100.01
        and m2["marks"] == sorted(m2["marks"]), (m1, m2))
-    ok("telemetry_reads_the_same_marks", shared == m2["marks"], (shared, m2["marks"]))
-    ok("a_new_branch_drops_future_ticks", len(m3["ticks"]) == 1 and m3["marks"] == m2["marks"][:1], m3)
+    # A tick is 2 px wide, ending on its moment's column: one run of the ok colour per saved state, exactly there.
+    ok("telemetry_reads_the_same_marks", scoped and len(p2["at"]) == 2 and None not in p2["at"] and runs(p2["ok"]) == [(x - 1, x) for x in p2["at"]], (p2["at"], runs(p2["ok"])))
+    ok("a_new_branch_drops_future_ticks", len(m3["ticks"]) == 1 and m3["marks"] == m2["marks"][:1]
+       and p3["at"][0] is not None and runs(p3["ok"]) == [(p3["at"][0] - 1, p3["at"][0])], (m3, p3["at"], runs(p3["ok"])))
+    pg.locator(".scope-x").first.click()
     pg.evaluate("async () => { const C = PhysicsPlayground.capture; for (const i of C.vault.list().filter(i => i.kind === 'state')) await C.vault.remove(i); }")
 
     # --- the director's camera: with the Director on, a clip is filmed with eased moves inside fixed limits, the user's

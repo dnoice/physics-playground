@@ -64,6 +64,7 @@ import { cheaperTier, in3D, pickTier } from './mode.js';
 
 import { syncPanel } from './panel.js';
 import { BUDGET_MS, active, announce, perf, state, stickies } from './state.js';
+import { FRAME_MAX_S, STEP_CAP } from './loop.js';
 import { setSpeed } from './transport.js';
 import { showPane } from './deck.js';
 import { ICON } from '../core/icons.js';
@@ -83,13 +84,19 @@ export function globalInsights() {
     const fixes = [];
     if (state.speed > 1) fixes.push({ label: 'Speed 1×', run() { setSpeed(1); } });
     if (active.perfFixes) fixes.push(...active.perfFixes());
-    // The warning names the cause the meters show, so it never blames the solver for a frame stretched by something else.
+    // The warning names the cause the meters show, read from the meters themselves, so it never blames one limit while
+    // its own numbers show another: the step cap when the frames take (nearly) every step it allows, the budget only
+    // when the solver's time reaches it, and slow frames only when they come too seldom to carry the run.
     const rate = `this lab is simulating <b>${perf.rate.toFixed(2)}×</b> real time instead of ${state.speed.toFixed(2)}×`;
-    const why = perf.sim > BUDGET_MS * 0.75
-      ? `The solver needs about <b>${perf.sim.toFixed(1)} ms</b> per frame, more than its ${BUDGET_MS} ms budget, so ${rate}. The budget drops the backlog so the page stays responsive.`
-      : perf.fps < 20
-        ? `Frames arrive only about <b>${Math.round(perf.fps)}</b> times a second, and each carries the run at most 50 ms forward, so ${rate}. The solver itself needs only ${perf.sim.toFixed(1)} ms a frame: the time goes to drawing or to the rest of the machine.`
-        : `At this speed a frame needs more than the ${active.maxSteps || 32} steps this lab takes in one, so ${rate}. The solver needs ${perf.sim.toFixed(1)} ms a frame.`;
+    const cap = active.maxSteps || STEP_CAP, sim = perf.sim.toFixed(1), most = Math.round(FRAME_MAX_S * 1000);
+    const carry = `${most} ms of real time${state.speed !== 1 ? ` (${+(most * state.speed).toPrecision(3)} ms of simulated time at ${state.speed.toFixed(2)}×)` : ''}`;
+    const why = perf.steps >= cap * 0.9
+      ? `At this speed a frame needs more than the <b>${cap} steps</b> this lab takes in one, so ${rate}. The solver needs ${sim} ms a frame.`
+      : perf.sim >= BUDGET_MS
+        ? `The solver needs about <b>${sim} ms</b> per frame, at or past its ${BUDGET_MS} ms budget, so ${rate}. The budget drops the backlog so the page stays responsive.`
+        : perf.fps < 1 / FRAME_MAX_S
+          ? `Frames arrive only about <b>${Math.round(perf.fps)}</b> times a second, and each carries the run at most ${carry}, so ${rate}. The solver itself needs only ${sim} ms a frame: the time goes to drawing or to the rest of the machine.`
+          : `${rate[0].toUpperCase()}${rate.slice(1)}. No one limit stands out: frames arrive about ${Math.round(perf.fps)} times a second, and the solver takes about ${Math.round(perf.steps)} of its ${cap} steps and ${sim} of its ${BUDGET_MS} ms in each.`;
     out.push({ id: 'perf-slow', level: 'warn', title: 'Running slower than requested', body: why, fixes });
   }
   // Drawing is the bottleneck only when it is: slow in itself, costlier than the solver, and most of what a frame takes.
@@ -116,11 +123,13 @@ export function evaluateDiagnostics() {
   renderInsights(list);
   const alerts = list.filter(i => i.level !== 'info'), worst = alerts.length ? alerts[0].level : null;
   alerting = alerts.length > 0;
+  // One wording for the stage's alert chip and the Insights tab: how many are critical, or else how many to check.
+  const n = worst === 'crit' ? alerts.filter(a => a.level === 'crit').length : alerts.length, words = worst === 'crit' ? `${n} critical` : `${n} to check`;
   const btn = $('#hud-alert');
   btn.hidden = !alerts.length;
-  if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
+  if (alerts.length) { btn.textContent = words; btn.dataset.level = worst; btn.setAttribute('aria-label', `${words}: show ${n === 1 ? 'it' : 'them'} in Insights`); }
   hudCautions(alerts);
-  tabMark(worst, worst === 'crit' ? alerts.filter(a => a.level === 'crit').length : alerts.length);
+  tabMark(worst, words);
   // The Now view counts what it holds, in the colour of the worst.
   const nowN = $('#iv-now-n'); nowN.textContent = list.length ? String(list.length) : ''; nowN.dataset.level = worst || 'ok';
   const ids = new Set(alerts.map(a => a.id));
@@ -131,15 +140,15 @@ export function evaluateDiagnostics() {
    With none, it carries nothing, so a mark on a tab always means there is something to check. Insights that are only
    informative are counted inside the pane, on the Now view, and unseen moments on the Story's own count (story.js). */
 let markKey = '';
-function tabMark(worst, n) {
-  const key = worst ? `${worst}${n}` : '';
+function tabMark(worst, words) {
+  const key = worst ? `${worst} ${words}` : '';
   if (key === markKey) return;
   markKey = key;
   const sum = $('#diag-sum'), tab = $('#dt-insights');
   sum.hidden = !worst;
   if (!worst) { delete sum.dataset.level; sum.textContent = ''; sum.removeAttribute('title'); tab.removeAttribute('aria-description'); return; }
   sum.dataset.level = worst;
-  sum.textContent = worst === 'crit' ? `${n} critical` : `${n} to check`;
+  sum.textContent = words;
   sum.title = worst === 'crit' ? 'Needs attention: see Insights, Now' : 'Worth checking: see Insights, Now';
   tab.setAttribute('aria-description', sum.title);
 }

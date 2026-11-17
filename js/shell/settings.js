@@ -66,7 +66,8 @@ const SECTIONS = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-l
    any setting is the person's own, and the player bar's capture settings, beside the buttons they set. Units, the
    head-up display and the keys are in the Settings button's nav, and U and ? open Units and the keys from anywhere. */
 const OPENERS = [['#btn-gfx', 'graphics'], ['#btn-cap-settings', 'capture']];
-const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';
+// A fold's summary takes focus too (the Capture section's list of what a dataset holds), so the trap counts it.
+const FOCUSABLE = 'button, [href], input, select, textarea, summary, [tabindex]';
 const dlg = $('#settings'), tabs = [...dlg.querySelectorAll('[role="tab"]')];
 let current = Object.hasOwn(SECTIONS, store.get('settingsTab')) ? store.get('settingsTab') : 'graphics', opener = null;
 

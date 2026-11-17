@@ -65,8 +65,11 @@ import { tickStory } from './story.js';
 import { BUDGET_MS, active, measure, perf, stageEl, state } from './state.js';
 
 /* ---------- loop ---------- */
+/* The most solver steps a frame takes when the lab sets no maxSteps of its own, and the most real time one frame may
+   carry the run forward by (a stall past it is dropped, not fast-forwarded). The slow-run warning names both. */
+export const STEP_CAP = 32, FRAME_MAX_S = 0.05;
 export function advance(lab, simDt, budget = BUDGET_MS) {
-  const h = lab.dt(), cap = lab.maxSteps || 32, t0 = performance.now();
+  const h = lab.dt(), cap = lab.maxSteps || STEP_CAP, t0 = performance.now();
   lab._acc += simDt;
   let n = 0, over = false;
   const rec = dataRec.on && dataRec.lab === lab;
@@ -85,7 +88,7 @@ let storyClock = 0;
 export function setLast(t) { last = t; }
 export function frame(now) {
   // `raw` is the true frame gap for the meters; `real` is capped so a stall cannot fast-forward the run.
-  const raw = Math.max(0, (now - last) / 1000), real = Math.min(0.05, raw);
+  const raw = Math.max(0, (now - last) / 1000), real = Math.min(FRAME_MAX_S, raw);
   last = now;
   if (raw > 0 && raw < 1) perf.fps += (1 / raw - perf.fps) * 0.05;
   tickWorld(raw);

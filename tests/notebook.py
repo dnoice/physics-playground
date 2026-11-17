@@ -156,7 +156,9 @@ with sync_playwright() as p:
        and re.fullmatch(r"[\d,]+ rows", pg.inner_text("#btn-data-sub")) is not None, pg.inner_text("#btn-data-sub"))
     ok("recording_light_is_status_not_a_button", light["tag"] == "SPAN" and light["shown"] and re.fullmatch(r"REC [\d,]+ rows", light["text"]) is not None
        and light["cursor"] != "pointer" and light["tab"] < 0, light)
-    ok("timeline_marks_the_recording", pg.evaluate("!document.getElementById('tl-data').hidden && document.getElementById('tl-clip').hidden"))
+    # The span is placed, not only shown: it begins inside the track and reaches the live end, so it has a width.
+    span = pg.evaluate("(s => ({ shown: !s.hidden, left: parseFloat(s.style.left), width: s.getBoundingClientRect().width, clip: !document.getElementById('tl-clip').hidden }))(document.getElementById('tl-data'))")
+    ok("timeline_marks_the_recording", span["shown"] and span["left"] < 100 and span["width"] > 0 and not span["clip"], span)
     run.click()
     settle(pg, "!PhysicsPlayground.capture.dataRec.on && PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')", 10000)
     pg.wait_for_timeout(300)

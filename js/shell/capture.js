@@ -104,7 +104,13 @@ export function toCSV(cols, rows) {
 /* ---------- rewind history ---------- */
 /* marks holds the simulated times of the states saved in this run, in order, for as long as the history reaches them. */
 export function hist(lab) { return lab.hist || (lab.hist = { snaps: [], pos: -1, cap: 480, marks: [] }); }
-export function histReset(lab) { lab.hist = { snaps: [], pos: -1, cap: 480, marks: [] }; }
+/* A recording that runs on through a rebuild or a loaded state starts its span again with the new history, which
+   begins at the lab's time now: the old start lay in the future of the new timeline, so its span had vanished. */
+export function histReset(lab) {
+  lab.hist = { snaps: [], pos: -1, cap: 480, marks: [] };
+  if (vrec.mr && vrec.lab === lab) vrec.from = lab.t;
+  if (dataRec.on && dataRec.lab === lab) dataRec.meta.t0 = lab.t;
+}
 export function histCapture(lab, force) {
   if (!lab.snapshot) return;
   const H = hist(lab), last = H.snaps[H.snaps.length - 1];
@@ -217,7 +223,7 @@ export function pickMime() {
 }
 export function startVideo() {
   if (vrec.mr) return;
-  if (!videoSupported()) { announce('Video recording is not supported in this browser.'); return; }
+  if (!videoSupported()) { announce('Recording a clip is not supported in this browser.'); return; }
   const mime = pickMime();
   try {
     vrec.rc = recCanvas(); vrec.rctx = vrec.rc.getContext('2d', { alpha: false }); copyFrame();
@@ -234,7 +240,7 @@ export function startVideo() {
   vrec.mr.start(1000);
   // With the Director on, the clip is filmed from this frame on.
   directorRec(true);
-  updateCaptureUI(); announce('Recording video');
+  updateCaptureUI(); announce('Recording a clip');
 }
 export function stopVideo() { if (vrec.mr && vrec.mr.state !== 'inactive') vrec.mr.stop(); }
 /* The recording's own canvas, fixed at the size the stage had when recording began, in even pixels as encoders prefer.
