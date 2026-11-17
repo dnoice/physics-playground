@@ -1,17 +1,22 @@
 <!--
 ✒ Metadata
-    - Title: Architecture Guide (digiSpace Edition - v2.18)
+    - Title: Architecture Guide (digiSpace Edition - v2.19)
     - File Name: ARCHITECTURE.md
     - Relative Path: ARCHITECTURE.md
     - Artifact Type: docs
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the player bar under Capture and storage
+      (captureStatus, syncCapture, timelineMarks and the history's marks, the
+      recording light, the Capture section of Settings), the scope's shared
+      marks, the boot order, rates, interaction model, Settings and styles.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       climate: climate.js and each world's b.clim, when it updates, starlight,
       air, temperature, ice, spin and classes, the look in 2D and 3D, what
@@ -192,8 +197,9 @@ before anything else reads it. Then `boot()` runs:
 2. `diagnostics.init` (with the Story's views), `transport.init` (buttons
    and every keyboard
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
-   `loop.init` (resize observer), `capture.init` (which also wires the
-   director's stage chip), `workspace.init` (lab
+   `loop.init` (resize observer), `capture.init` (which also builds the
+   Capture section of Settings and wires the director's stage chip),
+   `workspace.init` (lab
    rail), `mode.init` (2D and 3D, graphics tiers), `instruments.init`
    (scope), `deck.init` (panes, sizes and grip), `details.init` (Inspect
    card), `unitmenu.init` (the Units section), `headsup.init` (the head-up
@@ -221,9 +227,10 @@ lab:
   stage canvas, then calls `lab.overlay3`, so video capture and pointer input
   work the same in both modes. After either, `trackHud` places the head-up
   display's target box on the selected object as it was just drawn.
-- **Rates**: the status chips (time, rate, frame rate) and gizmo every 0.1 s;
-  readouts, chart, capture chips, the head-up display's tape and callout, and
-  the experiment check every 0.25 s; diagnostics and the caution lights every
+- **Rates**: the stage's status line (time and frame rate) and gizmo every
+  0.1 s; readouts, chart, the capture buttons' lines and the recording light
+  (`syncCapture`), the head-up display's tape and callout, and the
+  experiment check every 0.25 s; diagnostics and the caution lights every
   0.5 s; the lab's narrator every 0.25 s (see Instruments).
 
 ## The lab contract
@@ -480,7 +487,7 @@ rather than building interface.
 | Rail: Tools | What a click on the stage does, and whether what it places is random | `dock`, `random` |
 | Rail: View | What the stage shows, never what the simulation does | `views` |
 | Rail: This scene | Contextual actions that belong to the stage | `navExtras` |
-| Player bar | Time: play, step, reset, speed, rewind, capture | `snapshot`, `restore`, datasets |
+| Player bar | Time, as one control: the rewind timeline with the run's marks, play, step, reset, speed, and capture (Record clip, Record data, Save state) | `snapshot`, `restore`, datasets |
 | Deck: Telemetry | Readings over time | `readouts`, `chart`, `primary` |
 | Deck: Inspect | The selected object, read-only, plus actions on that object | `inspect`, `deselect`, `inspectHint` |
 | Deck: Insights | Now: diagnosis grounded in the run, with fixes; Story: the run's moments, narrated | `diagnose`, `perfFixes`, `drawFixes`, `narrate`, `storyHint` |
@@ -570,9 +577,11 @@ plotting with no code of its own: a row plots if its text starts with a number.
 Samples are kept per lab at panel rate. Each plotted reading gets its own lane on
 one time axis, because their units differ, and keeps its colour for as long as
 it is plotted. The axis is shared with the rewind history, so a click seeks to
-the nearest snapshot. While the run is replaying the past, sampling stops, so the
-recorded future stays until a new branch discards it. With nothing plotted, the
-lab's own `chart` shows instead.
+the nearest snapshot, and the plot draws the timeline's marks from
+`timelineMarks()` in `capture.js`, as the rewind track does: the two ways to
+rewind show the same recordings and saved states. While the run is replaying
+the past, sampling stops, so the recorded future stays until a new branch
+discards it. With nothing plotted, the lab's own `chart` shows instead.
 
 ## Head-up display
 
@@ -603,16 +612,17 @@ the same figures) and never clickable.
 
 `js/shell/settings.js` is one native modal `<dialog>` (`#settings`) with a
 section for each part of the workspace a person sets once and keeps:
-Graphics, Units, Head-up display and Keyboard. It owns the frame, not the
-contents. `mode.js` builds Graphics (tiers, verdicts and the settings of one's
-own), `unitmenu.js` Units and `headsup.js` the head-up display. The keyboard
-list is markup in `index.html`.
+Graphics, Units, Head-up display, Capture and Keyboard. It owns the frame,
+not the contents. `mode.js` builds Graphics (tiers, verdicts and the settings
+of one's own), `unitmenu.js` Units, `headsup.js` the head-up display and
+`capture.js` Capture. The keyboard list is markup in `index.html`.
 
 - **Opening.** `openSettings(id, from)` opens at a section and focuses its
   current choice (the checked tier or unit system, the display's switch), or
   its tab for the keyboard list. The top bar's Graphics, Units, HUD and
-  keyboard buttons open their own section, and so do U and ?. The Settings
-  button and Shift+S open the section last shown, remembered as
+  keyboard buttons, and the player bar's capture settings button, open
+  their own section, and so do U and ?. The Settings button and Shift+S
+  open the section last shown, remembered as
   `psp:settingsTab`. Each opener's `aria-expanded` says whether the dialog
   is open at its section.
 - **Inside.** The workspace behind is inert. Tab and Shift+Tab go round the
@@ -750,20 +760,10 @@ The dice in the rail, the switch in Controls and the Guide's card are three
 views of one parameter: each changes it through `setParam`, and
 `syncControl()` refreshes the others.
 
-The Library page has two sections in `index.html`, each headed by an
+The Library page keeps what was captured; capturing is the player bar's
+(see Capture and storage). Its one section in `index.html` is headed by an
 `h4.sub` with its controls in `.lib-head`.
 
-- **Capture** is a control bar built by `buildLibraryCapture` in
-  `library.js`.
-  - Two recorders wear a CSS record dot, which becomes a stop square under
-    `aria-pressed`.
-  - Save state flashes `.is-saved` when the vault has it.
-  - `syncLibraryCapture` keeps each button's two lines current: what it
-    will keep, or how far it has got.
-  - `#btn-cap-settings` folds out `#capture-settings`, and the fold is
-    remembered. The director's switch and Preview direction come from
-    `directorSettings()` in `director.js`.
-  - A `<details>` lists the dataset's columns.
 - **Saved** has the count, the filter and the storage line, then the items
   from `renderItem`.
   - Each item's kind sets `--k`, the colour of its tile, tag and main action.
@@ -1053,6 +1053,42 @@ the stage canvas, samples datasets at a fixed rate, and saves states.
 published artifact, IndexedDB in a plain browser, memory as a last resort.
 `js/shell/library.js` lists them in the notebook.
 
+### The player bar
+
+Time has one control, laid out as a video player's: the rewind timeline
+across the top of the player bar, then the transport, the speed and the
+capture cluster. Capture lives nowhere else.
+
+- **One wording.** `captureStatus()` says, for each of Record clip, Record
+  data and Save state, its name (what a press does now), its line (what it
+  will keep, or how far it has got), whether it runs and why it cannot act
+  ("Not in this lab"), and the recording light's text. `syncCapture()`
+  writes it into the buttons and the light at panel rate and whenever a
+  capture starts, stops or saves. A recorder is its own stop: `aria-pressed`
+  turns its record dot into a stop square. Save state shows `.is-saved` for
+  1.6 s once the vault has the state.
+- **One colour per kind**, through `--k`: red for a clip, cyan for data,
+  green for a saved state, on the buttons, the timeline's marks, the
+  Telemetry plot and the stage's light.
+- **The timeline's marks.** `hist(lab).marks` holds the simulated times of
+  the states saved in this run, in order; a rewind that branches drops those
+  after the new time, and those older than the oldest snapshot go with it.
+  `timelineMarks(lab)` fills one record in place with them and the time each
+  running recording began (`vrec.from`, which reaches back when a clip goes
+  on through a rewind; a dataset's first row). `updateRewind` places them on
+  the track: a span under it for each recording, a tick above it for each
+  state, at their moment between the snapshots either side.
+- **The stage's light.** `#hud-rec` is status, not a control: plain text
+  with a blinking dot, red, or cyan for data alone. The readings beside it
+  (`#hud-time`, `#hud-fps`) are plain text too; only `#hud-alert` and the
+  director's `#hud-dir` are buttons.
+- **Settings.** `capture.init` builds the Capture section of the Settings
+  dialog into `#capture-settings`: clip quality and labels, the director's
+  switch and Preview direction (`directorSettings()`), the data rate,
+  tracks and a fold of the dataset's columns. `updateCaptureSettings()`
+  keeps the tracks switch and the columns true to the lab. Preview
+  direction closes the dialog, so the stage can be watched.
+
 ### The director
 
 `js/shell/director.js` films a clip when the Director switch is on
@@ -1124,11 +1160,11 @@ The stylesheets load in this order, each building on the last:
 | `icons.css` | Material Symbols styling and tab glyph animations |
 | `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, the tier and unit lists, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
-| `stage.css` | Stage title and scene dropdown, status chips, player bar, experiment banner, stage rail and its Random dice |
+| `stage.css` | Stage title and scene dropdown, the status line and its two buttons, the player bar (timeline and its marks, transport, speed, capture cluster), experiment banner, stage rail and its Random dice |
 | `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and its section in Settings |
 | `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, the Now and Story views and the Story's moments, grip), Live Math panels, Guide cards, tabs |
-| `library.css` | Library page |
-| `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, and its phone layout |
+| `library.css` | Library page: storage status, filter and the saved items |
+| `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, the Capture section, and its phone layout |
 | `responsive.css` | Reflow and rail compaction for narrow screens |
 
 Tiles are inline-size containers, so their contents adapt with container
@@ -1257,7 +1293,7 @@ up, the checks, the house style and the header rules in full.
   (`will-change: transform`) and takes its opacity on itself, never on a
   stage-sized parent. The head-up display measured both: without its own
   layers the moving target box cost 16 % of the frame rate without a GPU and
-  the tape, painted together with the status chips that tick ten times a
-  second, about 5 %; with them the whole display costs 1 to 3 %.
+  the tape, painted together with the stage's status line, which ticks ten
+  times a second, about 5 %; with them the whole display costs 1 to 3 %.
 
 <!-- ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once! -->

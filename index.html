@@ -1,18 +1,28 @@
 <!DOCTYPE html>
 <!--
 ✒ Metadata
-    - Title: Physics Playground (digiSpace Edition - v2.18)
+    - Title: Physics Playground (digiSpace Edition - v2.19)
     - File Name: index.html
     - Relative Path: index.html
     - Artifact Type: markup
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the player bar is laid out as a video
+      player's, with the rewind timeline and its marks across the top, then
+      the transport, the speed and one capture cluster (Record clip, Record
+      data, Save state, each with its live line and key, and a capture
+      settings button). The Library's capture section is gone, and Settings
+      gains a Capture section. The stage's status line keeps the clock and
+      frame rate as plain text and one recording light; the Running pill and
+      the real-time chip, which repeated the Play button and Insights, are
+      gone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Insights pane's Now
       and Story views with their tablist in the deck's header, the Story's
@@ -26,10 +36,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       engine's release beside the name in the top bar (filled from
       js/core/version.js), linking to the changelog.
-    - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
-      Library page in two sections, Capture and Saved, with the capture
-      settings folding out beside the Capture heading; the download and edit
-      glyphs join the icon subset.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -47,9 +53,13 @@
     - Instruments deck with Telemetry, Inspect and Insights panes, compact,
       standard and tall sizes, and a grip to drag it to any height; Insights
       has two views, Now and the Story of the run.
-    - One Settings dialog (Shift+S) with Graphics, Units (U), Head-up display
-      and Keyboard (?) sections; the top bar's Graphics, Units, HUD and
-      keyboard buttons open it at their own.
+    - One Settings dialog (Shift+S) with Graphics, Units (U), Head-up
+      display, Capture and Keyboard (?) sections; the top bar's Graphics,
+      Units, HUD and keyboard buttons, and the player bar's capture settings
+      button, open it at their own.
+    - A player bar laid out as a video player's: the timeline across its
+      top with the run's marks, then play, step, reset, speed, and Record
+      clip, Record data and Save state with their live lines.
     - Focus mode (F) and hideable instruments (Shift+B); the layout reflows
       below 1180 px and 760 px.
     - Material Symbols Rounded from Google Fonts, subset with icon_names to
@@ -87,7 +97,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Raleway:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap">
-<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fiber_manual_record,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,view_column,visibility,warning,water_drop,waves&display=block">
+<link rel="stylesheet" id="icon-font" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&icon_names=ac_unit,add,add_circle,adjust,ads_click,airwave,arrow_outward,back_hand,balance,blur_on,bookmark,bubble_chart,casino,center_focus_strong,check_circle,chevron_left,chevron_right,close,close_fullscreen,coffee,content_cut,cyclone,delete,deployed_code,do_not_disturb_on,dock_to_bottom,download,edit,electric_bolt,error,expand_more,fit_screen,flag,format_color_reset,frame_inspect,fullscreen,fullscreen_exit,functions,history,info,ink_eraser,keep,keyboard,lens_blur,linear_scale,local_fire_department,monitor_heart,monitoring,movie,my_location,open_in_full,open_with,orbit,pan_tool,pause,play_arrow,play_circle,point_scan,radar,radio_button_checked,radio_button_unchecked,remove,restart_alt,rocket_launch,scatter_plot,school,science,settings,show_chart,skip_next,speed,sports_baseball,straighten,task_alt,texture,tune,unfold_less,unfold_more,vertical_split,video_library,video_settings,view_column,visibility,warning,water_drop,waves&display=block">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/icons.css">
@@ -157,15 +167,14 @@
             <div class="scene-menu" id="scene-menu" hidden></div>
           </div>
         </div>
+        <!-- The stage's status line. Readings are plain text: the clock and the frame rate, and the recording light
+             while a clip or a dataset records (its stop is in the player bar). Only what a press acts on is a button:
+             the notices open Insights, and the director's chip gives the camera back. -->
         <div class="hud">
-          <span class="chip pill" id="hud-state" data-state="run">Running</span>
-          <span class="chip" id="hud-time">t = 0.00 s</span>
-          <span class="chip" id="hud-rate" data-state="ok" title="Simulated seconds per real second">1.00× real time</span>
-          <span class="chip" id="hud-fps">60 fps</span>
+          <p class="hud-status"><span id="hud-time">t = 0.00 s</span><span id="hud-fps">60 fps</span></p>
+          <span class="hud-rec" id="hud-rec" hidden></span>
           <button type="button" class="chip hud-alert" id="hud-alert" hidden></button>
-          <button type="button" class="chip hud-rec" id="hud-rec" hidden></button>
-          <button type="button" class="chip hud-rec data" id="hud-data" hidden></button>
-          <button type="button" class="chip hud-rec dir" id="hud-dir" aria-label="The director is filming: press to give the camera back" title="Give the camera back" hidden></button>
+          <button type="button" class="chip hud-dir" id="hud-dir" aria-label="The director is filming: press to give the camera back" title="Give the camera back" hidden></button>
         </div>
       </div>
       <div class="exp-banner" id="exp-banner" hidden></div>
@@ -206,7 +215,17 @@
         <div class="minimap" id="minimap" hidden><canvas id="minimap-canvas" role="img" aria-label="Overview of the whole scene with the visible area outlined; click or drag to move the view"></canvas></div>
       </div>
     </div>
+    <!-- The player bar: one transport for time, laid out as a video player's. The timeline runs its full width and
+         carries the run's marks (what is recording, the states saved); beneath it are play, step and reset, the speed,
+         and the capture cluster, whose settings button opens the Capture section of Settings. -->
     <footer class="player">
+      <div class="timeline" role="group" aria-label="Timeline">
+        <span class="ms" aria-hidden="true">history</span>
+        <label for="rewind-range" class="sr-only">Rewind</label>
+        <div class="range-wrap no-notch"><div class="tl-marks" id="tl-marks" aria-hidden="true"><span class="tl-span" id="tl-clip" hidden></span><span class="tl-span data" id="tl-data" hidden></span></div><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note" title="Drag back to replay recent history. Comma steps back."></div>
+        <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
+        <span class="sr-only" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
+      </div>
       <div class="transport" role="group" aria-label="Simulation transport">
         <button type="button" class="btn btn-primary" id="btn-play" title="Play or pause (Space)"><span class="ms fill" id="btn-play-icon" aria-hidden="true">pause</span><span id="btn-play-label">Pause</span></button>
         <button type="button" class="btn btn-ghost" id="btn-step" title="Pause and advance one frame (.)"><span class="ms" aria-hidden="true">skip_next</span><span class="sr-only">Step</span></button>
@@ -218,17 +237,14 @@
         <output id="ctl-speed-out" class="ctl-val" for="ctl-speed">1.00×</output>
         <button type="button" class="ctl-reset" id="speed-reset" aria-label="Reset speed to 1×" title="Back to 1×" hidden><span class="ms" aria-hidden="true">restart_alt</span></button>
       </div>
-      <div class="timeline" role="group" aria-label="Rewind">
-        <span class="ms" aria-hidden="true">history</span>
-        <label for="rewind-range" class="sr-only">Rewind</label>
-        <div class="range-wrap no-notch"><input type="range" id="rewind-range" min="0" max="0" step="1" value="0" disabled aria-describedby="rewind-note" title="Drag back to replay recent history. Comma steps back."></div>
-        <output class="ctl-out" id="rewind-out" for="rewind-range">live</output>
-        <span class="sr-only" id="rewind-note">Drag back to replay recent history. Comma steps back.</span>
-      </div>
+      <!-- Each recorder and the save: a mark, its name, a live line (what it will keep, or how far it has got) and its
+           key. The name is what the button does now; the line describes it. capture.js keeps both, and the tooltip,
+           current. -->
       <div class="capture" role="group" aria-label="Capture">
-        <button type="button" class="btn btn-ghost btn-rec" id="btn-rec" aria-pressed="false" title="Record the stage as a video (M)"><span class="ms fill" aria-hidden="true">fiber_manual_record</span><span class="lbl" id="btn-rec-label">Video</span></button>
-        <button type="button" class="btn btn-ghost" id="btn-data" aria-pressed="false" title="Record this lab's measurements over time as a dataset (D)"><span class="ms" aria-hidden="true">monitoring</span><span class="lbl" id="btn-data-label">Data</span></button>
-        <button type="button" class="btn btn-ghost" id="btn-state" title="Save the exact state of this scene so you can reload it later"><span class="ms" aria-hidden="true">bookmark</span><span class="lbl">Save</span></button>
+        <button type="button" class="cap-btn" id="btn-rec" data-kind="clip" aria-pressed="false" aria-keyshortcuts="M" aria-labelledby="btn-rec-label" aria-describedby="btn-rec-sub"><span class="cap-mark" aria-hidden="true"></span><span class="cap-text"><span class="cap-name" id="btn-rec-label">Record clip</span><span class="cap-sub" id="btn-rec-sub"></span></span><kbd aria-hidden="true">M</kbd></button>
+        <button type="button" class="cap-btn" id="btn-data" data-kind="run" aria-pressed="false" aria-keyshortcuts="D" aria-labelledby="btn-data-label" aria-describedby="btn-data-sub"><span class="cap-mark" aria-hidden="true"></span><span class="cap-text"><span class="cap-name" id="btn-data-label">Record data</span><span class="cap-sub" id="btn-data-sub"></span></span><kbd aria-hidden="true">D</kbd></button>
+        <button type="button" class="cap-btn" id="btn-state" data-kind="state" aria-labelledby="btn-state-label" aria-describedby="btn-state-sub"><span class="cap-mark" aria-hidden="true"></span><span class="cap-text"><span class="cap-name" id="btn-state-label">Save state</span><span class="cap-sub" id="btn-state-sub"></span></span></button>
+        <button type="button" class="cap-set" id="btn-cap-settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings" title="Capture settings: clip quality and labels, the director, data rate and tracks"><span class="ms" aria-hidden="true">video_settings</span><span class="sr-only">Capture settings</span></button>
       </div>
     </footer>
   </section>
@@ -314,14 +330,6 @@
       <div role="tabpanel" id="np-guide" aria-labelledby="nt-guide" hidden><div id="guide"></div></div>
       <div role="tabpanel" id="np-math" aria-labelledby="nt-math" hidden><div class="math" id="math"></div></div>
       <div role="tabpanel" id="np-library" aria-labelledby="nt-library" hidden>
-        <section class="lib-sec" aria-labelledby="lib-cap-h">
-          <div class="lib-head">
-            <h4 class="sub" id="lib-cap-h">Capture</h4>
-            <button type="button" class="lib-tog" id="btn-cap-settings" aria-expanded="false" aria-controls="capture-settings"><span class="ms" aria-hidden="true">tune</span>Settings</button>
-          </div>
-          <div class="lib-capture" id="lib-capture" role="group" aria-label="Capture this run"></div>
-          <div class="capture-settings" id="capture-settings" hidden></div>
-        </section>
         <section class="lib-sec" aria-labelledby="lib-saved-h">
           <div class="lib-head">
             <h4 class="sub" id="lib-saved-h">Saved <span class="lib-count" id="lib-count"></span></h4>
@@ -343,8 +351,9 @@
 </footer>
 
 <!-- Settings (settings.js): one modal dialog, a section for each part of the workspace a person sets once and keeps.
-     The top bar's Graphics, Units, HUD and keyboard buttons open it at their own section; each section's contents
-     belong to the module that owns them (mode.js, unitmenu.js, headsup.js). -->
+     The top bar's Graphics, Units, HUD and keyboard buttons, and the player bar's capture settings button, open it at
+     their own section; each section's contents belong to the module that owns them (mode.js, unitmenu.js,
+     headsup.js, capture.js). -->
 <dialog class="settings" id="settings" aria-labelledby="settings-title" tabindex="-1">
   <header class="settings-head"><span class="ms settings-ico" aria-hidden="true">settings</span><h2 id="settings-title">Settings</h2><span class="settings-kept">Kept in this browser</span><button type="button" class="icon-btn" id="settings-close" title="Close (Esc)"><span class="ms" aria-hidden="true">close</span><span class="sr-only">Close settings</span></button></header>
   <div class="settings-nav">
@@ -352,10 +361,15 @@
       <button type="button" role="tab" class="set-tab" id="st-graphics" aria-controls="sp-graphics" aria-selected="true"><span class="ms" aria-hidden="true">tune</span>Graphics</button>
       <button type="button" role="tab" class="set-tab" id="st-units" aria-controls="sp-units" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">straighten</span>Units</button>
       <button type="button" role="tab" class="set-tab" id="st-hud" aria-controls="sp-hud" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">center_focus_strong</span>Head-up display</button>
+      <button type="button" role="tab" class="set-tab" id="st-capture" aria-controls="sp-capture" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">video_settings</span>Capture</button>
       <button type="button" role="tab" class="set-tab" id="st-keys" aria-controls="sp-keys" aria-selected="false" tabindex="-1"><span class="ms" aria-hidden="true">keyboard</span>Keyboard</button>
     </div>
   </div>
   <div class="settings-body" id="settings-body">
+<section class="set-pane" id="sp-capture" role="tabpanel" aria-labelledby="st-capture" hidden>
+  <header class="set-head"><h3 id="cap-title">Capture</h3><p>How Record clip and Record data, in the player bar under the stage, keep a run, and whether the director films your clips. What you capture gathers in the Library.</p></header>
+  <div class="cap-set-body" id="capture-settings"></div>
+</section>
 <section class="set-pane" id="sp-keys" role="tabpanel" aria-labelledby="st-keys" hidden>
   <header class="set-head"><h3 id="keys-title">Keyboard and pointer</h3><p>The keys work anywhere in the workspace, except while you type in a field.</p></header>
   <dl class="keys-list">
@@ -365,7 +379,7 @@
     <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Halve or double the speed</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, frame the scene</dd>
     <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Pan (orbit in 3D views; Shift pans)</dd>
-    <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record video · record data</dd>
+    <dt><kbd>M</kbd> <kbd>D</kbd></dt><dd>Record a clip · record data</dd>
     <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Switch labs</dd>
     <dt><kbd>Z</kbd></dt><dd>Switch between 2D and 3D</dd>
     <dt><kbd>F</kbd> <kbd>Shift</kbd>+<kbd>B</kbd></dt><dd>Focus the stage · show or hide the instruments</dd>

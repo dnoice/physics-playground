@@ -1,17 +1,23 @@
 """
 ✒ Metadata
-    - Title: Notebook Tests (digiSpace Edition - v2.5)
+    - Title: Notebook Tests (digiSpace Edition - v2.19)
     - File Name: notebook.py
     - Relative Path: tests/notebook.py
     - Artifact Type: test
-    - Version: 2.5.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the Library's capture-card checks became
+      checks of the player bar's cluster: Record data starts and stops a
+      recording, its line counts rows and its tooltip follows, the stage's
+      light is status and the timeline marks it, and the Library keeps the
+      dataset with no capture cards of its own.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created for
       release 2.5.0: the Math page's live panels, the Guide's cards, the
       Library's capture cards and the Inspect pane's focus chart. The Guide's
@@ -21,8 +27,9 @@
     Checks that the notebook is wired to the simulation in the flat view:
     live formulas read the run and their sliders change it in step with
     Controls, theory checks agree with what the run measures, the Guide's
-    cards pick tools and load scenes, the Library's cards start and stop a
-    capture, and the Inspect pane follows a figure over time.
+    cards pick tools and load scenes, the player bar's capture cluster
+    starts and stops a recording that the Library then keeps, and the
+    Inspect pane follows a figure over time.
 
 ✒ Key Features:
     - Every lab's Math page builds live panels without errors.
@@ -32,7 +39,10 @@
       system.
     - Guide: a tool card selects the tool and marks it; a keyboard change
       moves the mark; a scene card loads the scene.
-    - Library: the dataset card starts and stops a recording.
+    - Capture: Record data in the player bar starts and stops a recording,
+      its line counts the rows, the stage's recording light (status, not a
+      button) and the timeline show it, and the Library keeps the dataset
+      but no capture cards of its own.
     - Inspect: the focus chart sits inside the pane and follows the figure
       that is clicked.
 
@@ -46,6 +56,7 @@
       Windows, macOS and Linux
 ---------
 """
+import re
 from playwright.sync_api import sync_playwright
 from harness import URL, finish, launch, ok, open_page, settle
 
@@ -114,16 +125,30 @@ with sync_playwright() as p:
     ok("scene_card_loads_scene", state("active.presetId") == "twosrc" and pg.locator("#guide .g-scene[aria-pressed=true]").inner_text().strip().endswith("Two sources"))
     pg.context.close()
 
-    # ---- Library: the dataset card starts and stops a recording
+    # ---- Capture: one cluster in the player bar records and saves; the Library keeps only what was saved. Record data
+    # starts and stops a recording, its line counts the rows, the stage's light and the timeline show it while it runs.
     pg = fresh("collisions")
     pg.click("#nt-library"); pg.wait_for_timeout(300)
-    ok("capture_cards_shown", pg.locator("#lib-capture .cap-card").count() == 3 and "columns" in pg.inner_text("#lib-capture"))
-    run = pg.locator("#lib-capture .cap-card[data-kind=run]")
+    names = pg.evaluate("[...document.querySelectorAll('.player .capture .cap-btn')].map(b => [b.id, b.querySelector('.cap-name').textContent])")
+    ok("capture_cluster_in_player", names == [["btn-rec", "Record clip"], ["btn-data", "Record data"], ["btn-state", "Save state"]]
+       and re.fullmatch(r"\d+ cols · \d+ Hz", pg.inner_text("#btn-data-sub")) is not None and pg.locator("#btn-cap-settings").is_visible(), (names, pg.inner_text("#btn-data-sub")))
+    ok("library_has_no_capture_cards", pg.locator(".cap-card, #lib-capture, #np-library .lib-tog").count() == 0 and pg.locator("#np-library .lib-sec").count() == 1
+       and "player bar" in pg.inner_text("#lib-empty"), pg.inner_text("#lib-empty"))
+    run = pg.locator("#btn-data")
     run.click(); pg.wait_for_timeout(1200)
-    ok("dataset_card_starts", state("capture.dataRec.on") is True and run.get_attribute("aria-pressed") == "true" and "Stop" in run.inner_text())
+    light = pg.evaluate("(() => { const r = document.getElementById('hud-rec'); return { tag: r.tagName, shown: !r.hidden, text: r.textContent, cursor: getComputedStyle(r).cursor, tab: r.tabIndex }; })()")
+    ok("dataset_button_starts", state("capture.dataRec.on") is True and run.get_attribute("aria-pressed") == "true" and pg.inner_text("#btn-data-label") == "Stop data"
+       and run.get_attribute("title") == "Stop the dataset and keep it in the Library (D)"
+       and re.fullmatch(r"[\d,]+ rows", pg.inner_text("#btn-data-sub")) is not None, pg.inner_text("#btn-data-sub"))
+    ok("recording_light_is_status_not_a_button", light["tag"] == "SPAN" and light["shown"] and re.fullmatch(r"REC [\d,]+ rows", light["text"]) is not None
+       and light["cursor"] != "pointer" and light["tab"] < 0, light)
+    ok("timeline_marks_the_recording", pg.evaluate("!document.getElementById('tl-data').hidden && document.getElementById('tl-clip').hidden"))
     run.click()
     settle(pg, "!PhysicsPlayground.capture.dataRec.on && PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')", 10000)
-    ok("dataset_card_stops_and_saves", not state("capture.dataRec.on") and pg.evaluate("PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')"))
+    pg.wait_for_timeout(300)
+    ok("dataset_button_stops_and_saves", not state("capture.dataRec.on") and pg.evaluate("PhysicsPlayground.capture.vault.list().some(i => i.kind === 'run')")
+       and run.get_attribute("aria-pressed") == "false" and pg.inner_text("#btn-data-label") == "Record data" and run.get_attribute("title").endswith("(D)")
+       and pg.evaluate("document.getElementById('hud-rec').hidden && document.getElementById('tl-data').hidden") and pg.locator("#lib-list .lib-item[data-kind=run]").count() == 1)
     pg.context.close()
 
     # ---- Inspect: the focus chart sits inside the pane and follows the clicked figure

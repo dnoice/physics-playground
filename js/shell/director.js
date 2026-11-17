@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Director (digiSpace Edition - v2.18)
+    - Title: Director (digiSpace Edition - v2.19)
     - File Name: director.js
     - Relative Path: js/shell/director.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: its switch and Preview direction are
+      hosted in the Capture section of Settings, and a preview's announcement
+      says how to give the camera back.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
       on Dennis's call for recordings shot like a film: a director that
       drives the live view while a clip records, with establishing wide
@@ -428,7 +432,7 @@ export function setDirector(on) {
 export function previewDirector() {
   if (D.why === 'preview') { stopDirector(); announce('Preview stopped: the view is yours again'); return; }
   if (D.why || !D.on) return;
-  begin('preview'); announce('Previewing the director: press again, or the chip on the stage, to stop');
+  begin('preview'); announce('Previewing the director: the chip on the stage, or Stop preview in Settings, gives the camera back');
 }
 export function directorState() {
   return { on: D.on, why: D.why, driving: !!D.why, kind: D.kind, lab: D.lab && D.lab.id, shot: D.shot.kind, label: D.shot.label, key: D.shot.key,
@@ -467,7 +471,7 @@ function direct(real) {
   chip(lab, real);
 }
 
-/* ---------- on the stage and in the capture settings ---------- */
+/* ---------- on the stage, and in the Capture section of Settings ---------- */
 const ui = { chip: null, sw: null, pv: null, pvLabel: null };
 function chip(lab, dt) {
   if ((D.ui += dt) < 0.25) return;
@@ -491,7 +495,8 @@ export function syncDirectorUI() {
     ui.pvLabel.textContent = on ? 'Stop preview' : 'Preview direction';
   }
 }
-/* The switch and the preview, for the capture settings. */
+/* The switch and the preview, for the Capture section of Settings (capture.js builds it, and closes the dialog when a
+   preview starts, so the stage can be watched). */
 export function directorSettings() {
   const note = 'While a clip records, the director films the run for you: an establishing wide shot, then slow pans, dollies and orbits '
     + `onto what is happening. Move the camera and it waits until you have let go for ${YIELD} seconds; your view comes back when the clip stops.`

@@ -1,28 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck (digiSpace Edition - v2.7)
+    - Title: Instruments Deck (digiSpace Edition - v2.19)
     - File Name: instruments.js
     - Relative Path: js/shell/instruments.js
     - Artifact Type: javascript
-    - Version: 2.7.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the scope draws the timeline's marks
+      from timelineMarks(), as the rewind track does: a running recording in
+      its colour and a tick at each state saved in this run.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exports a
       reading's sampled history and the figure-and-unit formatter, so the
       head-up display's tape shows Telemetry's own text and trace.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — sparkPath()
       is shared with the Inspect pane's figure sparklines.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Readings
-      rank as primary or derived and set their units in a smaller face, so a
-      narrow gauge keeps both. A selected object's figures can be plotted
-      beside the readings (not remembered across visits), every series
-      restarts when the units change, and the diagnostics sheet's code moves
-      to the deck's Insights pane.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -39,6 +37,7 @@
     - Up to four series plot together, each in its own lane on one time axis,
       with their values in a legend that follows the cursor.
     - Click or drag on the scope to rewind; the wheel zooms the time window.
+      The scope shows the timeline's marks, as the rewind track does.
     - Plotted readings are remembered per lab; a selected object's figures
       plot under its own name and are not.
     - A change of unit system restarts every series, since old samples are in
@@ -58,7 +57,7 @@ import { rrect } from '../core/draw.js';
 import { Series } from '../core/series.js';
 import { $, clamp, el, store } from '../core/util.js';
 import { labs } from '../labs/index.js';
-import { hist, histSeek } from './capture.js';
+import { hist, histSeek, timelineMarks } from './capture.js';
 import { drawChart } from './panel.js';
 import { active, announce } from './state.js';
 
@@ -239,11 +238,31 @@ export function drawScope(c) {
     g.font = '500 12px "Raleway", system-ui, sans-serif'; g.fillStyle = THEME.muted; g.textAlign = 'left';
     if (laneH >= 26) g.fillText(label, x0 + 9, y0 + 15);
   });
+  // The timeline's marks, as the rewind track shows them: a running recording in its kind's colour from where it began,
+  // and a green tick on the axis, with a faint line through the lanes, for each state saved in this run.
+  const M = timelineMarks(lab);
+  let under = bottom + 1;
+  if (M.clip <= W.end) under = recBand(g, sx(Math.max(M.clip, W.beg)), x1, top, bottom, under, THEME.crit);
+  if (M.run <= W.end) recBand(g, sx(Math.max(M.run, W.beg)), x1, top, bottom, under, THEME.cyan);
+  g.fillStyle = THEME.ok;
+  for (const t of M.states) {
+    if (t < W.beg || t > W.end) continue;
+    const X = Math.round(sx(t));
+    g.globalAlpha = 0.3; g.fillRect(X - 0.5, top, 1, bottom - top); g.globalAlpha = 1; g.fillRect(X - 1, bottom + 1, 2, 6);
+  }
   g.font = `400 11px ${THEME.mono}`; g.fillStyle = THEME.muted;
   g.textAlign = 'left'; g.fillText(`t = ${W.beg.toFixed(1)} s`, x0 + 2, h - 3);
   g.textAlign = 'right'; g.fillText(`${W.end.toFixed(1)} s`, x1 - 2, h - 3);
   if (H.pos >= 0) { const X = Math.round(sx(clamp(H.snaps[H.pos].t, W.beg, W.end))) + 0.5; g.strokeStyle = THEME.amber; g.lineWidth = 1.5; g.beginPath(); g.moveTo(X, top); g.lineTo(X, bottom); g.stroke(); }
   if (hover != null) { const X = Math.round(sx(hover)) + 0.5; g.strokeStyle = THEME.text; g.globalAlpha = 0.45; g.lineWidth = 1; g.beginPath(); g.moveTo(X, top); g.lineTo(X, bottom); g.stroke(); g.globalAlpha = 1; g.textAlign = X > w - 90 ? 'right' : 'left'; g.fillStyle = THEME.text; g.fillText(`t = ${hover.toFixed(2)} s`, X + (X > w - 90 ? -6 : 6), h - 3); }
+}
+
+/* A running recording on the plot: a tint over the lanes from where it began, underlined in its kind's colour at y.
+   Returns where the next underline goes, so a clip and a dataset recording together each keep their own. */
+function recBand(g, X, x1, top, bottom, y, col) {
+  g.fillStyle = col; g.globalAlpha = 0.07; g.fillRect(X, top, x1 - X, bottom - top);
+  g.globalAlpha = 1; g.fillRect(X, y, x1 - X, 2);
+  return y + 3;
 }
 
 /* ---------- legend ---------- */

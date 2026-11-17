@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Chaos Lab (digiSpace Edition - v2.18)
+    - Title: Chaos Lab (digiSpace Edition - v2.19)
     - File Name: chaos.js
     - Relative Path: js/labs/chaos.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for a duplication sweep: Restart from these angles is
+      gone, since the starting-angle dials restart the run as they change and
+      Reset restarts it too.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for recordings shot like a film: interest() names the
       pendulum tips, where the copies part and the copies on the phase map for
@@ -20,9 +24,6 @@
       records the arms, bobs, g, the spread between copies as the code applies
       it (each lower angle δ₀ beyond the last) and every copy's starting
       state.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
-      dictionary for datasets and per-copy tracks: each column's unit, meaning
-      and SI factor, and a note on the pendulum's units.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -118,7 +119,6 @@ export const pendulum = {
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: PEND_TRAIL, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'toggle', key: 'trails', label: 'Show trails', group: 'display', short: 'Trails' },
   ],
-  actions: [{ label: 'Restart from these angles', run() { rebuild(pendulum); } }],
   N: 0, s: new Float64Array(240), trails: null, phist: null, tn: 0, th: 0, trailClock: 0, E0: 0, holding: false, drag: null, wmax: 0,
   sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN, fit: { n: 0, t: 0, y: 0, tt: 0, ty: 0 }, predAt: NaN, predFrom: NaN,
   k1: new Float64Array(4), k2: new Float64Array(4), k3: new Float64Array(4), k4: new Float64Array(4), tmp: new Float64Array(4),

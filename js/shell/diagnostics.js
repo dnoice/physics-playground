@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Diagnostics (digiSpace Edition - v2.18)
+    - Title: Diagnostics (digiSpace Edition - v2.19)
     - File Name: diagnostics.js
     - Relative Path: js/shell/diagnostics.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for chips that do not look clickable: the stage's
+      real-time chip is gone; the Now view's Real time figure and the slow-run
+      notice already say it.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the insights fill the
       pane's Now view, which counts them in the colour of the worst; the HUD's
@@ -20,9 +24,6 @@
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The
       warnings and critical notices also light the head-up display's caution
       lights.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Insights
-      render in the deck's Insights pane; the HUD alert opens that pane, and
-      the summary on its tab is short: a count, or how many need checking.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -170,8 +171,6 @@ export function updatePerfNums() {
   const rate = state.running && !active.holding ? perf.rate : 0, slow = state.running && perf.slow > 1;
   const rt = $('#perf-rate'); rt.textContent = state.running ? `${rate.toFixed(2)}×` : 'paused';
   if (slow) rt.setAttribute('data-state', 'warn'); else rt.removeAttribute('data-state');
-  const hr = $('#hud-rate'); hr.textContent = state.running ? `${rate.toFixed(2)}× real time` : 'paused';
-  hr.dataset.state = slow ? 'warn' : 'ok';
 }
 
 /* Wiring: run once from main.js after every module has evaluated. */

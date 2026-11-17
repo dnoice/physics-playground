@@ -1,17 +1,21 @@
 /*
 ✒ Metadata
-    - Title: Transport and Keys (digiSpace Edition - v2.18)
+    - Title: Transport and Keys (digiSpace Edition - v2.19)
     - File Name: transport.js
     - Relative Path: js/shell/transport.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for chips that do not look clickable: the Running pill on
+      the stage is gone, since the Play button already says whether the run
+      plays.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: Shift+S opens Settings, ahead of
       the tool letters so a lab whose tool is S keeps the plain key, and U and
@@ -19,10 +23,6 @@
       wait, and keys that reach the page go to the dialog.
     - 2.10.0 (11/14/2026) [dendogg + Anthropic - Claude Opus 5.5] — The + and
       - keys take the lab's zoomPace.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Shift+H
-      shows or hides the head-up display, ahead of the tool letters so a lab
-      whose tool is H keeps it; Escape also closes the HUD menu; a held H acts
-      once.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -34,7 +34,7 @@
     - 1–7 switch labs, letters pick tools, F focuses the stage, Shift+B
       hides the bay, Shift+S opens Settings, and U and ? open it at Units and
       at the keys.
-    - R resets, M records video, D records data, [ and ] change speed.
+    - R resets, M records a clip, D records data, [ and ] change speed.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -73,7 +73,6 @@ export function setSpeed(v) { state.speed = clamp(Number(v.toPrecision(3)), 0.1,
 export function updatePlay() {
   $('#btn-play-label').textContent = state.running ? 'Pause' : 'Play';
   $('#btn-play-icon').textContent = state.running ? 'pause' : 'play_arrow';
-  const pill = $('#hud-state'); pill.dataset.state = state.running ? 'run' : 'pause'; pill.textContent = state.running ? 'Running' : 'Paused';
 }
 export function play() { histBranch(active); state.running = true; perf.slow = 0; updatePlay(); announce('Running'); }
 export function pause() { state.running = false; updatePlay(); announce('Paused'); }

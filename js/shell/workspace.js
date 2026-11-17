@@ -1,24 +1,26 @@
 /*
 ✒ Metadata
-    - Title: Lab Rail (digiSpace Edition - v2.6)
+    - Title: Lab Rail (digiSpace Edition - v2.19)
     - File Name: workspace.js
     - Relative Path: js/shell/workspace.js
     - Artifact Type: javascript
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: a new lab updates the capture buttons
+      and the Capture section of Settings, which took over from the Library's
+      cards.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Selecting a
       lab scrolls its tab into view when the top bar is too narrow for every
       tab.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
       labs rebuilds the Library's capture cards.
-    - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Switching
-      labs refreshes the Units menu's scale note.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -42,11 +44,11 @@ import { LAB_ICON } from '../core/icons.js';
 import { $, el, store } from '../core/util.js';
 import { labs, labsById } from '../labs/index.js';
 import { navAnim } from './camera.js';
-import { dataRec, stopData, stopVideo, updateRewind, vrec } from './capture.js';
+import { dataRec, stopData, stopVideo, syncCapture, updateCaptureSettings, updateRewind, vrec } from './capture.js';
 import { updateDetails } from './details.js';
 import { evaluateDiagnostics, insightCards } from './diagnostics.js';
 import { buildDock } from './dock.js';
-import { buildLibraryCapture, renderLibrary, updateTracksNote } from './library.js';
+import { renderLibrary } from './library.js';
 import { ensureReady } from './lifecycle.js';
 import { prepareLab, renderMode } from './mode.js';
 import { buildNav } from './navigator.js';
@@ -88,7 +90,7 @@ export function selectLab(id, opts = {}) {
   insightCards.forEach(c => c.el.remove()); insightCards.clear();
   perf.slow = 0; perf.rate = state.speed;
   evaluateDiagnostics();
-  updateRewind(); updateTracksNote(); renderLibrary(); buildLibraryCapture(lab); updateDetails(lab); renderUnits();
+  updateRewind(); updateCaptureSettings(); renderLibrary(); syncCapture(); updateDetails(lab); renderUnits();
   if (!opts.silent) announce(`${lab.title} lab`);
   if (location.hash.slice(1) !== lab.id) { try { location.replace('#' + lab.id); } catch (_) { /* hash routing unavailable */ } }
 }

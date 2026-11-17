@@ -1,17 +1,20 @@
 /*
 ✒ Metadata
-    - Title: Control Styles (digiSpace Edition - v2.14)
+    - Title: Control Styles (digiSpace Edition - v2.19)
     - File Name: controls.css
     - Relative Path: css/controls.css
     - Artifact Type: stylesheet
-    - Version: 2.14.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for one timeline: the old record button's red glyph rule
+      is gone with the button it styled.
     - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The dial
       wheel's own user-select is gone: the workspace's one selection rule in
       tokens.css covers it.
@@ -22,9 +25,6 @@
       along the wheel's foot, a row's wheels level past a two-line name or a
       note (subgrid), the focus ring for the keyboard only, and the wheel as
       the field while typing.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
-      leftover row styles of the old sliders (.ctl-head, .ctl-tools,
-      output.ctl-val), which no markup uses since the dials.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -69,7 +69,6 @@
 .btn-primary { background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 90%, white), var(--amber)); border-color: var(--amber); color: #1a1206; box-shadow: 0 2px 12px color-mix(in oklab, var(--amber) 25%, transparent); }
 .btn-primary:hover { border-color: var(--amber); background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 80%, white), var(--amber)); }
 .btn-fix { min-height: 28px; padding: 5px 9px; font-size: 12px; background: color-mix(in oklab, var(--ink) 85%, currentColor 8%); }
-.btn-rec .ms { color: var(--crit); }
 .btn[aria-pressed="true"] { border-color: var(--crit); color: var(--crit); background: color-mix(in oklab, var(--crit) 10%, var(--ink)); }
 .btn[aria-pressed="true"] .ms { animation: blink 1s steps(2, start) infinite; }
 @keyframes blink { to { opacity: 0.25; } }
