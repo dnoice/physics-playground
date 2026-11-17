@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Cloth Lab (digiSpace Edition - v2.16)
+    - Title: Cloth Lab (digiSpace Edition - v2.17)
     - File Name: cloth.js
     - Relative Path: js/labs/cloth.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,19 +12,17 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Tracks
+      follow every third point along each row and column of the weave and
+      every pinned point (column, row, pin, position, velocity), where Cloth
+      had kept none; the weave's shape is kept, and a dataset records it with
+      its spacing, links and pins.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets: each column's unit, meaning and SI factor, and
       a note on coordinates and scale.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: mean and peak stretch, torn links and tearing rate on its tape;
       with nothing to select, no target.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
-      speed-cap Insight gives the per-step limit in the chosen units. The Wind
-      control and the Math page's wind value say that the push averages 0.62
-      of the setting and gusts swing it about that. The stretch check gives
-      the mean beside the peak and says where the peak gathers, so a hammock
-      hanging from two pins reads as a loaded corner rather than a cloth
-      holding within 44 %.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -131,6 +129,8 @@ export const cloth = {
     while (cols * rows > 4400) { cols--; rows = Math.max(4, rows - 1); }
     if (preset !== 'flag') x0 = (w - (cols - 1) * s) / 2;
     const id = (c, r) => r * cols + c;
+    // The weave's shape, for a dataset's tracks: point i sits at column i % cols, row ⌊i / cols⌋.
+    this.cols = cols; this.rows = rows; this.spacing = s;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const i = this.n++, X = x0 + c * s, Y = y0 + r * s;
       this.x[i] = X; this.y[i] = Y; this.ox[i] = X; this.oy[i] = Y; this.pin[i] = 0;
@@ -448,7 +448,29 @@ Object.assign(cloth, genericState, {
     mean_stretch: ['1', 'Mean strain of the intact links: length over rest length, minus 1 (0.01 is 1 % longer).'],
     peak_stretch: ['1', 'Strain of the most stretched intact link.'],
     tearing_per_s: ['1/s', 'Links torn per second of simulated time.', '1/s', 1],
+    point_id: ['id', 'The point\'s number in the weave: row × columns + column.'],
+    col: ['index', 'Its column in the weave, from the left, starting at 0.'],
+    row: ['index', 'Its row, from the top, starting at 0.'],
+    pinned: ['flag', '1 if the point is held in place, else 0.'],
+    x: ['px', 'Position, x.', 'm', PX_M],
+    y: ['px', 'Position, y (downward).', 'm', PX_M],
+    vx: ['px/s', 'Velocity, x, from its last step (the solver keeps positions, not velocities).', 'm/s', PX_M],
+    vy: ['px/s', 'Velocity, y (downward).', 'm/s', PX_M],
   },
-  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm.',
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm. The tracks follow every third point along each row and column of the weave, and every pinned point, so the cloth\'s shape can be rebuilt from them.',
+  /* The weave and its pins when a recording starts. */
+  dataContext() {
+    return { facts: [['Weave', `${this.cols} columns × ${this.rows} rows, ${this.n} points`], ['Rest spacing', `${this.spacing} px (${(this.spacing * PX_M * 100).toFixed(2)} cm)`],
+      ['Links', `${this.aliveCount ?? this.L} intact of ${this.L}`], ['Pinned points', this.pins()], ['Gravity', `${this.p.gravity} px/s² downward`]] };
+  },
+  trackLabel: 'Point tracks',
+  trackColumns: ['t_s', 'point_id', 'col', 'row', 'pinned', 'x', 'y', 'vx', 'vy'],
+  trackRows(out) {
+    const cols = this.cols, k = 1 / this.dt();
+    for (let i = 0; i < this.n; i++) {
+      const c = i % cols, r = (i - c) / cols;
+      if ((c % 3 === 0 && r % 3 === 0) || this.pin[i]) out.push([this.t, i, c, r, this.pin[i], this.x[i], this.y[i], (this.x[i] - this.ox[i]) * k, (this.y[i] - this.oy[i]) * k]);
+    }
+  },
   dataRow() { return [this.t, this.n, this.pins(), this.aliveCount, this.L - this.aliveCount, this.meanStretch, this.maxStretch, Math.max(0, this.tearRate)]; },
 });

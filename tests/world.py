@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: 3D Mode Test (digiSpace Edition - v2.15)
+    - Title: 3D Mode Test (digiSpace Edition - v2.17)
     - File Name: world.py
     - Relative Path: tests/world.py
     - Artifact Type: test
-    - Version: 2.15.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,10 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Chaos
+      back-view check waits for the camera to finish turning, as the Fluid one
+      does, before it reads the yaw; on a busy machine the turn had not ended
+      in the fixed 900 ms.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Fluid seen
       from behind with the backdrop's glow behind it; each tier's budgets
       reaching the studio and the texture shop; Ultra's finer environment; the
@@ -294,7 +298,7 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport=VIEW)
     pg = page(ctx, lab="chaos")
     settle(pg, IS3D, 30000); pg.wait_for_timeout(400)
-    pg.evaluate(f"{P}.view.snap('y')"); pg.wait_for_timeout(900)
+    pg.evaluate(f"{P}.view.snap('y')"); settle(pg, f"Math.abs(Math.abs({P}.view.get().yaw) - Math.PI) < 0.05", 10000); pg.wait_for_timeout(300)
     yaw = abs(pg.evaluate(f"{P}.view.get().yaw"))
     ok("chaos_seen_from_behind", abs(yaw - 3.1416) < 0.3 and pg.evaluate(LIT) > 0.02, round(yaw, 2))
     # The Fluid tank too, now that its yaw is free: its back is finished, and the backdrop's glow follows the camera

@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Fluid Lab (digiSpace Edition - v2.16)
+    - Title: Fluid Lab (digiSpace Edition - v2.17)
     - File Name: fluid.js
     - Relative Path: js/labs/fluid.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,15 +12,17 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Particles
+      carry stable numbers through removal, rewind and saved states; tracks
+      follow one particle in eight, chosen by number (position, velocity,
+      density), where Fluid had kept none; a dataset records the tank,
+      spacing, gravity, tilt and every post.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets: each column's unit, meaning and SI factor, and
       a note on coordinates and scale.
     - 2.15.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The camera
       orbits all the way round the tank, as in every other lab: its back is
       now finished.
-    - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
-      display: particles, mean and peak density and top speed on its tape, and
-      the selected post as its target, on the tank's mid-plane in 3D.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -133,6 +135,8 @@ export const fluid = {
   U: 20, Wu: 40, Hu: 30, cols: 1, rows: 1, n: 0, rho0: 3, spacing: 0.42, obs: [], seed: 1,
   x: new Float64Array(FL_CAP), y: new Float64Array(FL_CAP), px: new Float64Array(FL_CAP), py: new Float64Array(FL_CAP),
   vx: new Float64Array(FL_CAP), vy: new Float64Array(FL_CAP), rho: new Float32Array(FL_CAP), bin: new Uint8Array(FL_CAP),
+  // Each particle's number, kept through the swap that removes one, so its track follows the same drop of water.
+  uid: new Uint32Array(FL_CAP), nextUid: 0,
   cellOf: new Int32Array(FL_CAP), cellItems: new Int32Array(FL_CAP), cellStart: new Int32Array(2), fillPos: new Int32Array(2),
   ptr: null, vel: velocityTracker(), pourClock: 0, series: new Series(400), lastSample: -1, peak: 1, mean: 1, clamped: 0, ticks: 0, clampRate: 0,
   TICK: 1 / 240,
@@ -149,12 +153,12 @@ export const fluid = {
     if (this.n >= FL_CAP) return false;
     for (const o of this.obs) if ((x - o.x) ** 2 + (y - o.y) ** 2 < (o.r + 0.2) ** 2) return true;
     const i = this.n++;
-    this.x[i] = x; this.y[i] = y; this.px[i] = x; this.py[i] = y; this.vx[i] = vx; this.vy[i] = vy; this.rho[i] = this.rho0;
+    this.x[i] = x; this.y[i] = y; this.px[i] = x; this.py[i] = y; this.vx[i] = vx; this.vy[i] = vy; this.rho[i] = this.rho0; this.uid[i] = ++this.nextUid;
     return true;
   },
   removeAt(i) {
     const l = --this.n;
-    if (i !== l) { this.x[i] = this.x[l]; this.y[i] = this.y[l]; this.px[i] = this.px[l]; this.py[i] = this.py[l]; this.vx[i] = this.vx[l]; this.vy[i] = this.vy[l]; this.rho[i] = this.rho[l]; }
+    if (i !== l) { this.x[i] = this.x[l]; this.y[i] = this.y[l]; this.px[i] = this.px[l]; this.py[i] = this.py[l]; this.vx[i] = this.vx[l]; this.vy[i] = this.vy[l]; this.rho[i] = this.rho[l]; this.uid[i] = this.uid[l]; }
   },
   fillBlock(x0, y0, x1, y1, max, vx = 0, vy = 0) {
     const s = this.spacing, rs = s * Math.sqrt(3) / 2; let c = 0;
@@ -643,7 +647,7 @@ Object.assign(fluid, genericState, {
   snapshot() {
     const n = this.n, a = new Float64Array(n * 4), { gravity, tilt, k, kNear, visc } = this.p;
     for (let i = 0; i < n; i++) { const o = i * 4; a[o] = this.x[i]; a[o + 1] = this.y[i]; a[o + 2] = this.vx[i]; a[o + 3] = this.vy[i]; }
-    return { n, a, rho: this.rho.slice(0, n), obs: this.obs.map(o => ({ ...o })), seed: this.seed, p: { gravity, tilt, k, kNear, visc } };
+    return { n, a, rho: this.rho.slice(0, n), uid: this.uid.slice(0, n), nextUid: this.nextUid, obs: this.obs.map(o => ({ ...o })), seed: this.seed, p: { gravity, tilt, k, kNear, visc } };
   },
   restore(s) {
     Object.assign(this.p, s.p);
@@ -653,6 +657,9 @@ Object.assign(fluid, genericState, {
       this.x[i] = s.a[o]; this.y[i] = s.a[o + 1]; this.vx[i] = s.a[o + 2]; this.vy[i] = s.a[o + 3];
       this.px[i] = this.x[i] - this.vx[i]; this.py[i] = this.y[i] - this.vy[i]; this.rho[i] = s.rho ? s.rho[i] : this.rho0;
     }
+    // Particle numbers come back with them; a state saved before they existed numbers its particles afresh.
+    if (s.uid && s.uid.length >= s.n) { for (let i = 0; i < s.n; i++) this.uid[i] = s.uid[i]; this.nextUid = Math.max(this.nextUid, s.nextUid || 0, ...Array.from(s.uid).slice(0, s.n)); }
+    else for (let i = 0; i < s.n; i++) this.uid[i] = ++this.nextUid;
     this.obs = s.obs.map(o => ({ ...o })); this.ptr = null; this.seed = s.seed ?? this.seed;
     this.series.truncateAfter(this.t); this.lastSample = this.t;
     return true;
@@ -668,8 +675,29 @@ Object.assign(fluid, genericState, {
     speed_capped_fraction: ['1', 'Share of particles held at the solver\'s speed limit, a sign the run is pushed too hard.'],
     fastest_px_s: ['px/s', 'Speed of the fastest particle.', 'm/s', PX_M],
     obstacles: ['count', 'Posts in the tank.'],
+    particle_id: ['id', 'The particle\'s number: unique in this run, never reused.'],
+    x: ['px', 'Position, x.', 'm', PX_M],
+    y: ['px', 'Position, y (downward).', 'm', PX_M],
+    vx: ['px/s', 'Velocity, x.', 'm/s', PX_M],
+    vy: ['px/s', 'Velocity, y (downward).', 'm/s', PX_M],
+    density_ratio: ['1', 'The particle\'s density over the rest density ρ₀: above 1 it is squeezed, below it stretched or in spray.'],
   },
-  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the world\'s top-left corner. One pixel is 1.09 cm, set so the 900 px/s² of gravity is 9.81 m/s².',
+  dataNote: 'Positions are in the stage\'s world: x to the right and y downward, from the tank\'s top-left corner. One pixel is 1.09 cm, set so the 900 px/s² of gravity is 9.81 m/s². The tracks follow one particle in eight, chosen by number, so the same particles are followed all run.',
+  /* The tank and its posts when a recording starts, in pixels. */
+  dataContext() {
+    const U = this.U;
+    return {
+      facts: [['Tank', `${(this.Wu * U).toFixed(0)} × ${(this.Hu * U).toFixed(0)} px (${(this.Wu * U * PX_M).toFixed(2)} × ${(this.Hu * U * PX_M).toFixed(2)} m)`], ['Particles', this.n],
+        ['Particle spacing at rest', `${(this.spacing * U).toFixed(1)} px`], ['Gravity', this.p.gravity ? `${this.p.gravity} px/s², ${this.p.tilt}° from straight down` : 'off'], ['Posts', this.obs.length]],
+      tables: [{ title: 'Posts at the start', note: 'Round posts the liquid flows round, as the Obstacle tool placed them.', head: ['Post', 'x (px)', 'y (px)', 'Radius (px)'], rows: this.obs.map((o, k) => [k + 1, o.x * U, o.y * U, o.r * U]) }],
+    };
+  },
+  trackLabel: 'Particle tracks',
+  trackColumns: ['t_s', 'particle_id', 'x', 'y', 'vx', 'vy', 'density_ratio'],
+  trackRows(out) {
+    const U = this.U, s = U / this.TICK;
+    for (let i = 0; i < this.n; i++) if (this.uid[i] % 8 === 0) out.push([this.t, this.uid[i], this.x[i] * U, this.y[i] * U, this.vx[i] * s, this.vy[i] * s, this.rho[i] / this.rho0]);
+  },
   dataRow() {
     let vmax = 0, ke = 0;
     const s = this.U / this.TICK;

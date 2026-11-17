@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Waves Lab (digiSpace Edition - v2.16)
+    - Title: Waves Lab (digiSpace Edition - v2.17)
     - File Name: waves.js
     - Relative Path: js/labs/waves.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,18 +12,15 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A dataset
+      records the grid, the detector line, the slits, the edges, c, f and
+      every source.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A column
       dictionary for datasets and the detector profile: each column's unit,
       meaning and SI factor, and a note on the grid and the profile rows.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Head-up
       display: wavelength, sources, Courant number and beam angle on its tape,
       and the selected source as its target, a line source at its middle.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Audit: the
-      phased-array formula, its readout, Insight and check apply only to a row
-      of like sources, evenly spaced and started together, and say so when
-      sources placed by hand or with Random sources break the row; the fringe
-      check asks for the scene's lone plane wave; a beam angle near zero is
-      judged in degrees rather than as a share of zero.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -658,6 +655,16 @@ Object.assign(waves, genericState, {
     intensity: ['amplitude²', 'Time-averaged intensity ⟨u²⟩ at that cell: a running mean of u² over about 1.2 s.'],
   },
   dataNote: 'Positions are in grid cells: x to the right and y downward, from the top-left of the tank. One cell is 4 mm. Each row of the tracks is one cell of the detector line, so a sample writes a whole profile.',
+  /* The tank, the detector line, the slits and the sources when a recording starts, in grid cells. */
+  dataContext() {
+    return {
+      facts: [['Grid', `${this.Nx} × ${this.Ny} cells (${(this.Nx * 0.004).toFixed(2)} × ${(this.Ny * 0.004).toFixed(2)} m)`], ['Detector line', `x = ${this.detectorX()} cells`],
+        ['Slits', this.slits ? `a barrier at x = ${this.slits.x} cells, slits ${this.slits.d} cells apart` : 'none'], ['Absorbing edges', this.p.absorb ? 'on' : 'off'],
+        ['Wave speed c', `${this.p.c} cells/s`], ['Frequency', `${this.p.f} Hz`]],
+      tables: [{ title: 'Sources at the start', note: 'A line source spans the tank\'s height at its x. Phases in radians; a source placed with Random on runs at its own share of the frequency (fm).',
+        head: ['source_id', 'Type', 'x (cells)', 'y (cells)', 'Phase', 'fm'], rows: this.sources.map(q => [q.id, q.type, q.x, q.type === 'line' ? '' : q.y, q.phase || 0, q.fm ?? 1]) }],
+    };
+  },
   dataRow() {
     let m = 0; const u = this.u; for (let i = 0; i < u.length; i += 5) { const v = Math.abs(u[i]); if (v > m) m = v; }
     const d = this.detector();

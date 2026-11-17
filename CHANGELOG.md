@@ -1,10 +1,10 @@
 <!--
 ✒ Metadata
-    - Title: Changelog (digiSpace Edition - v2.16)
+    - Title: Changelog (digiSpace Edition - v2.17)
     - File Name: CHANGELOG.md
     - Relative Path: CHANGELOG.md
     - Artifact Type: docs
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,8 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.17.0: every lab's dataset stands on its own.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.16.0: self-describing datasets, Gravity's context columns, tracks that
       keep the whole run, readable README badges and a contents table. Clips
@@ -78,6 +80,71 @@
 The complete release history of the physics playground. Browser-delivered
 files carry only their latest entries in their headers; every entry lives
 here in full, newest first.
+
+## 2.17.0 (11/16/2026)
+
+[dendogg + Anthropic - Claude Opus 5.5]
+
+On Dennis's call to go over every simulation's export logic, after
+Gravity's: every lab's dataset now stands on its own for someone who never
+saw the run. An audit recorded each lab and found three that kept no record
+of their objects at all, and none that said where its charges, sources,
+posts or copies began.
+
+### Every lab tracks its objects
+
+- **Collisions tracks every ball.**
+  - Each row has the ball's number, radius, mass, position, velocity and
+    spin, and whether it is the Brownian tracer.
+  - Before, the tracks followed only the Brownian scene's tracer, so an
+    ideal-gas run, the lab's centrepiece, left no per-ball record from
+    which to read the speed distribution.
+- **Fluid tracks one particle in eight,** chosen by number so the same
+  particles are followed all run. Each row has position, velocity and
+  density. Before, Fluid kept no tracks at all.
+  - Particles now carry stable numbers through every swap that removes one,
+    and through rewind and saved states.
+- **Cloth tracks every third point along each row and column of the weave,
+  plus every pinned point.** Each row has the point's column, row and pin,
+  so the cloth's shape can be rebuilt. Before, Cloth kept no tracks at all.
+
+### Every README records the scene
+
+The README now has a "scene at the start" section in every lab:
+
+- **Collisions:** the box, the radii, the tracer, gravity, e and μ.
+- **Fluid:** the tank, the particle spacing, gravity and tilt, and every
+  post.
+- **Waves:** the grid, the detector line, the slits, the edges, c, f and
+  every source.
+- **Chaos:** the arms and bobs, g, the spread between copies, and every
+  copy's starting state.
+- **Cloth:** the weave, its spacing, links and pins.
+- **Fields:** the world, k, B and its gradient, E₀, the probe, and every
+  charge.
+- **Gravity:** G, the softening and merging, beside its bodies.
+
+The data package keeps the same facts and tables, for software.
+
+### Units, checked against the code
+
+- **Fields' potential and its tracked energies have real units now.** The
+  potential is px²/s² per C/kg, converting to volts by the same scale as E.
+  The tracked energies are px²/s² per unit mass, converting to J/kg. They
+  had been listed as bare simulation units. The lab's scale note now says
+  the app shows potentials in simulation units, and the dataset gives the
+  factor.
+- **Chaos's spread is described as the code applies it.** Each copy's lower
+  angle starts δ₀ beyond the last's.
+
+### Checks
+
+- `tests/capture.py` records a dataset in every lab. Each must have:
+  - tracks;
+  - unique ids within a sample, the same ids from the first sample to the
+    last, where nothing is added or removed;
+  - a scene section;
+  - every column described.
 
 ## 2.16.0 (11/16/2026)
 

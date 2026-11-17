@@ -1,10 +1,10 @@
 """
 ✒ Metadata
-    - Title: Capture Test (digiSpace Edition - v2.16)
+    - Title: Capture Test (digiSpace Edition - v2.17)
     - File Name: capture.py
     - Relative Path: tests/capture.py
     - Artifact Type: test
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Every
+      lab's dataset stands alone: tracks with unique ids that hold from first
+      sample to last, a scene section, and every column described.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Datasets
       explain themselves: the ZIP is whole, the data package matches the CSVs
       and describes every field, the README covers scene, columns, settings
@@ -133,6 +136,23 @@ with sync_playwright() as p:
       const out = { stride: run.trackStride, rows: tr.length - 1, lastTrack: +tr[tr.length - 1].split(',')[0], lastData: +csv[csv.length - 1].split(',')[0], period: 1 / run.rateAsked };
       await C.vault.remove(run); return out; }""")
     ok("dataset_tracks_thin_to_the_end", t["stride"] > 1 and t["rows"] < 24 and t["lastData"] - t["lastTrack"] <= t["stride"] * t["period"] * 1.5, t)
+    # Every lab's dataset stands on its own: tracks with stable ids, and the scene it was recorded in. A gas, a tank and a
+    # cloth had kept no per-object record at all, and no lab said where its charges, sources, posts or copies began.
+    labs_ok = {}
+    for lab, preset, idcol in [("collisions", "gas", "ball_id"), ("fluid", "posts", "particle_id"), ("waves", "double", "y_cell"), ("chaos", "chaos", "copy"), ("cloth", "curtain", "point_id"), ("fields", "cyclotron", "particle_id")]:
+        pg.evaluate(f"() => {{ const P = PhysicsPlayground; P.select('{lab}'); P.preset('{preset}'); P.capture.toggleData(); P.play(); }}")
+        pg.wait_for_timeout(2200)
+        pg.evaluate("() => PhysicsPlayground.capture.toggleData()"); pg.wait_for_timeout(500)
+        labs_ok[lab] = pg.evaluate(f"""async () => {{ const C = PhysicsPlayground.capture, run = C.vault.list().find(i => i.kind === 'run');
+          const m = await import(new URL('js/shell/dataset.js', location.href).href), d = m.describeRun(run);
+          const tr = (await (await C.vault.blob(run, 1)).text()).trim().split('\\n'), h = tr[0].split(','), j = h.indexOf('{idcol}'), first = tr[1].split(',')[0], last = tr[tr.length - 1].split(',')[0];
+          const ids = t => tr.slice(1).filter(l => l.split(',')[0] === t).map(l => l.split(',')[j]);
+          const a = ids(first), z = ids(last), out = {{ lab: run.lab, tracks: run.trackRows, unique: new Set(a).size === a.length, steady: a.join() === z.join(),
+            scene: d.readme.includes('## The scene at the start'), described: !d.readme.includes('not described') }};
+          await C.vault.remove(run); return out; }}""")
+    ok("every_lab_dataset_stands_alone", all(v["tracks"] > 0 and v["unique"] and v["scene"] and v["described"] for v in labs_ok.values())
+       and all(labs_ok[k]["steady"] for k in ("collisions", "fluid", "waves", "chaos", "cloth")), labs_ok)
+    pg.evaluate("PhysicsPlayground.select('gravity')"); pg.wait_for_timeout(600)
     # --- video recording
     pg.evaluate("() => { PhysicsPlayground.capture.toggleVideo(); }")
     pg.wait_for_timeout(2600)
@@ -141,8 +161,11 @@ with sync_playwright() as p:
     ok("rec_chip_counts", re.match(r"REC \d", pg.inner_text("#hud-rec")) is not None, pg.inner_text("#hud-rec"))
     # The clip keeps one size when the stage changes shape (here the window; the deck's charts do the same), and its
     # frames keep coming. Recording the stage canvas itself had frozen a clip at the first resize.
-    rec = """(() => { const v = PhysicsPlayground.capture.vrec, s = v.stream.getVideoTracks()[0].getSettings(), d = v.rc.getContext('2d').getImageData(0, 0, v.rc.width, v.rc.height).data;
-      let h = 0; for (let i = 0; i < d.length; i += 4097) h = (h * 31 + d[i] + d[i + 1] * 3) >>> 0;
+    # The frames are sampled through a small scratch canvas made for reading, so the clip's canvas is never read back.
+    rec = """(() => { const v = PhysicsPlayground.capture.vrec, s = v.stream.getVideoTracks()[0].getSettings();
+      const k = window.__probe || (window.__probe = Object.assign(document.createElement('canvas'), { width: 64, height: 32 })), g = k.getContext('2d', { willReadFrequently: true });
+      g.drawImage(v.rc, 0, 0, 64, 32); const d = g.getImageData(0, 0, 64, 32).data;
+      let h = 0; for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + d[i + 1] * 3) >>> 0;
       return { stream: [s.width, s.height], stage: document.getElementById('stage-canvas').width, hash: h }; })()"""
     v0 = pg.evaluate(rec); pg.set_viewport_size({"width": 1240, "height": 760}); pg.wait_for_timeout(1200)
     v1 = pg.evaluate(rec); pg.wait_for_timeout(800); v2 = pg.evaluate(rec)

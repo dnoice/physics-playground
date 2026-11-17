@@ -1,10 +1,10 @@
 /*
 ✒ Metadata
-    - Title: Gravity Lab (digiSpace Edition - v2.16)
+    - Title: Gravity Lab (digiSpace Edition - v2.17)
     - File Name: gravity.js
     - Relative Path: js/labs/gravity.js
     - Artifact Type: javascript
-    - Version: 2.16.0
+    - Version: 2.17.0
     - Date: 11/16/2026
     - Update: Monday, November 16, 2026
     - Author: Dennis 'dendogg' Smaltz
@@ -12,6 +12,9 @@
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — A
+      dataset's scene facts (G, softening, merging) and its bodies as a table,
+      through the shared scene section.
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for datasets another person can read: a column dictionary
       (unit, meaning, SI factor) on the Star system's exact scale, a note on
@@ -24,12 +27,6 @@
       together, in the drawn orbits, Inspect, the orbit tilts and the live
       Math, and the line is carried with the planet so it still passes through
       it.
-    - 2.14.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The Star
-      system's and Tilted orbits' comets are massless, as Halley's is: at a
-      third of a moon's mass, the Star system's comet knocked a moon into its
-      planet in about one run in forty. mergedKind keeps a small world's class
-      when it takes in another small world, so a moon hit by a comet stays a
-      moon.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -1456,7 +1453,13 @@ Object.assign(gravity, {
   dataNote: 'Positions are relative to the scene\'s origin, where its centre of mass sat when it was built. The scale holds at G = 1×; with G changed, gravity is stronger or weaker than in the real units the scale names.',
   /* The bodies when a recording starts, so a reader knows who body 448 was. */
   dataContext() {
-    return { bodies: this.bodies.map(b => { const P = this.pullHost(b); return { id: b.id, name: nameOf(b), kind: KINDS[b.kind].label, mass: b.m, mass_text: b.m > 0 ? this.massText(b.m) : 'massless', orbits_id: P ? P.id : null, orbits: P ? nameOf(P) : null }; }) };
+    const bodies = this.bodies.map(b => { const P = this.pullHost(b); return { id: b.id, name: nameOf(b), kind: KINDS[b.kind].label, mass: b.m, mass_text: b.m > 0 ? this.massText(b.m) : 'massless', orbits_id: P ? P.id : null, orbits: P ? nameOf(P) : null }; });
+    return {
+      bodies,
+      facts: [['Bodies', bodies.length], ['Gravity strength G', `${this.p.G}× (the scale's real units hold at 1×)`], ['Softening length ε', `${this.p.soft} px`], ['Merge on contact', this.p.merge ? 'on' : 'off']],
+      tables: [{ title: 'Bodies at the start', note: `The ${bodies.length} bodies when the recording started. Bodies can merge, escape or be added during a run; the tracks name every one at every sample.`,
+        head: ['body_id', 'Name', 'Kind', 'Mass (sim)', 'Mass', 'Orbits'], rows: bodies.map(b => [b.id, b.name, b.kind, b.mass, b.mass_text, b.orbits_id == null ? '' : `${b.orbits} (${b.orbits_id})`]) }],
+    };
   },
   dataRow() {
     this.energy();
