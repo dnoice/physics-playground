@@ -619,7 +619,9 @@ full-height Inspector beside them.
   the simulated time and the frame rate as plain text, and a red light
   blinks with the time, size or rows so far while a clip or a dataset
   records (cyan for data alone). Only what a press acts on there is a
-  button: the notices, which open Insights, and the director's chip.
+  button: the alert, which counts what stands in the Insights tab's own
+  words ("1 to check", "2 critical") and opens Insights, and the director's
+  chip.
 - **Stage rail**: hangs from the top-right corner, in the same place in every
   lab. **Camera** comes first (the axis ball in 3D, zoom, **Select**, pan
   and frame), then what belongs to this lab: its **Tools** (what a click
