@@ -34,9 +34,10 @@
     - A section nav with the full tab contract: arrows move and select, Home
       and End jump. It stands down the left on a wide screen and across the
       top on a phone, where the dialog fills the screen.
-    - Quick openers: Graphics, Units, HUD and the keyboard button open it at
-      their section and focus its current choice; U and ? do the same, and
-      Shift+S opens it at the section last shown.
+    - Two openers in the top bar: the Settings button (and Shift+S) opens it
+      at the section last shown, and the Graphics button, which shows the
+      tier and whether any setting is your own, at Graphics with its current
+      choice focused; U and ? open Units and the keyboard list.
     - Inside, the workspace's shortcuts wait: U and ? move to their section,
       or close the dialog when it is already there, Shift+H still turns the
       head-up display on or off, and Shift+S closes.
@@ -54,8 +55,10 @@ import { toggleHud } from './headsup.js';
 /* The sections in nav order, each with what takes focus when the dialog opens at it: its current choice, or its first
    control. The keyboard list has none, so its tab takes focus. */
 const SECTIONS = { graphics: '#gfx-list [aria-checked="true"]', units: '#units-list [aria-checked="true"]', hud: '#hud-on', keys: null };
-/* The top bar's quick openers, each for its own section. */
-const OPENERS = [['#btn-gfx', 'graphics'], ['#btn-units', 'units'], ['#btn-hud', 'hud'], ['#btn-keys', 'keys']];
+/* The top bar's one quick opener besides the Settings button: Graphics, which earns its place by showing the tier in
+   use and whether any setting is the person's own. Units, the head-up display and the keys are in the Settings
+   button's nav, and U and ? open Units and the keys from anywhere. */
+const OPENERS = [['#btn-gfx', 'graphics']];
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';
 const dlg = $('#settings'), tabs = [...dlg.querySelectorAll('[role="tab"]')];
 let current = Object.hasOwn(SECTIONS, store.get('settingsTab')) ? store.get('settingsTab') : 'graphics', opener = null;

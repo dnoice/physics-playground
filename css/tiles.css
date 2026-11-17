@@ -131,8 +131,6 @@
 .deck-tab[aria-selected="true"] { color: var(--text); background: color-mix(in oklab, var(--text) 9%, var(--bench)); box-shadow: inset 0 0 0 1px var(--hair); }
 .deck-tab[aria-selected="true"] .ms { color: var(--amber); }
 .deck-tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
-.deck-tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-.deck-tab-dot[hidden] { display: none; }
 .deck-title { margin: 0; flex: none; font: 600 13px/1 var(--font-body); color: var(--text); white-space: nowrap; }
 .tile-deck:not([data-pane="telemetry"]) :is(.deck-title, .scope-legend) { display: none; }
 .tile-deck:not([data-pane="telemetry"]) .diag-top { margin-left: auto; }
@@ -199,9 +197,11 @@ body.resizing { cursor: ns-resize; }
 @container tile (max-width: 620px) { .diag-top { display: none; } }
 
 /* ---------- diagnostics ---------- */
-.diag-sum { font: 500 11px/1 var(--font-mono); color: var(--ok); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+/* A tab's marks mean one thing on every tab: a coloured dot, with a few words, only while a warning (amber) or a
+   critical problem (red) stands; a neutral count for what has not been seen yet; and nothing otherwise. */
+.diag-sum { font: 500 11px/1 var(--font-mono); color: var(--warn); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.diag-sum[hidden] { display: none; }
 .diag-sum::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.diag-sum[data-level="warn"] { color: var(--warn); }
 .diag-sum[data-level="crit"] { color: var(--crit); }
 .perf { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 11px; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }
 #perf-spark { width: 100%; height: 36px; display: block; background: var(--ink); border: 1px solid var(--rule); border-radius: 6px; }
@@ -243,8 +243,9 @@ body.resizing { cursor: ns-resize; }
 .iv-n:empty, .iv-n[hidden] { display: none; }
 .iv-n[data-level="warn"] { color: var(--warn); }
 .iv-n[data-level="crit"] { color: var(--crit); }
-/* Unread moments: an amber count on the Insights tab and on the Story view. */
-.story-new, .iv-n[data-new] { padding: 2px 5px; border-radius: 8px; font: 600 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--amber); }
+/* Unseen moments: a neutral count on the Insights tab and on the Story view, in the same make as the inspector's tab
+   counts. Colour is kept for problems. */
+.story-new, .iv-n[data-new] { padding: 2px 5px; border-radius: 999px; font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--text) 32%, transparent); }
 .story-new[hidden] { display: none; }
 .ins-now[hidden], .ins-story[hidden] { display: none; }
 .ins-story { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
@@ -294,46 +295,26 @@ body.resizing { cursor: ns-resize; }
 .tabs [role="tab"][aria-selected="true"] .ms { color: var(--amber); }
 .tabs [role="tab"] { position: relative; }
 .tab-count { position: absolute; top: 5px; left: calc(50% + 11px); font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 5px; }
-.tabs [role="tab"].has-new .tab-count { color: var(--ink); background: var(--amber); border-color: var(--amber); }
-.tabs [role="tab"].has-new::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+/* Something saved and not yet seen: the count itself brightens, neutral as every unseen count is. */
+.tabs [role="tab"].has-new .tab-count { color: var(--text); border-color: color-mix(in oklab, var(--text) 45%, var(--rule)); }
 .notes-body [role="tabpanel"] { display: grid; gap: 14px; align-content: start; }
 .notes-body [role="tabpanel"][hidden] { display: none; }
 .guide { display: grid; gap: 16px; }
 .guide .blurb { margin: 0; font-size: 13.5px; line-height: 1.65; color: color-mix(in oklab, var(--text) 90%, var(--muted)); }
-/* The Guide's sections: the lab's tools, views and scenes as cards that pick them, then its notes. */
+/* The Guide's sections: a legend of the lab's tools and views (the rail picks them), its scenes, then its notes. The
+   legend is flat text on a hairline list, with no hover, press or pointer, so it never reads as a row of buttons. */
 .g-sec { display: grid; gap: 8px; }
 .g-title { margin: 0; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .g-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--rule), transparent); }
-.g-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-.g-card {
-  appearance: none; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 2px 8px;
-  padding: 9px 10px 10px; border: 0; border-radius: 11px; text-align: left; cursor: pointer; color: var(--text); font: inherit;
-  background: linear-gradient(180deg, color-mix(in oklab, white 3%, transparent), transparent 40px), color-mix(in oklab, var(--well) 70%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hair), var(--card-sheen); transition: background 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
-}
-.g-card:hover { background: color-mix(in oklab, var(--text) 7%, var(--well)); }
-.g-card:active { transform: scale(0.985); }
-.g-card .ms { font-size: 19px; color: color-mix(in oklab, var(--text) 75%, var(--muted)); }
-.g-name { font-weight: 600; font-size: 13px; }
-.g-card kbd { justify-self: end; }
-.g-switch { border: 1px dashed color-mix(in oklab, var(--text) 18%, transparent); box-shadow: var(--card-sheen); }
-.g-switch[aria-pressed="true"] { border-color: transparent; }
-.g-state { justify-self: end; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.g-state::before { content: "Off"; }
-.g-switch[aria-pressed="true"] .g-state { color: var(--amber); }
-.g-switch[aria-pressed="true"] .g-state::before { content: "On"; }
-.g-hint { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
-.g-card[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 16%, transparent), color-mix(in oklab, var(--amber) 6%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 45%, transparent), var(--card-sheen); }
-.g-card[aria-pressed="true"] .ms { color: var(--amber); }
-.g-scenes { display: flex; flex-wrap: wrap; gap: 6px; }
-.g-scene {
-  appearance: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; cursor: pointer; font: 500 12.5px/1 var(--font-body);
-  color: color-mix(in oklab, var(--text) 85%, var(--muted)); background: color-mix(in oklab, var(--well) 70%, transparent); box-shadow: inset 0 0 0 1px var(--hair); transition: background 0.15s, color 0.15s;
-}
-.g-scene .ms { font-size: 17px; color: var(--muted); }
-.g-scene:hover { color: var(--text); background: color-mix(in oklab, var(--text) 8%, var(--well)); }
-.g-scene[aria-pressed="true"] { color: var(--text); background: color-mix(in oklab, var(--cyan) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--cyan) 45%, transparent); }
-.g-scene[aria-pressed="true"] .ms { color: var(--cyan); }
+.g-lead { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.g-legend { margin: 0; display: grid; }
+.g-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; padding: 8px 2px 9px; border-top: 1px solid var(--rule); }
+.g-row:last-child { border-bottom: 1px solid var(--rule); }
+.g-row dt { display: flex; align-items: center; gap: 8px; }
+.g-row dt .ms { font-size: 18px; color: var(--muted); }
+.g-name { font-weight: 600; font-size: 13px; color: var(--text); }
+.g-row kbd { margin-left: auto; }
+.g-hint { margin: 0 0 0 26px; font-size: 12px; line-height: 1.45; color: var(--muted); }
 .g-nav { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
 .g-nav b { color: var(--text); font-weight: 600; }
 .interact { margin: 0; padding: 12px 14px 12px 30px; color: var(--muted); display: grid; gap: 8px; font-size: 13px; line-height: 1.55; background: var(--well); border: 1px solid var(--rule); border-radius: 10px; }

@@ -22,14 +22,14 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    The Units section of Settings and the top bar's Units button: Metric,
-    US customary or Simulation. A change of system rebuilds the controls in
+    The Units section of Settings: Metric, US customary or Simulation. A change of system rebuilds the controls in
     the new units, restarts the plotted series (they would otherwise mix
     units), and redraws every figure, without touching the simulation.
 
 ✒ Key Features:
     - A radio group with arrow keys, like the tiers in the Graphics section;
-      the Units button and U open Settings at it from anywhere.
+      U opens Settings at it from anywhere, and the Settings button's nav
+      reaches it.
     - The section states the current lab's scale, so a metre is never a
       mystery: what one pixel or one cell stands for, and why.
 
@@ -49,9 +49,7 @@ import { buildPanel, updateReadouts } from './panel.js';
 import { active, announce } from './state.js';
 
 export function renderUnits() {
-  const sys = unitSystem(), S = SYSTEMS.find(s => s.id === sys);
-  $('#btn-units-label').textContent = S.label;
-  $('#btn-units').title = `Units: ${S.long} (U)`;
+  const sys = unitSystem();
   for (const b of document.querySelectorAll('#units-list [role="radio"]')) { const on = b.dataset.sys === sys; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }
   $('#units-scale').textContent = active && active.scaleNote ? active.scaleNote : '';
 }

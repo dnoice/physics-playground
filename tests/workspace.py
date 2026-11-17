@@ -76,6 +76,14 @@ pane = lambda: pg.evaluate("document.getElementById('tile-deck').dataset.pane")
 # The Inspect card refreshes at panel rate, which a loaded machine stretches; wait for it to name the selection.
 card = lambda text: settle(pg, "document.getElementById('details-kicker').textContent.includes(%r)" % text, 10000)
 WARNED = "['warn', 'crit'].includes(document.getElementById('diag-sum').dataset.level)"
+# The Insights tab as it shows: its alert words, their colour and the dot's beside the theme's warning and critical
+# colours, the unseen count, the tab's description, and how many marks are on screen.
+TAB = """(() => { const sum = document.getElementById('diag-sum'), n = document.getElementById('dt-story-n'), tab = document.getElementById('dt-insights'), cs = getComputedStyle(sum);
+  const tone = v => { const e = document.createElement('i'); e.style.color = `var(${v})`; document.body.append(e); const c = getComputedStyle(e).color; e.remove(); return c; };
+  const shown = e => e.getClientRects().length > 0;
+  return { warn: PhysicsPlayground.diagnose().filter(i => i.level !== 'info').map(i => i.id), sum: shown(sum) ? sum.textContent : null, level: sum.dataset.level || null,
+    color: cs.color, dot: getComputedStyle(sum, '::before').backgroundColor, warnColor: tone('--warn'), critColor: tone('--crit'),
+    new: shown(n) ? n.textContent : null, desc: tab.getAttribute('aria-description'), marks: [...tab.children].filter(e => !e.matches('.ms, .deck-tab-name') && shown(e)).length }; })()"""
 ADVANCE = "(s => {{ const P = PhysicsPlayground, L = P.active, end = L.t + s; while (L.t < end - 1e-9) if (!P.advance(Math.min(1 / 60, end - L.t))) break; }})({})"
 
 with sync_playwright() as p:
@@ -194,10 +202,18 @@ with sync_playwright() as p:
     pg.mouse.click(*to_screen(s["x"], s["y"])); card("Source 1")
     ok("source_click_selects", state("active.sources.length") == 2 and "Source 1" in pg.inner_text("#details-kicker"))
     ok("source_rows_in_units", " m" in pg.inner_text("#details-rows") and "Hz" in pg.inner_text("#details-rows"))
-    # While a warning stands (a wavelength too short for the grid), the Insights tab opens on Now, where it is; once it
-    # clears, on the Story again, since the warning's Now is not remembered as the view chosen.
-    pg.evaluate(P + ".pause()"); pg.evaluate(P + ".setParam('f', 9)")
+    # The Insights tab's marks mean one thing: nothing while nothing stands and nothing is unseen. Paused (so a busy
+    # machine cannot raise "running slower"), with the Story read and Telemetry showing again, the tab is bare: no dot,
+    # no count, no description.
+    pg.evaluate(P + ".pause()"); pg.click("#dt-insights"); pg.click("#iv-story"); pg.wait_for_timeout(300); pg.click("#dt-telemetry")
+    pg.evaluate("PhysicsPlayground.story.tick()"); pg.wait_for_timeout(1200)
+    quiet = pg.evaluate(TAB)
+    ok("insights_tab_bare_when_nothing_stands", quiet["warn"] == [] and quiet["sum"] is None and quiet["new"] is None and quiet["desc"] is None and quiet["marks"] == 0, quiet)
+    # A warning shows its colour: the dot and its words in the warning colour, and the tab describes it.
+    pg.evaluate(P + ".setParam('f', 9)")
     warned = settle(pg, WARNED, 8000)
+    lit = pg.evaluate(TAB)
+    ok("insights_tab_warning_in_colour", warned and lit["sum"] == "1 to check" and lit["level"] == "warn" and lit["color"] == lit["warnColor"] == lit["dot"] != lit["critColor"] and bool(lit["desc"]), lit)
     pg.click("#dt-insights"); pg.wait_for_timeout(200)
     ok("insights_open_on_now_when_warned", warned and pane() == "insights" and pg.get_attribute("#iv-now", "aria-selected") == "true" and pg.is_visible("#insights") and pg.is_hidden("#ip-story"))
     pg.click("#dt-telemetry"); pg.evaluate(P + ".setParam('f', 3)")
@@ -208,7 +224,9 @@ with sync_playwright() as p:
 
     # ---- units: readings, controls and typed values follow the system; the physics does not
     pg = fresh("fluid")
-    ok("units_default_metric", state("units.get()") == "si" and pg.inner_text("#btn-units-label") == "Metric")
+    # The system in use is the checked one in the Units section (the top bar's Units button is gone).
+    checked = pg.evaluate("[...document.querySelectorAll('#units-list [aria-checked=true]')].map(b => [b.dataset.sys, b.querySelector('b').textContent])")
+    ok("units_default_metric", state("units.get()") == "si" and checked == [["si", "Metric (SI)"]] and not pg.evaluate("document.getElementById('btn-units')"), checked)
     g_label = lambda: pg.inner_text("#ctl-fluid-gravity-out")
     ok("control_in_metric", g_label().endswith("m/s²") and g_label().startswith("9.8"), g_label())
     pg.keyboard.press("u"); pg.wait_for_timeout(200)
@@ -266,6 +284,10 @@ with sync_playwright() as p:
     # The unread count rides on the Insights tab and clears when the Story is read.
     pg.wait_for_timeout(400)
     ok("story_unread_on_tab", pg.is_visible("#dt-story-n") and int(pg.inner_text("#dt-story-n").split()[0]) > 0, pg.inner_text("#dt-story-n"))
+    # The unseen count is neutral, in the text colour on no fill: colour on a tab is kept for a problem that stands.
+    tone = pg.evaluate("""(() => { const n = getComputedStyle(document.getElementById('dt-story-n')), e = document.createElement('i'); e.style.color = 'var(--text)'; document.body.append(e);
+      const t = getComputedStyle(e).color; e.remove(); return { color: n.color, text: t, fill: n.backgroundColor }; })()""")
+    ok("story_unread_count_neutral", tone["color"] == tone["text"] and tone["fill"] == "rgba(0, 0, 0, 0)", tone)
     # The run is paused, so whether a warning stands cannot change between the look and the click.
     warned = pg.evaluate(WARNED)
     pg.click("#dt-insights")

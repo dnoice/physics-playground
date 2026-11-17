@@ -75,7 +75,9 @@ export function globalInsights() {
     if (active.perfFixes) fixes.push(...active.perfFixes());
     out.push({ id: 'perf-slow', level: 'warn', title: 'Running slower than requested', body: `The solver needs about <b>${perf.sim.toFixed(1)} ms</b> per frame, more than its ${BUDGET_MS} ms budget, so this lab is simulating <b>${perf.rate.toFixed(2)}×</b> real time instead of ${state.speed.toFixed(2)}×. The budget drops the backlog so the page stays responsive.`, fixes });
   }
-  if (perf.fps < 40 && perf.draw > 12) out.push({ id: 'perf-draw', level: 'info', title: 'Drawing is the bottleneck', body: `Each frame spends <b>${perf.draw.toFixed(1)} ms</b> drawing, so the display rather than the physics limits the frame rate. Large windows and dense scenes cost the most.`, fixes: active.drawFixes ? active.drawFixes() : [] });
+  // Drawing is the bottleneck only when it is: slow in itself, costlier than the solver, and most of what a frame takes.
+  // A frame stretched by something else (a busy machine, a throttled page) is not the display's doing.
+  if (perf.fps < 40 && perf.draw > 12 && perf.draw > perf.sim && perf.draw * perf.fps > 500) out.push({ id: 'perf-draw', level: 'info', title: 'Drawing is the bottleneck', body: `Each frame spends <b>${perf.draw.toFixed(1)} ms</b> drawing, so the display rather than the physics limits the frame rate. Large windows and dense scenes cost the most.`, fixes: active.drawFixes ? active.drawFixes() : [] });
   if (in3D(active) && perf.fps < 30 && cheaperTier()) {
     const next = cheaperTier();
     out.push({ id: 'gfx-slow', level: 'info', title: 'This graphics tier is heavy here', body: `The 3D view is running at about <b>${Math.round(perf.fps)} fps</b>. A cheaper tier, or Auto in the Graphics section of Settings, keeps it smooth.`, fixes: [{ label: `Use ${next[0].toUpperCase()}${next.slice(1)}`, run() { pickTier(next); } }, { label: 'Use Auto', run() { pickTier('auto'); } }] });
@@ -97,21 +99,33 @@ export function evaluateDiagnostics() {
   renderInsights(list);
   const alerts = list.filter(i => i.level !== 'info'), worst = alerts.length ? alerts[0].level : null;
   alerting = alerts.length > 0;
-  const btn = $('#hud-alert'), sum = $('#diag-sum');
+  const btn = $('#hud-alert');
   btn.hidden = !alerts.length;
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
-  sum.dataset.level = worst || 'ok';
   showTopAlert(alerts[0], applyFix);
   hudCautions(alerts);
-  // The summary rides on the Insights tab, so it stays short: the state in words, then the count.
-  sum.textContent = worst === 'crit' ? `${alerts.length} critical` : worst === 'warn' ? `${alerts.length} to check` : list.length ? String(list.length) : '';
-  sum.title = worst === 'crit' ? 'Needs attention' : worst === 'warn' ? 'Check settings' : list.length ? `Stable · ${list.length} insight${list.length === 1 ? '' : 's'}` : 'Stable, no insights';
-  $('#dt-insights').setAttribute('aria-description', sum.title);
+  tabMark(worst, worst === 'crit' ? alerts.filter(a => a.level === 'crit').length : alerts.length);
   // The Now view counts what it holds, in the colour of the worst.
   const nowN = $('#iv-now-n'); nowN.textContent = list.length ? String(list.length) : ''; nowN.dataset.level = worst || 'ok';
   const ids = new Set(alerts.map(a => a.id));
   for (const a of alerts) if (!lastAlertIds.has(a.id)) { announce(`${LEVEL_TAG[a.level]}: ${a.title}`); break; }
   lastAlertIds = ids;
+}
+/* The Insights tab carries a mark only while a warning or critical notice stands: a dot in its colour and a few words.
+   With none, it carries nothing, so a mark on a tab always means there is something to check. Insights that are only
+   informative are counted inside the pane, on the Now view, and unseen moments on the Story's own count (story.js). */
+let markKey = '';
+function tabMark(worst, n) {
+  const key = worst ? `${worst}${n}` : '';
+  if (key === markKey) return;
+  markKey = key;
+  const sum = $('#diag-sum'), tab = $('#dt-insights');
+  sum.hidden = !worst;
+  if (!worst) { delete sum.dataset.level; sum.textContent = ''; sum.removeAttribute('title'); tab.removeAttribute('aria-description'); return; }
+  sum.dataset.level = worst;
+  sum.textContent = worst === 'crit' ? `${n} critical` : `${n} to check`;
+  sum.title = worst === 'crit' ? 'Needs attention: see Insights, Now' : 'Worth checking: see Insights, Now';
+  tab.setAttribute('aria-description', sum.title);
 }
 let quietEl = null;
 function applyFix(ins, i) {

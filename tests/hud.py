@@ -55,6 +55,9 @@ from harness import URL, finish, launch, ok, open_page, settle
 
 VIEW = {"width": 1440, "height": 900}
 P = "PhysicsPlayground"
+# The head-up display's setting as the page holds it and its Settings section shows it: on, opacity, the switch, and
+# whether the matching opacity step is the checked one.
+SETTING = "(() => { const h = PhysicsPlayground.hud.get(), a = document.getElementById('hud-alpha-' + h.alpha); return [h.on, h.alpha, document.getElementById('hud-on').getAttribute('aria-checked'), a && a.getAttribute('aria-checked')]; })()"
 SELECT = {
     "gravity": "(() => { const L = PhysicsPlayground.labs.gravity, o = L.orbitOf(); L.track = o.b.id; })()",
     "collisions": "(() => { PhysicsPlayground.labs.collisions.picked = 7; })()",
@@ -92,7 +95,7 @@ with sync_playwright() as p:
 
     # ---- Readings: on by default, under the title, the same text as Telemetry, never in the way of a click
     pg = fresh("gravity")
-    ok("hud_on_by_default", pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD 80%" and pg.get_attribute("#hu", "aria-hidden") == "true")
+    ok("hud_on_by_default", pg.is_visible("#hu") and pg.evaluate(SETTING) == [True, 80, "true", "true"] and pg.get_attribute("#hu", "aria-hidden") == "true", pg.evaluate(SETTING))
     same = {}
     for lab in ["gravity", "collisions", "fluid", "waves", "chaos", "cloth", "fields"]:
         pg.evaluate(P + ".select('%s')" % lab)
@@ -156,12 +159,13 @@ with sync_playwright() as p:
     # ---- Menu, keys and memory
     ctx = b.new_context(viewport=VIEW)
     pg = fresh("gravity", ctx=ctx)
-    pg.click("#btn-hud"); pg.wait_for_timeout(200)
+    # The section opens from the Settings button's nav; the top bar has no HUD button of its own any more.
+    pg.click("#btn-settings"); pg.wait_for_timeout(200); pg.click("#st-hud"); pg.wait_for_timeout(150); pg.keyboard.press("Tab")
     ok("menu_opens_on_switch", pg.is_visible("#sp-hud") and pg.evaluate("document.getElementById('settings').matches(':modal')") and pg.evaluate(P + ".settings.section()") == "hud"
-       and pg.evaluate("document.activeElement.id") == "hud-on" and pg.get_attribute("#btn-hud", "aria-expanded") == "true")
+       and pg.evaluate("document.activeElement.id") == "hud-on" and pg.get_attribute("#btn-settings", "aria-expanded") == "true" and not pg.evaluate("document.getElementById('btn-hud')"))
     pg.click("#hud-alpha-40"); pg.wait_for_timeout(150)
-    ok("menu_opacity_step", pg.evaluate("getComputedStyle(document.getElementById('hu')).getPropertyValue('--hu-a').trim()") == "0.4" and pg.inner_text("#btn-hud-label") == "HUD 40%"
-       and pg.get_attribute("#hud-alpha-40", "aria-checked") == "true")
+    ok("menu_opacity_step", pg.evaluate("getComputedStyle(document.getElementById('hu')).getPropertyValue('--hu-a').trim()") == "0.4" and pg.evaluate(SETTING) == [True, 40, "true", "true"]
+       and pg.get_attribute("#hud-alpha-80", "aria-checked") == "false")
     pg.click("#hud-part-read"); pg.wait_for_timeout(150)
     ok("menu_part_readings", not pg.is_visible("#hu-tape") and pg.get_attribute("#hud-part-read", "aria-checked") == "false")
     pg.click("#hud-part-read"); pg.click("#hud-part-target"); pg.wait_for_timeout(150)
@@ -175,16 +179,16 @@ with sync_playwright() as p:
     inside += [pg.is_visible("#hu"), pg.get_attribute("#hud-on", "aria-checked"), pg.evaluate("document.getElementById('settings').open")]
     ok("shift_h_inside_settings", inside == [False, "false", True, "true", True], inside)
     pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
-    ok("menu_escape_returns_focus", not pg.evaluate("document.getElementById('settings').open") and not pg.is_visible("#sp-hud") and pg.evaluate("document.activeElement.id") == "btn-hud"
-       and pg.get_attribute("#btn-hud", "aria-expanded") == "false")
+    ok("menu_escape_returns_focus", not pg.evaluate("document.getElementById('settings').open") and not pg.is_visible("#sp-hud") and pg.evaluate("document.activeElement.id") == "btn-settings"
+       and pg.get_attribute("#btn-settings", "aria-expanded") == "false")
     tool = pg.evaluate(P + ".active.p.tool")
     pg.evaluate("document.activeElement.blur()"); pg.keyboard.press("Shift+H"); pg.wait_for_timeout(200)
-    ok("shift_h_hides", not pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD off")
+    ok("shift_h_hides", not pg.is_visible("#hu") and pg.evaluate(SETTING) == [False, 40, "false", "true"], pg.evaluate(SETTING))
     ok("shift_h_leaves_h_tool", pg.evaluate(P + ".active.p.tool") == tool, (tool, pg.evaluate(P + ".active.p.tool")))
     pg.reload(); pg.wait_for_function("window.PhysicsPlayground && PhysicsPlayground.active"); pg.wait_for_timeout(400)
     ok("settings_kept_on_reload", not pg.is_visible("#hu") and pg.evaluate(P + ".hud.get()")["alpha"] == 40)
     pg.keyboard.press("Shift+H"); pg.wait_for_timeout(200)
-    ok("shift_h_shows", pg.is_visible("#hu") and pg.inner_text("#btn-hud-label") == "HUD 40%")
+    ok("shift_h_shows", pg.is_visible("#hu") and pg.evaluate(SETTING) == [True, 40, "true", "true"], pg.evaluate(SETTING))
     pg.keyboard.press("?"); pg.wait_for_timeout(150)
     ok("keys_sheet_lists_shift_h", pg.is_visible("#sp-keys") and pg.evaluate(P + ".settings.section()") == "keys" and "head-up display" in pg.inner_text("#sp-keys"))
     ctx.close()

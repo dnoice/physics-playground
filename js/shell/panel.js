@@ -44,8 +44,8 @@
     - Dials and switches honour the lab's enabled() and show the reason when
       disabled; a dial shows two lines of its note and the whole note as its
       tooltip.
-    - syncControl() also refreshes the Random dice and the Guide's cards, so
-      every mirror of a setting moves with it.
+    - syncControl() and syncPanel() also refresh the rail's Random dice, so
+      it moves with its switch however the setting changed.
     - Formula cards typeset with KaTeX; readouts update in place.
 
 ✒ Other Important Information:
@@ -66,16 +66,18 @@ import { makeWheel } from './dial.js';
 import { buildLiveMath } from './livemath.js';
 import { hudReadings } from './headsup.js';
 import { syncDice } from './dock.js';
-import { buildGuide, syncGuide } from './guide.js';
+import { buildGuide } from './guide.js';
 import { applyPreset, rebuild, setParam } from './lifecycle.js';
 
 import { active, announce, ui } from './state.js';
 
 /* ---------- controls ---------- */
 export const RESET_SVG = '<span class="ms" aria-hidden="true">restart_alt</span>';
-/* After a setting changes: its control, the section Resets, and the dice and Guide cards that mirror settings. */
-export function syncControl(key) { const f = ui.sync.get(key); if (f) f(); refreshGroups(); syncDice(); syncGuide(); }
-export function syncPanel() { for (const f of ui.sync.values()) f(); refreshEnabled(); }
+/* After a setting changes: its control, the section Resets, and the rail's dice, which mirrors the Random switch. */
+export function syncControl(key) { const f = ui.sync.get(key); if (f) f(); refreshGroups(); syncDice(); }
+/* After settings change by any other way (a scene, a section's Reset, a fix, a rewind, a saved state): every control and
+   the dice, at once. */
+export function syncPanel() { for (const f of ui.sync.values()) f(); refreshEnabled(); syncDice(); }
 export function refreshEnabled() {
   if (!active) return;
   for (const [key, fn] of ui.enable) { const s = active.enabled ? active.enabled(key) : true; fn(s === undefined ? true : s); }

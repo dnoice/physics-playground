@@ -20,21 +20,20 @@
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Builds the Guide page from what the lab declares: what it shows, its
-    pointer tools and views as cards that select them, its scenes as cards
-    that load them, its own interaction notes, and how to move around. The
-    cards mark the tool, view and scene in use, whichever way they were
-    chosen.
+    Builds the Guide page from what the lab declares: what it shows, a
+    legend of its pointer tools, Random placement and views (each glyph, name,
+    key and what it does), where its scenes are, its own interaction notes,
+    and how to move around. The Guide explains; the stage rail, the scene
+    menu and Controls are where things are picked.
 
 ✒ Key Features:
-    - Tool and view cards with icon, name, key and what a click on the stage
-      does; a click picks it, the same as on the stage rail.
-    - A Random card beside the tools in labs that place things, reading On or
-      Off, the same switch as the rail's dice.
-    - Scene cards that load a scene, marked when it is the current one.
+    - A static legend: glyph, name, key and hint for each tool and view, the
+      same glyphs the rail shows, with nothing to press and nothing to keep
+      in step.
+    - The Random row says where the dice and the Controls switch are.
+    - The Scenes line names the lab's scenes and points to the menu beside
+      the lab's name.
     - The lab's own notes and the navigation help keep their place below.
-    - syncGuide() keeps the marks current at panel rate and after every
-      setting change.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -45,57 +44,30 @@
 */
 import { icon } from '../core/icons.js';
 import { $, el } from '../core/util.js';
-import { selectDock, selectView, toggleRandom } from './dock.js';
-import { applyPreset } from './lifecycle.js';
 import { navHelp } from './panel.js';
-import { announce } from './state.js';
 
-let cards = [];
 const section = (title, ...children) => el('section', { class: 'g-sec' }, el('h4', { class: 'g-title', text: title }), ...children);
+/* One row of the legend: the rail's glyph, the name, the key that picks it and what it does. A legend explains; the rail,
+   the scene menu and Controls are where things are picked, so nothing here is a control. */
+const row = (glyph, name, key, hint) => el('div', { class: 'g-row' },
+  el('dt', { html: `${icon(glyph)}<span class="g-name">${name}</span>${key ? `<kbd>${key}</kbd>` : ''}` }), el('dd', { class: 'g-hint', text: hint || '' }));
+const legend = rows => el('dl', { class: 'g-legend' }, ...rows);
+const listed = names => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
 
 export function buildGuide(lab) {
-  cards = [];
   const parts = [el('p', { class: 'blurb', text: lab.blurb })];
-  // Tools: what a click on the stage does. Each card picks its tool, as the rail and the keyboard do.
+  // Tools: what a click on the stage does, picked on the rail or by its key.
   if (lab.dock) {
-    const list = el('div', { class: 'g-cards', role: 'group', 'aria-label': 'Pointer tools' }, ...lab.dock.options.map(o => {
-      const b = el('button', { type: 'button', class: 'g-card', 'aria-pressed': 'false', html: `${icon(o.icon)}<span class="g-name">${o.label}</span><kbd>${o.key.toUpperCase()}</kbd><span class="g-hint">${o.hint || ''}</span>` });
-      b.addEventListener('click', () => { selectDock(o.id); syncGuide(); });
-      cards.push({ b, on: () => lab.p[lab.dock.key] === o.id });
-      return b;
-    }));
-    // Random placement modifies every tool that places something, so it sits with them, as on the rail.
-    if (lab.random) {
-      const R = lab.random, b = el('button', { type: 'button', class: 'g-card g-switch', 'aria-pressed': 'false', html: `${icon('dice')}<span class="g-name">Random</span><span class="g-state" aria-hidden="true"></span><span class="g-hint">${R.tip || R.label}</span>` });
-      b.addEventListener('click', () => { toggleRandom(); syncGuide(); });
-      cards.push({ b, on: () => !!lab.p[R.key] });
-      list.append(b);
-    }
-    parts.push(section('Tools', list));
+    const rows = lab.dock.options.map(o => row(o.icon, o.label, o.key.toUpperCase(), o.hint));
+    // Random placement modifies every tool that places something, so it is told with them.
+    if (lab.random) rows.push(row('dice', 'Random', '', `${lab.random.tip || lab.random.label}. The dice under the tools on the rail turns it on and off, as does its switch in Controls.`));
+    parts.push(section('Tools', el('p', { class: 'g-lead', text: 'Pick one on the stage\'s rail, or press its key.' }), legend(rows)));
   }
-  if (lab.views) {
-    const list = el('div', { class: 'g-cards', role: 'group', 'aria-label': 'Views' }, ...lab.views.options.map(o => {
-      const b = el('button', { type: 'button', class: 'g-card', 'aria-pressed': 'false', html: `${icon(o.icon)}<span class="g-name">${o.label}</span><kbd>V</kbd><span class="g-hint">${o.tip || ''}</span>` });
-      b.addEventListener('click', () => { selectView(o.id); syncGuide(); });
-      cards.push({ b, on: () => lab.p[lab.views.key] === o.id });
-      return b;
-    }));
-    parts.push(section('Views', list));
-  }
-  // Scenes: each loads at once and restarts the run, as the scene menu does.
-  const scenes = el('div', { class: 'g-scenes', role: 'group', 'aria-label': 'Scenes' }, ...lab.presets.map(pr => {
-    const b = el('button', { type: 'button', class: 'g-scene', 'aria-pressed': 'false', html: `<span class="ms" aria-hidden="true">play_circle</span>${pr.label}` });
-    b.addEventListener('click', () => { applyPreset(lab, pr.id); announce(`${pr.label} loaded`); syncGuide(); });
-    cards.push({ b, on: () => lab.presetId === pr.id });
-    return b;
-  }));
-  parts.push(section('Scenes', scenes));
+  if (lab.views) parts.push(section('Views', el('p', { class: 'g-lead', text: 'What the stage shows, picked on the rail; V steps to the next, and the run carries on.' }), legend(lab.views.options.map(o => row(o.icon, o.label, 'V', o.tip)))));
+  // Scenes load from the menu beside the lab's name; the Guide only says which there are.
+  const names = lab.presets.map(pr => pr.label);
+  parts.push(section('Scenes', el('p', { class: 'g-lead', text: `${names.length} scene${names.length === 1 ? '' : 's'}: ${listed(names)}. Pick one from the menu beside the lab's name above the stage; it loads at once and restarts the run.` })));
   parts.push(section('How it works', el('ul', { class: 'interact', html: lab.interact.map(s => `<li>${s}</li>`).join('') })));
   parts.push(section('Moving around', el('p', { class: 'g-nav', html: navHelp(lab) })));
   $('#guide').replaceChildren(el('div', { class: 'guide' }, ...parts));
-  syncGuide();
-}
-/* Panel rate: mark the tool, view and scene in use, however they were chosen. */
-export function syncGuide() {
-  for (const c of cards) { const on = String(!!c.on()); if (c.b.getAttribute('aria-pressed') !== on) c.b.setAttribute('aria-pressed', on); }
 }

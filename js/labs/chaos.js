@@ -118,7 +118,6 @@ export const pendulum = {
     { type: 'range', key: 'trailLen', label: 'Trail length', min: 20, max: PEND_TRAIL, step: 10, fmt: v => (v / 60).toFixed(1) + ' s', group: 'display' },
     { type: 'toggle', key: 'trails', label: 'Show trails', group: 'display', short: 'Trails' },
   ],
-  actions: [{ label: 'Restart from these angles', run() { rebuild(pendulum); } }],
   N: 0, s: new Float64Array(240), trails: null, phist: null, tn: 0, th: 0, trailClock: 0, E0: 0, holding: false, drag: null, wmax: 0,
   sep: new Series(1800), sepClock: 0, lyap: NaN, divergeAt: NaN, fit: { n: 0, t: 0, y: 0, tt: 0, ty: 0 }, predAt: NaN, predFrom: NaN,
   k1: new Float64Array(4), k2: new Float64Array(4), k3: new Float64Array(4), k4: new Float64Array(4), tmp: new Float64Array(4),

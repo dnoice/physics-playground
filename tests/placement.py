@@ -154,22 +154,34 @@ with sync_playwright() as p:
     ok("dial_wheels_level_beside_a_note", abs(pg.locator("#ctl-gravity-G-wheel").bounding_box()["y"] - pg.locator("#ctl-gravity-soft-wheel").bounding_box()["y"]) < 0.5)
     pg.context.close()
 
-    # ---- Random: the dice, the Controls switch and the Guide card agree; the dice shows where things are placed
+    # ---- Random: the dice and the Controls switch agree; the dice shows where things are placed, named for that lab
     pg = fresh("gravity")
-    shown = {}
+    shown, named = {}, {}
+    DICE = "(() => { const d = document.getElementById('dock-dice'), L = PhysicsPlayground.active; return [d.getAttribute('aria-label'), d.dataset.tip || null, d.getAttribute('aria-pressed'), L.random ? L.random.label : null]; })()"
     for lab in ["gravity", "collisions", "fluid", "waves", "chaos", "cloth", "fields"]:
         pg.click("#tab-" + lab); pg.wait_for_timeout(200)
         shown[lab] = pg.is_visible("#dock-dice")
+        named[lab] = pg.evaluate(DICE)
     ok("dice_only_where_placing", shown == {"gravity": True, "collisions": True, "fluid": True, "waves": True, "chaos": False, "cloth": False, "fields": True}, shown)
+    # The dice names the current lab's thing, and a lab without Random leaves no other lab's name on it (Chaos, after
+    # Waves, read "Random sources").
+    ok("dice_names_the_current_lab", all((v[0] == v[3] and v[1] and v[2] == "false") if v[3] else v[:3] == [None, None, "false"] for v in named.values())
+       and named["waves"][0] == "Random sources" and named["chaos"][0] is None, named)
     pg.click("#tab-gravity"); pg.wait_for_timeout(200)
     pg.click("#dock-dice"); pg.wait_for_timeout(300)
     ok("dice_turns_random_on", pg.evaluate(P + ".active.p.rand") is True and pg.get_attribute("#dock-dice", "aria-pressed") == "true" and pg.get_attribute("#ctl-gravity-rand", "aria-checked") == "true")
     ok("random_disables_fixed_mass", pg.is_disabled("#ctl-gravity-launchMass") and "Random" in pg.inner_text("#ctl-gravity-launchMass-note"))
     pg.click("#ctl-gravity-rand"); pg.wait_for_timeout(400)
     ok("controls_switch_moves_dice", pg.get_attribute("#dock-dice", "aria-pressed") == "false" and pg.evaluate(P + ".active.p.rand") is False)
-    pg.click("#nt-guide"); pg.wait_for_timeout(200)
-    pg.locator("#guide .g-switch").click(); pg.wait_for_timeout(400)
-    ok("guide_card_moves_dice", pg.get_attribute("#dock-dice", "aria-pressed") == "true" and pg.locator("#guide .g-switch").get_attribute("aria-pressed") == "true")
+    # Every other way the setting changes moves the dice in the same task, with no frame between: the Guide has no
+    # switch of its own any more, and the dice no longer waits for a panel tick. The section's Reset sets it back to the
+    # scene's value (through syncPanel), and a setting made by code goes through setParam (syncControl).
+    pg.evaluate(P + ".pause()")
+    now = "[PhysicsPlayground.active.p.rand, document.getElementById('dock-dice').getAttribute('aria-pressed'), document.getElementById('ctl-gravity-rand').getAttribute('aria-checked')]"
+    by_code = pg.evaluate("(() => { PhysicsPlayground.setParam('rand', true); return %s; })()" % now)
+    reset = pg.evaluate("(() => { document.querySelector('[data-group=spawn] .pgroup-reset').click(); return %s; })()" % now)
+    ok("dice_follows_every_change", by_code == [True, "true", "true"] and reset == [False, "false", "false"] and pg.locator("#guide .g-switch").count() == 0, (by_code, reset))
+    pg.evaluate(P + ".play()")
 
     # ---- Gravity: random bodies in every type and its range; chosen type and drop speed; types survive rewind
     draws = pg.evaluate("(() => { const L = PhysicsPlayground.active, out = []; for (let i = 0; i < 400; i++) out.push(L.drawNew()); return out; })()")

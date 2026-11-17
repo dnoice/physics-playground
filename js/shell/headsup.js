@@ -43,9 +43,9 @@
     - Target box and callout, placed each frame from the lab's hudTarget(),
       clamped to the stage edge with a dashed box when the object is off it,
       and kept clear of the title, the rail and the tape.
-    - A Head-up display section in Settings, which the HUD button opens: on
-      or off (Shift+H), opacity in four steps, and each part on or off,
-      remembered per browser.
+    - A Head-up display section in Settings, reached from the Settings
+      button: on or off (Shift+H), opacity in four steps, and each part on
+      or off, remembered per browser.
 
 ✒ Usage Instructions:
     In a lab:  hud: [['Total energy E', 'ENERGY E'], ...]   readout labels and their short HUD names
@@ -240,9 +240,6 @@ function apply() {
   if (!cfg.read) { tapeLab = null; tape.replaceChildren(); }
   if (!cfg.target) { info = null; hideTarget(); card.hidden = true; }
   lightKey = null; hudCautions(lastAlerts);
-  const pct = `${cfg.alpha}%`;
-  $('#btn-hud-label').textContent = cfg.on ? `HUD ${pct}` : 'HUD off';
-  $('#btn-hud').title = `Head-up display: ${cfg.on ? `on, ${pct}` : 'off'} (Shift+H)`;
   $('#hud-on').setAttribute('aria-checked', String(cfg.on));
   for (const [k, b] of partSwitches) { b.setAttribute('aria-checked', String(cfg[k])); b.disabled = !cfg.on; }
   alphaUpdate();

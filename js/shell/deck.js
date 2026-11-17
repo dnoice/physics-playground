@@ -64,16 +64,15 @@ export function showPane(id, { focus = false, auto = false, reveal = false } = {
     if (on && focus) t.focus();
   }
   tile().dataset.pane = id;
-  if (id === 'inspect') $('#dt-inspect-dot').hidden = true;
   if (reveal) revealTile(tile());
   if (id === 'telemetry') requestAnimationFrame(() => drawChart());
 }
-/* Called by the Inspect pane whenever the selection changes: a new one opens Inspect, a cleared one goes back. */
+/* Called by the Inspect pane whenever the selection changes: a new one opens Inspect, a cleared one goes back. A
+   selection puts no mark on the Inspect tab: a tab's mark means a problem stands or something is unseen, and the
+   selection is in plain view on the stage. */
 export function noteSelection(had, has) {
   if (has && !had) { if (pane !== 'inspect') showPane('inspect', { auto: true }); }
   else if (!has && had) { if (pane === 'inspect' && before) { const b = before; before = null; showPane(b); } else before = null; }
-  else if (has && pane !== 'inspect') $('#dt-inspect-dot').hidden = false;
-  if (!has) $('#dt-inspect-dot').hidden = true;
 }
 
 /* ---------- size ---------- */
