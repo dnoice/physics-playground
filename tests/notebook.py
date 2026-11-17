@@ -18,7 +18,8 @@
       player bar's cluster: Record data starts and stops a recording, its line
       counts rows and its tooltip follows, the stage's light is status and the
       timeline marks it, and the Library keeps the dataset with no capture
-      cards of its own.
+      cards of its own. On Dennis's call for drag handles: the deck goes tall
+      from its grip's End key, the size button being gone.
     - 2.5.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created for
       release 2.5.0: the Math page's live panels, the Guide's cards, the
       Library's capture cards and the Inspect pane's focus chart. The Guide's
@@ -154,7 +155,8 @@ with sync_playwright() as p:
 
     # ---- Inspect: the focus chart sits inside the pane and follows the clicked figure
     pg = fresh("collisions")
-    pg.click("#btn-deck-size"); pg.wait_for_timeout(400)
+    # The deck's grip picks the tall preset with End (the size button it replaced stepped standard to tall).
+    pg.focus("#deck-grip"); pg.keyboard.press("End"); pg.wait_for_timeout(400)
     pg.evaluate("(() => { const L = PhysicsPlayground.active; L.select(L.uid[5]); })()")
     settle(pg, "document.getElementById('tile-deck').dataset.pane === 'inspect'", 5000)
     pg.wait_for_timeout(2500)

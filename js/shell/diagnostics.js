@@ -15,7 +15,9 @@
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for chips that do not look clickable: the stage's
       real-time chip is gone; the Now view's Real time figure and the slow-run
-      notice already say it.
+      notice already say it. On Dennis's call for a duplication sweep: the
+      deck header no longer repeats the first alert and its fix; the stage's
+      alert, the caution lights and the Now view's cards show them.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the insights fill the
       pane's Now view, which counts them in the colour of the worst; the HUD's
@@ -56,7 +58,6 @@ import { syncPanel } from './panel.js';
 import { BUDGET_MS, active, announce, perf, state, stickies } from './state.js';
 import { setSpeed } from './transport.js';
 import { showPane } from './deck.js';
-import { showTopAlert } from './instruments.js';
 import { ICON } from '../core/icons.js';
 import { hudCautions } from './headsup.js';
 import { initStory, openInsights, showView } from './story.js';
@@ -102,7 +103,6 @@ export function evaluateDiagnostics() {
   btn.hidden = !alerts.length;
   if (alerts.length) { btn.textContent = `${alerts.length} ${alerts.length === 1 ? 'notice' : 'notices'}`; btn.dataset.level = worst; btn.setAttribute('aria-label', `${alerts.length} diagnostic ${alerts.length === 1 ? 'notice' : 'notices'}; show diagnostics`); }
   sum.dataset.level = worst || 'ok';
-  showTopAlert(alerts[0], applyFix);
   hudCautions(alerts);
   // The summary rides on the Insights tab, so it stays short: the state in words, then the count.
   sum.textContent = worst === 'crit' ? `${alerts.length} critical` : worst === 'warn' ? `${alerts.length} to check` : list.length ? String(list.length) : '';

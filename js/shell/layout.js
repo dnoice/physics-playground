@@ -1,35 +1,40 @@
 /*
 ✒ Metadata
-    - Title: Workspace Layout (digiSpace Edition - v2.18)
+    - Title: Workspace Layout (digiSpace Edition - v2.19)
     - File Name: layout.js
     - Relative Path: js/shell/layout.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: a grip on the inspector's inner edge
+      sets its width by a drag or the keys (Home and End for the narrowest and
+      widest, Enter or a double-click for the standard width). The width is
+      kept as sidePx and restored on load, and the stage keeps at least half
+      the console.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the keyboard sheet became the
       Keyboard section of Settings, so its opening and closing left this
       module.
     - 2.1.0 (11/06/2026) [dendogg + Anthropic - Claude Opus 5.5] — Added the
       scene dropdown; Controls is the first Inspector tab.
-    - 2.0.0 (11/05/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      for v2.0 on Dennis's direction: the bento workspace he picked, with
-      focus mode and a hideable bay.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
-    Focus mode, the bottom bay, the notebook tabs and the scene dropdown,
-    with their state remembered between visits.
+    Focus mode, the bottom bay, the inspector's width, the notebook tabs and
+    the scene dropdown, with their state remembered between visits.
 
 ✒ Key Features:
     - setFocus and setBay toggle the bento modes and their buttons.
     - revealTile brings a tile into view, leaving focus mode if needed.
+    - The inspector's grip sets its width by a drag or the keys, kept as
+      sidePx, and never takes more than half the console.
     - Notebook tabs as a roving-tabindex tablist; the scene dropdown closes
       on Escape or an outside click.
 
@@ -41,7 +46,7 @@
 ---------
 */
 import { store } from '../core/util.js';
-import { $ } from '../core/util.js';
+import { $, clamp, dragHandle } from '../core/util.js';
 import { announce } from './state.js';
 
 /* ---------- workspace modes: focus (stage only) and the bottom bay ---------- */
@@ -65,6 +70,49 @@ export function revealTile(tile) {
   if (tile.classList.contains('bay') && !hasBay()) setBay(true);
   tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   tile.classList.remove('flash'); void tile.offsetWidth; tile.classList.add('flash');
+}
+
+/* ---------- the inspector's width: a grip on its inner edge ---------- */
+// The column's width is --side on the bento grid (workspace.css). The stylesheet's own width follows the viewport; a
+// dragged one is kept in pixels as sidePx (0 for the stylesheet's), and the stylesheet clamps it again as the window
+// changes, so the stage always keeps at least half the console.
+const SIDE_MIN = 320;
+let sidePx = 0;
+const aside = () => $('#tile-notes');
+// Layout sizes, not drawn ones: the tiles' entrance animation scales them for a moment.
+const sideWidth = () => aside().offsetWidth;
+const sideMax = () => Math.max(SIDE_MIN, Math.floor(($('#tile-stage').offsetWidth + sideWidth()) / 2));
+function applySide() {
+  bento().classList.toggle('side-sized', sidePx > 0);
+  if (sidePx > 0) bento().style.setProperty('--side-px', `${Math.round(sidePx)}px`); else bento().style.removeProperty('--side-px');
+}
+function sizeSide(w) { sidePx = clamp(w, SIDE_MIN, sideMax()); applySide(); }
+function syncSideGrip() {
+  const g = $('#side-grip'), w = Math.round(sideWidth());
+  if (!w) return;
+  g.setAttribute('aria-valuemax', String(sideMax()));
+  g.setAttribute('aria-valuenow', String(w));
+  g.setAttribute('aria-valuetext', `${w} pixels, ${sidePx > 0 ? 'custom width' : 'standard'}`);
+}
+function initSideGrip() {
+  sidePx = Math.max(0, +store.get('sidePx', 0) || 0);
+  applySide();
+  // Drag the edge, or focus it and use the arrow keys (Page keys step further); Home and End go to the narrowest and
+  // widest, and Enter or a double-click to the standard width.
+  const grip = $('#side-grip'), save = () => store.set('sidePx', sidePx);
+  const standard = () => { sidePx = 0; applySide(); save(); announce('Inspector standard width'); };
+  let w0 = 0;
+  dragHandle(grip, {
+    slop: 3, busy: 'resizing-side', save,
+    start: () => { w0 = sideWidth(); },
+    move: (e, dx) => sizeSide(w0 - dx),
+    keys: { ArrowLeft: 24, ArrowRight: -24, PageUp: 96, PageDown: -96, Home: 'min', End: 'max', Enter: 'standard' },
+    step: v => (v === 'standard' ? standard() : sizeSide(v === 'min' ? SIDE_MIN : v === 'max' ? sideMax() : sideWidth() + v)),
+  });
+  grip.addEventListener('dblclick', standard);
+  // The range follows the console's width and the value the column's own, so both are watched.
+  const ro = new ResizeObserver(syncSideGrip);
+  ro.observe(bento()); ro.observe(aside());
 }
 
 /* ---------- notebook tabs ---------- */
@@ -115,6 +163,7 @@ export function init() {
   selectNote(store.get('notesTab', 'controls'));
   setFocus(store.get('focus', false), false);
   setBay(store.get('bay', true), false);
+  initSideGrip();
   // Hide glyph names if the icon font never arrives (offline).
   if (document.fonts && document.fonts.load) {
     const t = setTimeout(() => document.documentElement.classList.add('no-icons'), 6000);

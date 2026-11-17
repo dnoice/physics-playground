@@ -18,7 +18,11 @@
       drawn only where they show, the selection marked) and stacks them below
       720 px. Each figure is one button that focuses it, and the focus chart's
       caption carries Pin to Telemetry in place of a second chart button per
-      figure.
+      figure. On Dennis's call for drag handles: the grips' look, shared by
+      the deck's and the inspector's: a light pill in the gap at rest, wider
+      and amber when hovered, a line along the edge while dragging and the
+      cyan ring for the keyboard. The size button's and the top alert's styles
+      are gone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for Insights that narrate the run: the Now and Story views
       beside the deck's tabs, the Story's moments with their time, actions and
@@ -35,8 +39,10 @@
 
 ✒ Key Features:
     - Scene presets as wrapping chips.
-    - Instruments deck: segmented pane tabs, a grip on the top edge, and a
-      short mode that keeps the readings and drops the plot.
+    - Instruments deck: segmented pane tabs and a short mode that keeps the
+      readings and drops the plot.
+    - Grips: a pill in the gap that widens and turns amber on hover, shows
+      the edge while dragging and takes the cyan ring for the keyboard.
     - Gauges: primary readings lead with larger figures, derived ones are set
       in italics, and units sit in a smaller face.
     - Inspect card: portrait, name and actions beside a grid of read-only
@@ -146,16 +152,30 @@
 .deck-tab-dot[hidden] { display: none; }
 .deck-title { margin: 0; flex: none; font: 600 13px/1 var(--font-body); color: var(--text); white-space: nowrap; }
 .tile-deck:not([data-pane="telemetry"]) :is(.deck-title, .scope-legend) { display: none; }
-.tile-deck:not([data-pane="telemetry"]) .diag-top { margin-left: auto; }
-.deck-head:has(.diag-top:not([hidden])) .scope-hint { display: none; }
-.deck-head #btn-deck-size { margin-left: auto; flex: none; }
-.diag-top + #btn-deck-size, .scope-legend ~ #btn-deck-size { margin-left: 0; }
-/* The grip: the deck's top edge drags to any height. */
-.deck-grip { position: absolute; top: 0; left: 18px; right: 18px; height: 9px; z-index: 3; cursor: ns-resize; touch-action: none; }
-.deck-grip::before { content: ""; position: absolute; left: 50%; top: 3px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--rule); opacity: 0.7; transition: background 0.15s, opacity 0.15s; }
-.deck-grip:hover::before, .deck-grip:focus-visible::before, body.resizing .deck-grip::before { background: var(--amber); opacity: 1; }
-.deck-grip:focus-visible { outline: none; }
-body.resizing { cursor: ns-resize; }
+/* The grips: the deck's top edge and the inspector's inner edge. Each is a 24 px band laid over the gap between two
+   tiles (workspace.css places it), so its pill sits on the page between them and never covers a tab or a button.
+   At rest the pill is a light bar; hovered it widens and turns amber with a faint line along the edge it moves;
+   dragged the line brightens; focused from the keyboard it takes the cyan ring. */
+.grip { position: relative; z-index: 4; display: grid; place-items: center; touch-action: none; outline: none; }
+.grip::before { content: ""; position: absolute; border-radius: 1px; background: var(--amber); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.grip::after {
+  content: ""; border-radius: 999px; background: color-mix(in oklab, var(--text) 38%, transparent); pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 6px rgba(0, 0, 0, 0.5); transition: background 0.15s, width 0.15s, height 0.15s, box-shadow 0.15s;
+}
+.grip-deck { cursor: row-resize; }
+.grip-deck::before { left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; }
+.grip-deck::after { width: 44px; height: 5px; }
+.grip-side { cursor: col-resize; }
+.grip-side::before { top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; }
+.grip-side::after { width: 5px; height: 44px; }
+.grip:hover::after, .grip:focus-visible::after, body.resizing-deck .grip-deck::after, body.resizing-side .grip-side::after { background: var(--amber); }
+.grip-deck:hover::after, body.resizing-deck .grip-deck::after { width: 72px; }
+.grip-side:hover::after, body.resizing-side .grip-side::after { height: 72px; }
+.grip:hover::before { opacity: 0.3; }
+body.resizing-deck .grip-deck::before, body.resizing-side .grip-side::before { opacity: 0.75; }
+.grip:focus-visible::after { box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--cyan); }
+body.resizing-deck { cursor: row-resize; }
+body.resizing-side { cursor: col-resize; }
 /* Too short for a plot: the readings stay, the plot and the timing strip go. */
 .tile-deck.deck-short .deck-chart, .tile-deck.deck-short .perf { display: none; }
 .tile-deck.deck-short .deck-telemetry { grid-template-rows: auto; }
@@ -240,10 +260,6 @@ body.resizing { cursor: ns-resize; }
 .scope-x { appearance: none; display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
 .scope-x:hover { color: var(--text); background: var(--rule); }
 .scope-x .ms { font-size: 13px; }
-.diag-top { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--warn); white-space: nowrap; }
-.diag-top[hidden] { display: none; }
-.diag-top > span { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
-@container tile (max-width: 620px) { .diag-top { display: none; } }
 
 /* ---------- diagnostics ---------- */
 .diag-sum { font: 500 11px/1 var(--font-mono); color: var(--ok); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }

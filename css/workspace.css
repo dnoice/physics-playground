@@ -1,17 +1,23 @@
 /*
 ✒ Metadata
-    - Title: Workspace Styles (digiSpace Edition - v2.18)
+    - Title: Workspace Styles (digiSpace Edition - v2.19)
     - File Name: workspace.css
     - Relative Path: css/workspace.css
     - Artifact Type: stylesheet
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles: the grips' places, each a 24 px band
+      centred on its gap and clear of the tiles' corners; the inspector's
+      dragged width in --side-px; and a dragged deck or inspector clamped
+      again, so the stage keeps 260 px of height and half the width. Focus
+      mode hides the grips.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one settings dialog: the floating sheet and its
       backdrop blur are gone, and the keyboard list and the tier and unit
@@ -19,10 +25,6 @@
     - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — The ENGINE
       release tag beside the name: monospace small capitals, the release in
       amber, quiet until hovered.
-    - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — The lab tab
-      strip is centred by auto margins instead of justify-content, so when it
-      overflows it scrolls from its first tab rather than pushing the first
-      tabs out of reach; removed the unused .tile-meta.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -32,7 +34,8 @@
 
 ✒ Key Features:
     - Console grid: the stage over the instruments deck, beside a
-      full-height inspector, with focus, no-bay and tall-deck modes.
+      full-height inspector, with focus, no-bay and tall-deck modes, and
+      grips across its gaps for the deck's height and the inspector's width.
     - Tiles are containers for container queries and never widen their grid
       track.
     - Rail tabs reveal the equation of the selected lab.
@@ -98,11 +101,19 @@
 .tile-inspector { grid-area: notes; }
 .bento.deck-tall { --bay: minmax(300px, 46vh); }
 .bento.deck-compact { --bay: 136px; }
-.bento.deck-sized { --bay: var(--bay-px); }
+/* A dragged height or width, clamped again here so a smaller window never squeezes the stage: it keeps 260 px of
+   height under the deck and at least half the console's width beside the inspector. */
+.bento.deck-sized { --bay: min(var(--bay-px), max(112px, 100% - var(--gap) - 260px)); }
+.bento.side-sized { --side: clamp(320px, var(--side-px), 50% - var(--gap) / 2); }
 .bento.no-bay { grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage notes"; }
 .bento.no-bay .bay { display: none; }
 .bento.focus { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "stage"; }
 .bento.focus .tile:not(.tile-stage) { display: none; }
+/* The grips (drawn in tiles.css) lie across the gaps, each centred on its gap and clear of the tiles' rounded corners:
+   the deck's along its top edge, the inspector's along its inner edge. Focus mode has no edges to move. */
+.grip-deck { grid-area: deck; align-self: start; height: 24px; margin: calc(-12px - var(--gap) / 2) 18px 0; }
+.grip-side { grid-area: notes; justify-self: start; width: 24px; margin: 18px 0 18px calc(-12px - var(--gap) / 2); }
+.bento.focus .grip { display: none; }
 
 /* One background layer and the sheen as an inset shadow, so a tile costs no more to paint than before (see
    --glass-tile in tokens.css). */

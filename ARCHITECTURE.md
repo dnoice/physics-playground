@@ -22,7 +22,10 @@
       bar under Capture and storage (captureStatus, syncCapture, timelineMarks
       and the history's marks, the recording light, the Capture section of
       Settings), the scope's shared marks, the boot order, rates, interaction
-      model, Settings and styles.
+      model, Settings and styles. On Dennis's call for drag handles: the grips
+      and dragHandle() under Instruments, the inspector's width in the boot
+      order, and the styles that draw and place the grips. On his call for a
+      duplication sweep: the deck's size button and top alert are gone.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Gravity's
       climate: climate.js and each world's b.clim, when it updates, starlight,
       air, temperature, ice, spin and classes, the look in 2D and 3D, what
@@ -199,7 +202,8 @@ They never build shell UI themselves.
 `js/main.js` imports `js/labs/index.js` first, so every lab object exists
 before anything else reads it. Then `boot()` runs:
 
-1. `layout.init` restores focus mode, the bay and the notebook tab.
+1. `layout.init` restores focus mode, the bay, the notebook tab and the
+   inspector's width, and wires the inspector's grip.
 2. `diagnostics.init` (with the Story's views), `transport.init` (buttons
    and every keyboard
    shortcut), `stage.init` (pointer input), `navigator.init` (gizmo),
@@ -575,10 +579,26 @@ lab's own fields:
 The deck (`js/shell/deck.js`) frames three panes over one header: Telemetry,
 Inspect and Insights. A new selection on the stage opens Inspect, and
 clearing it returns to the pane that was open before unless the user moved
-on. The size button steps through compact, standard and tall presets, kept
-in the stylesheet as values of `--bay`; the grip on the top edge sets a
-custom height, by drag or by the arrow keys, and a deck under 196 px keeps
-its readings and drops the plot.
+on. The grip above it is its one size control. Home, Enter and End pick the
+compact, standard and tall presets, kept in the stylesheet as values of
+`--bay`, and a double-click steps through them; a drag or the arrow keys set
+a custom height in `--bay-px`. A deck under 196 px keeps its readings and
+drops the plot. Problems show on the stage's alert, the head-up display's
+caution lights and the Now view's cards, so the header carries none.
+
+**Grips.** The deck's height and the inspector's width each have a grip
+(`#deck-grip`, `#side-grip`): a focusable `role="separator"` laid across the
+gap between two tiles, 24 px across, centred on the gap and clear of every
+tab and button. Its value is the tile's size in pixels, with the limits as
+its minimum and maximum. Both run on `dragHandle()` in `js/core/util.js`, as
+does the Telemetry plot's scrub: one captured pointer drag that ends exactly
+once (release, cancel or a lost capture), a slop before the first move so a
+double-click moves nothing, keyboard steps, and a save after each. The deck
+keeps `deckSize` and `deckPx`, and the inspector `sidePx` (`js/shell/layout.js`;
+0 is the stylesheet's own width). The stylesheet clamps both again, so a
+size kept from a larger window never squeezes the stage below 260 px of
+height or half the console's width. Focus mode hides both grips, and the
+one-column layout the inspector's.
 
 Inspect (`js/shell/details.js`) renders `lab.inspect()` as a card of
 read-only figures. Each numeric figure keeps its history since the selection
@@ -1231,11 +1251,11 @@ The stylesheets load in this order, each building on the last:
 | --- | --- |
 | `tokens.css` | Colours, type, spacing, radius, the page grid; the page's grain and light, and the glass tokens (opaque tiles in one plain-colour gradient with the sheen as an inset shadow; see Conventions) |
 | `icons.css` | Material Symbols styling and tab glyph animations |
-| `workspace.css` | Top bar, lab rail, console grid and deck heights, tile chrome, keys, the tier and unit lists, mode switch, colophon |
+| `workspace.css` | Top bar, lab rail, console grid with the deck's heights, the inspector's width and the grips' places, tile chrome, keys, the tier and unit lists, mode switch, colophon |
 | `controls.css` | Buttons, segmented choices, the thumbwheel dials and their open grid, switches, the player bar's native sliders |
 | `stage.css` | Stage title and scene dropdown, the status line and its two buttons, the player bar (timeline and its marks, transport, speed, capture cluster), experiment banner, stage rail and its Random dice |
 | `headsup.css` | The head-up display: readings tape, caution lights, target box, leader and callout, and its section in Settings |
-| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, Inspect's objects list, the Now and Story views and the Story's moments, grip), Live Math panels, Guide cards, tabs |
+| `tiles.css` | Inspector, instruments deck (Telemetry, Inspect and Insights panes, Inspect's objects list, the Now and Story views and the Story's moments), the grips' look, Live Math panels, Guide cards, tabs |
 | `library.css` | Library page: storage status, filter and the saved items |
 | `settings.css` | The Settings dialog: frame, section nav, tier cards, the machine's verdicts, the setting cards, the Capture section, and its phone layout |
 | `responsive.css` | Reflow and rail compaction for narrow screens |

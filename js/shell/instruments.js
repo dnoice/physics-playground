@@ -15,7 +15,12 @@
     - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for one timeline: the scope draws the timeline's marks
       from timelineMarks(), as the rewind track does: a running recording in
-      its colour and a tick at each state saved in this run.
+      its colour and a tick at each state saved in this run. On Dennis's call
+      for a duplication sweep: the deck header's top alert and its first fix
+      are gone, since the stage's alert, the head-up display's caution lights
+      and the Now view's cards already carry every problem and its fixes. The
+      plot's scrub runs on the shared dragHandle(), which also ends it on a
+      lost capture.
     - 2.7.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Exports a
       reading's sampled history and the figure-and-unit formatter, so the
       head-up display's tape shows Telemetry's own text and trace.
@@ -42,8 +47,7 @@
       plot under its own name and are not.
     - A change of unit system restarts every series, since old samples are in
       the old units.
-    - With nothing plotted, the lab's own chart shows; the top alert and its
-      first fix stay in the deck header.
+    - With nothing plotted, the lab's own chart shows.
 
 ✒ Other Important Information:
     - Dependencies: none beyond the modules it imports
@@ -55,7 +59,7 @@
 import { THEME } from '../core/color.js';
 import { rrect } from '../core/draw.js';
 import { Series } from '../core/series.js';
-import { $, clamp, el, store } from '../core/util.js';
+import { $, clamp, dragHandle, el, store } from '../core/util.js';
 import { labs } from '../labs/index.js';
 import { hist, histSeek, timelineMarks } from './capture.js';
 import { drawChart } from './panel.js';
@@ -298,37 +302,20 @@ function seekTo(lab, x, w) {
   if (a !== H.pos) histSeek(lab, a);
 }
 
-/* ---------- top alert ---------- */
-/* The top alert and its first fix stay in the header, so a problem never needs the sheet opened to act on it. */
-export function showTopAlert(alert, apply) {
-  const top = $('#diag-top');
-  top.hidden = !alert;
-  if (!alert) { top.replaceChildren(); return; }
-  if (top.dataset.id === alert.id) return;
-  top.dataset.id = alert.id;
-  const fix = alert.fixes && alert.fixes[0];
-  top.replaceChildren(el('span', { text: alert.title }));
-  if (fix) top.append(el('button', { type: 'button', class: 'btn btn-fix', text: fix.label, onclick: () => { apply(alert, 0); top.dataset.id = ''; } }));
-}
-
 /* Wiring: run once from main.js after every module has evaluated. */
 export function init() {
   const c = $('#chart'), x = e => e.clientX - c.getBoundingClientRect().left;
-  let scrub = null;
+  // Hovering reads a moment; pressing and dragging rewinds to it, with the pointer captured past the plot's edge.
+  dragHandle(c, {
+    start: e => { if (!active || !scopeOn(active)) return false; seekTo(active, x(e), c.clientWidth); },
+    move: e => seekTo(active, x(e), c.clientWidth),
+  });
   c.addEventListener('pointermove', e => {
     if (!active || !scopeOn(active)) return;
     inst(active).hoverX = x(e);
-    if (scrub === e.pointerId) seekTo(active, x(e), c.clientWidth);
     renderLegend(active); drawChart();
   });
   c.addEventListener('pointerleave', () => { if (!active) return; inst(active).hoverX = null; if (scopeOn(active)) { renderLegend(active); drawChart(); } });
-  c.addEventListener('pointerdown', e => {
-    if (e.button !== 0 || !active || !scopeOn(active)) return;
-    scrub = e.pointerId;
-    try { c.setPointerCapture(e.pointerId); } catch (_) { /* capture is best-effort */ }
-    seekTo(active, x(e), c.clientWidth);
-  });
-  for (const type of ['pointerup', 'pointercancel']) c.addEventListener(type, () => { scrub = null; });
   c.addEventListener('wheel', e => {
     if (!active || !scopeOn(active)) return;
     e.preventDefault();

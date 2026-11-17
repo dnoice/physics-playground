@@ -1,17 +1,24 @@
 /*
 ✒ Metadata
-    - Title: Instruments Deck Workspace (digiSpace Edition - v2.6)
+    - Title: Instruments Deck Workspace (digiSpace Edition - v2.19)
     - File Name: deck.js
     - Relative Path: js/shell/deck.js
     - Artifact Type: javascript
-    - Version: 2.6.0
-    - Date: 11/10/2026
-    - Update: Tuesday, November 10, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
+      Dennis's call for drag handles and a duplication sweep: the grip is the
+      deck's one size control, and the size button is gone. It lies across the
+      gap above the deck; a drag or the arrow keys set any height, Home, Enter
+      and End pick the compact, standard and tall presets, and a double-click
+      steps through them as the button did. It runs on dragHandle(), and its
+      value is the deck's height in pixels between its limits.
     - 2.6.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Removed the
       unused deckPane() export.
     - 2.4.0 (11/10/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
@@ -30,8 +37,9 @@
       End move and select.
     - A new selection on the stage opens Inspect; clearing it returns to the
       pane that was showing before, unless the user moved on meanwhile.
-    - Compact, standard and tall presets on one button, and a grip on the
-      top edge that drags, or steps with the arrow keys, to any height.
+    - One grip over the gap above the deck: a drag or the arrow keys set any
+      height, Home, Enter and End pick the compact, standard and tall
+      presets, and a double-click steps through them.
     - A deck too short for a plot hides it and keeps the readings; the plot
       redraws whenever the deck changes size.
 
@@ -42,7 +50,7 @@
       16.4+)
 ---------
 */
-import { $, clamp, store } from '../core/util.js';
+import { $, clamp, dragHandle, store } from '../core/util.js';
 import { revealTile } from './layout.js';
 import { drawChart } from './panel.js';
 import { announce } from './state.js';
@@ -78,36 +86,34 @@ export function noteSelection(had, has) {
 
 /* ---------- size ---------- */
 // The deck's height lives in --bay on the bento grid (workspace.css). A custom height is in pixels; the presets are
-// the stylesheet's own, so they follow the viewport.
+// the stylesheet's own, so they follow the viewport. The grip in the gap above the deck is the one control for both.
 const MIN = 112, SHORT = 196;
-const SIZES = ['compact', 'standard', 'tall'], SIZE_NAME = { compact: 'compact', standard: 'standard', tall: 'tall', custom: 'custom' };
+const SIZES = ['compact', 'standard', 'tall'];
 let size = 'standard', px = 0;
-function applySize(save = true) {
+function applySize() {
   const b = $('#bento');
   b.classList.toggle('deck-compact', size === 'compact');
   b.classList.toggle('deck-tall', size === 'tall');
   b.classList.toggle('deck-sized', size === 'custom');
   if (size === 'custom') b.style.setProperty('--bay-px', `${Math.round(px)}px`); else b.style.removeProperty('--bay-px');
-  const next = SIZES[(SIZES.indexOf(size) + 1) % SIZES.length] || 'compact', btn = $('#btn-deck-size');
-  btn.querySelector('.ms').textContent = next === 'compact' ? 'unfold_less' : 'unfold_more';
-  btn.title = `Instruments size: ${SIZE_NAME[size]} · click for ${next}`;
-  $('#btn-deck-size-label').textContent = `Instruments size: ${SIZE_NAME[size]}. Make them ${next}.`;
-  if (save) { store.set('deckSize', size); store.set('deckPx', px); }
 }
-export function setSize(s, h) {
-  size = s; if (h != null) px = h;
-  applySize();
-  announce(`Instruments ${SIZE_NAME[s]}`);
-}
+const saveSize = () => { store.set('deckSize', size); store.set('deckPx', px); };
+function setSize(s) { size = s; applySize(); saveSize(); announce(`Instruments ${s}`); }
+/* A double-click steps through the presets as the old size button did; from a dragged height it goes to standard. */
+const nextSize = () => (size === 'custom' ? 'standard' : SIZES[(SIZES.indexOf(size) + 1) % SIZES.length]);
+// Layout sizes, not drawn ones: the tiles' entrance animation scales them for a moment.
+const height = () => tile().offsetHeight;
+function resize(h) { px = clamp(h, MIN, maxHeight()); size = 'custom'; applySize(); }
 function maxHeight() {
-  const b = $('#bento'), wide = getComputedStyle(b).gridTemplateAreas.includes('notes');
-  // Beside the inspector the stage keeps 260 px; stacked, the deck may take most of the screen.
-  return wide && b.clientHeight > 0 ? Math.max(MIN, b.clientHeight - 260) : Math.round(innerHeight * 0.8);
+  const wide = getComputedStyle($('#bento')).gridTemplateAreas.includes('notes'), stage = $('#tile-stage').offsetHeight;
+  // Beside the inspector the stage keeps 260 px, as the stylesheet does; stacked, the deck may take most of the screen.
+  return wide && stage > 0 ? Math.max(MIN, Math.floor(stage + height() - 260)) : Math.round(innerHeight * 0.8);
 }
 function syncGrip() {
-  const h = tile().getBoundingClientRect().height, g = $('#deck-grip');
-  g.setAttribute('aria-valuenow', String(Math.round(h / Math.max(1, innerHeight) * 100)));
-  g.setAttribute('aria-valuetext', `${Math.round(h)} pixels, ${SIZE_NAME[size]}`);
+  const h = Math.round(height()), g = $('#deck-grip');
+  g.setAttribute('aria-valuemax', String(Math.round(maxHeight())));
+  g.setAttribute('aria-valuenow', String(h));
+  g.setAttribute('aria-valuetext', `${h} pixels, ${size === 'custom' ? 'custom height' : size}`);
 }
 
 /* Wiring: run once from main.js after every module has evaluated. */
@@ -123,40 +129,28 @@ export function init() {
   // The old two-state toggle stored deckTall; it maps onto the tall preset.
   size = store.get('deckSize', store.get('deckTall', false) ? 'tall' : 'standard'); px = store.get('deckPx', 0) || 0;
   if (!SIZES.includes(size) && !(size === 'custom' && px >= MIN)) size = 'standard';
-  applySize(false);
-  $('#btn-deck-size').addEventListener('click', () => setSize(SIZES[(SIZES.indexOf(size) + 1) % SIZES.length] || 'compact'));
+  applySize();
 
-  // The grip: drag the top edge, or focus it and use the arrow keys (Page keys step further, Home and End jump to
-  // compact and tall, Enter or a double-click restore the standard height).
+  // The grip: drag the top edge, or focus it and use the arrow keys (Page keys step further). Home, Enter and End
+  // pick the compact, standard and tall presets, and a double-click steps through them.
   const grip = $('#deck-grip');
-  let drag = null;
-  grip.addEventListener('pointerdown', e => {
-    if (e.button !== 0) return;
-    drag = { y: e.clientY, h: tile().getBoundingClientRect().height, id: e.pointerId };
-    try { grip.setPointerCapture(e.pointerId); } catch (_) { /* capture is best-effort */ }
-    document.body.classList.add('resizing');
+  let h0 = 0;
+  dragHandle(grip, {
+    slop: 3, busy: 'resizing-deck', save: saveSize,
+    start: () => { h0 = height(); },
+    move: (e, dx, dy) => resize(h0 - dy),
+    keys: { ArrowUp: 24, ArrowDown: -24, PageUp: 96, PageDown: -96, Home: 'compact', Enter: 'standard', End: 'tall' },
+    step: v => (typeof v === 'number' ? resize(height() + v) : setSize(v)),
   });
-  grip.addEventListener('pointermove', e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    px = clamp(drag.h + drag.y - e.clientY, MIN, maxHeight()); size = 'custom'; applySize(false);
-  });
-  const end = e => { if (!drag || e.pointerId !== drag.id) return; drag = null; document.body.classList.remove('resizing'); applySize(); };
-  grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
-  grip.addEventListener('dblclick', () => setSize('standard'));
-  grip.addEventListener('keydown', e => {
-    const h = tile().getBoundingClientRect().height, step = { ArrowUp: 24, ArrowDown: -24, PageUp: 96, PageDown: -96 }[e.key];
-    if (step) { e.preventDefault(); px = clamp(h + step, MIN, maxHeight()); size = 'custom'; applySize(); }
-    else if (e.key === 'Home') { e.preventDefault(); setSize('compact'); }
-    else if (e.key === 'End') { e.preventDefault(); setSize('tall'); }
-    else if (e.key === 'Enter') { e.preventDefault(); setSize('standard'); }
-  });
+  grip.addEventListener('dblclick', () => setSize(nextSize()));
   // Too short for a plot: keep the readings and hide the plot. Any size change redraws it at the new size.
+  // The grip's range follows the console's height, so the console is watched too.
   const ro = new ResizeObserver(() => {
-    const h = tile().getBoundingClientRect().height;
+    const h = height();
     tile().classList.toggle('deck-short', h < SHORT && h > 0);
     syncGrip();
     drawChart();
   });
-  ro.observe(tile());
+  ro.observe(tile()); ro.observe($('#bento'));
   showPane('telemetry');
 }
