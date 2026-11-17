@@ -73,7 +73,14 @@ export function globalInsights() {
     const fixes = [];
     if (state.speed > 1) fixes.push({ label: 'Speed 1×', run() { setSpeed(1); } });
     if (active.perfFixes) fixes.push(...active.perfFixes());
-    out.push({ id: 'perf-slow', level: 'warn', title: 'Running slower than requested', body: `The solver needs about <b>${perf.sim.toFixed(1)} ms</b> per frame, more than its ${BUDGET_MS} ms budget, so this lab is simulating <b>${perf.rate.toFixed(2)}×</b> real time instead of ${state.speed.toFixed(2)}×. The budget drops the backlog so the page stays responsive.`, fixes });
+    // The warning names the cause the meters show, so it never blames the solver for a frame stretched by something else.
+    const rate = `this lab is simulating <b>${perf.rate.toFixed(2)}×</b> real time instead of ${state.speed.toFixed(2)}×`;
+    const why = perf.sim > BUDGET_MS * 0.75
+      ? `The solver needs about <b>${perf.sim.toFixed(1)} ms</b> per frame, more than its ${BUDGET_MS} ms budget, so ${rate}. The budget drops the backlog so the page stays responsive.`
+      : perf.fps < 20
+        ? `Frames arrive only about <b>${Math.round(perf.fps)}</b> times a second, and each carries the run at most 50 ms forward, so ${rate}. The solver itself needs only ${perf.sim.toFixed(1)} ms a frame: the time goes to drawing or to the rest of the machine.`
+        : `At this speed a frame needs more than the ${active.maxSteps || 32} steps this lab takes in one, so ${rate}. The solver needs ${perf.sim.toFixed(1)} ms a frame.`;
+    out.push({ id: 'perf-slow', level: 'warn', title: 'Running slower than requested', body: why, fixes });
   }
   // Drawing is the bottleneck only when it is: slow in itself, costlier than the solver, and most of what a frame takes.
   // A frame stretched by something else (a busy machine, a throttled page) is not the display's doing.
