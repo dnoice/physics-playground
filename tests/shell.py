@@ -386,6 +386,9 @@ with sync_playwright() as p:
     ok("fluid_no_particle_inside_a_post", inside == 0, inside)
     pg.evaluate(P + ".reset()"); pg.wait_for_timeout(150)
     ok("fluid_reset_starts_clean", pg.evaluate(OBSTACLES) == "[]", pg.evaluate(OBSTACLES))
+    # Quick actions act on the run now, so they come first, above every section.
+    quick = pg.evaluate("(() => { const f = document.querySelector('#params-body .params').firstElementChild; return f.classList.contains('quick') ? [...f.querySelectorAll('button')].map(b => b.textContent) : null; })()")
+    ok("quick_actions_first", quick == ["Level the tank", "Splash upward", "Remove obstacles"], quick)
     pg.context.close()
 
     # ---- Control sections: in the lab's order after the quick actions, one restart note, a Reset that appears
@@ -393,7 +396,8 @@ with sync_playwright() as p:
     pg = fresh("chaos")
     groups = pg.evaluate("[...document.querySelectorAll('#params-body .pgroup')].map(s => s.dataset.group)")
     ok("sections_in_lab_order", groups == ["start", "physics", "display"], groups)
-    ok("quick_actions_first", pg.evaluate("document.querySelector('#params-body .params').firstElementChild.classList.contains('quick')"))
+    # Chaos's "Restart from these angles" only repeated Reset (R): with it gone the panel opens on its first section.
+    ok("chaos_no_second_restart", pg.evaluate("(() => { const p = document.querySelector('#params-body .params'); return p.firstElementChild.classList.contains('pgroup') && !p.querySelector('.quick') && ![...p.querySelectorAll('button')].some(b => /restart/i.test(b.textContent)); })()"))
     ok("restart_note_once", pg.locator("#params-body .pgroup-note").count() == 1 and "restart" in pg.inner_text("[data-group='start'] .pgroup-note"))
     ok("no_restart_note_per_slider", pg.inner_text("#ctl-chaos-copies-note") == "", pg.inner_text("#ctl-chaos-copies-note"))
     reset = pg.locator("[data-group='physics'] .pgroup-reset")
@@ -482,7 +486,7 @@ with sync_playwright() as p:
     at = {}
     pg.click("#btn-gfx"); pg.wait_for_timeout(200); s = st()
     good = (s["open"] and s["modal"] and s["section"] == "graphics" and s["panes"] == ["sp-graphics"] and s["tab"] == "st-graphics" and s["inside"] and s["onChoice"]
-            and s["expanded"] == ["btn-settings", "btn-gfx"])
+            and sorted(s["expanded"]) == ["btn-gfx", "btn-settings"])
     pg.keyboard.press("Escape"); pg.wait_for_timeout(200); back = st()
     at["graphics"] = True if good and not back["open"] and back["focus"] == "btn-gfx" and not back["expanded"] else (s, back)
     for sec in ["units", "hud", "keys"]:
@@ -508,7 +512,7 @@ with sync_playwright() as p:
     # its own, apart from the Controls tab's; and the stage's status chips are not a second "HUD".
     glyphs = pg.evaluate("""(() => { const g = s => document.querySelector(s + ' .ms').textContent; const all = [...document.querySelectorAll('.ms')].map(e => e.textContent);
       return { reset: g('#btn-reset'), speed: g('#speed-reset'), gfx: g('#btn-gfx'), gfxTab: g('#st-graphics'), controls: g('#nt-controls'), replays: all.filter(t => t === 'replay').length,
-        status: document.querySelector('.hud').getAttribute('aria-label'), hudTab: document.getElementById('st-hud').textContent.trim(), name: document.querySelector('#btn-reset .sr-only').textContent,
+        status: document.querySelector('.hud').getAttribute('aria-label'), hudTab: document.getElementById('st-hud').lastChild.textContent.trim(), name: document.querySelector('#btn-reset .sr-only').textContent,
         saysHud: /\\bHUD\\b/.test(document.body.innerText) }; })()""")
     ok("look_alikes_apart", glyphs["reset"] == "replay" and glyphs["replays"] == 1 and glyphs["speed"] == "restart_alt" and glyphs["gfx"] == glyphs["gfxTab"] != glyphs["controls"] == "tune"
        and glyphs["status"] == "Run status" and glyphs["hudTab"] == "Head-up display" and glyphs["name"] == "Restart the run" and not glyphs["saysHud"], glyphs)

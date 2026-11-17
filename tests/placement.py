@@ -181,7 +181,8 @@ with sync_playwright() as p:
     by_code = pg.evaluate("(() => { PhysicsPlayground.setParam('rand', true); return %s; })()" % now)
     reset = pg.evaluate("(() => { document.querySelector('[data-group=spawn] .pgroup-reset').click(); return %s; })()" % now)
     ok("dice_follows_every_change", by_code == [True, "true", "true"] and reset == [False, "false", "false"] and pg.locator("#guide .g-switch").count() == 0, (by_code, reset))
-    pg.evaluate(P + ".play()")
+    # Random stays on for the draws below, as the dice leaves it.
+    pg.click("#dock-dice"); pg.evaluate(P + ".play()")
 
     # ---- Gravity: random bodies in every type and its range; chosen type and drop speed; types survive rewind
     draws = pg.evaluate("(() => { const L = PhysicsPlayground.active, out = []; for (let i = 0; i < 400; i++) out.push(L.drawNew()); return out; })()")
