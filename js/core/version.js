@@ -1,24 +1,23 @@
 /*
 ✒ Metadata
-    - Title: App Version (digiSpace Edition - v2.18)
+    - Title: App Version (digiSpace Edition - v2.19)
     - File Name: version.js
     - Relative Path: js/core/version.js
     - Artifact Type: javascript
-    - Version: 2.18.0
-    - Date: 11/16/2026
-    - Update: Monday, November 16, 2026
+    - Version: 2.19.0
+    - Date: 11/17/2026
+    - Update: Tuesday, November 17, 2026
     - Author: Dennis 'dendogg' Smaltz
     - A.I. Acknowledgement: Anthropic - Claude Opus 5.5
     - Signature: ︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!
 
 ✒ Changelog:
+    - 2.19.0 (11/17/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
+      2.19.0.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.18.0.
     - 2.17.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Release
       2.17.0.
-    - 2.16.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — Created
-      so a dataset's README and data package can name the release that
-      recorded them.
     Earlier entries: see CHANGELOG.md
 
 ✒ Description:
@@ -36,4 +35,4 @@
       16.4+)
 ---------
 */
-export const APP = { name: 'Physics Playground', version: '2.18.0', home: 'https://dnoice.github.io/physics-playground/', source: 'https://github.com/dnoice/physics-playground' };
+export const APP = { name: 'Physics Playground', version: '2.19.0', home: 'https://dnoice.github.io/physics-playground/', source: 'https://github.com/dnoice/physics-playground' };

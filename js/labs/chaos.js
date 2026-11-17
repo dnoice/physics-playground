@@ -16,11 +16,9 @@
       Dennis's call for one way to select: the selection contract (objects,
       select, selectedId, pick and spot) for the copies, which Inspect lists
       with their energy, distance from the front copy and θ₂. On Dennis's call
-      for a duplication sweep: Restart from these angles is gone, since the
-      starting-angle dials restart the run as they change and Reset restarts
-      it too. On Dennis's call for a duplication sweep: the quick action
-      Restart from these angles, which only repeated Reset (R), is removed;
-      the angle dials already restart the run.
+      for a duplication sweep: the quick action Restart from these angles,
+      which only repeated Reset (R), is removed; the starting-angle dials
+      already restart the run as they change.
     - 2.18.0 (11/16/2026) [dendogg + Anthropic - Claude Opus 5.5] — On
       Dennis's call for recordings shot like a film: interest() names the
       pendulum tips, where the copies part and the copies on the phase map for

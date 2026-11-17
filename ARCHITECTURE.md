@@ -558,8 +558,11 @@ lab's own fields:
   body is followed rather than a new one dropped where it was. Its views
   share one `pickBody(p, project, slack)`: `projector()` writes where a
   body is drawn in the current view (flat, or `project3` with its `apart3`
-  rule), and picking, erasing, the follow ring (`followRing`) and the hover
-  tag (`hoverTag`, both in `js/core/draw.js`) all measure through it.
+  rule), and picking, erasing and the hover tag (`hoverTag` in
+  `js/core/draw.js`) all measure through it; the follow ring (`followRing`,
+  also in `draw.js`) goes through `projector(true)`, which places a moon
+  still inside its planet's disc too, so a followed moon is ringed in either
+  view.
   `lineAt(p, trails)` finds the drawn orbit within `LINE_PX` by rerunning
   `orbitCurve` through the same projection and measuring each chord with
   `segDist`, skipping moons not drawn apart and, in 3D, the stretch nearest
@@ -599,10 +602,14 @@ does the Telemetry plot's scrub: one captured pointer drag that ends exactly
 once (release, cancel or a lost capture), a slop before the first move so a
 double-click moves nothing, keyboard steps, and a save after each. The deck
 keeps `deckSize` and `deckPx`, and the inspector `sidePx` (`js/shell/layout.js`;
-0 is the stylesheet's own width). The stylesheet clamps both again, so a
-size kept from a larger window never squeezes the stage below 260 px of
-height or half the console's width. Focus mode hides both grips, and the
-one-column layout the inspector's.
+0 is the stylesheet's own width). The stylesheet holds every deck height,
+preset or dragged, to the room the stage leaves (`--bay-room`: the stage
+keeps 260 px of height), and a dragged inspector to half the console's
+width, so neither a short window nor a size kept from a larger one squeezes
+the stage; in one column every deck height stays within 80 % of the screen.
+The deck grip reads the layout from the grid's columns, so its maximum is
+the stylesheet's in both layouts, and its value never exceeds its maximum.
+Focus mode hides both grips, and the one-column layout the inspector's.
 
 Inspect (`js/shell/details.js`) renders `lab.inspect()` as a card of
 read-only figures. Each numeric figure keeps its history since the selection
@@ -627,9 +634,12 @@ alike:
   chip, and in the same words ("2 critical", "3 to check").
   Insights that are only informative are counted inside the pane, on the Now
   view, never on the tab.
-- **A neutral count,** in the text colour on no fill, for what has not been
-  seen: the Story's unread moments (`#dt-story-n`, from `story.js`) and a
-  Library item saved while another tab showed.
+- **A neutral count of what is new,** a bare "+n" in the text colour with
+  no pill, ring or fill, for what has not been seen: the Story's unread
+  moments (`#dt-story-n`, from `story.js`) and the items saved to the
+  Library while another tab showed (`.tab-new`, from `noteNewItem()` in
+  `library.js`). A pill on a tab holds a total or progress (the Library's and
+  Experiments' counts), never something unseen.
 - **Nothing otherwise.** A selection puts no mark on Inspect (it is in plain
   view on the stage, and a new one opens the pane), and a calm run leaves
   Insights bare.
@@ -966,7 +976,8 @@ state of any scene can carry the same metadata.
 - **Drawing to scale.** `drawR(b, z)` in 2D and `radius3(b, s)` in 3D draw
   a body at its real radius, but never under its `px` floor.
   - `apart` and `apart3` hide a moon while it sits inside its host's drawn
-    disc. Picking, erasing, names and orbits follow the same rule.
+    disc. Picking, erasing, names and orbits follow the same rule. The
+    follow ring does not: a followed moon is ringed wherever it is.
   - The 3D near plane follows the camera in. Floored at 1e-7 in sky scenes,
     it lets the camera reach a moon a few thousandths of a pixel across.
 - **Orbits and names.**

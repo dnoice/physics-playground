@@ -159,8 +159,8 @@ controls](docs/media/hero-workspace.webp)
       alt="Pages workflow status">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/release-v2.18.0-0e7490?style=flat-square&labelColor=0c1118"
-      alt="Release 2.18.0">
+    <img src="https://img.shields.io/badge/release-v2.19.0-0e7490?style=flat-square&labelColor=0c1118"
+      alt="Release 2.19.0">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df"
@@ -701,7 +701,9 @@ full-height Inspector beside them.
     misbehaves, each with its fix, beside the frame-timing strip. A tab
     carries a mark only when there is something to see: a dot in amber or
     red, with a few words, while a warning or a critical problem stands, and
-    a plain count of the Story's moments you have not read yet. With neither,
+    a plain "+n" count of the Story's moments you have not read yet (the
+    Library tab shows the same for items saved while another tab was open).
+    With neither,
     the tab is bare, and Inspect's tab never carries a mark for a selection.
     The stage's alert opens Now.
 
@@ -1141,7 +1143,7 @@ Physics Playground is licensed under the Apache License 2.0: see
 [pages-workflow]: https://github.com/dnoice/physics-playground/actions/workflows/pages.yml
 [badge-demo]: https://img.shields.io/badge/live_demo-open_the_lab-b45309?style=flat-square&labelColor=0c1118&logo=githubpages&logoColor=f2a541
 [badge-pages]: https://img.shields.io/github/actions/workflow/status/dnoice/physics-playground/pages.yml?branch=main&style=flat-square&label=pages&color=15803d&labelColor=0c1118&logo=githubactions&logoColor=6fcf97
-[badge-release]: https://img.shields.io/badge/release-v2.18.0-0e7490?style=flat-square&labelColor=0c1118
+[badge-release]: https://img.shields.io/badge/release-v2.19.0-0e7490?style=flat-square&labelColor=0c1118
 [badge-license]: https://img.shields.io/badge/license-Apache_2.0-0e7490?style=flat-square&labelColor=0c1118&logo=apache&logoColor=5fd0df
 [badge-esm]: https://img.shields.io/badge/ES_modules-no_build_step-232c39?style=flat-square&labelColor=0c1118&logo=javascript&logoColor=f2a541
 [badge-three]: https://img.shields.io/badge/three.js-0.187.0-232c39?style=flat-square&labelColor=0c1118&logo=threedotjs&logoColor=5fd0df
